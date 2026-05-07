@@ -33,7 +33,7 @@ echo "[tuist] Installing pinned version from .mise.toml..."
 mise install
 
 # 3. 설치된 Tuist 버전 확인
-TUIST_VERSION=$(mise exec -- tuist --version)
+TUIST_VERSION=$(mise exec -- tuist version)
 echo "[tuist] Active version: $TUIST_VERSION"
 
 # 4. Tuist fetch (SPM 패키지 등 의존성 설치)

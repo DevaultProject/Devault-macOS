@@ -48,7 +48,7 @@ cd Devault-macOS
 ### 4. Xcode 워크스페이스 생성
 
 ```bash
-mise exec -- tuist generate
+tuist generate
 ```
 
 - `Devault.xcworkspace`가 생성됩니다.
@@ -60,8 +60,8 @@ mise exec -- tuist generate
 
 | 명령어 | 설명 |
 |---|---|
-| `mise exec -- tuist generate` | Xcode 워크스페이스 재생성 |
-| `mise exec -- tuist clean` | Tuist 캐시 및 생성 파일 삭제 |
+| `tuist generate` | Xcode 워크스페이스 재생성 |
+| `tuist clean` | Tuist 캐시 및 생성 파일 삭제 |
 | `./scripts/bootstrap_modules.sh` | 새 모듈 디렉토리 초기화 |
 
 ---

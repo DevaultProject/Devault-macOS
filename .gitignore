@@ -153,3 +153,4 @@ xcuserdata
 *.xcodeproj
 Derived/
 .tuist-bin/
+Tuist/Package.resolved

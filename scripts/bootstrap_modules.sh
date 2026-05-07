@@ -101,4 +101,4 @@ SWIFT_EOF
 done
 
 echo ""
-echo "Done! Run 'mise exec -- tuist generate' to generate the Xcode workspace."
+echo "Done! Run 'tuist generate' to generate the Xcode workspace."
