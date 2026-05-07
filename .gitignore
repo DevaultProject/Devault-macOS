@@ -154,3 +154,7 @@ xcuserdata
 Derived/
 .tuist-bin/
 Tuist/Package.resolved
+
+### AI Tools ###
+.claude/
+.omc/
