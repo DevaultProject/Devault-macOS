@@ -27,7 +27,7 @@ extension SwiftDataModel {
         @Relationship(deleteRule: .cascade, inverse: \SwiftDataModel.SecretMetadata.secret)
         var metadata: [SecretMetadata]
 
-        @Relationship(deleteRule: .cascade, inverse: \SwiftDataModel.SecretAuditLog.secret)
+        @Relationship(deleteRule: .nullify, inverse: \SwiftDataModel.SecretAuditLog.secret)
         var auditLogs: [SecretAuditLog]
 
         var projects: [Project] {
@@ -46,8 +46,9 @@ extension SwiftDataModel {
             liked: Bool = false,
             deletedAt: Date? = nil,
             createdAt: Date = Date(),
-            updatedAt: Date = Date()
+            updatedAt: Date? = nil
         ) {
+            let initialCreatedAt = createdAt
             self.secretId = secretId
             self.name = name
             self.secretType = secretType
@@ -58,8 +59,8 @@ extension SwiftDataModel {
             self.memo = memo
             self.liked = liked
             self.deletedAt = deletedAt
-            self.createdAt = createdAt
-            self.updatedAt = updatedAt
+            self.createdAt = initialCreatedAt
+            self.updatedAt = updatedAt ?? initialCreatedAt
             self.projectLinks = []
             self.payload = nil
             self.metadata = []
