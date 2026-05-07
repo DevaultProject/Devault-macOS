@@ -9,5 +9,9 @@ let project = Project.project(
             product: Project.product,
             sources: .sources
         ),
+        .tests(
+            name: DVModule.DVDomain.name,
+            dependencies: [DVModule.DVDomain.dependency]
+        ),
     ]
 )
