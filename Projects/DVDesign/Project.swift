@@ -10,5 +10,9 @@ let project = Project.project(
             sources: .sources,
             resources: .default
         ),
+        .sampleApp(
+            name: DVModule.DVDesign.name,
+            dependencies: [DVModule.DVDesign.dependency]
+        ),
     ]
 )
