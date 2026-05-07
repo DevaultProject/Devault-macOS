@@ -1,0 +1,10 @@
+import ProjectDescription
+import ProjectDescriptionHelpers
+
+let workspace = Workspace(
+    name: "Devault",
+    projects: DVModule.allCases.map {
+        .relativeToRoot("Projects/\($0.rawValue)")
+    },
+    fileHeaderTemplate: "Copyright © 2026 Devault. All rights reserved"
+)
