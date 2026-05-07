@@ -3,8 +3,7 @@ import ProjectDescription
 // MARK: - External Dependencies
 
 public enum External: String {
-    case Nimble
-    case Quick
+    case ComposableArchitecture
 }
 
 extension TargetDependency {

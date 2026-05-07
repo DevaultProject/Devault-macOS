@@ -32,6 +32,42 @@ extension Target {
     }
 }
 
+// MARK: - Test Target
+
+extension Target {
+    public static func tests(
+        name: String,
+        dependencies: [TargetDependency] = []
+    ) -> Target {
+        .target(
+            name: "\(name)Tests",
+            product: .unitTests,
+            sources: .tests,
+            dependencies: dependencies
+        )
+    }
+}
+
+// MARK: - Sample App Target
+
+extension Target {
+    public static func sampleApp(
+        name: String,
+        dependencies: [TargetDependency] = []
+    ) -> Target {
+        .target(
+            name: "\(name)SampleApp",
+            product: .app,
+            infoPlist: .extendingDefault(with: [
+                "CFBundleDisplayName": .string("\(name) Sample"),
+            ]),
+            sources: ["SampleApp/Sources/**"],
+            resources: ["SampleApp/Resources/**"],
+            dependencies: dependencies
+        )
+    }
+}
+
 // MARK: - SourceFilesList
 
 extension SourceFilesList {
