@@ -5,19 +5,21 @@ import SwiftData
 
 extension SwiftDataModel {
     @Model final class SecretProjectLink {
+        @Attribute(.unique) var linkKey: String
         var linkedAt: Date
 
         @Relationship
-        var project: Project?
+        var project: Project
 
         @Relationship
-        var secret: Secret?
+        var secret: Secret
 
         init(
             project: Project,
             secret: Secret,
             linkedAt: Date = Date()
         ) {
+            self.linkKey = "\(project.id.uuidString):\(secret.secretId.uuidString)"
             self.linkedAt = linkedAt
             self.project = project
             self.secret = secret
