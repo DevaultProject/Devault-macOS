@@ -25,13 +25,12 @@ extension SwiftDataModel {
         var payload: SecretPayload?
 
         @Relationship(deleteRule: .cascade, inverse: \SwiftDataModel.SecretMetadata.secret)
-        var metadata: [SecretMetadata]
+        var metadata: SecretMetadata?
 
         @Relationship(deleteRule: .nullify, inverse: \SwiftDataModel.SecretAuditLog.secret)
         var auditLogs: [SecretAuditLog]
 
         var projects: [Project] {
-            projectLinks.compactMap(\.project)
         }
 
         init(
@@ -63,7 +62,7 @@ extension SwiftDataModel {
             self.updatedAt = updatedAt ?? initialCreatedAt
             self.projectLinks = []
             self.payload = nil
-            self.metadata = []
+            self.metadata = nil
             self.auditLogs = []
         }
     }

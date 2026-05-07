@@ -14,7 +14,7 @@ extension SwiftDataModel {
         var secretLinks: [SecretProjectLink]
 
         var secrets: [Secret] {
-            secretLinks.compactMap(\.secret)
+            secretLinks.map(\.secret)
         }
 
         init(

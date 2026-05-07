@@ -12,7 +12,7 @@ extension SwiftDataModel {
         var occurredAt: Date
 
         @Relationship
-        var secret: Secret?
+        var secret: Secret
 
         init(
             id: UUID = UUID(),
@@ -20,7 +20,7 @@ extension SwiftDataModel {
             actorContext: String,
             isSuspicious: Bool = false,
             occurredAt: Date = Date(),
-            secret: Secret? = nil
+            secret: Secret
         ) {
             self.id = id
             self.eventType = eventType
