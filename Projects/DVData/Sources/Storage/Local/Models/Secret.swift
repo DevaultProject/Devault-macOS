@@ -31,6 +31,7 @@ extension SwiftDataModel {
         var auditLogs: [SecretAuditLog]
 
         var projects: [Project] {
+            projectLinks.map(\.project)
         }
 
         init(
