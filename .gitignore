@@ -146,3 +146,10 @@ xcuserdata
 **/xcshareddata/WorkspaceSettings.xcsettings
 
 # End of https://www.toptal.com/developers/gitignore/api/xcode,macos,swift,swiftpackagemanager,cocoapods
+
+### Tuist ###
+# Tuist로 생성되는 파일들은 커밋하지 않습니다 (tuist generate로 재생성 가능)
+*.xcworkspace
+*.xcodeproj
+Derived/
+.tuist-bin/
