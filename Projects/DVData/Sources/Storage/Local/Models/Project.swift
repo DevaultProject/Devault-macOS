@@ -13,6 +13,7 @@ extension SwiftDataModel {
         @Relationship(deleteRule: .cascade, inverse: \SwiftDataModel.SecretProjectLink.project)
         var secretLinks: [SecretProjectLink]
 
+        /// `SecretProjectLink`를 통해 연결된 시크릿 목록을 반환하는 편의 접근자입니다.
         var secrets: [Secret] {
             secretLinks.map(\.secret)
         }

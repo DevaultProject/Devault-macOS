@@ -30,6 +30,7 @@ extension SwiftDataModel {
         @Relationship(deleteRule: .nullify, inverse: \SwiftDataModel.SecretAuditLog.secret)
         var auditLogs: [SecretAuditLog]
 
+        /// `SecretProjectLink`를 통해 연결된 프로젝트 목록을 반환하는 편의 접근자입니다.
         var projects: [Project] {
             projectLinks.map(\.project)
         }
