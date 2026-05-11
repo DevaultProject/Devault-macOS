@@ -1,13 +1,24 @@
+// Copyright © 2026 Devault. All rights reserved
+
 import SwiftUI
+import DVDesign
 
 struct ContentView: View {
     var body: some View {
         NavigationSplitView {
-            List(ComponentSection.allCases, id: \.self) { section in
-                Section(section.title) {
-                    ForEach(section.components, id: \.self) { component in
-                        NavigationLink(component.name) {
-                            ComponentPlaceholderView(name: component.name, owner: component.owner)
+            List {
+                Section("Foundation") {
+                    NavigationLink("Typography") {
+                        TypographyPreviewView()
+                    }
+                }
+
+                ForEach(ComponentSection.allCases, id: \.self) { section in
+                    Section(section.title) {
+                        ForEach(section.components, id: \.self) { component in
+                            NavigationLink(component.name) {
+                                ComponentPlaceholderView(name: component.name, owner: component.owner)
+                            }
                         }
                     }
                 }
