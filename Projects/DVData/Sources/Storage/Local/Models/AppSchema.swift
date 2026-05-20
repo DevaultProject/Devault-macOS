@@ -5,7 +5,7 @@ import SwiftData
 enum SwiftDataModel { }
 
 extension Schema {
-    private static let actualVersion: Schema.Version = Version(1, 0, 0)
+    private static let schemaVersion: Schema.Version = Version(1, 0, 0)
 
     static var appSchema: Schema {
         Schema([
@@ -17,6 +17,6 @@ extension Schema {
             SwiftDataModel.SecretAuditLog.self,
             SwiftDataModel.AppAuditLog.self,
             SwiftDataModel.BackupRecord.self,
-        ], version: actualVersion)
+        ], version: schemaVersion)
     }
 }
