@@ -287,7 +287,7 @@ struct Constants {
 
 파일 내 코드는 아래 순서로 구성합니다.
 
-```
+```text
 1. 프로퍼티 (stored → computed 순)
 2. init
 3. body (SwiftUI View의 경우)
