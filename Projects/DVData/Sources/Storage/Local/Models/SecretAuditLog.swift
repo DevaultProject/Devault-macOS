@@ -10,9 +10,14 @@ extension SwiftDataModel {
         var actorContext: String
         var isSuspicious: Bool
         var occurredAt: Date
+        
+        // MARK: - Snapshot field
+        var secretSnapshotId: UUID
+        var secretNameSnapshot: String
+        var secretTypeSnapshot: String
 
         @Relationship
-        var secret: Secret
+        var secret: Secret?
 
         init(
             id: UUID = UUID(),
@@ -27,6 +32,9 @@ extension SwiftDataModel {
             self.actorContext = actorContext
             self.isSuspicious = isSuspicious
             self.occurredAt = occurredAt
+            self.secretSnapshotId = secret.id
+            self.secretNameSnapshot = secret.name
+            self.secretTypeSnapshot = secret.secretType
             self.secret = secret
         }
     }

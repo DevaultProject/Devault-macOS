@@ -19,7 +19,7 @@ extension SwiftDataModel {
             secret: Secret,
             linkedAt: Date = Date()
         ) {
-            self.linkKey = "\(project.id.uuidString):\(secret.secretId.uuidString)"
+            self.linkKey = "\(project.id.uuidString):\(secret.id.uuidString)"
             self.linkedAt = linkedAt
             self.project = project
             self.secret = secret

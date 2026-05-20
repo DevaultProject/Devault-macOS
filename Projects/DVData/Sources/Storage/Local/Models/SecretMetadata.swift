@@ -6,7 +6,6 @@ import SwiftData
 extension SwiftDataModel {
     @Model final class SecretMetadata {
         @Attribute(.unique) var id: UUID
-        @Attribute(.unique) var secretKey: String
         var metadataJSON: Data
         var schemaVersion: Int
 
@@ -20,7 +19,6 @@ extension SwiftDataModel {
             secret: Secret
         ) {
             self.id = id
-            self.secretKey = secret.secretId.uuidString
             self.metadataJSON = metadataJSON
             self.schemaVersion = schemaVersion
             self.secret = secret
