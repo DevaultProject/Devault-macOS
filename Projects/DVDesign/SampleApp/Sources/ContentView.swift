@@ -30,8 +30,6 @@ struct ContentView: View {
         }
         .frame(minWidth: 700, minHeight: 500)
     }
-
-    @ViewBuilder
     private func detailView(for component: Component) -> some View {
         switch component.name {
         case "DVPageControl":
@@ -59,6 +57,33 @@ struct ContentView: View {
         default:
             ComponentPlaceholderView(name: component.name, owner: component.owner)
         }
+    }
+
+}
+
+// MARK: - Routing
+
+@ViewBuilder
+private func destination(for component: Component) -> some View {
+    switch component.name {
+    case "DVPageControl":
+        DVPageControlPreviewView()
+    case "DVCategory":
+        DVCategoryPreviewView()
+    case "DVProjectContainer":
+        DVProjectContainerPreviewView()
+    case "DVVaultContainer":
+        DVVaultContainerPreviewView()
+    case "DVButton":
+        DVButtonPreviewView()
+    case "DVCheckBox":
+        DVCheckBoxPreviewView()
+    case "DVTitleBar":
+        DVTitleBarPreviewView()
+    case "DVSecretType":
+        DVSecretTypePreviewView()
+    default:
+        ComponentPlaceholderView(name: component.name, owner: component.owner)
     }
 }
 
