@@ -6,7 +6,6 @@
 language: "ko-KR"
 early_access: false
 enable_free_tier: true
-
 tone_instructions: "Apple 플랫폼 시니어 개발자 관점으로, 원인과 개선안을 짧고 명확히 제시하며 개선 중심으로 리뷰하세요."
 
 # =============================================================================
