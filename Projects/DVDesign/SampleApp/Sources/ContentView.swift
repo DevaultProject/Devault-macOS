@@ -46,6 +46,32 @@ struct ContentView: View {
     }
 }
 
+// MARK: - Routing
+
+@ViewBuilder
+private func destination(for component: Component) -> some View {
+    switch component.name {
+    case "DVPageControl":
+        DVPageControlPreviewView()
+    case "DVCategory":
+        DVCategoryPreviewView()
+    case "DVProjectContainer":
+        DVProjectContainerPreviewView()
+    case "DVVaultContainer":
+        DVVaultContainerPreviewView()
+    case "DVButton":
+        DVButtonPreviewView()
+    case "DVCheckBox":
+        DVCheckBoxPreviewView()
+    case "DVTitleBar":
+        DVTitleBarPreviewView()
+    case "DVSecretType":
+        DVSecretTypePreviewView()
+    default:
+        ComponentPlaceholderView(name: component.name, owner: component.owner)
+    }
+}
+
 // MARK: - Placeholder Detail
 
 private struct ComponentPlaceholderView: View {
@@ -97,6 +123,8 @@ private enum ComponentSection: CaseIterable {
                 Component(name: "DVCategory", owner: "예성"),
                 Component(name: "DVButton", owner: "예성"),
                 Component(name: "DVCheckBox", owner: "예성"),
+                Component(name: "DVTitleBar", owner: "예성"),
+                Component(name: "DVSecretType", owner: "예성"),
             ]
         case .doyeon:
             return [
