@@ -117,7 +117,7 @@ public struct DVRadioButtonGroup<Value: Hashable>: View {
     }
 }
 
-public extension DVRadioButtonGroup {
+extension DVRadioButtonGroup {
     /// ``DVRadioButtonGroup`` 안에 렌더링되는 단일 옵션.
     ///
     /// `Item`은 그룹의 `selection` 바인딩과 비교되는 `Value`와 사용자가
@@ -128,7 +128,7 @@ public extension DVRadioButtonGroup {
     /// ```swift
     /// DVRadioButtonGroup<String>.Item("staging", title: "Staging")
     /// ```
-    struct Item: Identifiable {
+    public struct Item: Identifiable {
         /// 이 옵션을 식별하는 고유 값. 그룹의 `selection` 바인딩과
         /// 비교되어 선택 상태를 결정합니다.
         public let id: Value
@@ -154,7 +154,7 @@ public extension DVRadioButtonGroup {
     /// 각 케이스는 라디오 사이의 가로 간격(``spacing``)과 그룹 HStack의
     /// 최소 너비 하한선(``minWidth``)을 Devault Figma 스펙에 맞춰 함께
     /// 고정합니다.
-    enum Size {
+    public enum Size {
         /// 좁은 밀도: 간격 8pt, 최소 너비 180pt.
         case xs
 
