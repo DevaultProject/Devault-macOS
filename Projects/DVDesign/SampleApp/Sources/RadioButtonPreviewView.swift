@@ -59,7 +59,7 @@ struct RadioButtonPreviewView: View {
                                 size: .sm
                             )
                         }
-                        labeled("MD (spacing 28)") {
+                        labeled("MD (spacing 56)") {
                             DVRadioButtonGroup(
                                 items: items,
                                 selection: $mdSelection,

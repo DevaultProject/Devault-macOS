@@ -122,7 +122,7 @@ public struct DVRadioButton<Label: View>: View {
     }
 }
 
-public extension DVRadioButton where Label == Text {
+extension DVRadioButton where Label == Text {
     /// 디자인 시스템 타이포그래피가 적용된 단순 텍스트 라벨 라디오 버튼을
     /// 생성합니다.
     ///
@@ -140,7 +140,7 @@ public extension DVRadioButton where Label == Text {
     ///   - title: 인디케이터 옆에 표시될 텍스트.
     ///   - isSelected: 선택 상태 — ``init(isSelected:action:label:)`` 참고.
     ///   - action: 활성화 핸들러 — ``init(isSelected:action:label:)`` 참고.
-    init(
+    public init(
         _ title: String,
         isSelected: Bool,
         action: @escaping () -> Void
