@@ -17,7 +17,7 @@ struct ContentView: View {
                     Section(section.title) {
                         ForEach(section.components, id: \.self) { component in
                             NavigationLink(component.name) {
-                                ComponentPlaceholderView(name: component.name, owner: component.owner)
+                                detailView(for: component)
                             }
                         }
                     }
@@ -29,6 +29,16 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(minWidth: 700, minHeight: 500)
+    }
+
+    @ViewBuilder
+    private func detailView(for component: Component) -> some View {
+        switch component.name {
+        case "DVRadioButton", "DVRadioButtonGroup":
+            RadioButtonPreviewView()
+        default:
+            ComponentPlaceholderView(name: component.name, owner: component.owner)
+        }
     }
 }
 
