@@ -8,6 +8,7 @@ public enum SecretUseCaseError: Error, Equatable, Sendable {
     case secretNotFound(id: UUID)
     case repositoryFailure(SecretRepositoryError)
     case cryptoFailure(SecretCryptoError)
+    case authenticationFailure(UserAuthenticationError)
     case unexpected
 }
 
@@ -26,6 +27,10 @@ extension SecretUseCaseError {
 
         if let error = error as? SecretCryptoError {
             return .cryptoFailure(error)
+        }
+
+        if let error = error as? UserAuthenticationError {
+            return .authenticationFailure(error)
         }
 
         return .unexpected

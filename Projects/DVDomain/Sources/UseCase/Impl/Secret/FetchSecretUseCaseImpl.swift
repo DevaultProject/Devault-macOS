@@ -5,13 +5,16 @@ import Foundation
 public struct FetchSecretUseCaseImpl: FetchSecretUseCase {
     private let repository: any SecretRepository
     private let cryptoService: any SecretCryptoService
+    private let authenticationService: any UserAuthenticationService
 
     public init(
         repository: any SecretRepository,
-        cryptoService: any SecretCryptoService
+        cryptoService: any SecretCryptoService,
+        authenticationService: any UserAuthenticationService
     ) {
         self.repository = repository
         self.cryptoService = cryptoService
+        self.authenticationService = authenticationService
     }
 
     public func fetch(id: UUID) async throws -> Secret? {
@@ -38,6 +41,7 @@ public struct FetchSecretUseCaseImpl: FetchSecretUseCase {
             guard let secret = try await repository.fetch(id: id) else {
                 throw SecretUseCaseError.secretNotFound(id: id)
             }
+            try await authenticationService.authenticate(reason: "Reveal secret payload")
             return try await cryptoService.decryptPayload(secret.payload, as: type)
         } catch {
             throw SecretUseCaseError.map(error)
