@@ -8,6 +8,7 @@ struct ContentView: View {
         modelContainer: LocalStorage.shared.modelContainer
     )
     private let cryptoService = SecretCryptoServiceImpl()
+    private let authenticationService = LocalUserAuthenticationServiceImpl()
 
     var body: some View {
         SecretUseCaseDemoView(
@@ -17,7 +18,8 @@ struct ContentView: View {
             ),
             fetchSecretUseCase: FetchSecretUseCaseImpl(
                 repository: repository,
-                cryptoService: cryptoService
+                cryptoService: cryptoService,
+                authenticationService: authenticationService
             )
         )
     }
