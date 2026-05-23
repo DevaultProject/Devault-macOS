@@ -12,5 +12,9 @@ let project = Project.project(
                 .core(),
             ]
         ),
+        .tests(
+            name: DVModule.DVDomain.name,
+            dependencies: [DVModule.DVDomain.dependency]
+        ),
     ]
 )
