@@ -6,12 +6,6 @@ import SwiftData
 
 @ModelActor
 public actor SecretRepositoryImpl: SecretRepository {
-    public init(modelContainer: ModelContainer) {
-        let modelContext = ModelContext(modelContainer)
-        self.modelExecutor = DefaultSerialModelExecutor(modelContext: modelContext)
-        self.modelContainer = modelContainer
-    }
-    
     public func create(_ secret: DVDomain.Secret) async throws -> DVDomain.Secret {
         do {
             let localSecret = SwiftDataModel.Secret(
