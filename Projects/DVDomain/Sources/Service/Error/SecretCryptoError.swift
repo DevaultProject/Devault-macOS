@@ -2,6 +2,7 @@
 
 public enum SecretCryptoError: Error, Equatable, Sendable {
     case keyUnavailable
+    case keychainFailure(status: Int32)
     case encryptionFailed
     case decryptionFailed
     case encodingFailed
