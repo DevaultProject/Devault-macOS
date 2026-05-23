@@ -38,10 +38,10 @@ public struct FetchSecretUseCaseImpl: FetchSecretUseCase {
         as type: Payload.Type
     ) async throws -> Payload {
         do {
+            try await authenticationService.authenticate(reason: "Reveal secret payload")
             guard let secret = try await repository.fetch(id: id) else {
                 throw SecretUseCaseError.secretNotFound(id: id)
             }
-            try await authenticationService.authenticate(reason: "Reveal secret payload")
             return try await cryptoService.decryptPayload(secret.payload, as: type)
         } catch {
             throw SecretUseCaseError.map(error)
