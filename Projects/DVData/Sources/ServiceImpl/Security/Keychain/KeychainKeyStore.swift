@@ -23,7 +23,7 @@ struct KeychainKeyStore: Sendable {
         try saveKeyData(data, tag: tag)
         return SymmetricKey(data: data)
     }
-
+    
     /// tag에 해당하는 symmetric key를 조회하고, 없으면 keyUnavailable 오류를 던진다.
     func getSymmetricKey(tag: String) throws -> SymmetricKey {
         guard let data = try loadKeyData(tag: tag) else {
@@ -37,12 +37,13 @@ struct KeychainKeyStore: Sendable {
 extension KeychainKeyStore {
     /// Keychain에서 tag에 해당하는 raw key Data를 조회한다.
     private func loadKeyData(tag: String) throws -> Data? {
-        var query = keyQuery(tag: tag)
-        let attributes: [CFString: Any] = [
+        let query: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: tag,
             kSecReturnData: true,
             kSecMatchLimit: kSecMatchLimitOne,
         ]
-        attributes.forEach { query[$0.key] = $0.value }
 
         var result: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
@@ -53,7 +54,7 @@ extension KeychainKeyStore {
         }
 
         guard status == errSecSuccess, let data = result as? Data else {
-            throw SecretCryptoError.keychainFailure(status: status)
+            throw SecretCryptoError.keyUnavailable
         }
 
         return data
@@ -61,11 +62,15 @@ extension KeychainKeyStore {
 
     /// raw key Data를 Keychain에 저장하고, 기존 item이 있으면 갱신한다.
     private func saveKeyData(_ data: Data, tag: String) throws {
-        let query = keyQuery(tag: tag)
+        let query: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: tag,
+        ]
 
         let attributes: [CFString: Any] = [
             kSecValueData: data,
-            kSecAttrAccessible: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+            kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
         ]
 
         var addQuery = query
@@ -76,23 +81,14 @@ extension KeychainKeyStore {
         if status == errSecDuplicateItem {
             let updateStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
             guard updateStatus == errSecSuccess else {
-                throw SecretCryptoError.keychainFailure(status: updateStatus)
+                throw SecretCryptoError.keyUnavailable
             }
             return
         }
 
         guard status == errSecSuccess else {
-            throw SecretCryptoError.keychainFailure(status: status)
+            throw SecretCryptoError.keyUnavailable
         }
-    }
-
-    /// service와 tag로 Keychain key item을 식별하는 기본 query를 만든다.
-    private func keyQuery(tag: String) -> [CFString: Any] {
-        [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: service,
-            kSecAttrAccount: tag,
-        ]
     }
 
     /// AES-256 symmetric key로 사용할 32바이트 랜덤 Data를 생성한다.
