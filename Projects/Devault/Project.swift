@@ -11,7 +11,13 @@ let project = Project.project(
                 "CFBundleDisplayName": .string("Devault"),
             ]),
             sources: .sources,
-            resources: .default
+            resources: .default,
+            dependencies: [
+                .presentation(),
+                .data(),
+                .domain(),
+                .core(),
+            ]
         ),
     ],
     schemes: [

@@ -8,7 +8,10 @@ let project = Project.project(
             name: DVModule.DVDesign.name,
             product: Project.product,
             sources: .sources,
-            resources: .default
+            resources: .default,
+            dependencies: [
+                .core(),
+            ]
         ),
         .sampleApp(
             name: DVModule.DVDesign.name,
