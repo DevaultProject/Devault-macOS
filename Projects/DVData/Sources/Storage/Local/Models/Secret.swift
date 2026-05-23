@@ -36,7 +36,7 @@ extension SwiftDataModel {
         }
 
         init(
-            secretId: UUID = UUID(),
+            id: UUID = UUID(),
             name: String,
             secretType: String,
             subType: String? = nil,
@@ -50,7 +50,7 @@ extension SwiftDataModel {
             updatedAt: Date? = nil
         ) {
             let initialCreatedAt = createdAt
-            self.secretId = secretId
+            self.id = id
             self.name = name
             self.secretType = secretType
             self.subType = subType
