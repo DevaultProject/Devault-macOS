@@ -1,5 +1,6 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import DVDomain
 import Foundation
 import SwiftData
 
@@ -26,5 +27,15 @@ extension SwiftDataModel {
             self.schemaVersion = schemaVersion
             self.secret = secret
         }
+    }
+}
+
+extension SwiftDataModel.SecretPayload {
+    func toDomain() -> DVDomain.SecretPayload {
+        DVDomain.SecretPayload(
+            encryptedData: encryptedData,
+            keyTag: keyTag,
+            schemaVersion: schemaVersion
+        )
     }
 }

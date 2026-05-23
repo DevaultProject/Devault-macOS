@@ -1,5 +1,6 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import DVDomain
 import SwiftData
 import Foundation
 
@@ -67,5 +68,30 @@ extension SwiftDataModel {
             self.metadata = nil
             self.auditLogs = []
         }
+    }
+}
+
+extension SwiftDataModel.Secret {
+    func toDomain() throws -> DVDomain.Secret {
+        guard let payload else {
+            throw SecretRepositoryError.corruptedStorage
+        }
+
+        return DVDomain.Secret(
+            id: id,
+            name: name,
+            secretType: secretType,
+            subType: subType,
+            service: service,
+            environment: environment,
+            expiresAt: expiresAt,
+            memo: memo,
+            liked: liked,
+            deletedAt: deletedAt,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            payload: payload.toDomain(),
+            metadata: metadata?.toDomain()
+        )
     }
 }

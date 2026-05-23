@@ -1,5 +1,6 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import DVDomain
 import Foundation
 import SwiftData
 
@@ -23,5 +24,14 @@ extension SwiftDataModel {
             self.schemaVersion = schemaVersion
             self.secret = secret
         }
+    }
+}
+
+extension SwiftDataModel.SecretMetadata {
+    func toDomain() -> DVDomain.SecretMetadata {
+        DVDomain.SecretMetadata(
+            metadataJSON: metadataJSON,
+            schemaVersion: schemaVersion
+        )
     }
 }
