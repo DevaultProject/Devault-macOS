@@ -8,7 +8,12 @@ let project = Project.project(
             name: DVModule.DVPresentation.name,
             product: Project.product,
             sources: .sources,
-            resources: .default
+            resources: .default,
+            dependencies: [
+                .domain(),
+                .design(),
+                .core(),
+            ]
         ),
     ]
 )

@@ -7,7 +7,10 @@ let project = Project.project(
         .target(
             name: DVModule.DVDomain.name,
             product: Project.product,
-            sources: .sources
+            sources: .sources,
+            dependencies: [
+                .core(),
+            ]
         ),
         .tests(
             name: DVModule.DVDomain.name,
