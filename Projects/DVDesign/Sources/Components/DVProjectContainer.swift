@@ -48,14 +48,13 @@ public struct DVProjectContainer: View {
 extension DVProjectContainer {
 
     private var rowContent: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 4) {
             projectIcon
             nameLabel
             Spacer()
             countLabel
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(6)
     }
 
     private var projectIcon: some View {
@@ -74,11 +73,11 @@ extension DVProjectContainer {
     private var countLabel: some View {
         Text("\(count)")
             .dvFont(.bodyMD)
-            .foregroundStyle(isSelected ? Color.dv(.white).opacity(0.8) : Color.dv(.gray500))
+            .foregroundStyle(isSelected ? Color.dv(.gray300) : Color.dv(.gray400))
     }
 
     private var borderOverlay: some View {
-        RoundedRectangle(cornerRadius: 8)
+        RoundedRectangle(cornerRadius: 6)
             .stroke(isHovered && !isSelected ? Color.dv(.gray300) : Color.clear, lineWidth: 1)
     }
 }

@@ -22,7 +22,7 @@ public struct DVSecretType: View {
     // MARK: - Body
 
     public var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             iconCircle
             typeLabel
         }
@@ -37,7 +37,7 @@ extension DVSecretType {
         ZStack {
             Circle()
                 .fill(Color.dv(.gray200))
-                .frame(width: 120, height: 120)
+                .frame(width: 162, height: 162)
 
             if let icon {
                 icon
@@ -51,7 +51,7 @@ extension DVSecretType {
 
     private var typeLabel: some View {
         Text(labelText)
-            .dvFont(.bodyLG)
+            .dvFont(.headingLG)
             .foregroundStyle(Color.dv(.gray900))
             .multilineTextAlignment(.center)
     }
