@@ -5,11 +5,19 @@ import DVDesign
 
 struct DVButtonPreviewView: View {
 
+    // MARK: - Properties
+
+    @State private var tapCount = 0
+    @State private var isStarted = false
+
     // MARK: - Body
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 32) {
+                previewSection("Interactive (탭 횟수: \(tapCount))") {
+                    DVButton(titleText: "action check") { tapCount += 1 }
+                }
                 previewSection("Primary") {
                     primaryStates
                 }
@@ -33,7 +41,7 @@ extension DVButtonPreviewView {
 
     private var primaryStates: some View {
         VStack(spacing: 8) {
-            DVButton(titleText: "Start") {}
+            DVButton(titleText: isStarted ? "Done!" : "Start") { isStarted.toggle() }
             DVButton(titleText: "Start") {}
                 .disabled(true)
         }
