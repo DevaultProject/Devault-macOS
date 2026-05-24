@@ -36,6 +36,10 @@ struct ContentView: View {
         switch component.name {
         case "DVRadioButton", "DVRadioButtonGroup":
             RadioButtonPreviewView()
+        case "DVTextField":
+            TextFieldPreviewView()
+        case "DVTextContainer":
+            TextContainerPreviewView()
         default:
             ComponentPlaceholderView(name: component.name, owner: component.owner)
         }
