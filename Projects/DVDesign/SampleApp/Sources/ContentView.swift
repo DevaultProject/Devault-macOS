@@ -11,14 +11,18 @@ struct ContentView: View {
                     NavigationLink("Typography") {
                         TypographyPreviewView()
                     }
+                    NavigationLink("Color") {
+                        ColorPreviewView()
+                    }
+                    NavigationLink("Size") {
+                        SizePreviewView()
+                    }
                 }
 
-                ForEach(ComponentSection.allCases, id: \.self) { section in
-                    Section(section.title) {
-                        ForEach(section.components, id: \.self) { component in
-                            NavigationLink(component.name) {
-                                detailView(for: component)
-                            }
+                Section("Components") {
+                    ForEach(Component.all, id: \.self) { component in
+                        NavigationLink(component.name) {
+                            detailView(for: component)
                         }
                     }
                 }
@@ -30,6 +34,8 @@ struct ContentView: View {
         }
         .frame(minWidth: 700, minHeight: 500)
     }
+
+    @ViewBuilder
     private func detailView(for component: Component) -> some View {
         switch component.name {
         case "DVStepIndicator":
@@ -55,26 +61,21 @@ struct ContentView: View {
         case "DVTextContainer":
             TextContainerPreviewView()
         default:
-            ComponentPlaceholderView(name: component.name, owner: component.owner)
+            ComponentPlaceholderView(name: component.name)
         }
     }
-
 }
 
 // MARK: - Placeholder Detail
 
 private struct ComponentPlaceholderView: View {
     let name: String
-    let owner: String
 
     var body: some View {
         VStack(spacing: 12) {
             Text(name)
                 .font(.title2)
                 .fontWeight(.semibold)
-            Text("담당: \(owner)")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
             Text("🚧 구현 예정")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
@@ -88,42 +89,21 @@ private struct ComponentPlaceholderView: View {
 
 private struct Component: Hashable {
     let name: String
-    let owner: String
-}
 
-private enum ComponentSection: CaseIterable {
-    case yeseong
-    case doyeon
-
-    var title: String {
-        switch self {
-        case .yeseong: return "예성"
-        case .doyeon:  return "도연"
-        }
-    }
-
-    var components: [Component] {
-        switch self {
-        case .yeseong:
-            return [
-                Component(name: "DVStepIndicator", owner: "예성"),
-                Component(name: "DVProjectContainer", owner: "예성"),
-                Component(name: "DVVaultContainer", owner: "예성"),
-                Component(name: "DVCategory", owner: "예성"),
-                Component(name: "DVButton", owner: "예성"),
-                Component(name: "DVCheckBox", owner: "예성"),
-                Component(name: "DVTitleBar", owner: "예성"),
-                Component(name: "DVSecretType", owner: "예성"),
-            ]
-        case .doyeon:
-            return [
-                Component(name: "DVRadioButton", owner: "현주"),
-                Component(name: "DVRadioButtonGroup", owner: "현주"),
-                Component(name: "DVTextContainer", owner: "현주"),
-                Component(name: "DVTextField", owner: "현주"),
-                Component(name: "DVInputField", owner: "현주"),
-                Component(name: "DVDropDown", owner: "현주"),
-            ]
-        }
-    }
+    static let all: [Component] = [
+        Component(name: "DVStepIndicator"),
+        Component(name: "DVProjectContainer"),
+        Component(name: "DVVaultContainer"),
+        Component(name: "DVCategory"),
+        Component(name: "DVButton"),
+        Component(name: "DVCheckBox"),
+        Component(name: "DVTitleBar"),
+        Component(name: "DVSecretType"),
+        Component(name: "DVRadioButton"),
+        Component(name: "DVRadioButtonGroup"),
+        Component(name: "DVTextContainer"),
+        Component(name: "DVTextField"),
+//        Component(name: "DVInputField"),
+//        Component(name: "DVDropDown"),
+    ]
 }
