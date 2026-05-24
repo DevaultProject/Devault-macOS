@@ -1,0 +1,39 @@
+// Copyright © 2026 Devault. All rights reserved
+
+import ComposableArchitecture
+import SwiftUI
+
+// MARK: - {{ name }}View
+
+struct {{ name }}View: View {
+
+  // MARK: - Properties
+
+  @Bindable var store: StoreOf<{{ name }}Feature>
+
+  // MARK: - Body
+
+  var body: some View {
+    content
+      .task { store.send(.onAppear) }
+  }
+}
+
+// MARK: - Subviews
+
+extension {{ name }}View {
+
+  private var content: some View {
+    EmptyView()
+  }
+}
+
+// MARK: - Preview
+
+#Preview {
+  {{ name }}View(
+    store: Store(initialState: {{ name }}Feature.State()) {
+      {{ name }}Feature()
+    }
+  )
+}
