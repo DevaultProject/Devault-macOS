@@ -28,13 +28,11 @@ public struct DVTitleBar: View {
     // MARK: - Body
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 14) {
             titleRow
             searchField
         }
         .frame(width: 280)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
     }
 }
 
@@ -50,13 +48,14 @@ extension DVTitleBar {
             Spacer()
             sortButton
         }
+        .padding(.vertical, 4)
     }
 
     private var sortButton: some View {
         Button(action: onSortTapped) {
             Image(systemName: "arrow.up.arrow.down")
                 .dvFont(.bodyXL)
-                .foregroundStyle(Color.dv(.gray600))
+                .foregroundStyle(Color.dv(.gray800))
         }
         .buttonStyle(.plain)
     }

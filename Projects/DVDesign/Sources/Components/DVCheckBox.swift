@@ -40,7 +40,7 @@ extension DVCheckBox {
     private var checkboxShape: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 5.5)
-                .fill(isChecked ? Color.dv(.vaultGreen) : Color.dv(.gray200))
+                .fill(isChecked ? Color.dv(.vaultGreen) : Color.dv(.gray300))
                 .frame(width: 16, height: 16)
                 .overlay(borderOverlay)
 
@@ -57,7 +57,7 @@ extension DVCheckBox {
     }
 
     private var borderOverlay: some View {
-        RoundedRectangle(cornerRadius: 5)
+        RoundedRectangle(cornerRadius: 5.5)
             .stroke(
                 isHovered && !isChecked ? Color.dv(.gray400) : Color.clear,
                 lineWidth: 1

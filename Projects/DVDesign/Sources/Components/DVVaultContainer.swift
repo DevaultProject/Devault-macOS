@@ -58,14 +58,13 @@ public struct DVVaultContainer: View {
 extension DVVaultContainer {
 
     private var rowContent: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 14) {
             avatarCircle
             textStack
             Spacer()
             trailingIconView
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(8)
     }
 
     private var avatarCircle: some View {
@@ -75,14 +74,14 @@ extension DVVaultContainer {
     }
 
     private var textStack: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(name)
                 .dvFont(.bodyLG)
                 .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray900))
                 .lineLimit(1)
             Text(date)
                 .dvFont(.captionMDRegular)
-                .foregroundStyle(isSelected ? Color.dv(.white).opacity(0.7) : Color.dv(.gray500))
+                .foregroundStyle(isSelected ? Color.dv(.gray300) : Color.dv(.gray600))
         }
     }
 

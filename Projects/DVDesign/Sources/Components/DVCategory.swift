@@ -8,6 +8,7 @@ public struct DVCategory: View {
 
     public let title: String
     public let count: Int
+    public let systemImage: String
     public let isSelected: Bool
     public let action: () -> Void
 
@@ -18,11 +19,13 @@ public struct DVCategory: View {
     public init(
         title: String,
         count: Int,
+        systemImage: String,
         isSelected: Bool,
         action: @escaping () -> Void
     ) {
         self.title = title
         self.count = count
+        self.systemImage = systemImage
         self.isSelected = isSelected
         self.action = action
     }
@@ -34,11 +37,9 @@ public struct DVCategory: View {
             contentLayer
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .frame(width: 108, height: 72)
-        .background(isSelected ? Color.dv(.vaultGreen) : Color.dv(.gray100))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(borderOverlay)
+        .buttonStyle(DVCategoryButtonStyle(isHovered: isHovered, isSelected: isSelected))
+        .animation(.easeOut(duration: 0.12), value: isHovered)
+        .animation(.easeOut(duration: 0.12), value: isSelected)
         .onHover { isHovered = $0 }
     }
 }
@@ -50,19 +51,21 @@ extension DVCategory {
     private var contentLayer: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center) {
-                iconCircle
+                iconView
                 Spacer()
                 countLabel
             }
             Spacer()
             titleLabel
         }
-        .padding(12)
+        .padding(10)
+        .frame(maxWidth: .infinity, minHeight: 72)
     }
 
-    private var iconCircle: some View {
-        Circle()
-            .fill(isSelected ? Color.dv(.white).opacity(0.25) : Color.dv(.gray300))
+    private var iconView: some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 16, weight: .medium))
+            .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray700))
             .frame(width: 28, height: 28)
     }
 
@@ -77,9 +80,25 @@ extension DVCategory {
             .dvFont(.bodyMD)
             .foregroundStyle(isSelected ? Color.dv(.white).opacity(0.8) : Color.dv(.gray600))
     }
+}
 
-    private var borderOverlay: some View {
-        RoundedRectangle(cornerRadius: 12)
-            .stroke(isHovered && !isSelected ? Color.dv(.gray300) : Color.clear, lineWidth: 1)
+// MARK: - ButtonStyle
+
+private struct DVCategoryButtonStyle: ButtonStyle {
+
+    let isHovered: Bool
+    let isSelected: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(backgroundColor(isPressed: configuration.isPressed))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func backgroundColor(isPressed: Bool) -> Color {
+        if isSelected { return Color.dv(.vaultGreen) }
+        if isPressed  { return Color.dv(.gray300) }
+        if isHovered  { return Color.dv(.gray200) }
+        return Color.dv(.gray100)
     }
 }
