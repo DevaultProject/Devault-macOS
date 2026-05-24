@@ -32,8 +32,8 @@ struct ContentView: View {
     }
     private func detailView(for component: Component) -> some View {
         switch component.name {
-        case "DVPageControl":
-            DVPageControlPreviewView()
+        case "DVStepIndicator":
+            DVStepIndicatorPreviewView()
         case "DVCategory":
             DVCategoryPreviewView()
         case "DVProjectContainer":
@@ -132,7 +132,7 @@ private enum ComponentSection: CaseIterable {
         switch self {
         case .yeseong:
             return [
-                Component(name: "DVPageControl", owner: "예성"),
+                Component(name: "DVStepIndicator", owner: "예성"),
                 Component(name: "DVProjectContainer", owner: "예성"),
                 Component(name: "DVVaultContainer", owner: "예성"),
                 Component(name: "DVCategory", owner: "예성"),

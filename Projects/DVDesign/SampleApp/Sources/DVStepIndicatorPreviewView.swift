@@ -3,7 +3,7 @@
 import SwiftUI
 import DVDesign
 
-struct DVPageControlPreviewView: View {
+struct DVStepIndicatorPreviewView: View {
 
     // MARK: - Properties
 
@@ -16,7 +16,7 @@ struct DVPageControlPreviewView: View {
             VStack(alignment: .leading, spacing: 32) {
                 previewSection("Interactive (탭해서 이동)") {
                     VStack(spacing: 16) {
-                        DVPageControl(totalSteps: 3, currentStep: currentStep)
+                        DVStepIndicator(totalSteps: 3, currentStep: currentStep)
                         HStack(spacing: 8) {
                             DVButton(titleText: "이전", style: .secondary) {
                                 if currentStep > 0 { currentStep -= 1 }
@@ -33,18 +33,18 @@ struct DVPageControlPreviewView: View {
                     }
                 }
                 previewSection("Step 1 / 3") {
-                    DVPageControl(totalSteps: 3, currentStep: 0)
+                    DVStepIndicator(totalSteps: 3, currentStep: 0)
                 }
                 previewSection("Step 2 / 3") {
-                    DVPageControl(totalSteps: 3, currentStep: 1)
+                    DVStepIndicator(totalSteps: 3, currentStep: 1)
                 }
                 previewSection("Step 3 / 3") {
-                    DVPageControl(totalSteps: 3, currentStep: 2)
+                    DVStepIndicator(totalSteps: 3, currentStep: 2)
                 }
             }
             .padding(24)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .navigationTitle("DVPageControl")
+        .navigationTitle("DVStepIndicator")
     }
 }

@@ -2,7 +2,7 @@
 
 import SwiftUI
 
-public struct DVPageControl: View {
+public struct DVStepIndicator: View {
 
     // MARK: - Properties
 
@@ -29,7 +29,7 @@ public struct DVPageControl: View {
 
 // MARK: - Subviews
 
-extension DVPageControl {
+extension DVStepIndicator {
 
     private func dot(isActive: Bool) -> some View {
         RoundedRectangle(cornerRadius: 4)
