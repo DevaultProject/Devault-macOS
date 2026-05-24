@@ -86,6 +86,7 @@ extension DVButton {
             .dvFont(style.font)
             .frame(width: style.width, height: style.height)
             .padding(.horizontal, style.horizontalPadding)
+            .contentShape(Rectangle())
     }
 }
 
