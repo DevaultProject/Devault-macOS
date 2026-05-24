@@ -15,41 +15,30 @@ public struct DVVaultContainer: View {
 
     public let name: String
     public let date: String
-    public let isSelected: Bool
     public let trailingIcon: TrailingIcon?
-    public let action: () -> Void
 
-    @State private var isHovered = false
+    @State private var isRightClicked = false
 
     // MARK: - Init
 
     public init(
         name: String,
         date: String,
-        isSelected: Bool,
-        trailingIcon: TrailingIcon? = nil,
-        action: @escaping () -> Void
+        trailingIcon: TrailingIcon? = nil
     ) {
         self.name = name
         self.date = date
-        self.isSelected = isSelected
         self.trailingIcon = trailingIcon
-        self.action = action
     }
 
     // MARK: - Body
 
     public var body: some View {
-        Button(action: action) {
-            rowContent
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .frame(width: 280)
-        .background(isSelected ? Color.dv(.vaultGreen) : Color.clear)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .overlay(borderOverlay)
-        .onHover { isHovered = $0 }
+        rowContent
+            .background(RightClickDetector(onRightClick: { isRightClicked = true },
+                                           onReset: { isRightClicked = false }))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(borderOverlay)
     }
 }
 
@@ -69,7 +58,7 @@ extension DVVaultContainer {
 
     private var avatarCircle: some View {
         Circle()
-            .fill(isSelected ? Color.dv(.white).opacity(0.25) : Color.dv(.gray300))
+            .fill(Color.dv(.gray300))
             .frame(width: 44, height: 44)
     }
 
@@ -77,11 +66,11 @@ extension DVVaultContainer {
         VStack(alignment: .leading, spacing: 6) {
             Text(name)
                 .dvFont(.bodyLG)
-                .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray900))
+                .foregroundStyle(.primary)
                 .lineLimit(1)
             Text(date)
                 .dvFont(.captionMDRegular)
-                .foregroundStyle(isSelected ? Color.dv(.gray300) : Color.dv(.gray600))
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -89,13 +78,13 @@ extension DVVaultContainer {
     private var trailingIconView: some View {
         if let trailingIcon {
             Image(systemName: trailingIcon.iconName)
-                .foregroundStyle(isSelected ? Color.dv(.white) : trailingIcon.iconColor)
+                .foregroundStyle(trailingIcon.iconColor)
         }
     }
 
     private var borderOverlay: some View {
         RoundedRectangle(cornerRadius: 10)
-            .stroke(isHovered && !isSelected ? Color.dv(.gray300) : Color.clear, lineWidth: 1)
+            .stroke(isRightClicked ? Color.dv(.vaultGreen) : Color.clear, lineWidth: 1)
     }
 }
 
@@ -114,6 +103,58 @@ extension DVVaultContainer.TrailingIcon {
         switch self {
         case .expiringSoon: return Color.dv(.warning)
         case .expired:      return Color.dv(.danger)
+        }
+    }
+}
+
+// MARK: - Right Click Detector
+
+private struct RightClickDetector: NSViewRepresentable {
+    let onRightClick: () -> Void
+    let onReset: () -> Void
+
+    func makeNSView(context: Context) -> _RightClickView {
+        let view = _RightClickView()
+        view.onRightClick = onRightClick
+        view.onReset = onReset
+        return view
+    }
+
+    func updateNSView(_ nsView: _RightClickView, context: Context) {
+        nsView.onRightClick = onRightClick
+        nsView.onReset = onReset
+    }
+}
+
+private final class _RightClickView: NSView {
+    var onRightClick: (() -> Void)?
+    var onReset: (() -> Void)?
+
+    private var menuObserver: Any?
+
+    override func rightMouseDown(with event: NSEvent) {
+        onRightClick?()
+        super.rightMouseDown(with: event)
+
+        menuObserver = NotificationCenter.default.addObserver(
+            forName: NSMenu.didEndTrackingNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.resetAndRemoveObserver()
+        }
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        resetAndRemoveObserver()
+        super.mouseDown(with: event)
+    }
+
+    private func resetAndRemoveObserver() {
+        onReset?()
+        if let observer = menuObserver {
+            NotificationCenter.default.removeObserver(observer)
+            menuObserver = nil
         }
     }
 }

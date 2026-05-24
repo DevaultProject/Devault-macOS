@@ -8,38 +8,25 @@ public struct DVProjectContainer: View {
 
     public let name: String
     public let count: Int
-    public let isSelected: Bool
-    public let action: () -> Void
 
-    @State private var isHovered = false
+    @State private var isRightClicked = false
 
     // MARK: - Init
 
-    public init(
-        name: String,
-        count: Int,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) {
+    public init(name: String, count: Int) {
         self.name = name
         self.count = count
-        self.isSelected = isSelected
-        self.action = action
     }
 
     // MARK: - Body
 
     public var body: some View {
-        Button(action: action) {
-            rowContent
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .frame(width: 228, height: 28)
-        .background(backgroundColor)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(borderOverlay)
-        .onHover { isHovered = $0 }
+        rowContent
+            .background(RightClickDetector(onRightClick: { isRightClicked = true },
+                                           onReset: { isRightClicked = false }))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .overlay(borderOverlay)
+            .frame(width: 228, height: 28)
     }
 }
 
@@ -60,30 +47,76 @@ extension DVProjectContainer {
     private var projectIcon: some View {
         Image(systemName: "tray")
             .dvFont(.captionLG)
-            .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray700))
+            .foregroundStyle(.primary)
     }
 
     private var nameLabel: some View {
         Text(name)
             .dvFont(.bodyMD)
-            .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray900))
+            .foregroundStyle(.primary)
             .lineLimit(1)
     }
 
     private var countLabel: some View {
         Text("\(count)")
             .dvFont(.bodyMD)
-            .foregroundStyle(isSelected ? Color.dv(.gray300) : Color.dv(.gray400))
-    }
-
-    private var backgroundColor: Color {
-        if isSelected { return Color.dv(.vaultGreen) }
-        if isHovered  { return Color.dv(.vaultGreenTint) }
-        return Color.clear
+            .foregroundStyle(.secondary)
     }
 
     private var borderOverlay: some View {
         RoundedRectangle(cornerRadius: 6)
-            .stroke(Color.clear, lineWidth: 1)
+            .stroke(isRightClicked ? Color.dv(.vaultGreen) : Color.clear, lineWidth: 1)
+    }
+}
+
+// MARK: - Right Click Detector
+
+private struct RightClickDetector: NSViewRepresentable {
+    let onRightClick: () -> Void
+    let onReset: () -> Void
+
+    func makeNSView(context: Context) -> _RightClickView {
+        let view = _RightClickView()
+        view.onRightClick = onRightClick
+        view.onReset = onReset
+        return view
+    }
+
+    func updateNSView(_ nsView: _RightClickView, context: Context) {
+        nsView.onRightClick = onRightClick
+        nsView.onReset = onReset
+    }
+}
+
+private final class _RightClickView: NSView {
+    var onRightClick: (() -> Void)?
+    var onReset: (() -> Void)?
+
+    private var menuObserver: Any?
+
+    override func rightMouseDown(with event: NSEvent) {
+        onRightClick?()
+        super.rightMouseDown(with: event)
+
+        menuObserver = NotificationCenter.default.addObserver(
+            forName: NSMenu.didEndTrackingNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.resetAndRemoveObserver()
+        }
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        resetAndRemoveObserver()
+        super.mouseDown(with: event)
+    }
+
+    private func resetAndRemoveObserver() {
+        onReset?()
+        if let observer = menuObserver {
+            NotificationCenter.default.removeObserver(observer)
+            menuObserver = nil
+        }
     }
 }
