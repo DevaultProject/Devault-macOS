@@ -4,7 +4,7 @@ import SwiftUI
 import DVDesign
 
 struct DVVaultContainerPreviewView: View {
-    @State private var selected: String? = nil
+    @State private var selectedIndex: Int? = nil
 
     private let vaults = [
         ("내가 설정한 이름", "2026.04.01"),
@@ -18,12 +18,12 @@ struct DVVaultContainerPreviewView: View {
             VStack(alignment: .leading, spacing: 32) {
                 previewSection("Interactive") {
                     VStack(spacing: 4) {
-                        ForEach(vaults, id: \.0) { name, date in
+                        ForEach(vaults.indices, id: \.self) { index in
                             DVVaultContainer(
-                                name: name,
-                                date: date,
-                                isSelected: selected == name
-                            ) { selected = selected == name ? nil : name }
+                                name: vaults[index].0,
+                                date: vaults[index].1,
+                                isSelected: selectedIndex == index
+                            ) { selectedIndex = selectedIndex == index ? nil : index }
                         }
                     }
                 }
