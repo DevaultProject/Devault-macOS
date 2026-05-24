@@ -4,7 +4,7 @@ import SwiftUI
 import DVDesign
 
 struct DVProjectContainerPreviewView: View {
-    @State private var selected: String? = nil
+    @State private var selectedIndex: Int? = nil
 
     private let projects = [
         ("CheerLot", 8),
@@ -15,27 +15,31 @@ struct DVProjectContainerPreviewView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 32) {
-                previewSection("Interactive") {
-                    VStack(spacing: 2) {
-                        ForEach(projects, id: \.0) { name, count in
+                previewSection("Interactive (List)") {
+                    List(selection: $selectedIndex) {
+                        ForEach(projects.indices, id: \.self) { index in
                             DVProjectContainer(
-                                name: name,
-                                count: count,
-                                isSelected: selected == name
-                            ) { selected = selected == name ? nil : name }
+                                name: projects[index].0,
+                                count: projects[index].1
+                            )
+                            .tag(index)
+                            .listRowInsets(EdgeInsets())
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .contextMenu {
+                                Button("이름 변경") {}
+                                Divider()
+                                Button("삭제", role: .destructive) {}
+                            }
                         }
                     }
-                    .frame(width: 220)
+                    .listStyle(.sidebar)
+                    .tint(Color.dv(.vaultGreen))
+                    .frame(width: 228, height: 100)
                 }
 
-                previewSection("Selected") {
-                    DVProjectContainer(name: "DrinkiG", count: 8, isSelected: true) {}
-                        .frame(width: 220)
-                }
-
-                previewSection("Unselected") {
-                    DVProjectContainer(name: "DrinkiG", count: 8, isSelected: false) {}
-                        .frame(width: 220)
+                previewSection("Default") {
+                    DVProjectContainer(name: "DrinkiG", count: 8)
                 }
             }
             .padding(24)
