@@ -2,14 +2,14 @@
 
 import SwiftUI
 
+/// 시스템 `List(selection:)` 안에 행으로 넣어 사용한다.
+/// 선택 표시는 List(.sidebar) + `.tint(...)`에 위임, 컨텍스트 메뉴는 호출부에서 `.contextMenu`로 부착.
 public struct DVProjectContainer: View {
 
     // MARK: - Properties
 
     public let name: String
     public let count: Int
-
-    @State private var isRightClicked = false
 
     // MARK: - Init
 
@@ -21,28 +21,20 @@ public struct DVProjectContainer: View {
     // MARK: - Body
 
     public var body: some View {
-        rowContent
-            .background(RightClickDetector(onRightClick: { isRightClicked = true },
-                                           onReset: { isRightClicked = false }))
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .overlay(borderOverlay)
-            .frame(width: 228, height: 28)
+        HStack(spacing: 4) {
+            projectIcon
+            nameLabel
+            Spacer(minLength: 8)
+            countLabel
+        }
+        .padding(6)
+        .frame(minWidth: 120, alignment: .leading)
     }
 }
 
 // MARK: - Subviews
 
 extension DVProjectContainer {
-
-    private var rowContent: some View {
-        HStack(spacing: 4) {
-            projectIcon
-            nameLabel
-            Spacer()
-            countLabel
-        }
-        .padding(6)
-    }
 
     private var projectIcon: some View {
         Image(systemName: "tray")
@@ -55,68 +47,14 @@ extension DVProjectContainer {
             .dvFont(.bodyMD)
             .foregroundStyle(.primary)
             .lineLimit(1)
+            .truncationMode(.tail)
+            .frame(minWidth: 40, alignment: .leading)
     }
 
     private var countLabel: some View {
-        Text("\(count)")
+        Text(count > 999 ? "999+" : "\(count)")
             .dvFont(.bodyMD)
             .foregroundStyle(.secondary)
-    }
-
-    private var borderOverlay: some View {
-        RoundedRectangle(cornerRadius: 6)
-            .stroke(isRightClicked ? Color.dv(.vaultGreen) : Color.clear, lineWidth: 1)
-    }
-}
-
-// MARK: - Right Click Detector
-
-private struct RightClickDetector: NSViewRepresentable {
-    let onRightClick: () -> Void
-    let onReset: () -> Void
-
-    func makeNSView(context: Context) -> _RightClickView {
-        let view = _RightClickView()
-        view.onRightClick = onRightClick
-        view.onReset = onReset
-        return view
-    }
-
-    func updateNSView(_ nsView: _RightClickView, context: Context) {
-        nsView.onRightClick = onRightClick
-        nsView.onReset = onReset
-    }
-}
-
-private final class _RightClickView: NSView {
-    var onRightClick: (() -> Void)?
-    var onReset: (() -> Void)?
-
-    private var menuObserver: Any?
-
-    override func rightMouseDown(with event: NSEvent) {
-        onRightClick?()
-        super.rightMouseDown(with: event)
-
-        menuObserver = NotificationCenter.default.addObserver(
-            forName: NSMenu.didEndTrackingNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.resetAndRemoveObserver()
-        }
-    }
-
-    override func mouseDown(with event: NSEvent) {
-        resetAndRemoveObserver()
-        super.mouseDown(with: event)
-    }
-
-    private func resetAndRemoveObserver() {
-        onReset?()
-        if let observer = menuObserver {
-            NotificationCenter.default.removeObserver(observer)
-            menuObserver = nil
-        }
+            .fixedSize()
     }
 }

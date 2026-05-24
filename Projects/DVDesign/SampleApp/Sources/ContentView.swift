@@ -117,12 +117,12 @@ private enum ComponentSection: CaseIterable {
             ]
         case .doyeon:
             return [
-                Component(name: "DVRadioButton", owner: "도연"),
-                Component(name: "DVRadioButtonGroup", owner: "도연"),
-                Component(name: "DVTextContainer", owner: "도연"),
-                Component(name: "DVTextField", owner: "도연"),
-                Component(name: "DVInputField", owner: "도연"),
-                Component(name: "DVDropDown", owner: "도연"),
+                Component(name: "DVRadioButton", owner: "현주"),
+                Component(name: "DVRadioButtonGroup", owner: "현주"),
+                Component(name: "DVTextContainer", owner: "현주"),
+                Component(name: "DVTextField", owner: "현주"),
+                Component(name: "DVInputField", owner: "현주"),
+                Component(name: "DVDropDown", owner: "현주"),
             ]
         }
     }
