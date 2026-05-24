@@ -2,6 +2,8 @@
 
 import SwiftUI
 
+/// 시스템 `List(selection:)` 안에 행으로 넣어 사용한다.
+/// 선택 표시는 List(.sidebar) + `.tint(...)`에 위임, 컨텍스트 메뉴는 호출부에서 `.contextMenu`로 부착.
 public struct DVVaultContainer: View {
 
     // MARK: - Types
@@ -16,45 +18,39 @@ public struct DVVaultContainer: View {
     public let name: String
     public let date: String
     public let trailingIcon: TrailingIcon?
-
-    @State private var isRightClicked = false
+    public let isSelected: Bool
 
     // MARK: - Init
 
     public init(
         name: String,
         date: String,
-        trailingIcon: TrailingIcon? = nil
+        trailingIcon: TrailingIcon? = nil,
+        isSelected: Bool = false
     ) {
         self.name = name
         self.date = date
         self.trailingIcon = trailingIcon
+        self.isSelected = isSelected
     }
 
     // MARK: - Body
 
     public var body: some View {
-        rowContent
-            .background(RightClickDetector(onRightClick: { isRightClicked = true },
-                                           onReset: { isRightClicked = false }))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(borderOverlay)
+        HStack(spacing: 14) {
+            avatarCircle
+            textStack
+            Spacer(minLength: 8)
+            trailingIconView
+        }
+        .padding(8)
+        .frame(minWidth: 200, alignment: .leading)
     }
 }
 
 // MARK: - Subviews
 
 extension DVVaultContainer {
-
-    private var rowContent: some View {
-        HStack(spacing: 14) {
-            avatarCircle
-            textStack
-            Spacer()
-            trailingIconView
-        }
-        .padding(8)
-    }
 
     private var avatarCircle: some View {
         Circle()
@@ -68,23 +64,23 @@ extension DVVaultContainer {
                 .dvFont(.bodyLG)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
+                .truncationMode(.tail)
             Text(date)
                 .dvFont(.captionMDRegular)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
         }
+        .frame(minWidth: 60, alignment: .leading)
     }
 
     @ViewBuilder
     private var trailingIconView: some View {
         if let trailingIcon {
             Image(systemName: trailingIcon.iconName)
-                .foregroundStyle(trailingIcon.iconColor)
+                .foregroundStyle(isSelected ? Color.dv(.white) : trailingIcon.iconColor)
+                .fixedSize()
         }
-    }
-
-    private var borderOverlay: some View {
-        RoundedRectangle(cornerRadius: 10)
-            .stroke(isRightClicked ? Color.dv(.vaultGreen) : Color.clear, lineWidth: 1)
     }
 }
 
@@ -103,58 +99,6 @@ extension DVVaultContainer.TrailingIcon {
         switch self {
         case .expiringSoon: return Color.dv(.warning)
         case .expired:      return Color.dv(.danger)
-        }
-    }
-}
-
-// MARK: - Right Click Detector
-
-private struct RightClickDetector: NSViewRepresentable {
-    let onRightClick: () -> Void
-    let onReset: () -> Void
-
-    func makeNSView(context: Context) -> _RightClickView {
-        let view = _RightClickView()
-        view.onRightClick = onRightClick
-        view.onReset = onReset
-        return view
-    }
-
-    func updateNSView(_ nsView: _RightClickView, context: Context) {
-        nsView.onRightClick = onRightClick
-        nsView.onReset = onReset
-    }
-}
-
-private final class _RightClickView: NSView {
-    var onRightClick: (() -> Void)?
-    var onReset: (() -> Void)?
-
-    private var menuObserver: Any?
-
-    override func rightMouseDown(with event: NSEvent) {
-        onRightClick?()
-        super.rightMouseDown(with: event)
-
-        menuObserver = NotificationCenter.default.addObserver(
-            forName: NSMenu.didEndTrackingNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.resetAndRemoveObserver()
-        }
-    }
-
-    override func mouseDown(with event: NSEvent) {
-        resetAndRemoveObserver()
-        super.mouseDown(with: event)
-    }
-
-    private func resetAndRemoveObserver() {
-        onReset?()
-        if let observer = menuObserver {
-            NotificationCenter.default.removeObserver(observer)
-            menuObserver = nil
         }
     }
 }
