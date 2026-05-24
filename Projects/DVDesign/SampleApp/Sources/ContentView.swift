@@ -61,32 +61,6 @@ struct ContentView: View {
 
 }
 
-// MARK: - Routing
-
-@ViewBuilder
-private func destination(for component: Component) -> some View {
-    switch component.name {
-    case "DVPageControl":
-        DVPageControlPreviewView()
-    case "DVCategory":
-        DVCategoryPreviewView()
-    case "DVProjectContainer":
-        DVProjectContainerPreviewView()
-    case "DVVaultContainer":
-        DVVaultContainerPreviewView()
-    case "DVButton":
-        DVButtonPreviewView()
-    case "DVCheckBox":
-        DVCheckBoxPreviewView()
-    case "DVTitleBar":
-        DVTitleBarPreviewView()
-    case "DVSecretType":
-        DVSecretTypePreviewView()
-    default:
-        ComponentPlaceholderView(name: component.name, owner: component.owner)
-    }
-}
-
 // MARK: - Placeholder Detail
 
 private struct ComponentPlaceholderView: View {

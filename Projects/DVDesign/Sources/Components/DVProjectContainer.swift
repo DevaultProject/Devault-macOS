@@ -36,7 +36,7 @@ public struct DVProjectContainer: View {
         }
         .buttonStyle(.plain)
         .frame(width: 228, height: 28)
-        .background(isSelected ? Color.dv(.vaultGreen) : Color.clear)
+        .background(backgroundColor)
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .overlay(borderOverlay)
         .onHover { isHovered = $0 }
@@ -76,8 +76,14 @@ extension DVProjectContainer {
             .foregroundStyle(isSelected ? Color.dv(.gray300) : Color.dv(.gray400))
     }
 
+    private var backgroundColor: Color {
+        if isSelected { return Color.dv(.vaultGreen) }
+        if isHovered  { return Color.dv(.vaultGreenTint) }
+        return Color.clear
+    }
+
     private var borderOverlay: some View {
         RoundedRectangle(cornerRadius: 6)
-            .stroke(isHovered && !isSelected ? Color.dv(.gray300) : Color.clear, lineWidth: 1)
+            .stroke(Color.clear, lineWidth: 1)
     }
 }
