@@ -8,6 +8,10 @@ import SwiftData
 public actor SecretRepositoryImpl: SecretRepository {
     public func create(_ secret: DVDomain.Secret) async throws -> DVDomain.Secret {
         do {
+            if try fetchLocalSecret(id: secret.id) != nil {
+                throw SecretRepositoryError.duplicateID(id: secret.id)
+            }
+
             let localSecret = SwiftDataModel.Secret(
                 id: secret.id,
                 name: secret.name,
