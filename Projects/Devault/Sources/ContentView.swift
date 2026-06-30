@@ -4,11 +4,13 @@ import DVPresentation
 import SwiftUI
 
 struct ContentView: View {
-    private let repository = SecretRepositoryImpl(
-        modelContainer: LocalStorage.shared.modelContainer
-    )
+    private let repository: SecretRepositoryImpl
     private let cryptoService = SecretCryptoServiceImpl()
     private let authenticationService = LocalUserAuthenticationServiceImpl()
+
+    init(storage: LocalStorage) {
+        self.repository = SecretRepositoryImpl(modelContainer: storage.modelContainer)
+    }
 
     var body: some View {
         SecretUseCaseDemoView(
