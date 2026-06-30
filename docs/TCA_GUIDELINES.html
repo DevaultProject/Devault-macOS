@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCA Guidelines · Devault</title>
+<style>
+  :root {
+    --bg: #fbfaf7;
+    --surface: #ffffff;
+    --text: #1c1c1e;
+    --text-soft: #555;
+    --text-muted: #888;
+    --border: #e5e5e5;
+    --border-soft: #efefef;
+    --accent: #2f6f4a;
+    --accent-soft: #e9f3ed;
+    --code-bg: #f5f3ee;
+    --code-text: #1c1c1e;
+    --inline-code-bg: #efece4;
+    --good: #2f6f4a;
+    --good-soft: #e9f3ed;
+    --bad: #b3261e;
+    --bad-soft: #fbe9e7;
+    --warn: #b27500;
+    --warn-soft: #fdf5e1;
+    --info: #0b5b8a;
+    --info-soft: #e6f1f8;
+    --quote-bg: #f4f1ea;
+    --quote-border: #cdb98a;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+      "Pretendard", "Noto Sans KR", "Segoe UI", Roboto, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    margin: 0;
+    line-height: 1.75;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 48px;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 48px 32px;
+  }
+
+  /* ===== TOC ===== */
+  aside.toc {
+    position: sticky;
+    top: 32px;
+    align-self: start;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+    padding: 20px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  aside.toc h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 0 0 12px 0;
+    border: 0;
+  }
+  aside.toc ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  aside.toc ol li {
+    margin: 4px 0;
+  }
+  aside.toc a {
+    color: var(--text-soft);
+    text-decoration: none;
+    display: block;
+    padding: 3px 6px;
+    border-radius: 4px;
+  }
+  aside.toc a:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  /* ===== Main content ===== */
+  main {
+    max-width: 820px;
+    min-width: 0;
+  }
+
+  h1 {
+    font-size: 36px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.02em;
+  }
+  h2 {
+    font-size: 26px;
+    font-weight: 700;
+    margin: 56px 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+    letter-spacing: -0.01em;
+    scroll-margin-top: 24px;
+  }
+  h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 36px 0 12px 0;
+    color: var(--text);
+    scroll-margin-top: 24px;
+  }
+  h4 {
+    font-size: 16.5px;
+    font-weight: 700;
+    margin: 24px 0 8px 0;
+    color: var(--text);
+  }
+  p { margin: 14px 0; }
+  hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 40px 0;
+  }
+  a { color: var(--accent); }
+  a:hover { text-decoration: underline; }
+
+  /* ===== Inline code ===== */
+  code {
+    font-family: "SF Mono", "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.88em;
+    background: var(--inline-code-bg);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--code-text);
+  }
+
+  /* ===== Code blocks ===== */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-size: 13.5px;
+    line-height: 1.62;
+    margin: 16px 0;
+  }
+  pre code {
+    background: transparent;
+    padding: 0;
+    font-size: inherit;
+    color: var(--code-text);
+  }
+
+  /* Token coloring (super light) */
+  .tok-kw  { color: #ad3da4; font-weight: 600; }
+  .tok-typ { color: #1d4d8a; }
+  .tok-str { color: #b3261e; }
+  .tok-cmt { color: #8a8a8a; font-style: italic; }
+  .tok-num { color: #c45a00; }
+  .tok-attr{ color: #6f4a9c; font-weight: 600; }
+
+  /* ===== Quote / Callout ===== */
+  blockquote {
+    margin: 18px 0;
+    padding: 14px 18px;
+    background: var(--quote-bg);
+    border-left: 4px solid var(--quote-border);
+    border-radius: 0 8px 8px 0;
+    color: var(--text);
+  }
+  blockquote p:first-child { margin-top: 0; }
+  blockquote p:last-child  { margin-bottom: 0; }
+  blockquote strong:first-child {
+    color: var(--accent);
+    display: inline-block;
+    margin-bottom: 4px;
+  }
+
+  /* ===== Tables ===== */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 18px 0;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 14.5px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  thead th {
+    background: #f3f0e8;
+    text-align: left;
+    font-weight: 700;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody td {
+    padding: 10px 14px;
+    border-top: 1px solid var(--border-soft);
+    vertical-align: top;
+  }
+  tbody tr:hover { background: #faf8f1; }
+
+  /* ===== Lists ===== */
+  ul, ol { padding-left: 22px; margin: 12px 0; }
+  ul li, ol li { margin: 4px 0; }
+
+  /* ===== Good/Bad code comments hint ===== */
+  .good-mark { color: var(--good); font-weight: 700; }
+  .bad-mark  { color: var(--bad);  font-weight: 700; }
+
+  /* ===== Diagram (preformatted ASCII) ===== */
+  .diagram {
+    background: #fffdf6;
+    border: 1px dashed var(--quote-border);
+    color: var(--text);
+    font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
+    font-size: 13px;
+    padding: 16px 20px;
+    border-radius: 10px;
+    line-height: 1.55;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* ===== Hero ===== */
+  .hero {
+    background: linear-gradient(135deg, #1f4a36 0%, #2f6f4a 100%);
+    color: #fff;
+    padding: 40px 36px;
+    border-radius: 16px;
+    margin-bottom: 32px;
+    box-shadow: 0 8px 24px rgba(31, 74, 54, 0.15);
+  }
+  .hero h1 {
+    color: #fff;
+    margin: 0;
+    font-size: 32px;
+  }
+  .hero p {
+    color: #d4e6dc;
+    margin: 12px 0 0 0;
+    font-size: 15.5px;
+  }
+  .hero .meta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+    font-size: 13px;
+  }
+  .hero .meta span {
+    background: rgba(255,255,255,0.12);
+    padding: 4px 10px;
+    border-radius: 999px;
+    color: #fff;
+  }
+
+  /* ===== Reading note ===== */
+  .read-note {
+    background: var(--info-soft);
+    border-left: 4px solid var(--info);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    font-size: 14.5px;
+    margin: 20px 0 32px 0;
+  }
+
+  /* ===== Checklist ===== */
+  .checklist li {
+    list-style: none;
+    margin: 6px 0;
+    padding-left: 26px;
+    position: relative;
+  }
+  .checklist li::before {
+    content: "☐";
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* ===== Review template box ===== */
+  .review-template {
+    background: #fafafa;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-family: "SF Mono", "Menlo", monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    color: var(--text);
+  }
+  .review-template .crit { color: var(--bad);  font-weight: 600; }
+  .review-template .warn { color: var(--warn); font-weight: 600; }
+  .review-template .sug  { color: var(--info); font-weight: 600; }
+  .review-template .pass { color: var(--good); font-weight: 600; }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 1024px) {
+    .layout {
+      grid-template-columns: 1fr;
+      padding: 24px 18px;
+    }
+    aside.toc {
+      position: static;
+      max-height: none;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="toc">
+  <h2>목차</h2>
+  <ol>
+    <li><a href="#sec-0">0. 시작하기 전에 — 마인드모델</a></li>
+    <li><a href="#sec-principles">핵심 원칙</a></li>
+    <li><a href="#sec-start">새 Feature 시작하기</a></li>
+    <li><a href="#sec-1">1. 파일 구조</a></li>
+    <li><a href="#sec-2">2. State</a></li>
+    <li><a href="#sec-3">3. Action</a></li>
+    <li><a href="#sec-4">4. Reducer</a></li>
+    <li><a href="#sec-5">5. Effect &amp; 비동기</a></li>
+    <li><a href="#sec-6">6. Dependency</a></li>
+    <li><a href="#sec-7">7. Navigation &amp; Composition</a></li>
+    <li><a href="#sec-8">8. View</a></li>
+    <li><a href="#sec-9">9. Testing</a></li>
+    <li><a href="#sec-10">10. 상황별 가이드</a></li>
+    <li><a href="#sec-11">11. 안티패턴 모음</a></li>
+    <li><a href="#sec-12">12. 리뷰 체크리스트</a></li>
+    <li><a href="#sec-13">13. 리뷰 출력 형식</a></li>
+  </ol>
+</aside>
+
+<main>
+
+<div class="hero">
+  <h1>TCA Guidelines</h1>
+  <p>The Composable Architecture <strong>1.25.0</strong> (Observation 기반)을 사용하는 macOS SwiftUI 프로젝트의 컨벤션</p>
+  <div class="meta">
+    <span>대상 모듈 · DVPresentation</span>
+    <span>의존성 · Tuist/Package.swift</span>
+    <span>관련 · CODING_GUIDELINES.md</span>
+  </div>
+</div>
+
+<p>이 문서는 <strong>개발자가 Feature를 작성할 때의 기준</strong>이자, <strong>AI 에이전트가 PR을 리뷰할 때의 기준</strong>입니다.</p>
+
+<div class="read-note">
+  <strong>이 문서를 읽는 사람에게</strong><br>
+  TCA를 처음 사용한다면 <a href="#sec-0">0. 시작하기 전에 — 마인드모델</a>부터 순서대로 읽으세요.
+  이미 익숙하다면 <a href="#sec-12">11. 리뷰 체크리스트</a>로 바로 가도 됩니다.
+  본문 각 절에는 <em>언제 이걸 쓰는가 → 왜 이렇게 쓰는가 → 어떻게 쓰는가</em> 순서로 정리돼 있습니다.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-0">0. 시작하기 전에 — 마인드모델</h2>
+
+<p>TCA의 흐름은 단 네 가지 단어로 요약됩니다.</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>개념</th><th>한 줄 정의</th><th>비유</th></tr></thead>
+<tbody>
+  <tr><td><strong>State</strong></td><td>화면이 그릴 수 있는 모든 정보</td><td>사진(스냅샷)</td></tr>
+  <tr><td><strong>Action</strong></td><td>화면에서 <em>일어난 일</em></td><td>사진을 바꾸는 사건</td></tr>
+  <tr><td><strong>Reducer</strong></td><td>"이 사건이 일어나면 State를 어떻게 바꿀지" 규칙</td><td>사진 편집기</td></tr>
+  <tr><td><strong>Store</strong></td><td>State와 Reducer를 묶어 View에 노출하는 런타임</td><td>사진 액자</td></tr>
+</tbody>
+</table></div>
+
+<p>흐름은 항상 <strong>단방향</strong>입니다.</p>
+
+<div class="diagram">사용자 입력
+    ↓
+View가 Action을 store에 보냄  (store.send(.didTapAddButton))
+    ↓
+Reducer가 Action을 받아 State를 변경 / Effect 반환
+    ↓
+State 변경 → View가 자동으로 다시 그려짐
+    ↓
+(Effect가 끝나면 또 다른 Action을 보내 위 흐름을 반복)</div>
+
+<p>처음 TCA를 만나면 "왜 이렇게 복잡하게 하지?" 싶을 수 있습니다. 하지만 이 단방향 흐름이 주는 보상은 큽니다.</p>
+
+<ul>
+  <li><strong>모든 상태 변화의 원인을 추적 가능</strong> — "어떤 Action이 들어와서 State가 이렇게 됐다"가 항상 명확.</li>
+  <li><strong>테스트 가능성</strong> — Reducer는 순수 함수이므로 <code>Action 입력 → State 출력</code>을 검증하면 끝.</li>
+  <li><strong>합성 가능성</strong> — 작은 Feature를 만들어 큰 Feature 안에 그대로 꽂아 넣을 수 있음.</li>
+</ul>
+
+<p>이 문서의 모든 규칙은 위 세 가지 보상을 지키기 위해 존재합니다. 규칙이 헷갈릴 때마다 <strong>"이 규칙이 위 세 가지 중 무엇을 지키는가?"</strong> 를 떠올리면 됩니다.</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-principles">핵심 원칙</h2>
+
+<ol>
+  <li><strong>State는 값타입</strong>이고, <strong>변경은 오직 Reducer 안에서</strong>만 이루어진다.</li>
+  <li><strong>Action은 "일어난 일"이지 "해야 할 일"이 아니다.</strong> 명령형이 아닌 이벤트형으로 명명한다.</li>
+  <li><strong>Reducer는 순수 함수</strong>다. 비동기 작업·외부 자원 접근은 전부 <code>Effect</code> 또는 <code>@Dependency</code>로 빼낸다.</li>
+  <li><strong>자식 Feature는 부모의 일부 가지</strong>다. 자식 Store는 부모에서 <code>scope</code>로 내려준다.</li>
+  <li><strong>View는 표현(presentation)만</strong> 한다. 비즈니스 로직·라우팅 분기·외부 호출은 Reducer가 책임진다.</li>
+  <li><strong>테스트는 <code>TestStore</code>로 한다.</strong> Reducer는 Action 시퀀스로 검증한다.</li>
+</ol>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-start">새 Feature 시작하기</h2>
+
+<p>Tuist scaffold를 사용해 가이드라인에 맞는 보일러플레이트를 생성합니다.</p>
+
+<pre><code class="lang-bash">tuist scaffold feature --name ProjectList</code></pre>
+
+<p>생성 결과:</p>
+
+<div class="diagram">Projects/DVPresentation/Sources/Features/ProjectList/
+├── ProjectListFeature.swift   // @Reducer + State/Action/Body 골격
+└── ProjectListView.swift      // @Bindable store + content + Preview</div>
+
+<p>생성된 파일은 본 문서의 <a href="#sec-12">12절 체크리스트</a> 기본 항목(<code>@Reducer</code>, <code>@ObservableState</code>, exhaustive switch, <code>delegate(_)</code> Action, <code>.task</code> 패턴 등)을 이미 통과한 상태입니다. 신규 Feature는 <strong>반드시 scaffold로 시작</strong>합니다.</p>
+
+<blockquote>scaffold가 만들어 준 파일에서 출발해 <em>State 필드 추가 → Action 케이스 추가 → 각 case 본문 작성 → View 구현 → Test 작성</em> 순서로 살을 붙이면 됩니다.</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-1">1. 파일 구조</h2>
+
+<h3>1.1 Feature 단위 디렉토리</h3>
+<p>하나의 Feature는 <strong>하나의 디렉토리</strong>로 묶고, 최소 <code>Feature.swift</code>와 <code>View.swift</code>를 함께 둡니다.</p>
+
+<div class="diagram">DVPresentation/Sources/Features/
+├── AppFeature.swift                  // 루트 Reducer
+├── AppView.swift
+├── ProjectList/
+│   ├── ProjectListFeature.swift
+│   └── ProjectListView.swift
+├── ProjectDetail/
+│   ├── ProjectDetailFeature.swift
+│   ├── ProjectDetailView.swift
+│   └── Components/                   // 이 화면에서만 쓰이는 보조 View
+│       └── ProjectMetaSection.swift</div>
+
+<blockquote>
+  <strong>왜 디렉토리로 묶는가?</strong><br>
+  Feature는 <em>Reducer + View + (필요 시) 보조 View</em>가 하나의 단위입니다. 디렉토리로 묶어두면 한 화면에 관련된 모든 파일을 한 번에 열고 닫을 수 있고, 다른 화면으로 옮길 때도 디렉토리째 옮기면 됩니다.
+</blockquote>
+
+<h3>1.2 네이밍</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>대상</th><th>규칙</th><th>예시</th></tr></thead>
+<tbody>
+  <tr><td>Reducer 타입</td><td><code>{도메인}Feature</code></td><td><code>ProjectListFeature</code></td></tr>
+  <tr><td>Reducer 파일</td><td><code>{도메인}Feature.swift</code></td><td><code>ProjectListFeature.swift</code></td></tr>
+  <tr><td>View 타입</td><td><code>{도메인}View</code></td><td><code>ProjectListView</code></td></tr>
+  <tr><td>View 파일</td><td><code>{도메인}View.swift</code></td><td><code>ProjectListView.swift</code></td></tr>
+  <tr><td>자식 화면 enum 케이스</td><td>명사 (화면 이름)</td><td><code>case detail(ProjectDetailFeature)</code></td></tr>
+</tbody>
+</table></div>
+
+<blockquote>Reducer 이름에 <code>ViewModel</code>, <code>Store</code>, <code>Reducer</code> 접미사는 붙이지 않습니다. Store는 런타임 인스턴스이지 타입이 아닙니다. (<code>StoreOf&lt;ProjectListFeature&gt;</code> 가 런타임 타입)</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-2">2. State</h2>
+
+<h3>2.1 선언</h3>
+<p>State는 <strong>화면이 한 순간에 그릴 수 있는 모든 정보</strong>입니다. 다음 세 가지를 반드시 지킵니다.</p>
+<ul>
+  <li><code>@ObservableState</code>를 반드시 붙입니다. (<code>@Observable</code> 아님 — TCA 전용 매크로)</li>
+  <li><code>Equatable</code>을 채택합니다. (<code>TestStore</code>가 변경 전후를 비교할 때 사용)</li>
+  <li><strong>모든 프로퍼티는 값타입</strong>이어야 합니다. (<code>class</code>, <code>ObservableObject</code> 금지)</li>
+</ul>
+
+<pre><code><span class="tok-cmt">// ✅ Good</span>
+<span class="tok-attr">@Reducer</span>
+<span class="tok-kw">struct</span> <span class="tok-typ">ProjectListFeature</span> {
+
+  <span class="tok-attr">@ObservableState</span>
+  <span class="tok-kw">struct</span> <span class="tok-typ">State</span>: <span class="tok-typ">Equatable</span> {
+    <span class="tok-kw">var</span> projects: <span class="tok-typ">IdentifiedArrayOf</span>&lt;<span class="tok-typ">Project</span>&gt; = []
+    <span class="tok-kw">var</span> isLoading = <span class="tok-kw">false</span>
+    <span class="tok-kw">var</span> searchText = <span class="tok-str">""</span>
+    <span class="tok-attr">@Presents</span> <span class="tok-kw">var</span> destination: <span class="tok-typ">Destination.State</span>?
+  }
+}
+
+<span class="tok-cmt">// ❌ Bad</span>
+<span class="tok-kw">struct</span> <span class="tok-typ">State</span> {                              <span class="tok-cmt">// @ObservableState 없음</span>
+  <span class="tok-kw">var</span> viewModel: <span class="tok-typ">SomeViewModel</span>              <span class="tok-cmt">// reference type</span>
+  <span class="tok-kw">var</span> projects: [<span class="tok-typ">Project</span>]                   <span class="tok-cmt">// IdentifiedArray 미사용</span>
+}</code></pre>
+
+<blockquote>
+  <strong>자주 하는 질문: "왜 class를 못 쓰나요?"</strong><br>
+  Reducer는 "Action이 들어오기 전 State"와 "Action이 처리된 후 State"를 비교해 테스트합니다. class(참조)는 변경하면 이전 스냅샷이 사라져 비교 불가입니다. struct(값)는 변경 시 새 인스턴스가 만들어지므로 이전/이후를 모두 보존할 수 있습니다.
+</blockquote>
+
+<h3>2.2 컬렉션은 <code>IdentifiedArrayOf</code></h3>
+<p>자식 Feature를 행으로 갖는 리스트는 <strong>반드시</strong> <code>IdentifiedArrayOf&lt;Element&gt;</code>를 씁니다. ID 기반 접근·자식 Action 라우팅이 가능해야 하기 때문입니다.</p>
+
+<pre><code><span class="tok-cmt">// ✅ Good</span>
+<span class="tok-kw">var</span> rows: <span class="tok-typ">IdentifiedArrayOf</span>&lt;<span class="tok-typ">RowFeature.State</span>&gt; = []
+
+<span class="tok-cmt">// ❌ Bad</span>
+<span class="tok-kw">var</span> rows: [<span class="tok-typ">RowFeature.State</span>] = []</code></pre>
+
+<blockquote>
+  <strong>왜?</strong><br>
+  일반 <code>[Element]</code>는 인덱스(0, 1, 2)로만 접근합니다. 한 행을 지우거나 정렬을 바꾸면 인덱스가 어긋나 <em>"3번 행에 들어온 Action이 사실은 다른 행을 가리키는"</em> 사고가 납니다. <code>IdentifiedArrayOf</code>는 ID로 추적하므로 순서가 바뀌어도 Action이 정확한 자식에게 전달됩니다.
+</blockquote>
+
+<h3>2.3 파생 데이터는 computed property</h3>
+<p>State에 <strong>계산 가능한 값을 저장하지 않습니다.</strong> 항상 computed로 노출합니다.</p>
+
+<pre><code><span class="tok-cmt">// ✅ Good</span>
+<span class="tok-kw">struct</span> <span class="tok-typ">State</span>: <span class="tok-typ">Equatable</span> {
+  <span class="tok-kw">var</span> projects: <span class="tok-typ">IdentifiedArrayOf</span>&lt;<span class="tok-typ">Project</span>&gt; = []
+  <span class="tok-kw">var</span> searchText = <span class="tok-str">""</span>
+
+  <span class="tok-kw">var</span> filteredProjects: <span class="tok-typ">IdentifiedArrayOf</span>&lt;<span class="tok-typ">Project</span>&gt; {
+    <span class="tok-kw">guard</span> !searchText.isEmpty <span class="tok-kw">else</span> { <span class="tok-kw">return</span> projects }
+    <span class="tok-kw">return</span> projects.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+  }
+}
+
+<span class="tok-cmt">// ❌ Bad — projects나 searchText가 바뀔 때마다 동기화 누락 위험</span>
+<span class="tok-kw">struct</span> <span class="tok-typ">State</span>: <span class="tok-typ">Equatable</span> {
+  <span class="tok-kw">var</span> projects: <span class="tok-typ">IdentifiedArrayOf</span>&lt;<span class="tok-typ">Project</span>&gt; = []
+  <span class="tok-kw">var</span> searchText = <span class="tok-str">""</span>
+  <span class="tok-kw">var</span> filteredProjects: <span class="tok-typ">IdentifiedArrayOf</span>&lt;<span class="tok-typ">Project</span>&gt; = []  <span class="tok-cmt">// ← 어디서 갱신?</span>
+}</code></pre>
+
+<blockquote><strong>판단 기준:</strong> "이 값은 다른 State 값들로부터 <em>항상 계산할 수 있는가?</em>" 그렇다면 무조건 computed. 저장하는 순간 "갱신을 잊은 케이스"가 버그가 됩니다.</blockquote>
+
+<h3>2.4 옵셔널 vs 빈 컬렉션 — "아직 안 옴"과 "비어 있음"을 구분</h3>
+<ul>
+  <li>"값이 아직 로드되지 않음" → <code>Optional</code> 또는 명시적 상태(enum)</li>
+  <li>"값은 있지만 비어 있음" → 빈 컬렉션</li>
+</ul>
+
+<pre><code><span class="tok-cmt">// ✅ Good — 로딩 전과 빈 결과를 구분</span>
+<span class="tok-kw">enum</span> <span class="tok-typ">LoadingState</span>&lt;<span class="tok-typ">Value</span>: <span class="tok-typ">Equatable</span>&gt;: <span class="tok-typ">Equatable</span> {
+  <span class="tok-kw">case</span> idle
+  <span class="tok-kw">case</span> loading
+  <span class="tok-kw">case</span> loaded(<span class="tok-typ">Value</span>)
+  <span class="tok-kw">case</span> failed(<span class="tok-typ">String</span>)
+}
+
+<span class="tok-kw">var</span> projects: <span class="tok-typ">LoadingState</span>&lt;<span class="tok-typ">IdentifiedArrayOf</span>&lt;<span class="tok-typ">Project</span>&gt;&gt; = .idle</code></pre>
+
+<blockquote>
+  <strong>언제 LoadingState를 도입할까?</strong><br>
+  화면이 "로딩 스피너 / 빈 상태 일러스트 / 결과 리스트 / 에러 메시지" 네 가지 모습을 모두 가져야 한다면 <code>LoadingState</code> 같은 enum이 정답입니다. 단순히 "데이터 있음/없음"만 보여주면 되는 화면이라면 <code>[Project]</code>로 충분합니다.
+  <strong>모델링이 화면 분기를 정확히 표현해야 한다</strong> — 이게 핵심입니다.
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-3">3. Action</h2>
+
+<h3>3.1 네이밍 — "일어난 일"로 짓기</h3>
+<p>가장 자주 어기는 규칙입니다. Action은 <strong>명령(verb)이 아니라 사건(event)</strong>입니다. <a href="./CODING_GUIDELINES.md">CODING_GUIDELINES</a>의 "이벤트 핸들러는 과거형" 규칙을 그대로 따릅니다.</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>분류</th><th>패턴</th><th>예시</th></tr></thead>
+<tbody>
+  <tr><td>사용자 입력</td><td><code>didTap{대상}</code>, <code>didChange{대상}</code></td><td><code>didTapAddButton</code>, <code>didChangeSearchText(String)</code></td></tr>
+  <tr><td>라이프사이클</td><td><code>{시점}</code></td><td><code>onAppear</code>, <code>task</code></td></tr>
+  <tr><td>비동기 응답</td><td><code>{대상}Response(Result)</code></td><td><code>projectsResponse(Result&lt;[Project], Error&gt;)</code></td></tr>
+  <tr><td>내부 흐름</td><td><code>_{동사}</code> (언더스코어 prefix)</td><td><code>_setLoading(Bool)</code></td></tr>
+  <tr><td>자식 위임</td><td><code>delegate({이벤트})</code></td><td><code>delegate(.projectSaved(Project))</code></td></tr>
+  <tr><td>자식/네비게이션</td><td><code>{자식이름}({자식.Action})</code></td><td><code>destination(PresentationAction&lt;Destination.Action&gt;)</code></td></tr>
+</tbody>
+</table></div>
+
+<pre><code><span class="tok-cmt">// ✅ Good — 일어난 일</span>
+<span class="tok-kw">enum</span> <span class="tok-typ">Action</span> {
+  <span class="tok-kw">case</span> didTapAddButton
+  <span class="tok-kw">case</span> didChangeSearchText(<span class="tok-typ">String</span>)
+  <span class="tok-kw">case</span> projectsResponse(<span class="tok-typ">Result</span>&lt;[<span class="tok-typ">Project</span>], <span class="tok-typ">Error</span>&gt;)
+  <span class="tok-kw">case</span> destination(<span class="tok-typ">PresentationAction</span>&lt;<span class="tok-typ">Destination.Action</span>&gt;)
+  <span class="tok-kw">case</span> delegate(<span class="tok-typ">Delegate</span>)
+
+  <span class="tok-kw">enum</span> <span class="tok-typ">Delegate</span>: <span class="tok-typ">Equatable</span> {
+    <span class="tok-kw">case</span> projectDeleted(<span class="tok-typ">Project.ID</span>)
+  }
+}
+
+<span class="tok-cmt">// ❌ Bad — 명령형 / 동작 지시</span>
+<span class="tok-kw">enum</span> <span class="tok-typ">Action</span> {
+  <span class="tok-kw">case</span> loadProjects
+  <span class="tok-kw">case</span> showAddSheet
+  <span class="tok-kw">case</span> handleResponse([<span class="tok-typ">Project</span>])
+}</code></pre>
+
+<blockquote>
+  <strong>왜 명령형이 안 되는가?</strong><br>
+  <code>loadProjects</code>라고 이름 붙이면 View가 "Reducer야, 프로젝트를 불러와라"라고 <em>명령</em>하는 모양이 됩니다. 그럼 <em>어떻게</em> 불러올지를 View가 결정하는 셈입니다. <code>onAppear</code> / <code>didTapRefreshButton</code>이라고 쓰면 View는 "이런 사건이 일어났다"만 알리고, <em>어떻게 반응할지</em>는 Reducer가 결정합니다. 책임 경계가 또렷해집니다.
+</blockquote>
+
+<h3>3.2 케이스 분류 (권장 그룹)</h3>
+<p>큰 Feature의 Action은 의미별로 nested enum 또는 주석으로 그룹화합니다.</p>
+
+<pre><code><span class="tok-kw">enum</span> <span class="tok-typ">Action</span> {
+  <span class="tok-cmt">// MARK: View</span>
+  <span class="tok-kw">case</span> onAppear
+  <span class="tok-kw">case</span> didTapAddButton
+  <span class="tok-kw">case</span> didTapRow(id: <span class="tok-typ">Project.ID</span>)
+
+  <span class="tok-cmt">// MARK: Internal</span>
+  <span class="tok-kw">case</span> projectsResponse(<span class="tok-typ">Result</span>&lt;[<span class="tok-typ">Project</span>], <span class="tok-typ">Error</span>&gt;)
+
+  <span class="tok-cmt">// MARK: Child</span>
+  <span class="tok-kw">case</span> destination(<span class="tok-typ">PresentationAction</span>&lt;<span class="tok-typ">Destination.Action</span>&gt;)
+
+  <span class="tok-cmt">// MARK: Delegate</span>
+  <span class="tok-kw">case</span> delegate(<span class="tok-typ">Delegate</span>)
+  <span class="tok-kw">enum</span> <span class="tok-typ">Delegate</span>: <span class="tok-typ">Equatable</span> {
+    <span class="tok-kw">case</span> projectDeleted(<span class="tok-typ">Project.ID</span>)
+  }
+}</code></pre>
+
+<blockquote>
+  <strong>그룹의 의미</strong>
+  <ul>
+    <li><strong>View</strong>: 사용자 입력 / 화면 라이프사이클. View가 보내는 Action.</li>
+    <li><strong>Internal</strong>: Effect 응답·내부 흐름. Reducer가 자기 자신에게 보내는 Action.</li>
+    <li><strong>Child</strong>: 자식 Feature가 보내는 Action을 부모로 끌어올린 통로.</li>
+    <li><strong>Delegate</strong>: 부모에게 알리는 결과. (자세한 건 3.3절)</li>
+  </ul>
+</blockquote>
+
+<h3>3.3 Delegate Action 패턴 — 자식이 부모에게 알리는 유일한 통로</h3>
+<p>자식 Feature가 <strong>부모에게 알려야 하는 결과</strong>는 반드시 <code>delegate(_)</code>로 통일합니다. 부모는 자식의 일반 Action을 직접 듣지 않습니다.</p>
+
+<pre><code><span class="tok-cmt">// 자식 (ProjectDetailFeature)</span>
+<span class="tok-kw">case</span> .didTapDelete:
+  <span class="tok-kw">return</span> .run { [id = state.id] send <span class="tok-kw">in</span>
+    <span class="tok-kw">try await</span> projectClient.delete(id)
+    <span class="tok-kw">await</span> send(.delegate(.projectDeleted(id)))
+  }
+
+<span class="tok-cmt">// 부모 (ProjectListFeature)</span>
+<span class="tok-kw">case</span> .destination(.presented(.detail(.delegate(.projectDeleted(<span class="tok-kw">let</span> id))))):
+  state.projects.remove(id: id)
+  <span class="tok-kw">return</span> .none</code></pre>
+
+<blockquote>
+  <strong>왜 delegate를 따로 두는가?</strong><br>
+  자식의 일반 Action(<code>didTapDelete</code>, <code>projectsResponse</code> 등)은 <em>자식 내부의 사정</em>입니다. 부모가 이걸 직접 듣기 시작하면 "자식 구현을 바꾸면 부모도 같이 깨지는" 결합이 생깁니다. Delegate는 자식이 부모에게 노출하는 <strong>공개 인터페이스</strong>입니다. 자식 내부 Action을 자유롭게 바꿔도 Delegate 표면만 유지하면 부모는 영향을 받지 않습니다.
+</blockquote>
+
+<blockquote><strong>Rule:</strong> 자식이 부모의 State를 직접 알면 안 됩니다. 자식은 "내가 한 일"만 알리고, 부모가 그것을 어떻게 처리할지 결정합니다.</blockquote>
+
+<h4>처음엔 이렇게 쓰기 쉬워요 (그리고 왜 문제인지)</h4>
+
+<pre><code><span class="tok-cmt">// ❌ Bad — 부모가 자식의 일반 Action을 듣고 분기</span>
+<span class="tok-kw">case</span> .destination(.presented(.detail(.didTapDelete))):
+  <span class="tok-cmt">// 부모가 자식 내부의 동작 순서를 가정함</span>
+  state.projects.remove(id: ???)
+  <span class="tok-kw">return</span> .none</code></pre>
+
+<p>위 코드는 "자식이 <em>지금</em> 어떤 순서로 동작하는지"에 의존합니다. 자식 구현이 바뀌면(예: 삭제 전에 확인 다이얼로그를 띄우게 됐다면) 부모가 바로 깨집니다.</p>
+
+<h3>3.4 Equatable</h3>
+<p>Action은 <strong>가능한 한 <code>Equatable</code>을</strong> 채택합니다. <code>TestStore</code>에서 동등 비교가 필요하기 때문입니다. <code>Error</code> 등 Equatable이 안 되는 타입은 별도 wrapper(<code>EquatableError</code>)로 감싸거나 <code>Result</code>의 동등 비교를 위해 Error를 의미 있는 enum으로 매핑합니다.</p>
+
+<pre><code><span class="tok-cmt">// ✅ 도메인 에러를 enum으로 매핑</span>
+<span class="tok-kw">enum</span> <span class="tok-typ">ProjectLoadError</span>: <span class="tok-typ">Error</span>, <span class="tok-typ">Equatable</span> {
+  <span class="tok-kw">case</span> network
+  <span class="tok-kw">case</span> notFound
+  <span class="tok-kw">case</span> unauthorized
+}
+
+<span class="tok-kw">case</span> projectsResponse(<span class="tok-typ">Result</span>&lt;[<span class="tok-typ">Project</span>], <span class="tok-typ">ProjectLoadError</span>&gt;)</code></pre>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-4">4. Reducer</h2>
+
+<h3>4.1 형태</h3>
+<ul>
+  <li><code>@Reducer</code> 매크로 사용</li>
+  <li><code>var body: some ReducerOf&lt;Self&gt;</code> 안에서 <code>Reduce { state, action in ... }</code></li>
+  <li>자식 결합은 <code>Scope</code>, <code>ifLet</code>, <code>forEach</code> 등의 오퍼레이터로</li>
+</ul>
+
+<pre><code><span class="tok-attr">@Reducer</span>
+<span class="tok-kw">struct</span> <span class="tok-typ">ProjectListFeature</span> {
+
+  <span class="tok-attr">@ObservableState</span>
+  <span class="tok-kw">struct</span> <span class="tok-typ">State</span>: <span class="tok-typ">Equatable</span> { <span class="tok-cmt">/* ... */</span> }
+
+  <span class="tok-kw">enum</span> <span class="tok-typ">Action</span>: <span class="tok-typ">Equatable</span> { <span class="tok-cmt">/* ... */</span> }
+
+  <span class="tok-attr">@Dependency</span>(\.projectClient) <span class="tok-kw">var</span> projectClient
+
+  <span class="tok-kw">var</span> body: <span class="tok-kw">some</span> <span class="tok-typ">ReducerOf</span>&lt;<span class="tok-typ">Self</span>&gt; {
+    <span class="tok-typ">Reduce</span> { state, action <span class="tok-kw">in</span>
+      <span class="tok-kw">switch</span> action {
+      <span class="tok-cmt">// ...</span>
+      }
+    }
+    .ifLet(\.$destination, action: \.destination) {
+      <span class="tok-typ">Destination</span>()
+    }
+  }
+}</code></pre>
+
+<h3>4.2 Reducer 안에서는 절대 하지 말 것</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>금지 동작</th><th>왜</th><th>대안</th></tr></thead>
+<tbody>
+  <tr><td><code>Task { ... }</code> 직접 띄우기</td><td>취소 불가, 테스트에서 시간 제어 불가</td><td><code>.run { send in ... }</code></td></tr>
+  <tr><td><code>URLSession</code>, <code>FileManager</code>, <code>Date()</code>, <code>UUID()</code> 직접 호출</td><td>외부 자원에 직접 의존 → 테스트 불가</td><td><code>@Dependency</code></td></tr>
+  <tr><td>State를 Reducer 밖에서 변경 (View, Effect 클로저 내부)</td><td>단방향 흐름 위반</td><td>Action을 보내서 변경</td></tr>
+  <tr><td>View 표현 결정 (색·문자열)</td><td>책임 경계 위반</td><td>View가 책임</td></tr>
+  <tr><td>다른 Feature의 State를 직접 참조</td><td>결합도 폭발</td><td>부모를 통해 데이터 전달</td></tr>
+</tbody>
+</table></div>
+
+<h3>4.3 case 본문은 짧게</h3>
+<p>case 본문이 5~10줄을 넘으면 <strong>private helper</strong>로 분리합니다.</p>
+
+<pre><code><span class="tok-cmt">// ✅ Good</span>
+<span class="tok-kw">case</span> .projectsResponse(.success(<span class="tok-kw">let</span> projects)):
+  <span class="tok-kw">return</span> handleProjectsLoaded(state: &amp;state, projects: projects)
+
+<span class="tok-cmt">// helper</span>
+<span class="tok-kw">private func</span> handleProjectsLoaded(
+  state: <span class="tok-kw">inout</span> <span class="tok-typ">State</span>,
+  projects: [<span class="tok-typ">Project</span>]
+) -&gt; <span class="tok-typ">Effect</span>&lt;<span class="tok-typ">Action</span>&gt; {
+  state.isLoading = <span class="tok-kw">false</span>
+  state.projects = <span class="tok-typ">IdentifiedArray</span>(uniqueElements: projects)
+  <span class="tok-kw">return</span> .none
+}</code></pre>
+
+<blockquote>
+  <strong>왜?</strong><br>
+  <code>Reduce</code> 본문이 길어지면 switch 한 화면에 안 들어오기 시작합니다. switch는 "Action 목차"의 역할을 해야 하므로, <em>목차에 들어갈 한 줄</em>과 <em>세부 구현</em>은 분리합니다.
+</blockquote>
+
+<h3>4.4 switch는 <strong>반드시 exhaustive</strong></h3>
+<p><code>default:</code>를 쓰지 않습니다. Action이 늘었을 때 컴파일러가 잡아주는 안전망을 포기하지 마세요.</p>
+
+<pre><code><span class="tok-cmt">// ❌ Bad</span>
+<span class="tok-kw">switch</span> action {
+<span class="tok-kw">case</span> .didTapAddButton: ...
+<span class="tok-kw">default</span>: <span class="tok-kw">return</span> .none
+}
+
+<span class="tok-cmt">// ✅ Good — 모든 케이스 명시</span>
+<span class="tok-kw">switch</span> action {
+<span class="tok-kw">case</span> .didTapAddButton: ...
+<span class="tok-kw">case</span> .didChangeSearchText(<span class="tok-kw">let</span> text): ...
+<span class="tok-kw">case</span> .projectsResponse(.success(<span class="tok-kw">let</span> projects)): ...
+<span class="tok-kw">case</span> .projectsResponse(.failure(<span class="tok-kw">let</span> error)): ...
+<span class="tok-kw">case</span> .destination: <span class="tok-kw">return</span> .none
+<span class="tok-kw">case</span> .delegate: <span class="tok-kw">return</span> .none
+}</code></pre>
+
+<blockquote>
+  <strong>자주 하는 질문: "그럼 변화 없는 케이스는요?"</strong><br>
+  <code>return .none</code>을 명시적으로 적어주세요. "이 Action은 들어와도 무시한다"는 결정이 코드에 남아 있어야 합니다. <code>default</code>로 묶어버리면 새 Action을 추가했을 때 "어 이건 처리 안 한 건가, 무시인가?"를 알 수 없습니다.
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-5">5. Effect &amp; 비동기</h2>
+
+<h3>5.1 비동기는 <code>.run</code></h3>
+
+<pre><code><span class="tok-cmt">// ✅ Good</span>
+<span class="tok-kw">case</span> .onAppear:
+  state.isLoading = <span class="tok-kw">true</span>
+  <span class="tok-kw">return</span> .run { send <span class="tok-kw">in</span>
+    <span class="tok-kw">await</span> send(.projectsResponse(<span class="tok-typ">Result</span> { <span class="tok-kw">try await</span> projectClient.fetchAll() }))
+  }
+
+<span class="tok-cmt">// ❌ Bad</span>
+<span class="tok-kw">case</span> .onAppear:
+  <span class="tok-typ">Task</span> { <span class="tok-attr">@MainActor</span> <span class="tok-kw">in</span>
+    <span class="tok-kw">let</span> projects = <span class="tok-kw">try await</span> projectClient.fetchAll()
+    <span class="tok-cmt">// state를 여기서 못 바꿈</span>
+  }
+  <span class="tok-kw">return</span> .none</code></pre>
+
+<blockquote>
+  <strong>왜 Task가 안 되나?</strong><br>
+  <code>Task { }</code>는 Reducer가 끝나면 사라지는 별도 흐름입니다. 취소도 못 하고, 결과를 State로 가져올 길이 없고, TestStore도 추적 못 합니다. <code>.run { send in }</code>은 TCA가 Effect로 관리합니다 — 화면이 사라지면 자동 취소되고, <code>send(.액션)</code>으로 결과를 다시 Reducer 흐름에 합류시킬 수 있습니다.
+</blockquote>
+
+<h3>5.2 취소 가능한 Effect</h3>
+<p>검색·디바운스 등 <strong>이전 작업을 취소해야 하는 Effect</strong>는 <code>cancellable(id:)</code>를 씁니다. ID는 enum case 없는 <code>enum CancelID { case search }</code> 패턴으로 정의합니다.</p>
+
+<pre><code><span class="tok-kw">private enum</span> <span class="tok-typ">CancelID</span> { <span class="tok-kw">case</span> search }
+
+<span class="tok-kw">case</span> .didChangeSearchText(<span class="tok-kw">let</span> text):
+  state.searchText = text
+  <span class="tok-kw">return</span> .run { send <span class="tok-kw">in</span>
+    <span class="tok-kw">try await</span> clock.sleep(<span class="tok-kw">for</span>: .milliseconds(<span class="tok-num">300</span>))
+    <span class="tok-kw">await</span> send(.searchResponse(<span class="tok-typ">Result</span> { <span class="tok-kw">try await</span> projectClient.search(text) }))
+  }
+  .cancellable(id: <span class="tok-typ">CancelID</span>.search, cancelInFlight: <span class="tok-kw">true</span>)</code></pre>
+
+<blockquote>
+  <strong><code>cancelInFlight: true</code>의 의미</strong><br>
+  같은 <code>id</code>로 이미 진행 중인 Effect가 있다면 <strong>자동으로 취소하고</strong> 새로운 Effect를 시작합니다. 검색어를 빠르게 타이핑할 때 매번 새 Effect만 살아 있게 됩니다.
+</blockquote>
+
+<blockquote>
+  <strong>언제 cancellable을 도입하나?</strong><br>
+  <em>"같은 동작을 짧은 시간에 여러 번 일으킬 수 있는가?"</em> 가 판단 기준입니다.
+  <ul>
+    <li>검색어 입력 (매 키 입력) → 필요</li>
+    <li>디바운스가 필요한 자동 저장 → 필요</li>
+    <li>화면 진입 시 1회 fetch → 보통 불필요 (단, 화면이 사라질 때 취소되어야 한다면 도입)</li>
+  </ul>
+</blockquote>
+
+<h3>5.3 State capture는 명시적으로</h3>
+<p><code>.run</code> 클로저는 State 전체를 캡처할 수 없습니다(값타입이라 스냅샷). <strong>필요한 값만 캡처 리스트에 명시</strong>합니다.</p>
+
+<pre><code><span class="tok-cmt">// ✅ Good</span>
+<span class="tok-kw">return</span> .run { [id = state.id, name = state.name] send <span class="tok-kw">in</span>
+  <span class="tok-kw">try await</span> client.save(id: id, name: name)
+  <span class="tok-kw">await</span> send(.delegate(.projectSaved))
+}
+
+<span class="tok-cmt">// ❌ Bad — state 전체를 캡처하려는 시도</span>
+<span class="tok-kw">return</span> .run { send <span class="tok-kw">in</span>
+  <span class="tok-kw">try await</span> client.save(id: state.id, name: state.name)  <span class="tok-cmt">// ❌ 컴파일 오류 또는 의도와 다른 동작</span>
+}</code></pre>
+
+<blockquote>
+  <strong>왜 캡처 리스트가 필요한가?</strong><br>
+  Effect는 Reducer가 끝난 <em>뒤</em>에도 살아 있습니다. 그 사이 State가 또 바뀔 수 있죠. 캡처 리스트로 "Effect가 시작될 때의 값"을 박제해 두지 않으면, Effect가 어떤 시점의 State를 봐야 하는지가 모호해집니다.
+</blockquote>
+
+<h3>5.4 에러는 Reducer에서 처리</h3>
+<p><code>.run</code>에서 <code>try</code>로 던지면 <code>catch:</code> 클로저 또는 <code>Result</code>로 받습니다. Effect 안에서 묵살하지 않습니다.</p>
+
+<pre><code><span class="tok-cmt">// 패턴 A — Result 래핑</span>
+<span class="tok-kw">return</span> .run { send <span class="tok-kw">in</span>
+  <span class="tok-kw">await</span> send(.projectsResponse(<span class="tok-typ">Result</span> { <span class="tok-kw">try await</span> projectClient.fetchAll() }))
+}
+
+<span class="tok-cmt">// 패턴 B — catch 클로저</span>
+<span class="tok-kw">return</span> .run { send <span class="tok-kw">in</span>
+  <span class="tok-kw">let</span> projects = <span class="tok-kw">try await</span> projectClient.fetchAll()
+  <span class="tok-kw">await</span> send(.projectsResponse(.success(projects)))
+} catch: { error, send <span class="tok-kw">in</span>
+  <span class="tok-kw">await</span> send(.projectsResponse(.failure(error)))
+}</code></pre>
+
+<blockquote>
+  <strong>두 패턴 중 무엇을 쓰나?</strong><br>
+  단순하면 패턴 A. 에러 변환·로깅 등 추가 처리가 필요하면 패턴 B.
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-6">6. Dependency</h2>
+
+<blockquote>
+  가장 자주 오해되는 절입니다. <strong>TCA는 DVPresentation·App 타겟(Devault)에만 살고, DVDomain·DVData는 TCA를 모릅니다.</strong>
+  Client <em>인터페이스</em>는 DVPresentation에, <em><code>liveValue</code> 조립</em>은 App 타겟(Composition Root)에 둡니다.
+</blockquote>
+
+<h3>6.1 TCA의 영향 범위 — Composition Root 분리 원칙</h3>
+<p><code>import ComposableArchitecture</code>가 들어가는 모듈은 <strong>DVPresentation과 App 타겟(<code>Devault</code>)</strong> 두 개입니다. 두 모듈의 역할은 다릅니다.</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>모듈</th><th>역할</th><th>알고 있는 것</th></tr></thead>
+<tbody>
+  <tr><td><code>DVPresentation</code></td><td>Feature(Reducer/View) + Client <strong>인터페이스</strong> + <code>testValue</code>/<code>previewValue</code></td><td>TCA + DVDomain (※ DVData는 모름)</td></tr>
+  <tr><td><code>Devault</code> (App 타겟)</td><td>Client의 <strong><code>liveValue</code> 조립</strong> = Composition Root</td><td>TCA + DVPresentation + DVDomain + DVData</td></tr>
+  <tr><td><code>DVDomain</code>, <code>DVData</code></td><td>비즈니스 규칙·구현</td><td>TCA를 모름</td></tr>
+</tbody>
+</table></div>
+
+<p>의존 화살표:</p>
+
+<div class="diagram">Devault (App, @main)        ← Composition Root (모든 레이어 알 권한 있음)
+   │
+   ├─ liveValue 정의 (SecretClient+Live.swift 등)
+   │
+   ▼
+DVPresentation              ← TCA가 사는 곳, 단 DVData는 모름
+   │
+   ├─ Feature (Reducer/View)
+   ├─ Client struct + TestDependencyKey (testValue, previewValue)
+   │
+   ▼
+DVDomain  ←──  DVData       ← TCA를 모르는 순수 레이어</div>
+
+<blockquote>
+  <strong>왜 두 단계로 나누나? (Composition Root 패턴)</strong><br>
+  Robert C. Martin <em>Clean Architecture</em> 책의 표현 그대로 옮기면:
+  <p style="margin: 6px 0 6px 12px; font-style: italic;">"어딘가는 추상을 구체로 묶어야 한다. 그 한 점을 <em>Composition Root</em>라 부르고, 보통 <code>main()</code> 가장 가까운 곳에 둔다."</p>
+  Composition Root는 의존성 규칙의 <strong>공식 예외</strong>입니다. 그 한 점만 모든 레이어를 알아도 됩니다. 비즈니스 로직을 수행하지 않고 <em>그래프 조립</em>만 하기 때문입니다. 우리 프로젝트에서는 그 한 점이 <strong>App 타겟 <code>Devault</code></strong> 입니다.
+</blockquote>
+
+<blockquote>
+  <strong>왜 DVPresentation에 DVData import를 막나?</strong>
+  <ul>
+    <li>DVPresentation이 DVData를 모르면 <em>Feature 단위 빌드/Preview/단위 테스트가 가벼워집니다.</em> SwiftData 모델, Keychain 의존성 등을 불러올 필요가 없어집니다.</li>
+    <li>모듈 수준에서도 의존 화살표가 <em>바깥쪽 → 안쪽(Domain)</em> 으로만 흐릅니다. 코드 단위 뿐 아니라 모듈 단위에서도 클린 아키텍처가 지켜집니다.</li>
+  </ul>
+</blockquote>
+
+<blockquote>
+  <strong>왜 Domain/Data에 TCA를 못 넣게 하나?</strong>
+  <ul>
+    <li>DVDomain은 <em>비즈니스 규칙</em>만 담은 순수 레이어입니다. TCA를 import하는 순간 다른 환경(iOS Devault, CLI 툴 등)에서 재사용 불가능해집니다.</li>
+    <li>TCA 버전 변경(예: 1.25 → 2.0)이 Domain/Data 빌드까지 깨뜨립니다.</li>
+    <li>Domain만 단독으로 단위 테스트하기 어려워집니다.</li>
+  </ul>
+</blockquote>
+
+<h3>6.2 모든 외부 의존은 <code>@Dependency</code></h3>
+<p><code>secretClient</code>, <code>clock</code>, <code>uuid</code>, <code>date</code>, <code>mainQueue</code> 등 <strong>시간·랜덤·외부 자원은 전부 Dependency로</strong>.</p>
+
+<pre><code><span class="tok-attr">@Reducer</span>
+<span class="tok-kw">struct</span> <span class="tok-typ">SecretListFeature</span> {
+  <span class="tok-attr">@Dependency</span>(\.secretClient) <span class="tok-kw">var</span> secretClient
+  <span class="tok-attr">@Dependency</span>(\.uuid) <span class="tok-kw">var</span> uuid
+  <span class="tok-attr">@Dependency</span>(\.continuousClock) <span class="tok-kw">var</span> clock
+  <span class="tok-attr">@Dependency</span>(\.date.now) <span class="tok-kw">var</span> now
+}</code></pre>
+
+<blockquote>
+  <strong>왜 <code>UUID()</code>를 직접 못 쓰나?</strong><br>
+  테스트에서 <code>let id = UUID()</code>를 검증하려면 매번 다른 값이 나옵니다. <code>@Dependency(\.uuid)</code>로 받으면 테스트에서 <code>$0.uuid = .incrementing</code>처럼 <em>예측 가능한</em> 값으로 바꿔치기할 수 있습니다.
+</blockquote>
+
+<h3>6.3 왜 프로토콜을 그대로 못 쓰나 — 어댑터가 필요한 세 가지 이유</h3>
+<p>우리 프로젝트의 <code>FetchSecretUseCase</code>를 예로 들어 봅시다.</p>
+
+<pre><code><span class="tok-cmt">// DVDomain — 이미 정의되어 있음</span>
+<span class="tok-kw">public protocol</span> <span class="tok-typ">FetchSecretUseCase</span>: <span class="tok-typ">Sendable</span> {
+  <span class="tok-kw">func</span> fetch(id: <span class="tok-typ">UUID</span>) <span class="tok-kw">async throws</span> -&gt; <span class="tok-typ">Secret</span>?
+  <span class="tok-kw">func</span> fetch(query: <span class="tok-typ">SecretQuery</span>) <span class="tok-kw">async throws</span> -&gt; [<span class="tok-typ">Secret</span>]
+  <span class="tok-kw">func</span> revealPayload&lt;<span class="tok-typ">Payload</span>: <span class="tok-typ">SecretPayloadData</span>&gt;(
+    id: <span class="tok-typ">UUID</span>,
+    as type: <span class="tok-typ">Payload.Type</span>
+  ) <span class="tok-kw">async throws</span> -&gt; <span class="tok-typ">Payload</span>
+}</code></pre>
+
+<p>이걸 Reducer에서 그대로 받고 싶다고 가정하면:</p>
+
+<pre><code><span class="tok-cmt">// ❌ 이게 안 되는 이유</span>
+<span class="tok-attr">@Reducer</span>
+<span class="tok-kw">struct</span> <span class="tok-typ">SecretListFeature</span> {
+  <span class="tok-attr">@Dependency</span>(\.fetchSecretUseCase) <span class="tok-kw">var</span> fetchUseCase  <span class="tok-cmt">// 어떻게 DependencyKey 등록?</span>
+}</code></pre>
+
+<p><strong>문제 ①</strong> <code>@Dependency</code>로 받으려면 <strong><code>DependencyKey</code>에 conform한 구체 타입</strong>이 필요합니다. <code>protocol FetchSecretUseCase</code>는 자신이 다른 프로토콜에 conform할 수 없고, <em>어떤 구현체가 testValue인가?</em> 답이 없습니다.</p>
+
+<p><strong>문제 ②</strong> TCA의 <code>testValue</code>는 "호출하면 즉시 실패"하는 <strong>unimplemented가 기본</strong>입니다. 프로토콜에는 그런 기본값을 박을 수 없어, mock 클래스를 매번 손으로 만들어야 합니다.</p>
+
+<p><strong>문제 ③</strong> <code>revealPayload&lt;Payload&gt;</code> 같은 <strong>제네릭 메서드</strong>는 TCA <code>@DependencyClient</code> 매크로가 못 다룹니다. 클로저 프로퍼티는 제네릭을 가질 수 없거든요.</p>
+
+<p>→ 그래서 <strong>클로저 타입의 struct (= Client)</strong> 가 필요합니다. 프로토콜을 한 번 <em>어댑팅</em>해서 TCA가 알아먹는 모양으로 변환하는 거예요.</p>
+
+<h3>6.4 Client 정의 패턴 — 두 모듈에 나눠 둔다</h3>
+
+<p>Client는 두 부분으로 나뉘어 서로 다른 모듈에 살고, TCA의 <code>TestDependencyKey</code>/<code>DependencyKey</code> 분리가 정확히 이 용도를 위해 설계되어 있습니다.</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>부분</th><th>위치</th><th>역할</th></tr></thead>
+<tbody>
+  <tr><td><code>struct {이름}Client</code> + <code>TestDependencyKey</code> + <code>DependencyValues</code> 키</td><td><code>DVPresentation/Sources/Dependencies/{이름}Client.swift</code></td><td>인터페이스 + 테스트/프리뷰 기본값</td></tr>
+  <tr><td><code>extension {이름}Client: DependencyKey</code> (<code>liveValue</code>)</td><td><code>Devault/Sources/Dependencies/{이름}Client+Live.swift</code></td><td>실제 의존성 그래프 조립 (Composition Root)</td></tr>
+</tbody>
+</table></div>
+
+<p><code>liveValue</code> 정의는 App 타겟이 로드될 때 자동으로 등록되어, 런타임에 <code>@Dependency(\.secretClient)</code>가 알아서 <code>liveValue</code>를 집어 옵니다.</p>
+
+<h4>1단계: 인터페이스 정의 — DVPresentation에 둔다</h4>
+<p>UseCase 1개당 Client 1개가 아닙니다. <strong>화면이 필요로 하는 인터페이스 묶음</strong>이 Client 한 개입니다. <code>SecretList</code> 화면이 Fetch/Delete를 모두 쓴다면 하나의 <code>SecretClient</code>로 묶습니다.</p>
+
+<pre><code><span class="tok-cmt">// DVPresentation/Sources/Dependencies/SecretClient.swift</span>
+<span class="tok-kw">import</span> <span class="tok-typ">ComposableArchitecture</span>
+<span class="tok-kw">import</span> <span class="tok-typ">DVDomain</span>   <span class="tok-cmt">// ← Domain의 protocol·entity·error만 가져옴 (DVData 없음!)</span>
+<span class="tok-kw">import</span> <span class="tok-typ">Foundation</span>
+
+<span class="tok-attr">@DependencyClient</span>
+<span class="tok-kw">struct</span> <span class="tok-typ">SecretClient</span>: <span class="tok-typ">Sendable</span> {
+  <span class="tok-cmt">// FetchSecretUseCase에서 펼쳐 옴</span>
+  <span class="tok-kw">var</span> fetchByID: <span class="tok-attr">@Sendable</span> (_ id: <span class="tok-typ">UUID</span>) <span class="tok-kw">async throws</span> -&gt; <span class="tok-typ">Secret</span>?
+  <span class="tok-kw">var</span> fetchByQuery: <span class="tok-attr">@Sendable</span> (_ query: <span class="tok-typ">SecretQuery</span>) <span class="tok-kw">async throws</span> -&gt; [<span class="tok-typ">Secret</span>]
+
+  <span class="tok-cmt">// 제네릭은 클로저로 못 받으므로, 필요한 payload 타입별로 풀어줌</span>
+  <span class="tok-kw">var</span> revealAPIKeyPayload: <span class="tok-attr">@Sendable</span> (_ id: <span class="tok-typ">UUID</span>) <span class="tok-kw">async throws</span> -&gt; <span class="tok-typ">APIKeyPayload</span>
+
+  <span class="tok-cmt">// DeleteSecretUseCase에서 펼쳐 옴</span>
+  <span class="tok-kw">var</span> softDelete: <span class="tok-attr">@Sendable</span> (_ id: <span class="tok-typ">UUID</span>) <span class="tok-kw">async throws</span> -&gt; <span class="tok-typ">Secret</span>
+  <span class="tok-kw">var</span> restore: <span class="tok-attr">@Sendable</span> (_ id: <span class="tok-typ">UUID</span>) <span class="tok-kw">async throws</span> -&gt; <span class="tok-typ">Secret</span>
+}
+
+<span class="tok-kw">extension</span> <span class="tok-typ">SecretClient</span>: <span class="tok-typ">TestDependencyKey</span> {
+  <span class="tok-kw">static let</span> testValue = <span class="tok-typ">SecretClient</span>()    <span class="tok-cmt">// 전부 unimplemented</span>
+
+  <span class="tok-kw">static let</span> previewValue = <span class="tok-typ">SecretClient</span>(
+    fetchByID:    { _ <span class="tok-kw">in</span> <span class="tok-typ">Secret</span>.mock },
+    fetchByQuery: { _ <span class="tok-kw">in</span> <span class="tok-typ">Secret</span>.mockList },
+    revealAPIKeyPayload: { _ <span class="tok-kw">in</span> <span class="tok-typ">APIKeyPayload</span>.mock },
+    softDelete: { _ <span class="tok-kw">in</span> <span class="tok-typ">Secret</span>.mock },
+    restore:    { _ <span class="tok-kw">in</span> <span class="tok-typ">Secret</span>.mock }
+  )
+}
+
+<span class="tok-kw">extension</span> <span class="tok-typ">DependencyValues</span> {
+  <span class="tok-kw">var</span> secretClient: <span class="tok-typ">SecretClient</span> {
+    <span class="tok-kw">get</span> { <span class="tok-kw">self</span>[<span class="tok-typ">SecretClient.self</span>] }
+    <span class="tok-kw">set</span> { <span class="tok-kw">self</span>[<span class="tok-typ">SecretClient.self</span>] = newValue }
+  }
+}</code></pre>
+
+<p><strong>여기까지 DVPresentation은 DVData를 전혀 import하지 않습니다.</strong> <code>@DependencyClient</code> 매크로가 자동으로 <code>init</code>, <code>unimplemented</code> 기본값을 만들어 줍니다.</p>
+
+<blockquote>
+  <strong><code>TestDependencyKey</code> vs <code>DependencyKey</code></strong>
+  <ul>
+    <li><code>TestDependencyKey</code>: <code>testValue</code> + <code>previewValue</code>만 요구. <em>인터페이스 모듈</em>용.</li>
+    <li><code>DependencyKey</code>: <code>TestDependencyKey</code>를 상속하며 <code>liveValue</code>도 요구. <em>Composition Root</em>용.</li>
+  </ul>
+  분리해서 정의하면 인터페이스 모듈은 Live 의존성을 모른 채로 빌드·테스트할 수 있습니다.
+</blockquote>
+
+<h4>2단계: <code>liveValue</code> 조립 — App 타겟(Composition Root)에 둔다</h4>
+<p><code>liveValue</code>만 별도 파일로 App 타겟에 둡니다. <strong>여기가 우리 프로젝트의 유일한 Composition Root</strong>입니다. UseCaseImpl + RepositoryImpl + ServiceImpl을 <em>오직 이 한 곳에서만</em> 조립합니다.</p>
+
+<pre><code><span class="tok-cmt">// Devault/Sources/Dependencies/SecretClient+Live.swift</span>
+<span class="tok-kw">import</span> <span class="tok-typ">ComposableArchitecture</span>
+<span class="tok-kw">import</span> <span class="tok-typ">DVPresentation</span>
+<span class="tok-kw">import</span> <span class="tok-typ">DVDomain</span>
+<span class="tok-kw">import</span> <span class="tok-typ">DVData</span>
+
+<span class="tok-kw">extension</span> <span class="tok-typ">SecretClient</span>: <span class="tok-typ">DependencyKey</span> {
+
+  <span class="tok-kw">static let</span> liveValue: <span class="tok-typ">SecretClient</span> = {
+    <span class="tok-cmt">// ⬇️ Composition Root — Impl 인스턴스화는 전부 여기서만 일어남</span>
+    <span class="tok-kw">let</span> storage = <span class="tok-typ">LocalStorage</span>(<span class="tok-cmt">/* ... */</span>)
+    <span class="tok-kw">let</span> repository: <span class="tok-kw">any</span> <span class="tok-typ">SecretRepository</span> = <span class="tok-typ">SecretRepositoryImpl</span>(storage: storage)
+    <span class="tok-kw">let</span> crypto: <span class="tok-kw">any</span> <span class="tok-typ">SecretCryptoService</span> = <span class="tok-typ">SecretCryptoServiceImpl</span>(
+      keyStore: <span class="tok-typ">KeychainKeyStore</span>()
+    )
+    <span class="tok-kw">let</span> auth: <span class="tok-kw">any</span> <span class="tok-typ">UserAuthenticationService</span> = <span class="tok-typ">LocalUserAuthenticationServiceImpl</span>()
+
+    <span class="tok-kw">let</span> fetchUseCase: <span class="tok-kw">any</span> <span class="tok-typ">FetchSecretUseCase</span> = <span class="tok-typ">FetchSecretUseCaseImpl</span>(
+      repository: repository,
+      cryptoService: crypto,
+      authenticationService: auth
+    )
+    <span class="tok-kw">let</span> deleteUseCase: <span class="tok-kw">any</span> <span class="tok-typ">DeleteSecretUseCase</span> = <span class="tok-typ">DeleteSecretUseCaseImpl</span>(
+      repository: repository
+    )
+
+    <span class="tok-kw">return</span> <span class="tok-typ">SecretClient</span>(
+      fetchByID:    { <span class="tok-kw">try await</span> fetchUseCase.fetch(id: $0) },
+      fetchByQuery: { <span class="tok-kw">try await</span> fetchUseCase.fetch(query: $0) },
+      revealAPIKeyPayload: { id <span class="tok-kw">in</span>
+        <span class="tok-kw">try await</span> fetchUseCase.revealPayload(id: id, as: <span class="tok-typ">APIKeyPayload.self</span>)
+      },
+      softDelete: { <span class="tok-kw">try await</span> deleteUseCase.softDelete(id: $0) },
+      restore:    { <span class="tok-kw">try await</span> deleteUseCase.restore(id: $0) }
+    )
+  }()
+}</code></pre>
+
+<div class="table-wrap"><table>
+<thead><tr><th>값</th><th>정의 위치</th><th>언제 쓰이나</th><th>동작</th></tr></thead>
+<tbody>
+  <tr><td><code>liveValue</code></td><td>App 타겟 (<code>Devault</code>)</td><td>실제 앱 실행</td><td>DVData의 Impl 조립 후 실제 호출</td></tr>
+  <tr><td><code>testValue</code></td><td>DVPresentation</td><td>XCTest</td><td>호출하면 즉시 실패 — <em>override 안 한 호출을 잡아내는 안전망</em></td></tr>
+  <tr><td><code>previewValue</code></td><td>DVPresentation</td><td>SwiftUI Preview</td><td>즉시 mock 데이터 반환</td></tr>
+</tbody>
+</table></div>
+
+<blockquote>
+  <strong>왜 testValue는 unimplemented가 기본인가?</strong><br>
+  테스트할 때 <em>내가 명시적으로 override하지 않은 의존성</em>이 호출되면 <em>그 호출이 일어났다는 사실 자체가 버그</em>입니다. unimplemented는 그 호출에서 즉시 테스트를 실패시켜 알려줍니다.
+</blockquote>
+
+<blockquote>
+  <strong><code>static let liveValue = { ... }()</code>는 lazy + 1회 평가</strong><br>
+  앱 전체에서 한 번만 조립됩니다. 무거운 인스턴스(<code>LocalStorage</code>, <code>KeychainKeyStore</code> 등)는 거기서 한 번만 만들어 클로저들이 캡처합니다.
+</blockquote>
+
+<h4>3단계: 자동 등록 확인 — 별도 wiring 불필요</h4>
+<p><code>@Dependency(\.secretClient)</code>는 런타임 컨텍스트(live/test/preview)에 따라:</p>
+<ul>
+  <li>App 실행 중 → <code>DependencyKey.liveValue</code> (Devault 모듈에서 발견)</li>
+  <li>XCTest 중 → <code>TestDependencyKey.testValue</code></li>
+  <li>Preview 중 → <code>TestDependencyKey.previewValue</code></li>
+</ul>
+<p>App 타겟이 로드되는 순간 <code>DependencyKey</code> conformance가 자동 등록되므로, <strong><code>DevaultApp.swift</code>에서 별도의 wiring 코드는 필요 없습니다.</strong></p>
+
+<blockquote>
+  <strong>추가 제어가 필요할 때</strong><br>
+  통합 테스트나 빌드 변형에서 일부 Dependency만 미리 override하고 싶다면 App 시작 시 <code>prepareDependencies { $0.secretClient = .liveValue }</code>를 호출할 수 있습니다. 평상시엔 생략해도 됩니다.
+</blockquote>
+
+<h3>6.5 Reducer에서의 사용 — 우리 프로젝트 케이스</h3>
+<p><code>SecretClient</code>가 준비됐다면 Reducer는 깔끔합니다.</p>
+
+<pre><code><span class="tok-cmt">// DVPresentation/Sources/Features/SecretList/SecretListFeature.swift</span>
+<span class="tok-kw">import</span> <span class="tok-typ">ComposableArchitecture</span>
+<span class="tok-kw">import</span> <span class="tok-typ">DVDomain</span>    <span class="tok-cmt">// Secret, SecretQuery, SecretUseCaseError 같은 도메인 어휘만</span>
+
+<span class="tok-attr">@Reducer</span>
+<span class="tok-kw">struct</span> <span class="tok-typ">SecretListFeature</span> {
+
+  <span class="tok-attr">@ObservableState</span>
+  <span class="tok-kw">struct</span> <span class="tok-typ">State</span>: <span class="tok-typ">Equatable</span> {
+    <span class="tok-kw">var</span> secrets: <span class="tok-typ">IdentifiedArrayOf</span>&lt;<span class="tok-typ">Secret</span>&gt; = []
+    <span class="tok-kw">var</span> query: <span class="tok-typ">SecretQuery</span> = <span class="tok-typ">SecretQuery</span>()
+    <span class="tok-kw">var</span> isLoading = <span class="tok-kw">false</span>
+  }
+
+  <span class="tok-kw">enum</span> <span class="tok-typ">Action</span>: <span class="tok-typ">Equatable</span> {
+    <span class="tok-kw">case</span> task
+    <span class="tok-kw">case</span> secretsResponse(<span class="tok-typ">Result</span>&lt;[<span class="tok-typ">Secret</span>], <span class="tok-typ">SecretUseCaseError</span>&gt;)
+    <span class="tok-kw">case</span> didTapDelete(id: <span class="tok-typ">UUID</span>)
+    <span class="tok-kw">case</span> deleteResponse(<span class="tok-typ">Result</span>&lt;<span class="tok-typ">Secret</span>, <span class="tok-typ">SecretUseCaseError</span>&gt;)
+    <span class="tok-kw">case</span> delegate(<span class="tok-typ">Delegate</span>)
+    <span class="tok-kw">enum</span> <span class="tok-typ">Delegate</span>: <span class="tok-typ">Equatable</span> {}
+  }
+
+  <span class="tok-attr">@Dependency</span>(\.secretClient) <span class="tok-kw">var</span> secretClient
+
+  <span class="tok-kw">var</span> body: <span class="tok-kw">some</span> <span class="tok-typ">ReducerOf</span>&lt;<span class="tok-typ">Self</span>&gt; {
+    <span class="tok-typ">Reduce</span> { state, action <span class="tok-kw">in</span>
+      <span class="tok-kw">switch</span> action {
+      <span class="tok-kw">case</span> .task:
+        state.isLoading = <span class="tok-kw">true</span>
+        <span class="tok-kw">return</span> .run { [query = state.query] send <span class="tok-kw">in</span>
+          <span class="tok-kw">await</span> send(.secretsResponse(<span class="tok-typ">Result</span> {
+            <span class="tok-kw">try await</span> secretClient.fetchByQuery(query)
+          }.mapError { <span class="tok-typ">SecretUseCaseError</span>.map($0) }))
+        }
+
+      <span class="tok-kw">case</span> .secretsResponse(.success(<span class="tok-kw">let</span> secrets)):
+        state.isLoading = <span class="tok-kw">false</span>
+        state.secrets = <span class="tok-typ">IdentifiedArray</span>(uniqueElements: secrets)
+        <span class="tok-kw">return</span> .none
+
+      <span class="tok-kw">case</span> .secretsResponse(.failure):
+        state.isLoading = <span class="tok-kw">false</span>
+        <span class="tok-kw">return</span> .none
+
+      <span class="tok-kw">case</span> .didTapDelete(<span class="tok-kw">let</span> id):
+        <span class="tok-kw">return</span> .run { send <span class="tok-kw">in</span>
+          <span class="tok-kw">await</span> send(.deleteResponse(<span class="tok-typ">Result</span> {
+            <span class="tok-kw">try await</span> secretClient.softDelete(id)
+          }.mapError { <span class="tok-typ">SecretUseCaseError</span>.map($0) }))
+        }
+
+      <span class="tok-kw">case</span> .deleteResponse(.success(<span class="tok-kw">let</span> secret)):
+        state.secrets.remove(id: secret.id)
+        <span class="tok-kw">return</span> .none
+
+      <span class="tok-kw">case</span> .deleteResponse(.failure):
+        <span class="tok-kw">return</span> .none
+
+      <span class="tok-kw">case</span> .delegate:
+        <span class="tok-kw">return</span> .none
+      }
+    }
+  }
+}</code></pre>
+
+<p>Reducer는 <strong>DVDomain만 import</strong>합니다. <code>SecretClient</code> 인터페이스는 같은 모듈(DVPresentation) 안에 있어 자동으로 보입니다.</p>
+
+<h3>6.6 의존 그래프 (TCA + Composition Root 도입 후)</h3>
+
+<div class="diagram">Devault (App 타겟, @main)              ← Composition Root
+   │
+   ├─ SecretClient+Live.swift          (extension: DependencyKey, liveValue)
+   │     │
+   │     │  Impl 인스턴스화·그래프 조립
+   │     ▼
+   │   FetchSecretUseCaseImpl, DeleteSecretUseCaseImpl,
+   │   SecretRepositoryImpl, SecretCryptoServiceImpl, ...   (in DVDomain·DVData)
+   │
+   ▼
+DVPresentation                          ← TCA가 살지만 DVData는 모름
+   │
+   ├─ SecretListFeature                 (uses @Dependency(\.secretClient))
+   ├─ SecretClient struct + TestDependencyKey (testValue, previewValue)
+   │
+   ▼
+DVDomain  ←──  DVData                   ← TCA를 모름. 의존 화살표는 안쪽으로만</div>
+
+<p><strong>TCA를 아는 박스는 두 곳</strong>: DVPresentation의 Feature/Client 인터페이스, 그리고 App 타겟의 <code>liveValue</code> 한 줄.<br>
+<strong>DVData를 import하는 모듈도 두 곳</strong>: 자기 자신 + Composition Root(<code>Devault</code>). DVPresentation은 DVData를 모릅니다.</p>
+
+<h3>6.7 자주 빠지는 함정</h3>
+
+<blockquote>
+  <strong>함정 ① "UseCase 1개당 Client 1개?"</strong><br>
+  아닙니다. <strong>화면 단위로 묶는 게 자연스럽습니다.</strong> <code>SecretClient</code> 하나가 Fetch/Create/Delete/Patch UseCase를 모두 잡아도 OK. 어댑터의 결합 단위는 <em>Feature가 필요로 하는 인터페이스 묶음</em>입니다.
+</blockquote>
+
+<blockquote>
+  <strong>함정 ② "liveValue에서 Impl을 매번 new 하면 비싸지 않나?"</strong><br>
+  <code>static let liveValue = { ... }()</code>는 <strong>lazy + 1회 평가</strong>입니다. 앱 전체에서 한 번만 조립되고, 무거운 인스턴스는 거기서 한 번 만들어 클로저들이 캡처합니다.
+</blockquote>
+
+<blockquote>
+  <strong>함정 ③ "UseCase의 제네릭 메서드를 어떻게 다 클로저로 풀지?"</strong><br>
+  <code>revealPayload&lt;Payload&gt;</code> 같은 건 <em>Presentation에서 실제로 필요한 타입별로</em> 별개 함수로 풉니다 (<code>revealAPIKeyPayload</code>, <code>revealDatabasePayload</code>, ...). Domain은 제네릭 그대로 두고 어댑터에서만 풀어요.
+</blockquote>
+
+<blockquote>
+  <strong>함정 ④ "그럼 DVPresentation에서는 DVData를 어떻게 쓰지?"</strong><br>
+  <strong>쓰지 않습니다.</strong> DVPresentation은 인터페이스(<code>SecretClient</code> struct)와 mock(<code>testValue</code>/<code>previewValue</code>)만 압니다. 실제 Impl 조립은 App 타겟 <code>Devault</code>의 <code>+Live.swift</code> 파일이 책임집니다. 이게 Clean Architecture의 의존 화살표를 모듈 수준에서도 유지하는 방법입니다.
+</blockquote>
+
+<blockquote>
+  <strong>함정 ⑤ "Reducer가 Domain의 에러 타입을 알면 결합도가 높아지지 않나?"</strong><br>
+  Domain 모델(Entity, Error enum)은 <strong>공유 어휘</strong>입니다. View/Feature가 도메인 어휘를 아는 건 결합도가 아니라 응당함입니다. 결합도가 문제가 되는 건 <em>Reducer가 Repository 구현체나 Data 레이어 세부를 아는 경우</em>뿐입니다.
+</blockquote>
+
+<blockquote>
+  <strong>함정 ⑥ "<code>liveValue</code>가 App 타겟에 있으면 <code>@Dependency</code>가 자동으로 찾아주나?"</strong><br>
+  네. App 타겟이 로드되면 <code>extension SecretClient: DependencyKey</code>의 conformance가 등록되고, 런타임 환경(live)에 따라 자동으로 <code>liveValue</code>가 선택됩니다. 별도 wiring 코드는 필요 없습니다. 통합 테스트 등 명시적 제어가 필요하면 <code>prepareDependencies</code> 호출.
+</blockquote>
+
+<h3>6.8 금지 사항</h3>
+<ul>
+  <li>❌ <code>DVDomain</code>/<code>DVData</code>에서 <code>import ComposableArchitecture</code> — <strong>절대 금지</strong></li>
+  <li>❌ <code>DVPresentation</code>에서 <code>import DVData</code> — Live 조립은 App 타겟이 담당</li>
+  <li>❌ DVPresentation에 <code>DependencyKey.liveValue</code>를 정의 — <code>TestDependencyKey</code>만 정의</li>
+  <li>❌ Reducer 안에서 싱글톤 직접 호출 (<code>SomeService.shared.foo()</code>)</li>
+  <li>❌ Reducer 안에서 <code>UseCaseImpl()</code> / <code>RepositoryImpl()</code>을 직접 인스턴스화 — <code>liveValue</code> 안에서만</li>
+  <li>❌ DVDomain UseCase 프로토콜을 직접 <code>@Dependency</code>로 받기 — Client로 감싸기</li>
+  <li>❌ <code>@Dependency</code>를 View나 외부 함수에서 읽기 — Reducer 안에서만 의미가 있음</li>
+</ul>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-7">7. Navigation &amp; Composition</h2>
+
+<p>가장 헷갈리는 절입니다. <strong>상황별 의사결정 트리</strong>부터 보세요.</p>
+
+<div class="diagram">화면 위에 다른 화면을 띄우고 싶다
+    │
+    ├── 0~1개만 떠 있다 (시트/풀스크린/알럿/다이얼로그)
+    │       → 7.1  @Presents + ifLet + Destination enum
+    │
+    ├── 푸시 스택처럼 여러 화면이 쌓인다 (NavigationStack)
+    │       → 7.2  StackState + forEach + Path enum
+    │
+    └── 동일 타입 자식이 여러 개 동시에 존재한다 (리스트의 행 등)
+            → 7.3  IdentifiedArrayOf + forEach</div>
+
+<h3>7.1 단일 자식 화면 — <code>@Presents</code> + <code>ifLet</code></h3>
+<p>시트·풀스크린·알럿 등 <strong>0~1개 떠 있는</strong> 화면. 같은 위치에 <em>어떤 화면이 떠 있을지</em>는 enum으로 표현합니다.</p>
+
+<pre><code><span class="tok-attr">@ObservableState</span>
+<span class="tok-kw">struct</span> <span class="tok-typ">State</span>: <span class="tok-typ">Equatable</span> {
+  <span class="tok-attr">@Presents</span> <span class="tok-kw">var</span> destination: <span class="tok-typ">Destination.State</span>?
+}
+
+<span class="tok-attr">@Reducer</span>
+<span class="tok-kw">enum</span> <span class="tok-typ">Destination</span> {
+  <span class="tok-kw">case</span> detail(<span class="tok-typ">ProjectDetailFeature</span>)
+  <span class="tok-kw">case</span> addSheet(<span class="tok-typ">AddProjectFeature</span>)
+  <span class="tok-kw">case</span> deleteAlert(<span class="tok-typ">AlertState</span>&lt;<span class="tok-typ">Action.Alert</span>&gt;)
+}
+
+<span class="tok-kw">var</span> body: <span class="tok-kw">some</span> <span class="tok-typ">ReducerOf</span>&lt;<span class="tok-typ">Self</span>&gt; {
+  <span class="tok-typ">Reduce</span> { state, action <span class="tok-kw">in</span> <span class="tok-cmt">/* ... */</span> }
+    .ifLet(\.$destination, action: \.destination)
+}</code></pre>
+
+<blockquote>
+  <strong>왜 enum으로 묶나?</strong><br>
+  "한 번에 떠 있는 건 하나뿐"이라는 사실을 <em>타입으로</em> 표현합니다. <code>var sheet: AddProjectFeature.State?</code>, <code>var alert: AlertState?</code>, <code>var detail: ProjectDetailFeature.State?</code> 세 개를 각각 두면 <em>둘 이상이 동시에 nil이 아닌</em> 잘못된 상태가 모델링됩니다. enum이면 그게 불가능합니다.
+</blockquote>
+
+<h3>7.2 스택 네비게이션 — <code>StackState</code> + <code>forEach</code></h3>
+
+<pre><code><span class="tok-attr">@ObservableState</span>
+<span class="tok-kw">struct</span> <span class="tok-typ">State</span>: <span class="tok-typ">Equatable</span> {
+  <span class="tok-kw">var</span> path = <span class="tok-typ">StackState</span>&lt;<span class="tok-typ">Path.State</span>&gt;()
+}
+
+<span class="tok-attr">@Reducer</span>
+<span class="tok-kw">enum</span> <span class="tok-typ">Path</span> {
+  <span class="tok-kw">case</span> detail(<span class="tok-typ">ProjectDetailFeature</span>)
+  <span class="tok-kw">case</span> settings(<span class="tok-typ">SettingsFeature</span>)
+}
+
+<span class="tok-kw">var</span> body: <span class="tok-kw">some</span> <span class="tok-typ">ReducerOf</span>&lt;<span class="tok-typ">Self</span>&gt; {
+  <span class="tok-typ">Reduce</span> { state, action <span class="tok-kw">in</span> <span class="tok-cmt">/* ... */</span> }
+    .forEach(\.path, action: \.path)
+}</code></pre>
+
+<blockquote>
+  <strong>언제 StackState?</strong><br>
+  NavigationStack처럼 <em>깊이 들어갔다 돌아오기</em>를 표현할 때. 시트는 0~1개 자식이지만 스택은 N개 자식이 <em>순서대로</em> 쌓입니다.
+</blockquote>
+
+<h3>7.3 동등한 자식 컬렉션 — <code>forEach</code></h3>
+<p>리스트의 각 행이 자체 Feature를 가진 경우.</p>
+
+<pre><code><span class="tok-attr">@ObservableState</span>
+<span class="tok-kw">struct</span> <span class="tok-typ">State</span>: <span class="tok-typ">Equatable</span> {
+  <span class="tok-kw">var</span> rows: <span class="tok-typ">IdentifiedArrayOf</span>&lt;<span class="tok-typ">RowFeature.State</span>&gt; = []
+}
+
+<span class="tok-kw">enum</span> <span class="tok-typ">Action</span> {
+  <span class="tok-kw">case</span> rows(<span class="tok-typ">IdentifiedActionOf</span>&lt;<span class="tok-typ">RowFeature</span>&gt;)
+}
+
+<span class="tok-kw">var</span> body: <span class="tok-kw">some</span> <span class="tok-typ">ReducerOf</span>&lt;<span class="tok-typ">Self</span>&gt; {
+  <span class="tok-typ">Reduce</span> { <span class="tok-cmt">/* ... */</span> }
+    .forEach(\.rows, action: \.rows) {
+      <span class="tok-typ">RowFeature</span>()
+    }
+}</code></pre>
+
+<blockquote>
+  <strong>언제 행을 Feature로 만드나?</strong><br>
+  행마다 <em>독립적인 상태</em>(로딩, 토글, 펼침/접힘 등)나 <em>독립적인 사이드 이펙트</em>(이 행만의 fetch)가 필요할 때. 행이 단순한 표시용 카드라면 그냥 <code>IdentifiedArrayOf&lt;Project&gt;</code>를 State에 두고, 행 컴포넌트는 평범한 SwiftUI View로 두는 게 가볍습니다.
+</blockquote>
+
+<h3>7.4 Composition 원칙</h3>
+<ul>
+  <li><strong>부모는 자식의 State를 alloc/dealloc하고, 자식의 delegate Action만 듣는다.</strong></li>
+  <li>자식의 일반 Action에 부모가 분기를 다는 일은 최소화한다.</li>
+  <li>두 자식이 서로 통신해야 하면 <strong>공통 부모를 통해</strong> 한다. 자식끼리 직접 연결하지 않는다.</li>
+</ul>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-8">8. View</h2>
+
+<h3>8.1 Store 보유</h3>
+<ul>
+  <li>루트 View: <code>let store: StoreOf&lt;Feature&gt;</code> 또는 <code>@Bindable var store</code></li>
+  <li>양방향 바인딩이 필요한 화면: <code>@Bindable var store: StoreOf&lt;Feature&gt;</code></li>
+</ul>
+
+<pre><code><span class="tok-kw">struct</span> <span class="tok-typ">ProjectListView</span>: <span class="tok-typ">View</span> {
+  <span class="tok-attr">@Bindable</span> <span class="tok-kw">var</span> store: <span class="tok-typ">StoreOf</span>&lt;<span class="tok-typ">ProjectListFeature</span>&gt;
+
+  <span class="tok-kw">var</span> body: <span class="tok-kw">some</span> <span class="tok-typ">View</span> {
+    <span class="tok-typ">NavigationStack</span> {
+      content
+    }
+    .task { store.send(.task) }
+    .sheet(
+      item: $store.scope(state: \.destination?.addSheet, action: \.destination.addSheet)
+    ) { addStore <span class="tok-kw">in</span>
+      <span class="tok-typ">AddProjectView</span>(store: addStore)
+    }
+  }
+}</code></pre>
+
+<blockquote>
+  <strong><code>@Bindable</code> vs <code>let</code></strong><br>
+  View 안에서 <code>$store.searchText</code> 같은 양방향 바인딩이 <em>필요하면</em> <code>@Bindable</code>. 아니면 그냥 <code>let</code>.
+</blockquote>
+
+<h3>8.2 View 본문 규칙</h3>
+<p><a href="./CODING_GUIDELINES.md">CODING_GUIDELINES §3</a> 그대로 적용:</p>
+<ul>
+  <li><code>var body</code>에는 <strong>최상위 컨테이너 하나</strong>만</li>
+  <li>하위뷰는 <code>extension</code>에서 <code>private</code>로</li>
+</ul>
+
+<h3>8.3 View에서 절대 하지 말 것</h3>
+<ul>
+  <li>❌ View에서 <code>Task { ... }</code> 띄우고 비동기 작업</li>
+  <li>❌ View에서 직접 <code>@Dependency</code> 읽기</li>
+  <li>❌ <code>store.state.foo</code> 형태로 깊이 읽기 — Observation이 알아서 추적하니까 <code>store.foo</code>로 충분</li>
+  <li>❌ <code>ViewStore</code>, <code>WithViewStore</code> 사용 (1.7+ Observation 시대엔 deprecated 패턴)</li>
+  <li>❌ View에서 <code>if let</code> 으로 자식 상태 분기 후 자체 분기 처리 — 그건 Destination enum의 일</li>
+</ul>
+
+<pre><code><span class="tok-cmt">// ✅ Good</span>
+<span class="tok-typ">Text</span>(store.title)
+<span class="tok-typ">Button</span>(<span class="tok-str">"Add"</span>) { store.send(.didTapAddButton) }
+
+<span class="tok-cmt">// ❌ Bad — 옛날 자료 보고 따라 쓰기 쉬움</span>
+<span class="tok-typ">WithViewStore</span>(store, observe: { $0 }) { viewStore <span class="tok-kw">in</span>
+  <span class="tok-typ">Text</span>(viewStore.title)
+}</code></pre>
+
+<blockquote>
+  <strong>인터넷에서 옛날 TCA 코드를 봤다면</strong><br>
+  <code>ViewStore</code>, <code>WithViewStore</code>, <code>viewStore.binding(get:send:)</code> 같은 패턴은 1.7 이전 시대 코드입니다. 1.25에서는 <code>@ObservableState</code> + <code>@Bindable</code>로 단순화됐어요. 옛날 패턴을 신규 코드에 도입하지 마세요.
+</blockquote>
+
+<h3>8.4 바인딩</h3>
+<pre><code><span class="tok-cmt">// ✅ Good — @ObservableState + @Bindable이면 $store.프로퍼티로 바로 바인딩</span>
+<span class="tok-typ">TextField</span>(<span class="tok-str">"Search"</span>, text: $store.searchText)
+
+<span class="tok-cmt">// ❌ Bad — 옛날 방식</span>
+<span class="tok-typ">TextField</span>(<span class="tok-str">"Search"</span>, text: viewStore.binding(get: \.searchText, send: ...))</code></pre>
+
+<blockquote>이를 위해 Action에는 <code>BindableAction</code> + <code>binding(_:)</code> 케이스를 채택해도 좋습니다.</blockquote>
+
+<pre><code><span class="tok-kw">enum</span> <span class="tok-typ">Action</span>: <span class="tok-typ">BindableAction</span>, <span class="tok-typ">Equatable</span> {
+  <span class="tok-kw">case</span> binding(<span class="tok-typ">BindingAction</span>&lt;<span class="tok-typ">State</span>&gt;)
+  <span class="tok-kw">case</span> didTapAddButton
+  <span class="tok-cmt">// ...</span>
+}
+
+<span class="tok-kw">var</span> body: <span class="tok-kw">some</span> <span class="tok-typ">ReducerOf</span>&lt;<span class="tok-typ">Self</span>&gt; {
+  <span class="tok-typ">BindingReducer</span>()
+  <span class="tok-typ">Reduce</span> { <span class="tok-cmt">/* ... */</span> }
+}</code></pre>
+
+<blockquote>
+  <strong><code>BindingReducer</code>는 언제?</strong><br>
+  State 필드 <em>여러 개를</em> View에서 직접 편집할 때(폼 입력 등). 매 필드마다 <code>didChangeFoo(String)</code> Action을 만들지 않아도 됩니다.
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-9">9. Testing</h2>
+
+<h3>9.1 TestStore 기본형</h3>
+
+<pre><code><span class="tok-attr">@MainActor</span>
+<span class="tok-kw">func</span> test_didTapAdd_presentsAddSheet() <span class="tok-kw">async</span> {
+  <span class="tok-kw">let</span> store = <span class="tok-typ">TestStore</span>(initialState: <span class="tok-typ">ProjectListFeature.State</span>()) {
+    <span class="tok-typ">ProjectListFeature</span>()
+  } withDependencies: {
+    $0.projectClient.fetchAll = { [<span class="tok-typ">Project</span>.mock1, <span class="tok-typ">Project</span>.mock2] }
+    $0.uuid = .incrementing
+    $0.continuousClock = <span class="tok-typ">ImmediateClock</span>()
+  }
+
+  <span class="tok-kw">await</span> store.send(.didTapAddButton) {
+    $0.destination = .addSheet(<span class="tok-typ">AddProjectFeature.State</span>())
+  }
+}</code></pre>
+
+<blockquote>
+  <strong>trailing closure의 의미</strong><br>
+  <code>await store.send(.didTapAddButton) { $0.destination = ... }</code> 의 <code>{ ... }</code>는 <em>이 Action을 처리한 뒤 State가 이렇게 변했어야 한다</em>는 단언입니다. TestStore는 실제로 Reduce가 변경한 State와 비교해서 다르면 테스트 실패를 냅니다.
+</blockquote>
+
+<h3>9.2 규칙</h3>
+<ul>
+  <li>모든 Dependency는 <strong>테스트에서 명시적으로 override</strong>한다. unimplemented 호출이 나면 테스트 실패.</li>
+  <li><code>await store.send(...)</code>의 trailing closure에서 <strong>State 변경을 정확히 기술</strong>한다.</li>
+  <li>비동기 Effect 결과는 <code>await store.receive(\.액션)</code> 로 받는다.</li>
+  <li><code>store.exhaustivity = .off</code>는 <strong>임시 디버깅용</strong>. PR에 남기지 않는다.</li>
+</ul>
+
+<h3>9.3 권장 테스트 범위</h3>
+<ul>
+  <li>사용자 입력 Action → State 변화</li>
+  <li>Effect 응답 Action → State 변화 + 후속 Action</li>
+  <li>Delegate Action → 부모의 처리</li>
+  <li>취소 가능한 Effect의 취소 동작</li>
+</ul>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-10">10. 상황별 가이드 (Cookbook)</h2>
+<p>자주 마주치는 시나리오에 어떤 TCA 기술을 골라야 하는지 정리한 절입니다.</p>
+
+<h3>10.1 "버튼을 눌렀을 때 시트를 띄우고 싶다"</h3>
+<p>→ 7.1 <code>@Presents + Destination enum</code>. 시트가 한 종류뿐이라도 미래에 다른 시트가 추가될 수 있으니 처음부터 <code>Destination</code> enum으로 시작하세요.</p>
+
+<pre><code><span class="tok-kw">case</span> .didTapAddButton:
+  state.destination = .addSheet(<span class="tok-typ">AddProjectFeature.State</span>())
+  <span class="tok-kw">return</span> .none</code></pre>
+
+<h3>10.2 "리스트의 한 행을 누르면 상세 화면으로 푸시"</h3>
+<p>→ 7.2 <code>StackState + Path enum</code>. 시트가 아니라 <em>되돌아갈 수 있는 푸시</em>라면 스택이 맞습니다.</p>
+
+<pre><code><span class="tok-kw">case</span> .didTapRow(<span class="tok-kw">let</span> id):
+  <span class="tok-kw">guard let</span> project = state.projects[id: id] <span class="tok-kw">else</span> { <span class="tok-kw">return</span> .none }
+  state.path.append(.detail(<span class="tok-typ">ProjectDetailFeature.State</span>(project: project)))
+  <span class="tok-kw">return</span> .none</code></pre>
+
+<h3>10.3 "상세 화면에서 삭제했더니 리스트가 갱신돼야 한다"</h3>
+<p>→ 3.3 <code>delegate Action</code>. 자식이 일을 끝낸 후 <code>delegate(.projectDeleted(id))</code>를 보내고, 부모는 path/destination을 통해 그것을 받아 처리.</p>
+
+<pre><code><span class="tok-cmt">// 부모</span>
+<span class="tok-kw">case</span> .path(.element(_, .detail(.delegate(.projectDeleted(<span class="tok-kw">let</span> id))))):
+  state.projects.remove(id: id)
+  <span class="tok-kw">return</span> .none</code></pre>
+
+<h3>10.4 "검색창에 글자를 칠 때마다 fetch가 일어나면 안 됨"</h3>
+<p>→ 5.2 <code>cancellable + cancelInFlight: true</code>. 디바운스 + 직전 요청 취소.</p>
+
+<pre><code><span class="tok-kw">private enum</span> <span class="tok-typ">CancelID</span> { <span class="tok-kw">case</span> search }
+
+<span class="tok-kw">case</span> .didChangeSearchText(<span class="tok-kw">let</span> text):
+  state.searchText = text
+  <span class="tok-kw">return</span> .run { send <span class="tok-kw">in</span>
+    <span class="tok-kw">try await</span> clock.sleep(<span class="tok-kw">for</span>: .milliseconds(<span class="tok-num">300</span>))
+    <span class="tok-kw">await</span> send(.searchResponse(<span class="tok-typ">Result</span> { <span class="tok-kw">try await</span> projectClient.search(text) }))
+  }
+  .cancellable(id: <span class="tok-typ">CancelID</span>.search, cancelInFlight: <span class="tok-kw">true</span>)</code></pre>
+
+<h3>10.5 "화면에 들어왔을 때 데이터 불러오기"</h3>
+<p>→ View의 <code>.task { store.send(.task) }</code> + Reducer에서 <code>.run</code> Effect. <code>.task</code> 모디파이어는 View가 화면에 있는 동안만 살아 있어서, 사라지면 Effect가 자동 취소됩니다.</p>
+
+<pre><code><span class="tok-cmt">// View</span>
+<span class="tok-kw">var</span> body: <span class="tok-kw">some</span> <span class="tok-typ">View</span> {
+  content
+    .task { store.send(.task) }
+}
+
+<span class="tok-cmt">// Reducer</span>
+<span class="tok-kw">case</span> .task:
+  state.isLoading = <span class="tok-kw">true</span>
+  <span class="tok-kw">return</span> .run { send <span class="tok-kw">in</span>
+    <span class="tok-kw">await</span> send(.projectsResponse(<span class="tok-typ">Result</span> { <span class="tok-kw">try await</span> projectClient.fetchAll() }))
+  }</code></pre>
+
+<h3>10.6 "한 화면 안에서 여러 입력 필드를 바인딩"</h3>
+<p>→ 8.4 <code>BindableAction + BindingReducer</code>. 필드마다 <code>didChange...</code> Action을 만드는 대신 <code>$store.foo</code>로 바로 바인딩.</p>
+
+<h3>10.7 "다른 Feature의 State를 봐야 한다"</h3>
+<p>→ <strong>잘못된 신호</strong>. 두 Feature가 같은 데이터를 본다면 <em>공통 부모</em>에서 그 데이터를 들고 자식들에게 전달하세요. 자식이 다른 자식의 State를 직접 import하는 일은 없어야 합니다.</p>
+
+<h3>10.8 "로딩 / 빈 / 결과 / 에러 네 가지를 화면에 그려야 한다"</h3>
+<p>→ 2.4 <code>LoadingState</code> enum. 네 가지를 분기 가능한 enum으로 모델링하면 View는 단순한 switch 한 번이면 됩니다.</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-11">11. 안티패턴 모음</h2>
+
+<div class="table-wrap"><table>
+<thead><tr><th>안티패턴</th><th>왜 안 되나</th><th>대안</th></tr></thead>
+<tbody>
+  <tr><td>State에 <code>class</code> 또는 <code>ObservableObject</code></td><td>값 의미 깨짐, 테스트 불가</td><td>struct + computed</td></tr>
+  <tr><td>Reducer 안에서 <code>Task { ... }</code></td><td>취소·테스트 불가</td><td><code>.run { send in ... }</code></td></tr>
+  <tr><td>Action 이름이 동사 (<code>loadProjects</code>)</td><td>"해야 할 일"을 View가 결정하게 됨</td><td>"일어난 일" (<code>didTapRefresh</code>)</td></tr>
+  <tr><td>자식이 부모 State를 알고 변경</td><td>결합도 폭발</td><td><code>delegate(_)</code> Action</td></tr>
+  <tr><td><code>default:</code> 케이스</td><td>새 Action 추가 시 누락</td><td>exhaustive switch</td></tr>
+  <tr><td><code>WithViewStore</code> 신규 사용</td><td>1.7+ 에선 deprecated 패턴</td><td><code>@ObservableState</code> + <code>@Bindable</code></td></tr>
+  <tr><td>View에서 <code>Task { }</code></td><td>라이프사이클·취소 깨짐</td><td><code>.task { store.send(...) }</code> + Reducer Effect</td></tr>
+  <tr><td>싱글톤 직접 호출</td><td>테스트 불가, mock 불가</td><td><code>@Dependency</code></td></tr>
+  <tr><td><code>[Element]</code>로 행 관리</td><td>ID 라우팅 불가</td><td><code>IdentifiedArrayOf&lt;Element&gt;</code></td></tr>
+  <tr><td>State에 캐시된 파생값 저장</td><td>동기화 누락 위험</td><td>computed property</td></tr>
+</tbody>
+</table></div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-12">12. 리뷰 체크리스트 (AI 에이전트용)</h2>
+
+<blockquote>AI 에이전트는 PR 또는 Feature 코드 리뷰 요청 시 아래 항목을 <strong>순서대로</strong> 점검하고, 위반 사항을 항목 번호와 함께 보고한다. 각 항목은 <strong>위반 / 통과 / 해당 없음</strong> 중 하나로 판정한다.</blockquote>
+
+<h3>A. 파일 구조</h3>
+<ul class="checklist">
+  <li><strong>A1.</strong> Feature 디렉토리에 <code>{이름}Feature.swift</code>와 <code>{이름}View.swift</code>가 함께 있는가?</li>
+  <li><strong>A2.</strong> Reducer 타입 이름이 <code>~Feature</code> 형태인가? (<code>~ViewModel</code>, <code>~Store</code>, <code>~Reducer</code> 금지)</li>
+</ul>
+
+<h3>B. State</h3>
+<ul class="checklist">
+  <li><strong>B1.</strong> State에 <code>@ObservableState</code>가 붙어 있는가?</li>
+  <li><strong>B2.</strong> State가 <code>Equatable</code>을 채택했는가?</li>
+  <li><strong>B3.</strong> State 프로퍼티가 모두 값타입인가? (class/ObservableObject 사용 금지)</li>
+  <li><strong>B4.</strong> 자식 컬렉션이 <code>IdentifiedArrayOf&lt;...&gt;</code>인가?</li>
+  <li><strong>B5.</strong> 파생 데이터가 computed property로 노출되는가? (저장 금지)</li>
+  <li><strong>B6.</strong> "로딩 전"과 "빈 결과"가 구분되는 모델링인가?</li>
+</ul>
+
+<h3>C. Action</h3>
+<ul class="checklist">
+  <li><strong>C1.</strong> Action 이름이 "일어난 일"(이벤트형, 과거형)로 작성됐는가?</li>
+  <li><strong>C2.</strong> 부모에게 전달할 결과가 <code>delegate(_)</code> Action으로 분리됐는가?</li>
+  <li><strong>C3.</strong> 자식 Feature 결합이 <code>destination</code>/<code>path</code>/<code>{자식}</code> 형태로 일관되게 명명됐는가?</li>
+  <li><strong>C4.</strong> Action이 가능한 한 <code>Equatable</code>인가?</li>
+  <li><strong>C5.</strong> Action enum이 의미별 그룹(View/Internal/Child/Delegate)으로 정리됐는가?</li>
+</ul>
+
+<h3>D. Reducer</h3>
+<ul class="checklist">
+  <li><strong>D1.</strong> <code>@Reducer</code> 매크로를 사용했는가?</li>
+  <li><strong>D2.</strong> <code>Reduce</code> 안의 <code>switch</code>가 <strong>exhaustive</strong>한가? (<code>default</code> 금지)</li>
+  <li><strong>D3.</strong> 각 case 본문이 5~10줄 이내인가? (초과 시 helper로 분리)</li>
+  <li><strong>D4.</strong> Reducer 안에서 <code>Task { ... }</code>를 직접 띄우지 않는가?</li>
+  <li><strong>D5.</strong> Reducer 안에서 <code>URLSession</code>, <code>Date()</code>, <code>UUID()</code>, 싱글톤을 직접 호출하지 않는가?</li>
+  <li><strong>D6.</strong> 자식 결합이 <code>Scope</code>/<code>ifLet</code>/<code>forEach</code> 중 적절한 것으로 됐는가?</li>
+  <li><strong>D7.</strong> Reducer가 View 표현(색·문자열) 결정을 하지 않는가?</li>
+</ul>
+
+<h3>E. Effect</h3>
+<ul class="checklist">
+  <li><strong>E1.</strong> 비동기 작업이 전부 <code>.run { send in ... }</code>로 표현됐는가?</li>
+  <li><strong>E2.</strong> State 캡처가 캡처 리스트 <code>[x = state.x]</code>로 명시됐는가? (<code>state.x</code> 직접 참조 금지)</li>
+  <li><strong>E3.</strong> 디바운스·중복 방지가 필요한 Effect가 <code>cancellable(id:cancelInFlight:)</code>을 쓰는가?</li>
+  <li><strong>E4.</strong> 에러가 묵살되지 않고 응답 Action(<code>Result</code>)으로 돌아오는가?</li>
+  <li><strong>E5.</strong> <code>CancelID</code>가 case 없는 enum으로 정의됐는가?</li>
+</ul>
+
+<h3>F. Dependency</h3>
+<ul class="checklist">
+  <li><strong>F1.</strong> 외부 호출이 모두 <code>@Dependency</code>로 주입됐는가?</li>
+  <li><strong>F2.</strong> Client가 <code>@DependencyClient</code>로 정의되고 <code>liveValue</code>/<code>testValue</code>/<code>previewValue</code>를 제공하는가?</li>
+  <li><strong>F3.</strong> <code>DependencyValues</code> extension으로 키가 등록됐는가?</li>
+  <li><strong>F4.</strong> Reducer/View에서 싱글톤(<code>.shared</code>) 직접 호출이 없는가?</li>
+</ul>
+
+<h3>G. Navigation</h3>
+<ul class="checklist">
+  <li><strong>G1.</strong> 0~1개 자식 화면이 <code>@Presents</code> + <code>ifLet</code>으로 구성됐는가?</li>
+  <li><strong>G2.</strong> 다중 화면 스택이 <code>StackState</code> + <code>forEach</code>로 구성됐는가?</li>
+  <li><strong>G3.</strong> 두 자식이 서로 통신할 때 공통 부모를 거치는가? (자식끼리 직접 연결 금지)</li>
+</ul>
+
+<h3>H. View</h3>
+<ul class="checklist">
+  <li><strong>H1.</strong> View가 <code>let store</code> 또는 <code>@Bindable var store</code>로 Store를 보유하는가?</li>
+  <li><strong>H2.</strong> <code>WithViewStore</code>/<code>ViewStore</code>가 신규 코드에 사용되지 않았는가?</li>
+  <li><strong>H3.</strong> View가 직접 <code>Task { ... }</code>를 띄우지 않는가? (<code>.task { store.send(...) }</code> 사용)</li>
+  <li><strong>H4.</strong> View에서 <code>@Dependency</code>를 직접 읽지 않는가?</li>
+  <li><strong>H5.</strong> 바인딩이 <code>$store.프로퍼티</code> 또는 <code>BindingReducer</code> 패턴인가?</li>
+  <li><strong>H6.</strong> <code>var body</code>에 최상위 컨테이너 하나만 있고 하위뷰가 <code>private</code> extension으로 분리됐는가?</li>
+</ul>
+
+<h3>I. Testing</h3>
+<ul class="checklist">
+  <li><strong>I1.</strong> Feature에 <code>TestStore</code> 기반 단위 테스트가 존재하는가?</li>
+  <li><strong>I2.</strong> 테스트에서 모든 Dependency가 명시적으로 override됐는가?</li>
+  <li><strong>I3.</strong> <code>store.exhaustivity = .off</code>가 코드에 남아 있지 않은가?</li>
+  <li><strong>I4.</strong> Delegate 동작에 대한 테스트가 있는가? (자식 → 부모 상호작용)</li>
+</ul>
+
+<h3>J. 코드 스타일</h3>
+<ul class="checklist">
+  <li><strong>J1.</strong> <a href="./CODING_GUIDELINES.md">CODING_GUIDELINES.md</a>의 규칙(접근 제어, MARK 구분, 임포트 순서)을 따르는가?</li>
+  <li><strong>J2.</strong> 강제 언래핑(<code>!</code>)이 없는가?</li>
+  <li><strong>J3.</strong> Action 이름이 <a href="./CODING_GUIDELINES.md">CODING_GUIDELINES §1</a>의 "이벤트 핸들러 과거형" 규칙과 일치하는가?</li>
+</ul>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sec-13">13. 리뷰 출력 형식 (AI 에이전트용)</h2>
+<p>리뷰 결과는 아래 형식으로 작성한다.</p>
+
+<div class="review-template">## TCA Convention Review
+
+### <span class="crit">🚨 Critical (반드시 수정)</span>
+- [D2] ProjectListFeature.swift:42 — switch에 default 케이스가 있음. 모든 Action을 명시적으로 처리해야 함.
+- [E2] ProjectListFeature.swift:78 — .run 클로저 안에서 state.id를 직접 참조. 캡처 리스트로 옮길 것.
+
+### <span class="warn">⚠️ Warning (개선 권장)</span>
+- [C1] Action `loadProjects` — 명령형. `onAppear` 또는 `didTapRefreshButton`으로 변경 권장.
+- [B5] State.filteredProjects가 저장 프로퍼티. computed property로 변경.
+
+### <span class="sug">💡 Suggestion (선택)</span>
+- [C5] Action enum이 그룹화되지 않음. View/Internal/Delegate 섹션으로 MARK 구분 권장.
+
+### <span class="pass">✅ Passed</span>
+- @Reducer, @ObservableState 모두 적용
+- TestStore 기반 테스트 존재 및 Dependency override 정상</div>
+
+<p>각 지적에는 <strong>항목 번호([D2] 등)</strong>, <strong>파일:라인</strong>, <strong>위반 내용</strong>, <strong>수정 방향</strong>을 포함한다.</p>
+
+</main>
+</div>
+</body>
+</html>
