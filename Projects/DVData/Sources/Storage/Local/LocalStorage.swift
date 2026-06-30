@@ -3,20 +3,19 @@
 import SwiftData
 
 public final class LocalStorage {
-    public static let shared = LocalStorage()
+    public let modelContainer: ModelContainer
 
-    private init() { }
+    public init(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
+    }
 
-    public lazy var modelContainer: ModelContainer = {
+    public static func makeDefault() throws -> LocalStorage {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: false)
+        let modelContainer = try ModelContainer(
+            for: Schema.appSchema,
+            configurations: configuration
+        )
 
-        do {
-            return try ModelContainer(
-                for: Schema.appSchema,
-                configurations: configuration
-            )
-        } catch {
-            fatalError("Failed to create ModelContainer: \(error)")
-        }
-    }()
+        return LocalStorage(modelContainer: modelContainer)
+    }
 }
