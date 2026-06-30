@@ -15,13 +15,13 @@ struct KeychainKeyStore: Sendable {
     
     /// tag에 해당하는 symmetric key를 조회하고, 없으면 새 key를 생성해 Keychain에 저장한다.
     func getOrCreateSymmetricKey(tag: String) throws -> SymmetricKey {
-        if let data = try loadKeyData(tag: tag) {
-            return SymmetricKey(data: data)
+        if let existing = try loadKeyData(tag: tag) {
+            return SymmetricKey(data: existing)
         }
         
-        let data = try generateKeyData()
-        try saveKeyData(data, tag: tag)
-        return SymmetricKey(data: data)
+        let generated = try generateKeyData()
+        let resolved = try saveOrLoadExistingKeyData(generated, tag: tag)
+        return SymmetricKey(data: resolved)
     }
 
     /// tag에 해당하는 symmetric key를 조회하고, 없으면 keyUnavailable 오류를 던진다.
@@ -59,8 +59,8 @@ extension KeychainKeyStore {
         return data
     }
 
-    /// raw key Data를 Keychain에 저장하고, 기존 item이 있으면 갱신한다.
-    private func saveKeyData(_ data: Data, tag: String) throws {
+    /// raw key Data를 Keychain에 저장하고, 이미 생성된 item이 있으면 기존 값을 사용한다.
+    private func saveOrLoadExistingKeyData(_ data: Data, tag: String) throws -> Data {
         let query = keyQuery(tag: tag)
 
         let attributes: [CFString: Any] = [
@@ -74,16 +74,17 @@ extension KeychainKeyStore {
         let status = SecItemAdd(addQuery as CFDictionary, nil)
 
         if status == errSecDuplicateItem {
-            let updateStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
-            guard updateStatus == errSecSuccess else {
-                throw SecretCryptoError.keychainFailure(status: updateStatus)
+            guard let existingData = try loadKeyData(tag: tag) else {
+                throw SecretCryptoError.keychainFailure(status: status)
             }
-            return
+            return existingData
         }
 
         guard status == errSecSuccess else {
             throw SecretCryptoError.keychainFailure(status: status)
         }
+
+        return data
     }
 
     /// service와 tag로 Keychain key item을 식별하는 기본 query를 만든다.
