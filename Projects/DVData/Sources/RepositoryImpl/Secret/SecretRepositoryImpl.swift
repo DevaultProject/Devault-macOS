@@ -117,6 +117,81 @@ public actor SecretRepositoryImpl: SecretRepository {
             throw SecretRepositoryError.persistenceFailed
         }
     }
+
+    public func fetchProjects(secretID: UUID) async throws -> [DVDomain.Project] {
+        do {
+            guard let localSecret = try fetchLocalSecret(id: secretID) else {
+                throw SecretRepositoryError.notFound(id: secretID)
+            }
+
+            return localSecret.projects
+                .sorted { $0.name < $1.name }
+                .map { $0.toDomain() }
+        } catch let error as SecretRepositoryError {
+            throw error
+        } catch {
+            throw SecretRepositoryError.persistenceFailed
+        }
+    }
+
+    public func linkProject(secretID: UUID, projectID: UUID) async throws {
+        do {
+            guard let localSecret = try fetchLocalSecret(id: secretID) else {
+                throw SecretRepositoryError.notFound(id: secretID)
+            }
+
+            guard let localProject = try fetchLocalProject(id: projectID) else {
+                throw SecretRepositoryError.projectNotFound(id: projectID)
+            }
+
+            if try fetchLocalProjectLink(secretID: secretID, projectID: projectID) != nil {
+                throw SecretRepositoryError.duplicateProjectLink(
+                    secretID: secretID,
+                    projectID: projectID
+                )
+            }
+
+            let link = SwiftDataModel.SecretProjectLink(
+                project: localProject,
+                secret: localSecret
+            )
+            modelContext.insert(link)
+            try modelContext.save()
+        } catch let error as SecretRepositoryError {
+            throw error
+        } catch {
+            throw SecretRepositoryError.persistenceFailed
+        }
+    }
+
+    public func unlinkProject(secretID: UUID, projectID: UUID) async throws {
+        do {
+            guard try fetchLocalSecret(id: secretID) != nil else {
+                throw SecretRepositoryError.notFound(id: secretID)
+            }
+
+            guard try fetchLocalProject(id: projectID) != nil else {
+                throw SecretRepositoryError.projectNotFound(id: projectID)
+            }
+
+            guard let link = try fetchLocalProjectLink(
+                secretID: secretID,
+                projectID: projectID
+            ) else {
+                throw SecretRepositoryError.projectLinkNotFound(
+                    secretID: secretID,
+                    projectID: projectID
+                )
+            }
+
+            modelContext.delete(link)
+            try modelContext.save()
+        } catch let error as SecretRepositoryError {
+            throw error
+        } catch {
+            throw SecretRepositoryError.persistenceFailed
+        }
+    }
 }
 
 extension SecretRepositoryImpl {
@@ -126,6 +201,30 @@ extension SecretRepositoryImpl {
         )
         descriptor.fetchLimit = 1
         return try modelContext.fetch(descriptor).first
+    }
+
+    private func fetchLocalProject(id: UUID) throws -> SwiftDataModel.Project? {
+        var descriptor = FetchDescriptor<SwiftDataModel.Project>(
+            predicate: #Predicate { $0.id == id }
+        )
+        descriptor.fetchLimit = 1
+        return try modelContext.fetch(descriptor).first
+    }
+
+    private func fetchLocalProjectLink(
+        secretID: UUID,
+        projectID: UUID
+    ) throws -> SwiftDataModel.SecretProjectLink? {
+        let linkKey = projectLinkKey(secretID: secretID, projectID: projectID)
+        var descriptor = FetchDescriptor<SwiftDataModel.SecretProjectLink>(
+            predicate: #Predicate { $0.linkKey == linkKey }
+        )
+        descriptor.fetchLimit = 1
+        return try modelContext.fetch(descriptor).first
+    }
+
+    private func projectLinkKey(secretID: UUID, projectID: UUID) -> String {
+        "\(projectID.uuidString):\(secretID.uuidString)"
     }
 
     /// SecretPatch를 SwiftData model에 반영
