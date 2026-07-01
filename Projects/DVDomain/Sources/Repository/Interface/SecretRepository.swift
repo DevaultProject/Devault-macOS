@@ -8,4 +8,8 @@ public protocol SecretRepository: Sendable {
     func fetch(_ query: SecretQuery) async throws -> [Secret]
     func patch(id: UUID, with patch: SecretPatch) async throws -> Secret
     func delete(id: UUID) async throws
+    
+    func fetchProjects(secretID: UUID) async throws -> [Project]
+    func linkProject(secretID: UUID, projectID: UUID) async throws
+    func unlinkProject(secretID: UUID, projectID: UUID) async throws
 }
