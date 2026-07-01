@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// 아직 저장되지 않은 Secret 초안 정보를 표현합니다.
+/// 아직 저장되지 않은 Secret 초안 정보를 표현합니다. 암호화 결과 등의 생성 책임을 UseCase 안으로 모으는 역할.
 public struct SecretDraft: Equatable, Sendable {
     public var name: String
     public var secretType: String
