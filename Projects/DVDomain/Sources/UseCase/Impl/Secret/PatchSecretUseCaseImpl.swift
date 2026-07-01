@@ -26,50 +26,58 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
         }
     }
 
-    public func updatePayload<Payload: SecretPayloadData>(
+    public func update<Payload: SecretPayloadData>(
         id: UUID,
-        payload: Payload
+        patch: SecretPatch,
+        payload: Payload,
+        projectIDs: [UUID]
     ) async throws -> Secret {
         do {
             let encryptedPayload = try await cryptoService.encryptPayload(payload)
-            let now = dateProvider()
-            let patch = SecretPatch(
-                payload: .set(encryptedPayload),
-                updatedAt: .set(now)
-            )
-            return try await repository.patch(id: id, with: patch)
+            var fullPatch = patch
+            fullPatch.payload = .set(encryptedPayload)
+            fullPatch.updatedAt = .set(dateProvider())
+            let updated = try await repository.patch(id: id, with: fullPatch)
+            try await reconcileProjects(secretID: id, desiredIDs: projectIDs)
+            return updated
         } catch {
             throw SecretUseCaseError.map(error)
         }
     }
 
-    public func updateMetadata<Metadata: SecretMetadataContent>(
+    public func update<Payload: SecretPayloadData, Metadata: SecretMetadataContent>(
         id: UUID,
-        metadata: Metadata
+        patch: SecretPatch,
+        payload: Payload,
+        metadata: Metadata,
+        projectIDs: [UUID]
     ) async throws -> Secret {
         do {
+            let encryptedPayload = try await cryptoService.encryptPayload(payload)
             let encodedMetadata = try cryptoService.encodeMetadata(metadata)
-            let now = dateProvider()
-            let patch = SecretPatch(
-                metadata: .set(encodedMetadata),
-                updatedAt: .set(now)
-            )
-            return try await repository.patch(id: id, with: patch)
+            var fullPatch = patch
+            fullPatch.payload = .set(encryptedPayload)
+            fullPatch.metadata = .set(encodedMetadata)
+            fullPatch.updatedAt = .set(dateProvider())
+            let updated = try await repository.patch(id: id, with: fullPatch)
+            try await reconcileProjects(secretID: id, desiredIDs: projectIDs)
+            return updated
         } catch {
             throw SecretUseCaseError.map(error)
         }
     }
 
-    public func removeMetadata(id: UUID) async throws -> Secret {
-        do {
-            let now = dateProvider()
-            let patch = SecretPatch(
-                metadata: .set(nil),
-                updatedAt: .set(now)
-            )
-            return try await repository.patch(id: id, with: patch)
-        } catch {
-            throw SecretUseCaseError.map(error)
+}
+
+private extension PatchSecretUseCaseImpl {
+    func reconcileProjects(secretID: UUID, desiredIDs: [UUID]) async throws {
+        let currentIDs = Set(try await repository.fetchProjects(secretID: secretID).map(\.id))
+        let desiredIDs = Set(desiredIDs)
+        for projectID in desiredIDs.subtracting(currentIDs) {
+            try await repository.linkProject(secretID: secretID, projectID: projectID)
+        }
+        for projectID in currentIDs.subtracting(desiredIDs) {
+            try await repository.unlinkProject(secretID: secretID, projectID: projectID)
         }
     }
 }
