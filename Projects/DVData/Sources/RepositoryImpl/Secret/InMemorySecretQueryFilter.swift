@@ -19,10 +19,10 @@ enum InMemorySecretQueryFilter {
             return true
         }
 
-        let fields = [
+        let fields: [String?] = [
             secret.name,
-            secret.secretType,
-            secret.subType,
+            secret.secretType.rawValue,
+            secret.subType?.rawValue,
             secret.service,
             secret.environment,
             secret.memo,
