@@ -1,5 +1,6 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import DVDomain
 import Foundation
 import SwiftData
 
@@ -30,5 +31,16 @@ extension SwiftDataModel {
             self.updatedAt = updatedAt
             self.secretLinks = []
         }
+    }
+}
+
+extension SwiftDataModel.Project {
+    func toDomain() -> DVDomain.Project {
+        DVDomain.Project(
+            id: id,
+            name: name,
+            createdAt: createdAt,
+            updatedAt: updatedAt
+        )
     }
 }
