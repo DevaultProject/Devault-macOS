@@ -4,24 +4,35 @@ import DVPresentation
 import SwiftUI
 
 struct ContentView: View {
-    private let repository: SecretRepositoryImpl
+    private let secretRepository: SecretRepositoryImpl
+    private let projectRepository: ProjectRepositoryImpl
     private let cryptoService = SecretCryptoServiceImpl()
     private let authenticationService = LocalUserAuthenticationServiceImpl()
 
     init(storage: LocalStorage) {
-        self.repository = SecretRepositoryImpl(modelContainer: storage.modelContainer)
+        self.secretRepository = SecretRepositoryImpl(modelContainer: storage.modelContainer)
+        self.projectRepository = ProjectRepositoryImpl(modelContainer: storage.modelContainer)
     }
 
     var body: some View {
-        SecretUseCaseDemoView(
+        ProjectSecretRelationDemoView(
+            createProjectUseCase: CreateProjectUseCaseImpl(
+                repository: projectRepository
+            ),
+            fetchProjectUseCase: FetchProjectUseCaseImpl(
+                repository: projectRepository
+            ),
             createSecretUseCase: CreateSecretUseCaseImpl(
-                repository: repository,
+                repository: secretRepository,
                 cryptoService: cryptoService
             ),
             fetchSecretUseCase: FetchSecretUseCaseImpl(
-                repository: repository,
+                repository: secretRepository,
                 cryptoService: cryptoService,
                 authenticationService: authenticationService
+            ),
+            secretProjectRelationUseCase: SecretProjectRelationUseCaseImpl(
+                repository: secretRepository
             )
         )
     }
