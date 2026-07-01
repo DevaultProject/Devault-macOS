@@ -15,8 +15,8 @@ public actor SecretRepositoryImpl: SecretRepository {
             let localSecret = SwiftDataModel.Secret(
                 id: secret.id,
                 name: secret.name,
-                secretType: secret.secretType,
-                subType: secret.subType,
+                secretType: secret.secretType.rawValue,
+                subType: secret.subType?.rawValue,
                 service: secret.service,
                 environment: secret.environment,
                 expiresAt: secret.expiresAt,
@@ -233,10 +233,10 @@ extension SecretRepositoryImpl {
             secret.name = name
         }
         if case let .set(secretType) = patch.secretType {
-            secret.secretType = secretType
+            secret.secretType = secretType.rawValue
         }
         if case let .set(subType) = patch.subType {
-            secret.subType = subType
+            secret.subType = subType?.rawValue
         }
         if case let .set(service) = patch.service {
             secret.service = service

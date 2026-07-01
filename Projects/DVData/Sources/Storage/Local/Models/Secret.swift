@@ -80,8 +80,8 @@ extension SwiftDataModel.Secret {
         return DVDomain.Secret(
             id: id,
             name: name,
-            secretType: secretType,
-            subType: subType,
+            secretType: DVDomain.SecretType(rawValue: secretType) ?? .etc,
+            subType: subType.flatMap(DVDomain.SecretSubType.init(rawValue:)),
             service: service,
             environment: environment,
             expiresAt: expiresAt,

@@ -3,15 +3,14 @@
 import Foundation
 
 enum SecretUseCaseHelper {
-    /// Secret 초안의 기본 필수값을 검증합니다.
-    static func validateDraft(_ draft: SecretDraft) throws {
-        guard !draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw SecretUseCaseError.invalidName
-        }
+    /// Secret 초안의 이름을 정규화하고 필수값을 검증한 초안을 반환합니다.
+    static func normalizedDraft(_ draft: SecretDraft) throws -> SecretDraft {
+        let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { throw SecretUseCaseError.invalidName }
 
-        guard !draft.secretType.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw SecretUseCaseError.invalidSecretType
-        }
+        var normalized = draft
+        normalized.name = name
+        return normalized
     }
 
     /// patch에 updatedAt이 없으면 전달받은 시각으로 채웁니다.
