@@ -22,7 +22,8 @@ public struct CreateSecretUseCaseImpl: CreateSecretUseCase {
 
     public func execute<Payload: SecretPayloadData>(
         draft: SecretDraft,
-        payload: Payload
+        payload: Payload,
+        projectIDs: [UUID]
     ) async throws -> Secret {
         do {
             try SecretUseCaseHelper.validateDraft(draft)
@@ -42,7 +43,7 @@ public struct CreateSecretUseCaseImpl: CreateSecretUseCase {
                 updatedAt: now,
                 payload: encryptedPayload
             )
-            return try await repository.create(secret)
+            return try await createAndLink(secret, projectIDs: projectIDs)
         } catch {
             throw SecretUseCaseError.map(error)
         }
@@ -51,7 +52,8 @@ public struct CreateSecretUseCaseImpl: CreateSecretUseCase {
     public func execute<Payload: SecretPayloadData, Metadata: SecretMetadataContent>(
         draft: SecretDraft,
         payload: Payload,
-        metadata: Metadata
+        metadata: Metadata,
+        projectIDs: [UUID]
     ) async throws -> Secret {
         do {
             try SecretUseCaseHelper.validateDraft(draft)
@@ -73,9 +75,25 @@ public struct CreateSecretUseCaseImpl: CreateSecretUseCase {
                 payload: encryptedPayload,
                 metadata: encodedMetadata
             )
-            return try await repository.create(secret)
+            return try await createAndLink(secret, projectIDs: projectIDs)
         } catch {
             throw SecretUseCaseError.map(error)
         }
+    }
+
+}
+
+private extension CreateSecretUseCaseImpl {
+    func createAndLink(_ secret: Secret, projectIDs: [UUID]) async throws -> Secret {
+        let created = try await repository.create(secret)
+        do {
+            for projectID in projectIDs {
+                try await repository.linkProject(secretID: created.id, projectID: projectID)
+            }
+        } catch {
+            try? await repository.delete(id: created.id)
+            throw error
+        }
+        return created
     }
 }
