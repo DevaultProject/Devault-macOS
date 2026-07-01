@@ -127,7 +127,7 @@ private extension SecretUseCaseDemoView {
                 Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 10) {
                     resultRow("ID", selectedSecret.id.uuidString)
                     resultRow("Name", selectedSecret.name)
-                    resultRow("Type", selectedSecret.secretType)
+                    resultRow("Type", selectedSecret.secretType.rawValue)
                     resultRow("Service", selectedSecret.service ?? "-")
                     resultRow("Environment", selectedSecret.environment ?? "-")
                     resultRow("Liked", selectedSecret.liked ? "true" : "false")
@@ -173,7 +173,8 @@ private extension SecretUseCaseDemoView {
             let timestamp = Int(Date().timeIntervalSince1970)
             let draft = SecretDraft(
                 name: "Demo Secret \(timestamp)",
-                secretType: "apiKey",
+                secretType: .apiKeyToken,
+                subType: .apiKey,
                 service: "github",
                 environment: "development",
                 memo: "Created from temporary Presentation UseCase demo",
@@ -185,7 +186,8 @@ private extension SecretUseCaseDemoView {
             let created = try await createSecretUseCase.execute(
                 draft: draft,
                 payload: payload,
-                metadata: metadata
+                metadata: metadata,
+                projectIDs: []
             )
             secrets = try await fetchSecretUseCase.fetch(query: SecretQuery())
             selectedSecret = try await fetchSecretUseCase.fetch(id: created.id)
