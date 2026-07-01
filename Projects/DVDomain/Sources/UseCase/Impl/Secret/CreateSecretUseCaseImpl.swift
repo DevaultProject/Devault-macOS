@@ -26,7 +26,7 @@ public struct CreateSecretUseCaseImpl: CreateSecretUseCase {
         projectIDs: [UUID]
     ) async throws -> Secret {
         do {
-            try SecretUseCaseHelper.validateDraft(draft)
+            let draft = try SecretUseCaseHelper.normalizedDraft(draft)
             let now = dateProvider()
             let encryptedPayload = try await cryptoService.encryptPayload(payload)
             let secret = Secret(
@@ -56,7 +56,7 @@ public struct CreateSecretUseCaseImpl: CreateSecretUseCase {
         projectIDs: [UUID]
     ) async throws -> Secret {
         do {
-            try SecretUseCaseHelper.validateDraft(draft)
+            let draft = try SecretUseCaseHelper.normalizedDraft(draft)
             let now = dateProvider()
             let encryptedPayload = try await cryptoService.encryptPayload(payload)
             let encodedMetadata = try cryptoService.encodeMetadata(metadata)

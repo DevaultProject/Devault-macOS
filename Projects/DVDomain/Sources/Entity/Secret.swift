@@ -5,8 +5,8 @@ import Foundation
 public struct Secret: Equatable, Identifiable, Sendable {
     public var id: UUID
     public var name: String
-    public var secretType: String
-    public var subType: String?
+    public var secretType: SecretType
+    public var subType: SecretSubType?
     public var service: String?
     public var environment: String?
     public var expiresAt: Date?
@@ -21,8 +21,8 @@ public struct Secret: Equatable, Identifiable, Sendable {
     public init(
         id: UUID,
         name: String,
-        secretType: String,
-        subType: String? = nil,
+        secretType: SecretType,
+        subType: SecretSubType? = nil,
         service: String? = nil,
         environment: String? = nil,
         expiresAt: Date? = nil,

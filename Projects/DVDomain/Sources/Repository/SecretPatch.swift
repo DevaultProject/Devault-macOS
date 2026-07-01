@@ -5,8 +5,8 @@ import Foundation
 /// Secret의 일부 필드 변경 요청을 표현합니다.
 public struct SecretPatch: Equatable, Sendable {
     public var name: PatchField<String>
-    public var secretType: PatchField<String>
-    public var subType: PatchField<String?>
+    public var secretType: PatchField<SecretType>
+    public var subType: PatchField<SecretSubType?>
     public var service: PatchField<String?>
     public var environment: PatchField<String?>
     public var expiresAt: PatchField<Date?>
@@ -19,8 +19,8 @@ public struct SecretPatch: Equatable, Sendable {
 
     public init(
         name: PatchField<String> = .unchanged,
-        secretType: PatchField<String> = .unchanged,
-        subType: PatchField<String?> = .unchanged,
+        secretType: PatchField<SecretType> = .unchanged,
+        subType: PatchField<SecretSubType?> = .unchanged,
         service: PatchField<String?> = .unchanged,
         environment: PatchField<String?> = .unchanged,
         expiresAt: PatchField<Date?> = .unchanged,
