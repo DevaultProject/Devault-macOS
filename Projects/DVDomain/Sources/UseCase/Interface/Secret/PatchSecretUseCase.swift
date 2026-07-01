@@ -4,13 +4,17 @@ import Foundation
 
 public protocol PatchSecretUseCase: Sendable {
     func patch(id: UUID, with patch: SecretPatch) async throws -> Secret
-    func updatePayload<Payload: SecretPayloadData>(
+    func update<Payload: SecretPayloadData>(
         id: UUID,
-        payload: Payload
+        patch: SecretPatch,
+        payload: Payload,
+        projectIDs: [UUID]
     ) async throws -> Secret
-    func updateMetadata<Metadata: SecretMetadataContent>(
+    func update<Payload: SecretPayloadData, Metadata: SecretMetadataContent>(
         id: UUID,
-        metadata: Metadata
+        patch: SecretPatch,
+        payload: Payload,
+        metadata: Metadata,
+        projectIDs: [UUID]
     ) async throws -> Secret
-    func removeMetadata(id: UUID) async throws -> Secret
 }
