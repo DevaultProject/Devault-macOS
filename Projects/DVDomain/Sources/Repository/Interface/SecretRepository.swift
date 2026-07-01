@@ -3,13 +3,46 @@
 import Foundation
 
 public protocol SecretRepository: Sendable {
+    /// Secret을 저장소에 생성한다.
+    /// - Parameter secret: 저장할 Secret 엔티티
+    /// - Returns: 저장된 Secret
     func create(_ secret: Secret) async throws -> Secret
+
+    /// ID로 단일 Secret을 조회한다.
+    /// - Parameter id: 조회할 Secret의 ID
+    /// - Returns: 해당 Secret. 존재하지 않으면 nil
     func fetch(id: UUID) async throws -> Secret?
+
+    /// 쿼리 조건에 맞는 Secret 목록을 조회한다.
+    /// - Parameter query: 필터·정렬 조건을 담은 SecretQuery
+    /// - Returns: 조건에 부합하는 Secret 배열
     func fetch(_ query: SecretQuery) async throws -> [Secret]
+
+    /// Secret의 지정 필드를 수정한다.
+    /// - Parameters:
+    ///   - id: 수정할 Secret의 ID
+    ///   - patch: 변경할 필드만 담은 SecretPatch
+    /// - Returns: 수정된 Secret
     func patch(id: UUID, with patch: SecretPatch) async throws -> Secret
+
+    /// Secret을 영구 삭제한다.
+    /// - Parameter id: 삭제할 Secret의 ID
     func delete(id: UUID) async throws
-    
+
+    /// Secret에 연결된 Project 목록을 조회한다.
+    /// - Parameter secretID: 조회할 Secret의 ID
+    /// - Returns: 해당 Secret에 연결된 Project 배열
     func fetchProjects(secretID: UUID) async throws -> [Project]
+
+    /// Secret을 Project에 연결한다.
+    /// - Parameters:
+    ///   - secretID: 연결할 Secret의 ID
+    ///   - projectID: 연결 대상 Project의 ID
     func linkProject(secretID: UUID, projectID: UUID) async throws
+
+    /// Secret과 Project의 연결을 해제한다.
+    /// - Parameters:
+    ///   - secretID: 연결 해제할 Secret의 ID
+    ///   - projectID: 연결 해제 대상 Project의 ID
     func unlinkProject(secretID: UUID, projectID: UUID) async throws
 }
