@@ -10,12 +10,12 @@ public enum SecretType: String, Codable, CaseIterable, Sendable {
 
     public var availableSubTypes: [SecretSubType] {
         switch self {
-        case .apiKeyToken:          return [.apiKey, .accessToken, .webhookSecret]
-        case .oauth:                return [.oauthClient, .serviceAccount]
-        case .database:             return []
-        case .sshAndCredentials:    return [.sshKey, .sslTlsCertificate]
+        case .apiKeyToken:            return [.apiKey, .accessToken, .webhookSecret]
+        case .oauth:                  return [.oauthClient, .serviceAccount]
+        case .database:               return []
+        case .sshAndCredentials:      return [.sshKey, .sslTlsCertificate]
         case .environmentVariableSet: return []
-        case .etc:                  return [.licenseKey, .custom]
+        case .etc:                    return [.licenseKey, .custom]
         }
     }
 }
@@ -33,10 +33,10 @@ public enum SecretSubType: String, Codable, CaseIterable, Sendable {
 
     public var secretType: SecretType {
         switch self {
-        case .apiKey, .accessToken, .webhookSecret:     return .apiKeyToken
-        case .oauthClient, .serviceAccount:             return .oauth
-        case .sshKey, .sslTlsCertificate:               return .sshAndCredentials
-        case .licenseKey, .custom:                      return .etc
+        case .apiKey, .accessToken, .webhookSecret: return .apiKeyToken
+        case .oauthClient, .serviceAccount:         return .oauth
+        case .sshKey, .sslTlsCertificate:           return .sshAndCredentials
+        case .licenseKey, .custom:                  return .etc
         }
     }
 }
