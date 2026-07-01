@@ -45,8 +45,3 @@ public struct SecretPatch: Equatable, Sendable {
         self.updatedAt = updatedAt
     }
 }
-
-public enum PatchField<Value: Equatable & Sendable>: Equatable, Sendable {
-    case unchanged
-    case set(Value)
-}
