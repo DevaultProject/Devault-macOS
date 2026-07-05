@@ -1,7 +1,8 @@
 // Copyright © 2026 Devault. All rights reserved
 
-import ComposableArchitecture
 import SwiftUI
+
+import ComposableArchitecture
 
 // MARK: - {{ name }}View
 

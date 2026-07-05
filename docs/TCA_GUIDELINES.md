@@ -9,7 +9,7 @@ The Composable Architecture(이하 TCA) **1.25.0** (Observation 기반)을 사�
 
 > **이 문서를 읽는 사람에게**
 > TCA를 처음 사용한다면 [0. 시작하기 전에 — 마인드모델](#0-시작하기-전에--마인드모델)부터 순서대로 읽으세요.
-> 이미 익숙하다면 [11. 리뷰 체크리스트](#11-리뷰-체크리스트-ai-에이전트용)로 바로 가도 됩니다.
+> 이미 익숙하다면 [12. 리뷰 체크리스트](#12-리뷰-체크리스트-ai-에이전트용)로 바로 가도 됩니다.
 > 본문 각 절에는 *언제 이걸 쓰는가 → 왜 이렇게 쓰는가 → 어떻게 쓰는가* 순서로 정리돼 있습니다.
 
 ---
@@ -27,7 +27,7 @@ TCA의 흐름은 단 네 가지 단어로 요약됩니다.
 
 흐름은 항상 **단방향**입니다.
 
-```
+```text
 사용자 입력
     ↓
 View가 Action을 store에 보냄  (store.send(.didTapAddButton))
@@ -70,13 +70,13 @@ tuist scaffold feature --name ProjectList
 
 생성 결과:
 
-```
+```text
 Projects/DVPresentation/Sources/Features/ProjectList/
 ├── ProjectListFeature.swift   // @Reducer + State/Action/Body 골격
 └── ProjectListView.swift      // @Bindable store + content + Preview
 ```
 
-생성된 파일은 본 문서의 [11절 체크리스트](#11-리뷰-체크리스트-ai-에이전트용) 기본 항목(`@Reducer`, `@ObservableState`, exhaustive switch, `delegate(_)` Action, `.task` 패턴 등)을 이미 통과한 상태입니다.
+생성된 파일은 본 문서의 [12절 체크리스트](#12-리뷰-체크리스트-ai-에이전트용) 기본 항목(`@Reducer`, `@ObservableState`, exhaustive switch, `delegate(_)` Action, `.task` 패턴 등)을 이미 통과한 상태입니다.
 신규 Feature는 **반드시 scaffold로 시작**합니다.
 
 > scaffold가 만들어 준 파일에서 출발해 *State 필드 추가 → Action 케이스 추가 → 각 case 본문 작성 → View 구현 → Test 작성* 순서로 살을 붙이면 됩니다.
@@ -89,7 +89,7 @@ Projects/DVPresentation/Sources/Features/ProjectList/
 
 하나의 Feature는 **하나의 디렉토리**로 묶고, 최소 `Feature.swift`와 `View.swift`를 함께 둡니다.
 
-```
+```text
 DVPresentation/Sources/Features/
 ├── AppFeature.swift                  // 루트 Reducer
 ├── AppView.swift
@@ -450,7 +450,12 @@ case .delegate: return .none
 case .onAppear:
   state.isLoading = true
   return .run { send in
-    await send(.projectsResponse(Result { try await projectClient.fetchAll() }))
+    do {
+      let projects = try await projectClient.fetchAll()
+      await send(.projectsResponse(.success(projects)))
+    } catch {
+      await send(.projectsResponse(.failure(error)))
+    }
   }
 
 // ❌ Bad
@@ -469,7 +474,7 @@ case .onAppear:
 ### 5.2 취소 가능한 Effect
 
 검색·디바운스 등 **이전 작업을 취소해야 하는 Effect**는 `cancellable(id:)`를 씁니다.
-ID는 enum case 없는 `enum CancelID { case search }` 패턴으로 정의합니다.
+ID는 이 Feature 내부에서만 쓰이는 **private enum**으로 정의하고, 그 안에 취소 작업별 `case`를 나열합니다.
 
 ```swift
 private enum CancelID { case search }
@@ -478,7 +483,12 @@ case .didChangeSearchText(let text):
   state.searchText = text
   return .run { send in
     try await clock.sleep(for: .milliseconds(300))
-    await send(.searchResponse(Result { try await projectClient.search(text) }))
+    do {
+      let projects = try await projectClient.search(text)
+      await send(.searchResponse(.success(projects)))
+    } catch {
+      await send(.searchResponse(.failure(error)))
+    }
   }
   .cancellable(id: CancelID.search, cancelInFlight: true)
 ```
@@ -514,15 +524,20 @@ return .run { send in
 
 ### 5.4 에러는 Reducer에서 처리
 
-`.run`에서 `try`로 던지면 `catch:` 클로저 또는 `Result`로 받습니다. Effect 안에서 묵살하지 않습니다.
+`.run`에서 `try`로 던지면 반드시 잡아 응답 Action으로 돌려보냅니다. Effect 안에서 묵살하지 않습니다.
 
 ```swift
-// 패턴 A — Result 래핑
+// 패턴 A — .run 내부 do/catch
 return .run { send in
-  await send(.projectsResponse(Result { try await projectClient.fetchAll() }))
+  do {
+    let projects = try await projectClient.fetchAll()
+    await send(.projectsResponse(.success(projects)))
+  } catch {
+    await send(.projectsResponse(.failure(error)))
+  }
 }
 
-// 패턴 B — catch 클로저
+// 패턴 B — .run의 catch: 클로저
 return .run { send in
   let projects = try await projectClient.fetchAll()
   await send(.projectsResponse(.success(projects)))
@@ -532,7 +547,10 @@ return .run { send in
 ```
 
 > **두 패턴 중 무엇을 쓰나?**
-> 단순하면 패턴 A. 에러 변환·로깅 등 추가 처리가 필요하면 패턴 B.
+> 여러 `try`가 얽혀 있으면 패턴 A (한 do 블록으로 묶이니 흐름이 명확). 성공 경로가 짧고 에러 처리를 한 줄로 처리하면 패턴 B.
+
+> **`Result { try await ... }` 축약은 Swift 5.9에서 안 됨**
+> `Result`의 async throwing initializer는 [Swift 6.4의 SE-0530](https://github.com/apple/swift-evolution/blob/main/proposals/0530-async-result-support.md)부터 도입됐습니다. 우리 프로젝트 툴체인이 5.9 기반이면 컴파일이 막히므로 위 두 패턴만 사용합니다. 6.4 이상으로 올라가면 `Result { try await ... }` 축약을 추가로 고려할 수 있습니다.
 
 ---
 
@@ -553,7 +571,7 @@ return .run { send in
 
 의존 화살표:
 
-```
+```text
 Devault (App, @main)        ← Composition Root (모든 레이어 알 권한 있음)
    │
    ├─ liveValue 정의 (SecretClient+Live.swift 등)
@@ -800,9 +818,12 @@ struct SecretListFeature {
       case .task:
         state.isLoading = true
         return .run { [query = state.query] send in
-          await send(.secretsResponse(Result {
-            try await secretClient.fetchByQuery(query)
-          }.mapError { SecretUseCaseError.map($0) }))
+          do {
+            let secrets = try await secretClient.fetchByQuery(query)
+            await send(.secretsResponse(.success(secrets)))
+          } catch {
+            await send(.secretsResponse(.failure(SecretUseCaseError.map(error))))
+          }
         }
 
       case .secretsResponse(.success(let secrets)):
@@ -816,9 +837,12 @@ struct SecretListFeature {
 
       case .didTapDelete(let id):
         return .run { send in
-          await send(.deleteResponse(Result {
-            try await secretClient.softDelete(id)
-          }.mapError { SecretUseCaseError.map($0) }))
+          do {
+            let secret = try await secretClient.softDelete(id)
+            await send(.deleteResponse(.success(secret)))
+          } catch {
+            await send(.deleteResponse(.failure(SecretUseCaseError.map(error))))
+          }
         }
 
       case .deleteResponse(.success(let secret)):
@@ -840,7 +864,7 @@ Reducer는 **DVDomain만 import**합니다. `SecretClient` 인터페이스는 �
 
 ### 6.6 의존 그래프 (TCA + Composition Root 도입 후)
 
-```
+```text
 Devault (App 타겟, @main)              ← Composition Root
    │
    ├─ SecretClient+Live.swift          (extension: DependencyKey, liveValue)
@@ -899,7 +923,7 @@ DVDomain  ←──  DVData                   ← TCA를 모름. 의존 화살�
 
 가장 헷갈리는 절입니다. **상황별 의사결정 트리**부터 보세요.
 
-```
+```text
 화면 위에 다른 화면을 띄우고 싶다
     │
     ├── 0~1개만 떠 있다 (시트/풀스크린/알럿/다이얼로그)
@@ -1172,7 +1196,12 @@ case .didChangeSearchText(let text):
   state.searchText = text
   return .run { send in
     try await clock.sleep(for: .milliseconds(300))
-    await send(.searchResponse(Result { try await projectClient.search(text) }))
+    do {
+      let projects = try await projectClient.search(text)
+      await send(.searchResponse(.success(projects)))
+    } catch {
+      await send(.searchResponse(.failure(error)))
+    }
   }
   .cancellable(id: CancelID.search, cancelInFlight: true)
 ```
@@ -1193,7 +1222,12 @@ var body: some View {
 case .task:
   state.isLoading = true
   return .run { send in
-    await send(.projectsResponse(Result { try await projectClient.fetchAll() }))
+    do {
+      let projects = try await projectClient.fetchAll()
+      await send(.projectsResponse(.success(projects)))
+    } catch {
+      await send(.projectsResponse(.failure(error)))
+    }
   }
 ```
 
@@ -1273,7 +1307,7 @@ case .task:
 - [ ] **E2.** State 캡처가 캡처 리스트 `[x = state.x]`로 명시됐는가? (`state.x` 직접 참조 금지)
 - [ ] **E3.** 디바운스·중복 방지가 필요한 Effect가 `cancellable(id:cancelInFlight:)`을 쓰는가?
 - [ ] **E4.** 에러가 묵살되지 않고 응답 Action(`Result`)으로 돌아오는가?
-- [ ] **E5.** `CancelID`가 case 없는 enum으로 정의됐는가?
+- [ ] **E5.** `CancelID`가 Feature-private enum(취소 작업별 case)으로 정의됐는가?
 
 ### F. Dependency
 
@@ -1316,7 +1350,7 @@ case .task:
 
 리뷰 결과는 아래 형식으로 작성한다.
 
-```
+```text
 ## TCA Convention Review
 
 ### 🚨 Critical (반드시 수정)

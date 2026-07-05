@@ -1,7 +1,8 @@
 // Copyright © 2026 Devault. All rights reserved
 
-import ComposableArchitecture
 import Foundation
+
+import ComposableArchitecture
 
 // MARK: - {{ name }}Feature
 
@@ -19,15 +20,15 @@ struct {{ name }}Feature {
 
   enum Action: Equatable {
 
-    // MARK: View
+    // MARK: - View
 
     case onAppear
 
-    // MARK: Internal
+    // MARK: - Internal
 
-    // MARK: Child
+    // MARK: - Child
 
-    // MARK: Delegate
+    // MARK: - Delegate
 
     case delegate(Delegate)
 
