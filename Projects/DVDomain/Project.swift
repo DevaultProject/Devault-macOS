@@ -13,6 +13,13 @@ let project = Project.project(
             ]
         ),
         .tests(
+            name: "DVDomainTests",
+            sources: ["Tests/Core/**"],
+            dependencies: [
+                .domain(),
+            ]
+        ),
+        .tests(
             name: "DVDomainContentTests",
             sources: ["Tests/Content/**"],
             dependencies: [
