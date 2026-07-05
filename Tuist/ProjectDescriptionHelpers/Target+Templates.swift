@@ -37,12 +37,13 @@ extension Target {
 extension Target {
     public static func tests(
         name: String,
+        sources: SourceFilesList = .tests,
         dependencies: [TargetDependency] = []
     ) -> Target {
         .target(
-            name: "\(name)Tests",
+            name: name,
             product: .unitTests,
-            sources: .tests,
+            sources: sources,
             dependencies: dependencies
         )
     }
