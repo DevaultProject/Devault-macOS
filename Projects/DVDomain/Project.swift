@@ -12,5 +12,12 @@ let project = Project.project(
                 .core(),
             ]
         ),
+        .tests(
+            name: "DVDomainContentTests",
+            sources: ["Tests/Content/**"],
+            dependencies: [
+                .domain(),
+            ]
+        ),
     ]
 )
