@@ -13,10 +13,14 @@ let project = Project.project(
             sources: .sources,
             resources: .default,
             dependencies: [
+                // internal dependency
                 .presentation(),
                 .data(),
                 .domain(),
                 .core(),
+                
+                // 3rd-party dependency
+                .tca(),
             ]
         ),
     ],
