@@ -43,7 +43,7 @@ public struct CreateSecretUseCaseImpl: CreateSecretUseCase {
                 updatedAt: now,
                 payload: encryptedPayload
             )
-            return try await createAndLink(secret, projectIDs: projectIDs)
+            return try await repository.create(secret, projectIDs: projectIDs)
         } catch {
             throw SecretUseCaseError.map(error)
         }
@@ -75,25 +75,10 @@ public struct CreateSecretUseCaseImpl: CreateSecretUseCase {
                 payload: encryptedPayload,
                 metadata: encodedMetadata
             )
-            return try await createAndLink(secret, projectIDs: projectIDs)
+            return try await repository.create(secret, projectIDs: projectIDs)
         } catch {
             throw SecretUseCaseError.map(error)
         }
     }
 
-}
-
-private extension CreateSecretUseCaseImpl {
-    func createAndLink(_ secret: Secret, projectIDs: [UUID]) async throws -> Secret {
-        let created = try await repository.create(secret)
-        do {
-            for projectID in projectIDs {
-                try await repository.linkProject(secretID: created.id, projectID: projectID)
-            }
-        } catch {
-            try? await repository.delete(id: created.id)
-            throw error
-        }
-        return created
-    }
 }

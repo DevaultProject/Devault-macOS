@@ -45,4 +45,22 @@ public protocol SecretRepository: Sendable {
     ///   - secretID: 연결 해제할 Secret의 ID
     ///   - projectID: 연결 해제 대상 Project의 ID
     func unlinkProject(secretID: UUID, projectID: UUID) async throws
+
+    /// Secret 생성과 Project 연결을 단일 트랜잭션으로 처리한다.
+    /// 실패 시 ModelContext가 자동 롤백하므로 partial state가 발생하지 않는다.
+    /// - Parameters:
+    ///   - secret: 저장할 Secret 엔티티
+    ///   - projectIDs: 연결할 Project ID 목록. 중복은 무시된다
+    /// - Returns: 저장된 Secret
+    func create(_ secret: Secret, projectIDs: [UUID]) async throws -> Secret
+
+    /// Secret 필드 수정과 Project 연결 재조정을 단일 트랜잭션으로 처리한다.
+    /// 현재 연결 상태와 projectIDs를 비교해 link/unlink를 결정한다.
+    /// 실패 시 ModelContext가 자동 롤백하므로 partial state가 발생하지 않는다.
+    /// - Parameters:
+    ///   - id: 수정할 Secret의 ID
+    ///   - patch: 변경할 필드만 담은 SecretPatch
+    ///   - projectIDs: 수정 후 연결되어야 할 Project ID 목록
+    /// - Returns: 수정된 Secret
+    func patch(id: UUID, with patch: SecretPatch, projectIDs: [UUID]) async throws -> Secret
 }

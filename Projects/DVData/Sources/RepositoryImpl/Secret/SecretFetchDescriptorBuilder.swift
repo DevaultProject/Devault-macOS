@@ -16,8 +16,8 @@ enum SecretFetchDescriptorBuilder {
     }
 
     private static func predicate(from query: SecretQuery) -> Predicate<SwiftDataModel.Secret> {
-        let hasSecretType = !(query.secretType?.isEmpty ?? true)
-        let secretType = query.secretType ?? ""
+        let hasSecretType = query.secretType != nil
+        let secretType = query.secretType?.rawValue ?? ""
         let hasService = !(query.service?.isEmpty ?? true)
         let service = query.service ?? ""
         let hasEnvironment = !(query.environment?.isEmpty ?? true)
