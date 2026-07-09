@@ -77,11 +77,24 @@ extension SwiftDataModel.Secret {
             throw SecretRepositoryError.corruptedStorage
         }
 
+        guard let domainSecretType = DVDomain.SecretType(rawValue: secretType) else {
+            throw SecretRepositoryError.corruptedStorage
+        }
+        let domainSubType: DVDomain.SecretSubType?
+        if let subType {
+            guard let parsedSubType = DVDomain.SecretSubType(rawValue: subType) else {
+                throw SecretRepositoryError.corruptedStorage
+            }
+            domainSubType = parsedSubType
+        } else {
+            domainSubType = nil
+        }
+
         return DVDomain.Secret(
             id: id,
             name: name,
-            secretType: DVDomain.SecretType(rawValue: secretType) ?? .etc,
-            subType: subType.flatMap(DVDomain.SecretSubType.init(rawValue:)),
+            secretType: domainSecretType,
+            subType: domainSubType,
             service: service,
             environment: environment,
             expiresAt: expiresAt,

@@ -192,6 +192,104 @@ public actor SecretRepositoryImpl: SecretRepository {
             throw SecretRepositoryError.persistenceFailed
         }
     }
+
+    public func create(_ secret: DVDomain.Secret, projectIDs: [UUID]) async throws -> DVDomain.Secret {
+        do {
+            if try fetchLocalSecret(id: secret.id) != nil {
+                throw SecretRepositoryError.duplicateID(id: secret.id)
+            }
+
+            let localSecret = SwiftDataModel.Secret(
+                id: secret.id,
+                name: secret.name,
+                secretType: secret.secretType.rawValue,
+                subType: secret.subType?.rawValue,
+                service: secret.service,
+                environment: secret.environment,
+                expiresAt: secret.expiresAt,
+                memo: secret.memo,
+                liked: secret.liked,
+                deletedAt: secret.deletedAt,
+                createdAt: secret.createdAt,
+                updatedAt: secret.updatedAt
+            )
+
+            let localPayload = SwiftDataModel.SecretPayload(
+                encryptedData: secret.payload.encryptedData,
+                keyTag: secret.payload.keyTag,
+                schemaVersion: secret.payload.schemaVersion,
+                secret: localSecret
+            )
+            localSecret.payload = localPayload
+            modelContext.insert(localSecret)
+            modelContext.insert(localPayload)
+
+            if let metadata = secret.metadata {
+                let localMetadata = SwiftDataModel.SecretMetadata(
+                    metadataJSON: metadata.metadataJSON,
+                    schemaVersion: metadata.schemaVersion,
+                    secret: localSecret
+                )
+                localSecret.metadata = localMetadata
+                modelContext.insert(localMetadata)
+            }
+
+            for projectID in Set(projectIDs) {
+                guard let localProject = try fetchLocalProject(id: projectID) else {
+                    throw SecretRepositoryError.projectNotFound(id: projectID)
+                }
+                let link = SwiftDataModel.SecretProjectLink(
+                    project: localProject,
+                    secret: localSecret
+                )
+                modelContext.insert(link)
+            }
+
+            try modelContext.save()
+            return try localSecret.toDomain()
+        } catch let error as SecretRepositoryError {
+            throw error
+        } catch {
+            throw SecretRepositoryError.persistenceFailed
+        }
+    }
+
+    public func patch(id: UUID, with patch: SecretPatch, projectIDs: [UUID]) async throws -> DVDomain.Secret {
+        do {
+            guard let localSecret = try fetchLocalSecret(id: id) else {
+                throw SecretRepositoryError.notFound(id: id)
+            }
+
+            apply(patch, to: localSecret)
+
+            let currentIDs = Set(localSecret.projects.map(\.id))
+            let desiredIDs = Set(projectIDs)
+
+            for projectID in desiredIDs.subtracting(currentIDs) {
+                guard let localProject = try fetchLocalProject(id: projectID) else {
+                    throw SecretRepositoryError.projectNotFound(id: projectID)
+                }
+                let link = SwiftDataModel.SecretProjectLink(
+                    project: localProject,
+                    secret: localSecret
+                )
+                modelContext.insert(link)
+            }
+
+            for projectID in currentIDs.subtracting(desiredIDs) {
+                if let link = try fetchLocalProjectLink(secretID: id, projectID: projectID) {
+                    modelContext.delete(link)
+                }
+            }
+
+            try modelContext.save()
+            return try localSecret.toDomain()
+        } catch let error as SecretRepositoryError {
+            throw error
+        } catch {
+            throw SecretRepositoryError.persistenceFailed
+        }
+    }
 }
 
 extension SecretRepositoryImpl {

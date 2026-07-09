@@ -17,10 +17,32 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
         self.dateProvider = dateProvider
     }
 
-    public func patch(id: UUID, with patch: SecretPatch) async throws -> Secret {
+    public func update(
+        id: UUID,
+        patch: SecretPatch,
+        projectIDs: PatchField<[UUID]>
+    ) async throws -> Secret {
         do {
-            let patch = SecretUseCaseHelper.settingUpdatedAtIfNeeded(patch, now: dateProvider())
-            return try await repository.patch(id: id, with: patch)
+            var fullPatch = patch
+            fullPatch.updatedAt = .set(dateProvider())
+            return try await applyPatch(id: id, patch: fullPatch, projectIDs: projectIDs)
+        } catch {
+            throw SecretUseCaseError.map(error)
+        }
+    }
+
+    public func update<Metadata: SecretMetadataContent>(
+        id: UUID,
+        patch: SecretPatch,
+        metadata: Metadata,
+        projectIDs: PatchField<[UUID]>
+    ) async throws -> Secret {
+        do {
+            let encodedMetadata = try cryptoService.encodeMetadata(metadata)
+            var fullPatch = patch
+            fullPatch.metadata = .set(encodedMetadata)
+            fullPatch.updatedAt = .set(dateProvider())
+            return try await applyPatch(id: id, patch: fullPatch, projectIDs: projectIDs)
         } catch {
             throw SecretUseCaseError.map(error)
         }
@@ -30,16 +52,14 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
         id: UUID,
         patch: SecretPatch,
         payload: Payload,
-        projectIDs: [UUID]
+        projectIDs: PatchField<[UUID]>
     ) async throws -> Secret {
         do {
             let encryptedPayload = try await cryptoService.encryptPayload(payload)
             var fullPatch = patch
             fullPatch.payload = .set(encryptedPayload)
             fullPatch.updatedAt = .set(dateProvider())
-            let updated = try await repository.patch(id: id, with: fullPatch)
-            try await reconcileProjects(secretID: id, desiredIDs: projectIDs)
-            return updated
+            return try await applyPatch(id: id, patch: fullPatch, projectIDs: projectIDs)
         } catch {
             throw SecretUseCaseError.map(error)
         }
@@ -50,7 +70,7 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
         patch: SecretPatch,
         payload: Payload,
         metadata: Metadata,
-        projectIDs: [UUID]
+        projectIDs: PatchField<[UUID]>
     ) async throws -> Secret {
         do {
             let encryptedPayload = try await cryptoService.encryptPayload(payload)
@@ -59,25 +79,18 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
             fullPatch.payload = .set(encryptedPayload)
             fullPatch.metadata = .set(encodedMetadata)
             fullPatch.updatedAt = .set(dateProvider())
-            let updated = try await repository.patch(id: id, with: fullPatch)
-            try await reconcileProjects(secretID: id, desiredIDs: projectIDs)
-            return updated
+            return try await applyPatch(id: id, patch: fullPatch, projectIDs: projectIDs)
         } catch {
             throw SecretUseCaseError.map(error)
         }
     }
-
 }
 
-private extension PatchSecretUseCaseImpl {
-    func reconcileProjects(secretID: UUID, desiredIDs: [UUID]) async throws {
-        let currentIDs = Set(try await repository.fetchProjects(secretID: secretID).map(\.id))
-        let desiredIDs = Set(desiredIDs)
-        for projectID in desiredIDs.subtracting(currentIDs) {
-            try await repository.linkProject(secretID: secretID, projectID: projectID)
+extension PatchSecretUseCaseImpl {
+    private func applyPatch(id: UUID, patch: SecretPatch, projectIDs: PatchField<[UUID]>) async throws -> Secret {
+        if case .set(let ids) = projectIDs {
+            return try await repository.patch(id: id, with: patch, projectIDs: ids)
         }
-        for projectID in currentIDs.subtracting(desiredIDs) {
-            try await repository.unlinkProject(secretID: secretID, projectID: projectID)
-        }
+        return try await repository.patch(id: id, with: patch)
     }
 }
