@@ -10,20 +10,33 @@ import Foundation
 /// 각 메서드별로 에러 주입과 호출 카운트를 제공한다.
 public final class InMemorySecretRepository: SecretRepository, @unchecked Sendable {
     public var secrets: [UUID: Secret] = [:]
+    /// secretID → 연결된 projectID 집합
+    public var projectLinks: [UUID: Set<UUID>] = [:]
 
     public var errorOnCreate: SecretRepositoryError?
     public var errorOnFetchByID: SecretRepositoryError?
     public var errorOnFetchQuery: SecretRepositoryError?
     public var errorOnPatch: SecretRepositoryError?
     public var errorOnDelete: SecretRepositoryError?
+    public var errorOnFetchProjects: SecretRepositoryError?
+    public var errorOnLinkProject: SecretRepositoryError?
+    public var errorOnUnlinkProject: SecretRepositoryError?
+    public var errorOnCreateWithProjects: SecretRepositoryError?
+    public var errorOnPatchWithProjects: SecretRepositoryError?
 
     public private(set) var createCount = 0
     public private(set) var fetchByIDCount = 0
     public private(set) var fetchQueryCount = 0
     public private(set) var patchCount = 0
     public private(set) var deleteCount = 0
+    public private(set) var fetchProjectsCount = 0
+    public private(set) var linkProjectCount = 0
+    public private(set) var unlinkProjectCount = 0
+    public private(set) var createWithProjectsCount = 0
+    public private(set) var patchWithProjectsCount = 0
 
     public private(set) var lastPatch: SecretPatch?
+    public private(set) var lastProjectIDs: [UUID]?
 
     public init() {}
 
@@ -74,11 +87,60 @@ public final class InMemorySecretRepository: SecretRepository, @unchecked Sendab
         secrets.removeValue(forKey: id)
     }
 
-    // MARK: - SecretRepository (Project 연결 관련 프로토콜 준수용, 이슈 #28 범위 외)
+    public func fetchProjects(secretID: UUID) async throws -> [Project] {
+        fetchProjectsCount += 1
+        if let error = errorOnFetchProjects { throw error }
+        guard secrets[secretID] != nil else {
+            throw SecretRepositoryError.notFound(id: secretID)
+        }
+        return []
+    }
 
-    public func fetchProjects(secretID: UUID) async throws -> [Project] { [] }
-    public func linkProject(secretID: UUID, projectID: UUID) async throws {}
-    public func unlinkProject(secretID: UUID, projectID: UUID) async throws {}
+    public func linkProject(secretID: UUID, projectID: UUID) async throws {
+        linkProjectCount += 1
+        if let error = errorOnLinkProject { throw error }
+        guard secrets[secretID] != nil else {
+            throw SecretRepositoryError.notFound(id: secretID)
+        }
+        projectLinks[secretID, default: []].insert(projectID)
+    }
+
+    public func unlinkProject(secretID: UUID, projectID: UUID) async throws {
+        unlinkProjectCount += 1
+        if let error = errorOnUnlinkProject { throw error }
+        guard secrets[secretID] != nil else {
+            throw SecretRepositoryError.notFound(id: secretID)
+        }
+        projectLinks[secretID]?.remove(projectID)
+    }
+
+    // MARK: - 원자적 생성·수정 (Project 연결 포함)
+
+    public func create(_ secret: Secret, projectIDs: [UUID]) async throws -> Secret {
+        createWithProjectsCount += 1
+        lastProjectIDs = projectIDs
+        if let error = errorOnCreateWithProjects { throw error }
+        guard secrets[secret.id] == nil else {
+            throw SecretRepositoryError.duplicateID(id: secret.id)
+        }
+        secrets[secret.id] = secret
+        projectLinks[secret.id] = Set(projectIDs)
+        return secret
+    }
+
+    public func patch(id: UUID, with patch: SecretPatch, projectIDs: [UUID]) async throws -> Secret {
+        patchWithProjectsCount += 1
+        lastPatch = patch
+        lastProjectIDs = projectIDs
+        if let error = errorOnPatchWithProjects { throw error }
+        guard var secret = secrets[id] else {
+            throw SecretRepositoryError.notFound(id: id)
+        }
+        secret.apply(patch)
+        secrets[id] = secret
+        projectLinks[id] = Set(projectIDs)
+        return secret
+    }
 }
 
 private extension Secret {

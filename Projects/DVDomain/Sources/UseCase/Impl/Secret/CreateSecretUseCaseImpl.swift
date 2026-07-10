@@ -80,5 +80,4 @@ public struct CreateSecretUseCaseImpl: CreateSecretUseCase {
             throw SecretUseCaseError.map(error)
         }
     }
-
 }
