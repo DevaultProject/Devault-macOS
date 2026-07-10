@@ -7,10 +7,10 @@ import Testing
 
 @Suite("PatchSecretUseCaseImpl")
 struct PatchSecretUseCaseImplTests {
-    // MARK: - patch(id:with:)
+    // MARK: - updateSimple(id:with:)
 
-    @Test("patch는 updatedAt이 unchanged면 주입 시각으로 채운다")
-    func patchFillsUpdatedAtWhenUnchanged() async throws {
+    @Test("updateSimple은 updatedAt이 unchanged면 주입 시각으로 채운다")
+    func updateSimpleFillsUpdatedAtWhenUnchanged() async throws {
         let repo = InMemorySecretRepository()
         let secret = SecretFixture.make()
         repo.seed(secret)
@@ -21,14 +21,14 @@ struct PatchSecretUseCaseImplTests {
             dateProvider: { fixedNow }
         )
 
-        _ = try await sut.patch(id: secret.id, with: SecretPatch(liked: .set(true)))
+        _ = try await sut.updateSimple(id: secret.id, with: SecretPatch(liked: .set(true)))
 
         #expect(repo.lastPatch?.updatedAt == .set(fixedNow))
         #expect(repo.lastPatch?.liked == .set(true))
     }
 
-    @Test("patch는 updatedAt이 이미 set이면 그대로 유지한다")
-    func patchPreservesExplicitUpdatedAt() async throws {
+    @Test("updateSimple은 updatedAt이 이미 set이면 그대로 유지한다")
+    func updateSimplePreservesExplicitUpdatedAt() async throws {
         let repo = InMemorySecretRepository()
         let secret = SecretFixture.make()
         repo.seed(secret)
@@ -39,7 +39,7 @@ struct PatchSecretUseCaseImplTests {
             dateProvider: { Date() }
         )
 
-        _ = try await sut.patch(
+        _ = try await sut.updateSimple(
             id: secret.id,
             with: SecretPatch(liked: .set(true), updatedAt: .set(explicit))
         )
@@ -47,8 +47,8 @@ struct PatchSecretUseCaseImplTests {
         #expect(repo.lastPatch?.updatedAt == .set(explicit))
     }
 
-    @Test("존재하지 않는 id에 대한 patch는 secretNotFound로 매핑된다")
-    func patchMapsSecretNotFound() async {
+    @Test("존재하지 않는 id에 대한 updateSimple은 secretNotFound로 매핑된다")
+    func updateSimpleMapsSecretNotFound() async {
         let repo = InMemorySecretRepository()
         let missingID = UUID()
         let sut = PatchSecretUseCaseImpl(
@@ -57,7 +57,7 @@ struct PatchSecretUseCaseImplTests {
         )
 
         await #expect(throws: SecretUseCaseError.secretNotFound(id: missingID)) {
-            _ = try await sut.patch(id: missingID, with: SecretPatch(liked: .set(true)))
+            _ = try await sut.updateSimple(id: missingID, with: SecretPatch(liked: .set(true)))
         }
     }
 
@@ -80,7 +80,7 @@ struct PatchSecretUseCaseImplTests {
             id: secret.id,
             patch: SecretPatch(name: .set("Renamed")),
             payload: APIKeyPayload(value: "sk_new"),
-            projectIDs: []
+            projectIDs: .unchanged
         )
 
         #expect(crypto.encryptCount == 1)
@@ -111,7 +111,7 @@ struct PatchSecretUseCaseImplTests {
             patch: SecretPatch(),
             payload: APIKeyPayload(value: "sk"),
             metadata: APIKeyMetadata(scope: "read"),
-            projectIDs: []
+            projectIDs: .unchanged
         )
 
         #expect(crypto.encryptCount == 1)
@@ -138,7 +138,7 @@ struct PatchSecretUseCaseImplTests {
                 id: secret.id,
                 patch: SecretPatch(),
                 payload: APIKeyPayload(value: "sk"),
-                projectIDs: []
+                projectIDs: .unchanged
             )
         }
         #expect(repo.patchCount == 0)
