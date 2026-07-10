@@ -10,6 +10,7 @@ import Foundation
 /// 각 메서드별로 에러 주입과 호출 카운트를 제공한다.
 public final class InMemorySecretRepository: SecretRepository, @unchecked Sendable {
     public var secrets: [UUID: Secret] = [:]
+    public var projects: [UUID: Project] = [:]
     /// secretID → 연결된 projectID 집합
     public var projectLinks: [UUID: Set<UUID>] = [:]
 
@@ -41,6 +42,7 @@ public final class InMemorySecretRepository: SecretRepository, @unchecked Sendab
     public init() {}
 
     public func seed(_ secret: Secret) { secrets[secret.id] = secret }
+    public func seedProject(_ project: Project) { projects[project.id] = project }
 
     // MARK: - SecretRepository
 
@@ -93,7 +95,7 @@ public final class InMemorySecretRepository: SecretRepository, @unchecked Sendab
         guard secrets[secretID] != nil else {
             throw SecretRepositoryError.notFound(id: secretID)
         }
-        return []
+        return projectLinks[secretID]?.compactMap { projects[$0] } ?? []
     }
 
     public func linkProject(secretID: UUID, projectID: UUID) async throws {
