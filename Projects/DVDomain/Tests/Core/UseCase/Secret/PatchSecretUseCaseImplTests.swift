@@ -142,5 +142,62 @@ struct PatchSecretUseCaseImplTests {
             )
         }
         #expect(repo.patchCount == 0)
+        #expect(repo.patchWithProjectsCount == 0)
+    }
+
+    // MARK: - update(id:patch:metadata:projectIDs:)
+
+    @Test("metadata-only update는 payload 암호화 없이 metadata 인코딩만 수행한다")
+    func updateMetadataOnlyEncodesMetadata() async throws {
+        let repo = InMemorySecretRepository()
+        let secret = SecretFixture.make()
+        repo.seed(secret)
+        let crypto = FakeSecretCryptoService()
+        let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: crypto)
+
+        _ = try await sut.update(
+            id: secret.id,
+            patch: SecretPatch(),
+            metadata: APIKeyMetadata(scope: "read"),
+            projectIDs: .unchanged
+        )
+
+        #expect(crypto.encryptCount == 0)
+        #expect(crypto.encodeCount == 1)
+        if case .set(let m) = repo.lastPatch?.metadata {
+            #expect(m != nil)
+        } else {
+            Issue.record("metadata가 set이어야 한다")
+        }
+    }
+
+    // MARK: - projectIDs 라우팅
+
+    @Test("projectIDs가 .unchanged면 patch(id:with:)를 호출한다")
+    func updateWithUnchangedProjectIDsCallsPatchWithoutProjects() async throws {
+        let repo = InMemorySecretRepository()
+        let secret = SecretFixture.make()
+        repo.seed(secret)
+        let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: FakeSecretCryptoService())
+
+        _ = try await sut.update(id: secret.id, patch: SecretPatch(liked: .set(true)), projectIDs: .unchanged)
+
+        #expect(repo.patchCount == 1)
+        #expect(repo.patchWithProjectsCount == 0)
+    }
+
+    @Test("projectIDs가 .set이면 patch(id:with:projectIDs:)를 호출하고 lastProjectIDs를 전달한다")
+    func updateWithSetProjectIDsCallsPatchWithProjects() async throws {
+        let repo = InMemorySecretRepository()
+        let secret = SecretFixture.make()
+        repo.seed(secret)
+        let projectID = UUID()
+        let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: FakeSecretCryptoService())
+
+        _ = try await sut.update(id: secret.id, patch: SecretPatch(), projectIDs: .set([projectID]))
+
+        #expect(repo.patchWithProjectsCount == 1)
+        #expect(repo.patchCount == 0)
+        #expect(repo.lastProjectIDs == [projectID])
     }
 }

@@ -33,7 +33,7 @@ struct CreateSecretUseCaseImplTests {
         #expect(secret.createdAt == fixedDate)
         #expect(secret.updatedAt == fixedDate)
         #expect(crypto.encryptCount == 1)
-        #expect(repo.createCount == 1)
+        #expect(repo.createWithProjectsCount == 1)
     }
 
     @Test("빈 이름의 draft는 invalidName 에러를 던진다")
@@ -80,7 +80,7 @@ struct CreateSecretUseCaseImplTests {
                 projectIDs: []
             )
         }
-        #expect(repo.createCount == 0)
+        #expect(repo.createWithProjectsCount == 0)
     }
 
     @Test("Repository.create 실패는 repositoryFailure로 매핑된다")
@@ -102,6 +102,26 @@ struct CreateSecretUseCaseImplTests {
                 projectIDs: []
             )
         }
+    }
+
+    @Test("projectIDs가 전달되면 repository.create(_:projectIDs:)로 그대로 포워딩된다")
+    func executeForwardsProjectIDs() async throws {
+        let repo = InMemorySecretRepository()
+        let projectID1 = UUID()
+        let projectID2 = UUID()
+        let sut = CreateSecretUseCaseImpl(
+            repository: repo,
+            cryptoService: FakeSecretCryptoService()
+        )
+
+        _ = try await sut.execute(
+            draft: SecretFixture.draft(),
+            payload: APIKeyPayload(value: "sk"),
+            projectIDs: [projectID1, projectID2]
+        )
+
+        #expect(Set(repo.lastProjectIDs ?? []) == [projectID1, projectID2])
+        #expect(repo.createWithProjectsCount == 1)
     }
 
     // MARK: - execute(draft:payload:metadata:projectIDs:)
@@ -139,6 +159,6 @@ struct CreateSecretUseCaseImplTests {
                 projectIDs: []
             )
         }
-        #expect(repo.createCount == 0)
+        #expect(repo.createWithProjectsCount == 0)
     }
 }
