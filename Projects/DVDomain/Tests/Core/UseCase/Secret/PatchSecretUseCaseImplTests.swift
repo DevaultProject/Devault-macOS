@@ -200,4 +200,14 @@ struct PatchSecretUseCaseImplTests {
         #expect(repo.patchCount == 0)
         #expect(repo.lastProjectIDs == [projectID])
     }
+
+    @Test("projectIDs가 .set일 때 존재하지 않는 id는 secretNotFound로 매핑된다")
+    func updateWithSetProjectIDsMapsSecretNotFound() async {
+        let missingID = UUID()
+        let sut = PatchSecretUseCaseImpl(repository: InMemorySecretRepository(), cryptoService: FakeSecretCryptoService())
+
+        await #expect(throws: SecretUseCaseError.secretNotFound(id: missingID)) {
+            _ = try await sut.update(id: missingID, patch: SecretPatch(), projectIDs: .set([UUID()]))
+        }
+    }
 }
