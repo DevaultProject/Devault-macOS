@@ -24,7 +24,7 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
     ) async throws -> Secret {
         do {
             var fullPatch = patch
-            fullPatch.updatedAt = .set(dateProvider())
+            fullPatch = SecretUseCaseHelper.settingUpdatedAtIfNeeded(fullPatch, now: dateProvider())
             return try await applyPatch(id: id, patch: fullPatch, projectIDs: projectIDs)
         } catch {
             throw SecretUseCaseError.map(error)
@@ -41,7 +41,7 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
             let encodedMetadata = try cryptoService.encodeMetadata(metadata)
             var fullPatch = patch
             fullPatch.metadata = .set(encodedMetadata)
-            fullPatch.updatedAt = .set(dateProvider())
+            fullPatch = SecretUseCaseHelper.settingUpdatedAtIfNeeded(fullPatch, now: dateProvider())
             return try await applyPatch(id: id, patch: fullPatch, projectIDs: projectIDs)
         } catch {
             throw SecretUseCaseError.map(error)
@@ -58,7 +58,7 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
             let encryptedPayload = try await cryptoService.encryptPayload(payload)
             var fullPatch = patch
             fullPatch.payload = .set(encryptedPayload)
-            fullPatch.updatedAt = .set(dateProvider())
+            fullPatch = SecretUseCaseHelper.settingUpdatedAtIfNeeded(fullPatch, now: dateProvider())
             return try await applyPatch(id: id, patch: fullPatch, projectIDs: projectIDs)
         } catch {
             throw SecretUseCaseError.map(error)
@@ -78,7 +78,7 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
             var fullPatch = patch
             fullPatch.payload = .set(encryptedPayload)
             fullPatch.metadata = .set(encodedMetadata)
-            fullPatch.updatedAt = .set(dateProvider())
+            fullPatch = SecretUseCaseHelper.settingUpdatedAtIfNeeded(fullPatch, now: dateProvider())
             return try await applyPatch(id: id, patch: fullPatch, projectIDs: projectIDs)
         } catch {
             throw SecretUseCaseError.map(error)
