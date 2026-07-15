@@ -62,12 +62,12 @@ extension DVVaultContainer {
         VStack(alignment: .leading, spacing: 6) {
             Text(name)
                 .dvFont(.bodyLG)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.dv(.gray900))
                 .lineLimit(1)
                 .truncationMode(.tail)
             Text(date)
                 .dvFont(.captionMDRegular)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.dv(.gray600))
                 .lineLimit(1)
                 .truncationMode(.tail)
         }
