@@ -13,7 +13,7 @@ public enum SecretUseCaseError: Error, Equatable, Sendable {
 }
 
 extension SecretUseCaseError {
-    static func map(_ error: Error) -> SecretUseCaseError {
+    public static func map(_ error: Error) -> SecretUseCaseError {
         if let error = error as? SecretUseCaseError {
             return error
         }
