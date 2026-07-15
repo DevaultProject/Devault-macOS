@@ -25,12 +25,7 @@ struct MainView: View {
 extension MainView {
 
   private var content: some View {
-    NavigationSplitView(
-      columnVisibility: Binding(
-        get: { store.columnVisibility },
-        set: { store.send(.didChangeColumnVisibility($0)) }
-      )
-    ) {
+    NavigationSplitView(columnVisibility: $store.columnVisibility) {
       sidebar
     } content: {
       contentColumn

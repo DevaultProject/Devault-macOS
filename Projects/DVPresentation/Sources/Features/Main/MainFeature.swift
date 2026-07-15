@@ -20,12 +20,12 @@ public struct MainFeature {
 
   // MARK: - Action
 
-  public enum Action: Equatable {
+  public enum Action: BindableAction, Equatable {
 
     // MARK: - View
 
+    case binding(BindingAction<State>)
     case task
-    case didChangeColumnVisibility(NavigationSplitViewVisibility)
 
     // MARK: - Delegate
 
@@ -41,13 +41,13 @@ public struct MainFeature {
   // MARK: - Body
 
   public var body: some ReducerOf<Self> {
+    BindingReducer()
     Reduce { state, action in
       switch action {
-      case .task:
+      case .binding:
         return .none
 
-      case .didChangeColumnVisibility(let visibility):
-        state.columnVisibility = visibility
+      case .task:
         return .none
 
       case .delegate:
