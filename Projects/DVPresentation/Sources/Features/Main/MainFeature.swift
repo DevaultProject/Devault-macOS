@@ -14,6 +14,7 @@ public struct MainFeature {
   @ObservableState
   public struct State: Equatable {
     public var columnVisibility: NavigationSplitViewVisibility = .all
+    var sidebar: SidebarFeature.State = .init()
 
     public init() {}
   }
@@ -26,6 +27,10 @@ public struct MainFeature {
 
     case binding(BindingAction<State>)
     case task
+
+    // MARK: - Child
+
+    case sidebar(SidebarFeature.Action)
 
     // MARK: - Delegate
 
@@ -42,6 +47,9 @@ public struct MainFeature {
 
   public var body: some ReducerOf<Self> {
     BindingReducer()
+    Scope(state: \.sidebar, action: \.sidebar) {
+      SidebarFeature()
+    }
     Reduce { state, action in
       switch action {
       case .binding:
@@ -50,9 +58,39 @@ public struct MainFeature {
       case .task:
         return .none
 
+      case .sidebar(.delegate(let delegate)):
+        return handleSidebarDelegate(&state, delegate: delegate)
+
+      case .sidebar:
+        return .none
+
       case .delegate:
         return .none
       }
+    }
+  }
+}
+
+// MARK: - Private
+
+extension MainFeature {
+
+  private func handleSidebarDelegate(
+    _ state: inout State,
+    delegate: SidebarFeature.Action.Delegate
+  ) -> Effect<Action> {
+    switch delegate {
+    case .selectionChanged:
+      return .none
+
+    case .addButtonTapped:
+      return .none
+
+    case .settingsButtonTapped:
+      return .none
+
+    case .addProjectTapped:
+      return .none
     }
   }
 }
