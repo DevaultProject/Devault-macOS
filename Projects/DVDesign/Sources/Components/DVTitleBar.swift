@@ -9,15 +9,16 @@ public struct DVTitleBar: View {
     public let titleText: String
     public let searchText: Binding<String>
     public let searchPromptText: String
-    public let onSortTapped: () -> Void
+    public let onSortTapped: (() -> Void)?
 
     // MARK: - Init
 
+    /// - Parameter onSortTapped: 정렬 버튼 탭 핸들러. `nil`이면 정렬 버튼 자체를 그리지 않는다.
     public init(
         titleText: String,
         searchText: Binding<String>,
         searchPromptText: String = "Search",
-        onSortTapped: @escaping () -> Void
+        onSortTapped: (() -> Void)? = nil
     ) {
         self.titleText = titleText
         self.searchText = searchText
@@ -46,13 +47,15 @@ extension DVTitleBar {
                 .dvFont(.headingXL)
                 .foregroundStyle(Color.dv(.gray900))
             Spacer()
-            sortButton
+            if let onSortTapped {
+                sortButton(action: onSortTapped)
+            }
         }
         .padding(.vertical, 4)
     }
 
-    private var sortButton: some View {
-        Button(action: onSortTapped) {
+    private func sortButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             Image(systemName: "arrow.up.arrow.down")
                 .dvFont(.bodyXL)
                 .foregroundStyle(Color.dv(.gray800))
