@@ -19,5 +19,11 @@ let project = Project.project(
                 .tca(),
             ]
         ),
+        .tests(
+            name: "DVPresentationTests",
+            dependencies: [
+                .presentation(),
+            ]
+        ),
     ]
 )

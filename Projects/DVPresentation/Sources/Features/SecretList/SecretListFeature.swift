@@ -14,9 +14,19 @@ struct SecretListFeature {
 
   @ObservableState
   struct State: Equatable {
-    var secrets: IdentifiedArrayOf<Secret> = []
+    let collection: SecretQuery.Collection
+    var secretsState: LoadingState<IdentifiedArrayOf<Secret>, SecretUseCaseError> = .idle
     var selectedSecretID: Secret.ID?
-    var isLoading = false
+    var searchText = ""
+    var sort: SecretQuery.Sort = .recentlyAdded
+
+    init(collection: SecretQuery.Collection = .all) {
+      self.collection = collection
+    }
+
+    var query: SecretQuery {
+      SecretQuery(collection: collection, searchText: searchText.isEmpty ? nil : searchText, sort: sort)
+    }
   }
 
   // MARK: - Action
@@ -27,6 +37,8 @@ struct SecretListFeature {
 
     case task
     case didSelectSecret(id: Secret.ID?)
+    case didChangeSearchText(String)
+    case didSelectSort(SecretQuery.Sort)
 
     // MARK: - Internal
 
@@ -46,6 +58,11 @@ struct SecretListFeature {
   // MARK: - Dependencies
 
   @Dependency(\.secretClient) var secretClient
+  @Dependency(\.continuousClock) var clock
+
+  private enum CancelID {
+    case fetch
+  }
 
   // MARK: - Init
 
@@ -57,23 +74,23 @@ struct SecretListFeature {
     Reduce { state, action in
       switch action {
       case .task:
-        state.isLoading = true
-        return .run { send in
-          do {
-            let secrets = try await secretClient.fetchByQuery(SecretQuery())
-            await send(.secretsResponse(.success(secrets)))
-          } catch {
-            await send(.secretsResponse(.failure(SecretUseCaseError.map(error))))
-          }
-        }
+        state.secretsState = .loading
+        return fetchSecretsEffect(query: state.query, debounced: false)
+
+      case .didChangeSearchText(let text):
+        state.searchText = text
+        return fetchSecretsEffect(query: state.query, debounced: true)
+
+      case .didSelectSort(let sort):
+        state.sort = sort
+        return fetchSecretsEffect(query: state.query, debounced: false)
 
       case .secretsResponse(.success(let secrets)):
-        state.isLoading = false
-        state.secrets = IdentifiedArray(uniqueElements: secrets)
+        state.secretsState = .loaded(IdentifiedArray(uniqueElements: secrets))
         return .none
 
-      case .secretsResponse(.failure):
-        state.isLoading = false
+      case .secretsResponse(.failure(let error)):
+        state.secretsState = .failed(error)
         return .none
 
       case .didSelectSecret(let id):
@@ -84,5 +101,22 @@ struct SecretListFeature {
         return .none
       }
     }
+  }
+
+  // MARK: - Helpers
+
+  private func fetchSecretsEffect(query: SecretQuery, debounced: Bool) -> Effect<Action> {
+    .run { send in
+      if debounced {
+        try await clock.sleep(for: .milliseconds(300))
+      }
+      do {
+        let secrets = try await secretClient.fetchByQuery(query)
+        await send(.secretsResponse(.success(secrets)))
+      } catch {
+        await send(.secretsResponse(.failure(SecretUseCaseError.map(error))))
+      }
+    }
+    .cancellable(id: CancelID.fetch, cancelInFlight: true)
   }
 }
