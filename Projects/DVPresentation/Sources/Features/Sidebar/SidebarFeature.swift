@@ -26,7 +26,7 @@ public enum SidebarFilter: Equatable, CaseIterable, Hashable {
     case .all: "square.grid.2x2.fill"
     case .starred: "star.fill"
     case .expired: "exclamationmark"
-    case .deleted: "trash.fill"
+    case .deleted: "trash"
     }
   }
 }
