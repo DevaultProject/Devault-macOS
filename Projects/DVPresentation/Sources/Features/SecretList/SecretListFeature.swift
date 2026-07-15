@@ -25,10 +25,30 @@ struct SecretListFeature {
       self.collection = collection
     }
 
+    /// `.expired`는 "이미 지남 + N일 이내 예정"을 한 화면에서 섹션으로 나눠 보여준다.
+    /// `SecretFetchDescriptorBuilder`의 `expired` predicate는 `expiresAt < referenceDate` 단일 비교라
+    /// referenceDate를 `expiringSoonWindowDays`만큼 미래로 밀어서 두 범위를 한 번에 가져온다.
+    /// 화면에 표시되는 `collection`(및 그 referenceDate)은 실제 "오늘"을 유지 — 섹션 분류 기준으로 View가 그대로 쓴다.
     var query: SecretQuery {
-      SecretQuery(collection: collection, searchText: searchText.isEmpty ? nil : searchText, sort: sort)
+      let normalizedSearchText = searchText.isEmpty ? nil : searchText
+      switch collection {
+      case let .expired(referenceDate):
+        let windowEnd = referenceDate.addingTimeInterval(
+          TimeInterval(SecretListFeature.expiringSoonWindowDays) * 86_400
+        )
+        return SecretQuery(
+          collection: .expired(referenceDate: windowEnd),
+          searchText: normalizedSearchText,
+          sort: .expiringSoon
+        )
+      default:
+        return SecretQuery(collection: collection, searchText: normalizedSearchText, sort: sort)
+      }
     }
   }
+
+  /// Expired 탭에서 "예정" 섹션으로 함께 보여줄 최대 기간(일).
+  static let expiringSoonWindowDays = 30
 
   // MARK: - Action
 
