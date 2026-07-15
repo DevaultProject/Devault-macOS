@@ -8,8 +8,24 @@ import Foundation
 /// searchText 매칭과, SwiftData `SortDescriptor`가 지원하지 않는 로케일 인식 이름 정렬을 담당한다.
 enum InMemorySecretQueryFilter {
     static func apply(_ query: SecretQuery, to secrets: [DVDomain.Secret]) -> [DVDomain.Secret] {
-        let filtered = secrets.filter { matchesSearchText(query.searchText, secret: $0) }
+        let filtered = secrets
+            .filter { matchesSearchText(query.searchText, secret: $0) }
+            .filter { matchesExpiry(query.collection, secret: $0) }
         return sortedByNameIfNeeded(filtered, sort: query.sort)
+    }
+
+    /// `.all`/`.liked`(Star)는 이미 만료된 Secret을 보여주지 않는다 — 만료된 항목은 Expired 탭에서만 보인다.
+    private static func matchesExpiry(_ collection: SecretQuery.Collection, secret: DVDomain.Secret) -> Bool {
+        switch collection {
+        case .all, .liked:
+            break
+        case .expired, .deleted, .project:
+            return true
+        }
+        guard let expiresAt = secret.expiresAt else {
+            return true
+        }
+        return expiresAt >= Date.now
     }
 
     /// SwiftData `SortDescriptor(\.name)`는 Unicode 코드포인트 순서(대소문자 구분)로만 비교해

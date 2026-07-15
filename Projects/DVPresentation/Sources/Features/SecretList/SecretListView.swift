@@ -64,25 +64,69 @@ extension SecretListView {
 
   private var list: some View {
     List(selection: selectedSecretIDBinding) {
-      ForEach(secrets) { secret in
-        DVVaultContainer(
-          name: secret.name,
-          date: SecretDateFormatter.string(from: secret.updatedAt),
-          isSelected: secret.id == store.selectedSecretID
-        )
-        .tag(secret.id)
-        .listRowInsets(EdgeInsets())
-        .listRowBackground(Color.clear)
-        .listRowSeparator(.hidden)
-        .contextMenu {
-          contextMenuItems(for: secret)
+      if case let .expired(referenceDate) = store.collection {
+        expirySections(referenceDate: referenceDate)
+      } else {
+        ForEach(secrets) { secret in
+          row(for: secret)
         }
       }
     }
     .listStyle(.sidebar)
     .scrollContentBackground(.hidden)
-    .tint(Color.dv(.vaultGreen))
+    .tint(Color(nsColor: .controlAccentColor).opacity(0.6))
   }
+
+  /// "이미 지남"과 "N일 이내 예정"을 섹션으로 나눠 보여준다. 쿼리가 이미 `expiringSoon` 순으로 정렬해 와서
+  /// 버킷 안에서 다시 정렬할 필요는 없다.
+  @ViewBuilder
+  private func expirySections(referenceDate: Date) -> some View {
+    ForEach(ExpiryBucket.allCases) { bucket in
+      let bucketSecrets = secrets.filter { bucket.contains($0.expiresAt, referenceDate: referenceDate) }
+      if !bucketSecrets.isEmpty {
+        Section {
+          ForEach(bucketSecrets) { secret in
+            row(for: secret)
+          }
+        } header: {
+          Text(bucket.title)
+            .dvFont(.captionMDSemibold)
+            .foregroundStyle(Color(nsColor: .controlAccentColor))
+        }
+      }
+    }
+  }
+
+  private func row(for secret: Secret) -> some View {
+    DVVaultContainer(
+      name: secret.name,
+      date: SecretDateFormatter.string(from: secret.updatedAt),
+      trailingIcon: trailingIcon(for: secret),
+      isSelected: secret.id == store.selectedSecretID
+    )
+    .tag(secret.id)
+    .listRowInsets(EdgeInsets())
+    .listRowBackground(Color.clear)
+    .listRowSeparator(.hidden)
+    .contextMenu {
+      contextMenuItems(for: secret)
+    }
+  }
+
+  /// All/Star/Expired/Deleted 어디서든 만료 상태를 알려준다: 이미 지났으면 느낌표, `expiringSoonThreshold` 이내면 시계.
+  private func trailingIcon(for secret: Secret) -> DVVaultContainer.TrailingIcon? {
+    guard let expiresAt = secret.expiresAt else { return nil }
+    let now = Date.now
+    if expiresAt < now {
+      return .expired
+    }
+    if expiresAt <= now.addingTimeInterval(Self.expiringSoonThreshold) {
+      return .expiringSoon
+    }
+    return nil
+  }
+
+  private static let expiringSoonThreshold: TimeInterval = 3 * 86_400
 
   /// All/Star/Expired는 "프로젝트에 추가/삭제", Deleted는 "복구/영구 삭제"를 보여준다.
   @ViewBuilder
@@ -171,6 +215,41 @@ extension SecretListView {
   }
 }
 
+// MARK: - ExpiryBucket
+
+/// Expired 탭의 섹션 구분. 경계는 오늘 기준 7일/30일로 고정.
+
+private enum ExpiryBucket: CaseIterable, Identifiable {
+  case expired
+  case within7Days
+  case within30Days
+
+  var id: Self { self }
+
+  var title: String {
+    switch self {
+    case .expired: return "Expired"
+    case .within7Days: return "Expires in 7 days"
+    case .within30Days: return "Expires in 30 days"
+    }
+  }
+
+  func contains(_ expiresAt: Date?, referenceDate: Date) -> Bool {
+    guard let expiresAt else { return false }
+    let sevenDaysOut = referenceDate.addingTimeInterval(7 * 86_400)
+    let thirtyDaysOut = referenceDate.addingTimeInterval(30 * 86_400)
+
+    switch self {
+    case .expired:
+      return expiresAt < referenceDate
+    case .within7Days:
+      return expiresAt >= referenceDate && expiresAt < sevenDaysOut
+    case .within30Days:
+      return expiresAt >= sevenDaysOut && expiresAt <= thirtyDaysOut
+    }
+  }
+}
+
 // MARK: - SortMenuRow
 
 /// 체크마크 + 호버 하이라이트를 갖는 네이티브 메뉴 스타일 행. 이 화면 전용 — 재사용 필요해지면 DVDesign으로 승격.
@@ -220,7 +299,7 @@ private struct SortMenuRow: View {
   .frame(width: 300, height: 500)
 }
 
-#Preview("Expired - 정렬 없음") {
+#Preview("Expired - Expired/7일/30일 섹션") {
   SecretListView(
     store: Store(initialState: SecretListFeature.State(collection: .expired(referenceDate: .now))) {
       SecretListFeature()
