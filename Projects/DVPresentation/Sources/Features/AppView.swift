@@ -31,7 +31,7 @@ public struct AppView: View {
 extension AppView {
 
   private var content: some View {
-    Text("Devault")
+    MainView(store: store.scope(state: \.main, action: \.main))
   }
 }
 
