@@ -28,7 +28,7 @@ extension MainView {
     NavigationSplitView(
       columnVisibility: Binding(
         get: { store.columnVisibility },
-        set: { store.send(.columnVisibilityChanged($0)) }
+        set: { store.send(.didChangeColumnVisibility($0)) }
       )
     ) {
       sidebar
