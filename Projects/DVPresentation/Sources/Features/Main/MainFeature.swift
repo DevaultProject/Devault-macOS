@@ -25,7 +25,7 @@ public struct MainFeature {
     // MARK: - View
 
     case task
-    case columnVisibilityChanged(NavigationSplitViewVisibility)
+    case didChangeColumnVisibility(NavigationSplitViewVisibility)
 
     // MARK: - Delegate
 
@@ -46,7 +46,7 @@ public struct MainFeature {
       case .task:
         return .none
 
-      case .columnVisibilityChanged(let visibility):
+      case .didChangeColumnVisibility(let visibility):
         state.columnVisibility = visibility
         return .none
 
