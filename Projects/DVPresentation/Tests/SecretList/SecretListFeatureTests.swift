@@ -125,6 +125,69 @@ struct SecretListFeatureTests {
         await store.receive(.delegate(.secretSelected(id)))
     }
 
+    @Test("didTapDelete는 softDelete를 호출하고 성공하면 목록을 재조회한다")
+    func deleteRefetchesOnSuccess() async {
+        let secret = makeSecret(name: "GitHub API Key")
+        let store = TestStore(initialState: SecretListFeature.State()) {
+            SecretListFeature()
+        } withDependencies: {
+            $0.secretClient.softDelete = { _ in secret }
+            $0.secretClient.fetchByQuery = { _ in [] }
+        }
+
+        await store.send(.didTapDelete(id: secret.id))
+        await store.receive(.mutationResponse(.success(secret.id)))
+        await store.receive(.secretsResponse(.success([]))) {
+            $0.secretsState = .loaded([])
+        }
+    }
+
+    @Test("didTapRecover는 restore를 호출하고 성공하면 목록을 재조회한다")
+    func recoverRefetchesOnSuccess() async {
+        let secret = makeSecret(name: "GitHub API Key")
+        let store = TestStore(initialState: SecretListFeature.State(collection: .deleted)) {
+            SecretListFeature()
+        } withDependencies: {
+            $0.secretClient.restore = { _ in secret }
+            $0.secretClient.fetchByQuery = { _ in [] }
+        }
+
+        await store.send(.didTapRecover(id: secret.id))
+        await store.receive(.mutationResponse(.success(secret.id)))
+        await store.receive(.secretsResponse(.success([]))) {
+            $0.secretsState = .loaded([])
+        }
+    }
+
+    @Test("didTapDeleteForever는 permanentlyDelete를 호출하고 성공하면 목록을 재조회한다")
+    func deleteForeverRefetchesOnSuccess() async {
+        let secretID = UUID()
+        let store = TestStore(initialState: SecretListFeature.State(collection: .deleted)) {
+            SecretListFeature()
+        } withDependencies: {
+            $0.secretClient.permanentlyDelete = { _ in }
+            $0.secretClient.fetchByQuery = { _ in [] }
+        }
+
+        await store.send(.didTapDeleteForever(id: secretID))
+        await store.receive(.mutationResponse(.success(secretID)))
+        await store.receive(.secretsResponse(.success([]))) {
+            $0.secretsState = .loaded([])
+        }
+    }
+
+    @Test("didTapAddToProject는 destination을 연다")
+    func addToProjectPresentsDestination() async {
+        let secretID = UUID()
+        let store = TestStore(initialState: SecretListFeature.State()) {
+            SecretListFeature()
+        }
+
+        await store.send(.didTapAddToProject(id: secretID)) {
+            $0.destination = .addToProject(AddToProjectFeature.State(secretID: secretID))
+        }
+    }
+
     // MARK: - Helpers
 
     private func makeSecret(name: String) -> Secret {

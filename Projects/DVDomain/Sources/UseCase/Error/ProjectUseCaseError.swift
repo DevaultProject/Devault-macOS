@@ -10,7 +10,7 @@ public enum ProjectUseCaseError: Error, Equatable, Sendable {
 }
 
 extension ProjectUseCaseError {
-    static func map(_ error: Error) -> ProjectUseCaseError {
+    public static func map(_ error: Error) -> ProjectUseCaseError {
         if let error = error as? ProjectUseCaseError {
             return error
         }

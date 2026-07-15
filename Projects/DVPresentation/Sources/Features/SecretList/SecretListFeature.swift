@@ -19,6 +19,7 @@ struct SecretListFeature {
     var selectedSecretID: Secret.ID?
     var searchText = ""
     var sort: SecretQuery.Sort = .recentlyAdded
+    @Presents var destination: Destination.State?
 
     init(collection: SecretQuery.Collection = .all) {
       self.collection = collection
@@ -39,12 +40,19 @@ struct SecretListFeature {
     case didSelectSecret(id: Secret.ID?)
     case didChangeSearchText(String)
     case didSelectSort(SecretQuery.Sort)
+    case didTapAddToProject(id: Secret.ID)
+    case didTapDelete(id: Secret.ID)
+    case didTapRecover(id: Secret.ID)
+    case didTapDeleteForever(id: Secret.ID)
 
     // MARK: - Internal
 
     case secretsResponse(Result<[Secret], SecretUseCaseError>)
+    case mutationResponse(Result<Secret.ID, SecretUseCaseError>)
 
     // MARK: - Child
+
+    case destination(PresentationAction<Destination.Action>)
 
     // MARK: - Delegate
 
@@ -53,6 +61,13 @@ struct SecretListFeature {
     enum Delegate: Equatable {
       case secretSelected(Secret.ID?)
     }
+  }
+
+  // MARK: - Destination
+
+  @Reducer
+  enum Destination {
+    case addToProject(AddToProjectFeature)
   }
 
   // MARK: - Dependencies
@@ -97,10 +112,33 @@ struct SecretListFeature {
         state.selectedSecretID = id
         return .send(.delegate(.secretSelected(id)))
 
+      case .didTapAddToProject(let id):
+        state.destination = .addToProject(AddToProjectFeature.State(secretID: id))
+        return .none
+
+      case .didTapDelete(let id):
+        return mutationEffect(id: id) { try await secretClient.softDelete(id) }
+
+      case .didTapRecover(let id):
+        return mutationEffect(id: id) { try await secretClient.restore(id) }
+
+      case .didTapDeleteForever(let id):
+        return mutationEffect(id: id) { try await secretClient.permanentlyDelete(id) }
+
+      case .mutationResponse(.success):
+        return fetchSecretsEffect(query: state.query, debounced: false)
+
+      case .mutationResponse(.failure):
+        return .none
+
+      case .destination:
+        return .none
+
       case .delegate:
         return .none
       }
     }
+    .ifLet(\.$destination, action: \.destination)
   }
 
   // MARK: - Helpers
@@ -119,4 +157,21 @@ struct SecretListFeature {
     }
     .cancellable(id: CancelID.fetch, cancelInFlight: true)
   }
+
+  private func mutationEffect(id: Secret.ID, operation: @escaping () async throws -> Void) -> Effect<Action> {
+    .run { send in
+      do {
+        try await operation()
+        await send(.mutationResponse(.success(id)))
+      } catch {
+        await send(.mutationResponse(.failure(SecretUseCaseError.map(error))))
+      }
+    }
+  }
 }
+
+// MARK: - Destination Equatable
+
+// swift-composable-architecture는 @Reducer enum의 State/Action에 Equatable을 자동으로 붙이지 않는다 (공식 예제도 동일하게 명시적으로 붙임).
+extension SecretListFeature.Destination.State: Equatable {}
+extension SecretListFeature.Destination.Action: Equatable {}

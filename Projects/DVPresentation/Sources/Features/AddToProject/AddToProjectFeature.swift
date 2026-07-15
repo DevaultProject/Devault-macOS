@@ -1,0 +1,113 @@
+// Copyright © 2026 Devault. All rights reserved
+
+import Foundation
+
+import ComposableArchitecture
+import DVDomain
+
+// MARK: - AddToProjectFeature
+
+@Reducer
+struct AddToProjectFeature {
+
+  // MARK: - State
+
+  @ObservableState
+  struct State: Equatable {
+    let secretID: Secret.ID
+    var projects: IdentifiedArrayOf<Project> = []
+    var isLoading = false
+
+    init(secretID: Secret.ID) {
+      self.secretID = secretID
+    }
+  }
+
+  // MARK: - Action
+
+  enum Action: Equatable {
+
+    // MARK: - View
+
+    case task
+    case didTapProject(id: Project.ID)
+    case didTapCancel
+
+    // MARK: - Internal
+
+    case projectsResponse(Result<[Project], ProjectUseCaseError>)
+    case linkResponse(Result<Secret.ID, SecretUseCaseError>)
+
+    // MARK: - Child
+
+    // MARK: - Delegate
+
+    case delegate(Delegate)
+
+    enum Delegate: Equatable {
+      case projectLinked
+    }
+  }
+
+  // MARK: - Dependencies
+
+  @Dependency(\.secretClient) var secretClient
+  @Dependency(\.dismiss) var dismiss
+
+  // MARK: - Init
+
+  init() {}
+
+  // MARK: - Body
+
+  var body: some ReducerOf<Self> {
+    Reduce { state, action in
+      switch action {
+      case .task:
+        state.isLoading = true
+        return .run { send in
+          do {
+            let projects = try await secretClient.fetchProjects()
+            await send(.projectsResponse(.success(projects)))
+          } catch {
+            await send(.projectsResponse(.failure(ProjectUseCaseError.map(error))))
+          }
+        }
+
+      case .projectsResponse(.success(let projects)):
+        state.isLoading = false
+        state.projects = IdentifiedArray(uniqueElements: projects)
+        return .none
+
+      case .projectsResponse(.failure):
+        state.isLoading = false
+        return .none
+
+      case .didTapProject(let id):
+        return .run { [secretID = state.secretID] send in
+          do {
+            try await secretClient.linkProject(secretID, id)
+            await send(.linkResponse(.success(secretID)))
+          } catch {
+            await send(.linkResponse(.failure(SecretUseCaseError.map(error))))
+          }
+        }
+
+      case .linkResponse(.success):
+        return .run { send in
+          await send(.delegate(.projectLinked))
+          await dismiss()
+        }
+
+      case .linkResponse(.failure):
+        return .none
+
+      case .didTapCancel:
+        return .run { _ in await dismiss() }
+
+      case .delegate:
+        return .none
+      }
+    }
+  }
+}
