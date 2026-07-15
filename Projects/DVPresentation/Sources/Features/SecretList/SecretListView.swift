@@ -21,6 +21,11 @@ struct SecretListView: View {
   var body: some View {
     content
       .task { store.send(.task) }
+      .sheet(
+        item: $store.scope(state: \.destination?.addToProject, action: \.destination.addToProject)
+      ) { addToProjectStore in
+        AddToProjectView(store: addToProjectStore)
+      }
   }
 }
 
@@ -69,11 +74,36 @@ extension SecretListView {
         .listRowInsets(EdgeInsets())
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
+        .contextMenu {
+          contextMenuItems(for: secret)
+        }
       }
     }
     .listStyle(.sidebar)
     .scrollContentBackground(.hidden)
     .tint(Color.dv(.vaultGreen))
+  }
+
+  /// All/Star/Expired는 "프로젝트에 추가/삭제", Deleted는 "복구/영구 삭제"를 보여준다.
+  @ViewBuilder
+  private func contextMenuItems(for secret: Secret) -> some View {
+    switch store.collection {
+    case .deleted:
+      Button("Recover") {
+        store.send(.didTapRecover(id: secret.id))
+      }
+      Button("Delete Forever", role: .destructive) {
+        store.send(.didTapDeleteForever(id: secret.id))
+      }
+
+    case .all, .liked, .expired, .project:
+      Button("Add to Project") {
+        store.send(.didTapAddToProject(id: secret.id))
+      }
+      Button("Delete", role: .destructive) {
+        store.send(.didTapDelete(id: secret.id))
+      }
+    }
   }
 
   private var sortMenu: some View {
@@ -193,6 +223,17 @@ private struct SortMenuRow: View {
 #Preview("Expired - 정렬 없음") {
   SecretListView(
     store: Store(initialState: SecretListFeature.State(collection: .expired(referenceDate: .now))) {
+      SecretListFeature()
+    } withDependencies: {
+      $0.secretClient = .previewValue
+    }
+  )
+  .frame(width: 300, height: 500)
+}
+
+#Preview("Deleted - 정렬 없음, 우클릭: Recover/Delete Forever") {
+  SecretListView(
+    store: Store(initialState: SecretListFeature.State(collection: .deleted)) {
       SecretListFeature()
     } withDependencies: {
       $0.secretClient = .previewValue
