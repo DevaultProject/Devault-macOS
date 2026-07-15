@@ -27,7 +27,7 @@ public struct DVProjectContainer: View {
             Spacer(minLength: 8)
             countLabel
         }
-        .padding(6)
+        .padding(2)
         .frame(minWidth: 120, alignment: .leading)
     }
 }
@@ -39,13 +39,13 @@ extension DVProjectContainer {
     private var projectIcon: some View {
         Image(systemName: "tray")
             .dvFont(.captionLG)
-            .foregroundStyle(.primary)
+            .foregroundStyle(Color.dv(.gray900))
     }
 
     private var nameLabel: some View {
         Text(name)
             .dvFont(.bodyMD)
-            .foregroundStyle(.primary)
+            .foregroundStyle(Color.dv(.gray900))
             .lineLimit(1)
             .truncationMode(.tail)
             .frame(minWidth: 40, alignment: .leading)
@@ -54,7 +54,7 @@ extension DVProjectContainer {
     private var countLabel: some View {
         Text(count > 999 ? "999+" : "\(count)")
             .dvFont(.bodyMD)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color.dv(.gray400))
             .fixedSize()
     }
 }

@@ -64,21 +64,21 @@ extension DVCategory {
 
     private var iconView: some View {
         Image(systemName: systemImage)
-            .font(.system(size: 16, weight: .medium))
-            .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray700))
-            .frame(width: 28, height: 28)
+            .dvFont(.headingLG)
+            .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray800))
+            .frame(width: 24, height: 24)
     }
 
     private var titleLabel: some View {
         Text(title)
             .dvFont(.bodyLG)
-            .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray800))
+            .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray900))
     }
 
     private var countLabel: some View {
         Text(count > 999 ? "999+" : "\(count)")
             .dvFont(.bodyMD)
-            .foregroundStyle(isSelected ? Color.dv(.white).opacity(0.8) : Color.dv(.gray600))
+            .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray600))
     }
 }
 
@@ -99,6 +99,6 @@ private struct DVCategoryButtonStyle: ButtonStyle {
         if isSelected { return Color.dv(.vaultGreen) }
         if isPressed  { return Color.dv(.gray300) }
         if isHovered  { return Color.dv(.gray200) }
-        return Color.dv(.gray100)
+        return Color.dv(.gray200)
     }
 }
