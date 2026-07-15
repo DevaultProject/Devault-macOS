@@ -1,6 +1,6 @@
 // Copyright © 2026 Devault. All rights reserved
 
-import Foundation
+import SwiftUI
 
 import ComposableArchitecture
 
@@ -13,6 +13,7 @@ public struct AppFeature {
 
   @ObservableState
   public struct State: Equatable {
+    var main: MainFeature.State = .init()
 
     public init() {}
   }
@@ -24,6 +25,10 @@ public struct AppFeature {
     // MARK: - View
 
     case task
+
+    // MARK: - Child
+
+    case main(MainFeature.Action)
 
     // MARK: - Delegate
 
@@ -39,9 +44,15 @@ public struct AppFeature {
   // MARK: - Body
 
   public var body: some ReducerOf<Self> {
+    Scope(state: \.main, action: \.main) {
+      MainFeature()
+    }
     Reduce { state, action in
       switch action {
       case .task:
+        return .none
+
+      case .main:
         return .none
 
       case .delegate:
