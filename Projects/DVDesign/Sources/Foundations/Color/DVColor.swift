@@ -20,6 +20,7 @@ public enum DVColor: CaseIterable {
     case black
     case danger
     case warning
+    case required
 
     public var color: Color {
         switch self {
@@ -40,6 +41,7 @@ public enum DVColor: CaseIterable {
         case .black:           return Color("black", bundle: .module)
         case .danger:          return Color("danger", bundle: .module)
         case .warning:         return Color("warning", bundle: .module)
+        case .required:        return Color("required", bundle: .module)
         }
     }
 }
