@@ -55,11 +55,18 @@ public struct DVChipsField: View {
                 DVChipFlow(hSpacing: 10, vSpacing: 10) {
                     ForEach(visibleChips, id: \.self) { chip in
                         DVChip(chip) { handleTapChip(chip) }
+                            .transition(
+                                .asymmetric(
+                                    insertion: .opacity.combined(with: .scale(scale: 0.85)),
+                                    removal: .opacity
+                                )
+                            )
                     }
                 }
                 .frame(width: size.width, alignment: .leading)
             }
         }
+        .animation(.spring(response: 0.5, dampingFraction: 0.85), value: visibleChips)
     }
 
     /// input과 정확히 일치하는 chip은 편집 대상으로 간주하여 목록에서 숨김.
@@ -85,9 +92,14 @@ extension DVChipsField {
 
 /// Chips wrapping flow layout — 가로로 배치하다가 너비를 넘으면 다음 줄로 wrap.
 ///
-/// SwiftUI `Layout` protocol을 사용해 컨테이너 너비에 맞춰 자동으로 세로 확장.
-/// macOS 13+ 필요.
+/// 각 chip 크기를 캐시해 `sizeThatFits`/`placeSubviews` 간 중복 측정을 피하고,
+/// 두 함수 모두 동일한 `arrangement(...)` 헬퍼로 배치 계산을 위임한다.
 private struct DVChipFlow: Layout {
+
+    struct Cache {
+        var proposedWidth: CGFloat?
+        var sizes: [CGSize] = []
+    }
 
     let hSpacing: CGFloat
     let vSpacing: CGFloat
@@ -97,65 +109,81 @@ private struct DVChipFlow: Layout {
         self.vSpacing = vSpacing
     }
 
+    func makeCache(subviews: Subviews) -> Cache { Cache() }
+
     func sizeThatFits(
         proposal: ProposedViewSize,
         subviews: Subviews,
-        cache: inout ()
+        cache: inout Cache
     ) -> CGSize {
         guard !subviews.isEmpty else { return .zero }
         let maxWidth = proposal.width ?? .infinity
-
-        // 각 subview에 컨테이너 너비를 propose — chip이 자연 너비가
-        // 초과할 경우 tail truncate 되어 항상 한 줄에 최소 하나는 들어감.
-        let chipProposal = ProposedViewSize(width: maxWidth, height: nil)
-
-        var currentX: CGFloat = 0
-        var currentY: CGFloat = 0
-        var lineHeight: CGFloat = 0
-        var totalWidth: CGFloat = 0
-
-        for (index, subview) in subviews.enumerated() {
-            let size = subview.sizeThatFits(chipProposal)
-            if index > 0 && currentX + size.width > maxWidth {
-                currentY += lineHeight + vSpacing
-                currentX = 0
-                lineHeight = 0
-            }
-            currentX += size.width
-            lineHeight = max(lineHeight, size.height)
-            totalWidth = max(totalWidth, currentX)
-            if index < subviews.count - 1 {
-                currentX += hSpacing
-            }
-        }
-        return CGSize(width: totalWidth, height: currentY + lineHeight)
+        let sizes = ensureSizes(for: subviews, width: maxWidth, cache: &cache)
+        return arrangement(sizes: sizes, maxWidth: maxWidth).bounds
     }
 
     func placeSubviews(
         in bounds: CGRect,
         proposal: ProposedViewSize,
         subviews: Subviews,
-        cache: inout ()
+        cache: inout Cache
     ) {
+        let sizes = ensureSizes(for: subviews, width: bounds.width, cache: &cache)
+        let positions = arrangement(sizes: sizes, maxWidth: bounds.width).positions
         let chipProposal = ProposedViewSize(width: bounds.width, height: nil)
-        var currentX: CGFloat = bounds.minX
-        var currentY: CGFloat = bounds.minY
-        var lineHeight: CGFloat = 0
 
         for (index, subview) in subviews.enumerated() {
-            let size = subview.sizeThatFits(chipProposal)
-            if index > 0 && currentX + size.width > bounds.maxX {
-                currentY += lineHeight + vSpacing
-                currentX = bounds.minX
-                lineHeight = 0
-            }
+            let position = positions[index]
             subview.place(
-                at: CGPoint(x: currentX, y: currentY),
+                at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y),
                 proposal: chipProposal
             )
-            currentX += size.width + hSpacing
-            lineHeight = max(lineHeight, size.height)
         }
+    }
+
+    /// 각 subview에 컨테이너 너비를 propose 한 결과를 캐시. 동일한 width에 대한
+    /// 반복 호출 시 재계산 생략.
+    private func ensureSizes(
+        for subviews: Subviews,
+        width: CGFloat,
+        cache: inout Cache
+    ) -> [CGSize] {
+        if cache.proposedWidth != width || cache.sizes.count != subviews.count {
+            let proposal = ProposedViewSize(width: width, height: nil)
+            cache.sizes = subviews.map { $0.sizeThatFits(proposal) }
+            cache.proposedWidth = width
+        }
+        return cache.sizes
+    }
+
+    /// 한 번의 라인 브레이크 계산으로 각 chip의 상대 위치와 전체 바운딩 사이즈를 반환.
+    /// `sizeThatFits`와 `placeSubviews`가 동일한 결과를 참조하도록 단일 소스로 둔다.
+    private func arrangement(
+        sizes: [CGSize],
+        maxWidth: CGFloat
+    ) -> (positions: [CGPoint], bounds: CGSize) {
+        var positions: [CGPoint] = []
+        positions.reserveCapacity(sizes.count)
+        var currentX: CGFloat = 0
+        var currentY: CGFloat = 0
+        var lineHeight: CGFloat = 0
+        var totalWidth: CGFloat = 0
+
+        for (index, size) in sizes.enumerated() {
+            if index > 0 && currentX + size.width > maxWidth {
+                currentY += lineHeight + vSpacing
+                currentX = 0
+                lineHeight = 0
+            }
+            positions.append(CGPoint(x: currentX, y: currentY))
+            currentX += size.width
+            lineHeight = max(lineHeight, size.height)
+            totalWidth = max(totalWidth, currentX)
+            if index < sizes.count - 1 {
+                currentX += hSpacing
+            }
+        }
+        return (positions, CGSize(width: totalWidth, height: currentY + lineHeight))
     }
 }
 
