@@ -59,11 +59,7 @@ public struct DVMultilineTextField: View {
 
 extension DVMultilineTextField {
 
-    // TextEditor는 NSTextView 기반이라 자체 내부 inset이 있습니다.
-    // 시각 정렬을 위해 커서 시작 위치(약 leading 5pt, top 8pt)에
-    // placeholder를 정확히 겹치도록 padding을 맞춥니다.
-    private static let contentInsetLeading: CGFloat = 6
-    private static let contentInsetTop: CGFloat = 0
+    private static let placeholderLeadingInset: CGFloat = 6
 
     private var editor: some View {
         TextEditor(text: $text)
@@ -78,7 +74,7 @@ extension DVMultilineTextField {
         Text(placeholder)
             .font(DVFont.bodyLG.font)
             .foregroundStyle(Color.dv(.gray400))
-            .padding(.leading, Self.contentInsetLeading)
+            .padding(.leading, Self.placeholderLeadingInset)
             .allowsHitTesting(false)
     }
 }
