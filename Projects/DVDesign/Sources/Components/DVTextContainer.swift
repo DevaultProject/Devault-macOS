@@ -93,6 +93,7 @@ import SwiftUI
 public struct DVTextContainer<Accessories: View>: View {
     private let text: String
     private let size: DVComponentSize
+    private let textColor: DVColor
     private let accessories: () -> Accessories
     /// 우측 padding (포인트). 액세서리가 있을 땐 4pt(아이콘이 약간 안쪽으로 들어오는 디자인), 액세서리 없는 단순 텍스트 컨테이너는 좌우 대칭의 8pt를 적용한다.
     private let trailingPadding: CGFloat
@@ -102,15 +103,19 @@ public struct DVTextContainer<Accessories: View>: View {
     /// - Parameters:
     ///   - text: 박스 좌측에 표시될 본문 텍스트. 빈 문자열을 전달하면 Empty 상태가 됩니다.
     ///   - size: 너비 변형. 기본값은 ``DVComponentSize/md``.
+    ///   - textColor: 본문 텍스트 색상 토큰. 비활성 상태 등에서 다른 색을 쓰고 싶을 때 지정.
+    ///     기본값 ``DVColor/gray900``.
     ///   - accessories: 박스 우측에 배치될 임의의 뷰를 만드는 빌더.
     ///   아이콘 모음, 토글 버튼 등. 버튼이 외부 `@State`를 갱신하면 자연스럽게 `text` 인자가 다음 렌더에서 바뀌어 텍스트 표시도 함께 갱신됩니다.
     public init(
         _ text: String,
         size: DVComponentSize = .md,
+        textColor: DVColor = .gray900,
         @ViewBuilder accessories: @escaping () -> Accessories
     ) {
         self.text = text
         self.size = size
+        self.textColor = textColor
         self.accessories = accessories
         self.trailingPadding = 4
     }
@@ -122,7 +127,7 @@ public struct DVTextContainer<Accessories: View>: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 Text(text)
                     .font(DVFont.bodyLG.font)
-                    .foregroundStyle(Color.dv(.gray900))
+                    .foregroundStyle(Color.dv(textColor))
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
                     .textSelection(.enabled)
@@ -148,12 +153,15 @@ extension DVTextContainer where Accessories == EmptyView {
     /// - Parameters:
     ///   - text: 박스에 표시될 본문 텍스트.
     ///   - size: 너비 변형. 기본값은 ``DVComponentSize/md``.
+    ///   - textColor: 본문 텍스트 색상 토큰. 기본값 ``DVColor/gray900``.
     public init(
         _ text: String,
-        size: DVComponentSize = .md
+        size: DVComponentSize = .md,
+        textColor: DVColor = .gray900
     ) {
         self.text = text
         self.size = size
+        self.textColor = textColor
         self.accessories = { EmptyView() }
         self.trailingPadding = 8
     }
@@ -184,14 +192,16 @@ extension DVTextContainer where Accessories == AnyView {
     ///   - text: 마스킹 대상 원본 텍스트.
     ///   - isRevealed: 마스킹 해제 여부에 대한 양방향 바인딩. 토글 버튼이 이 값을 갱신하며, 호출자도 자유롭게 외부에서 수정 가능합니다.
     ///   - size: 너비 변형. 기본값은 ``DVComponentSize/md``.
+    ///   - textColor: 본문 텍스트 색상 토큰. 기본값 ``DVColor/gray900``.
     public init(
         secured text: String,
         isRevealed: Binding<Bool>,
-        size: DVComponentSize = .md
+        size: DVComponentSize = .md,
+        textColor: DVColor = .gray900
     ) {
         let revealed = isRevealed.wrappedValue
         let displayed = revealed ? text : String(repeating: "•", count: text.count)
-        self.init(displayed, size: size) {
+        self.init(displayed, size: size, textColor: textColor) {
             AnyView(
                 Button {
                     isRevealed.wrappedValue.toggle()
@@ -220,13 +230,15 @@ extension DVTextContainer where Accessories == AnyView {
     /// - Parameters:
     ///   - text: 박스에 표시될 본문 텍스트. (호출자가 실제 클립보드에 쓸 문자열은 `onCopy` 내부에서 결정합니다 — text 인자와 다를 수 있음.)
     ///   - size: 너비 변형. 기본값은 ``DVComponentSize/md``.
+    ///   - textColor: 본문 텍스트 색상 토큰. 기본값 ``DVColor/gray900``.
     ///   - onCopy: 복사 버튼 탭 시 실행될 클로저.
     public init(
         copyable text: String,
         size: DVComponentSize = .md,
+        textColor: DVColor = .gray900,
         onCopy: @escaping () -> Void
     ) {
-        self.init(text, size: size) {
+        self.init(text, size: size, textColor: textColor) {
             AnyView(
                 Button(action: onCopy) {
                     Image(systemName: "doc.on.doc")
@@ -257,15 +269,17 @@ extension DVTextContainer where Accessories == AnyView {
     /// - Parameters:
     ///   - text: 박스에 표시될 본문 텍스트.
     ///   - size: 너비 변형. 기본값은 ``DVComponentSize/md``.
+    ///   - textColor: 본문 텍스트 색상 토큰. 기본값 ``DVColor/gray900``.
     ///   - onTap: 액세서리 버튼 탭 시 실행될 클로저.
     ///   - icon: 액세서리 자리에 표시될 아이콘 뷰를 만드는 빌더.
     public init<Icon: View>(
         _ text: String,
         size: DVComponentSize = .md,
+        textColor: DVColor = .gray900,
         onTap: @escaping () -> Void,
         @ViewBuilder icon: @escaping () -> Icon
     ) {
-        self.init(text, size: size) {
+        self.init(text, size: size, textColor: textColor) {
             AnyView(
                 Button(action: onTap) {
                     icon()
