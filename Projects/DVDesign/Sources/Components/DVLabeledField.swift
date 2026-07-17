@@ -2,48 +2,13 @@
 
 import SwiftUI
 
-/// Devault 디자인 시스템의 폼 필드 래퍼.
+/// 폼 필드 래퍼 — Label + `(*)` 필수 표시 + 입력 슬롯 + 우측 hint.
 ///
-/// `DVLabeledField`는 폼 안에서 반복되는 "Label + (*) 필수 표시 + 입력 슬롯 + 우측 힌트"
-/// 3파트 조합을 하나의 컴포넌트로 묶은 wrapper입니다. Figma의 Field 컴포넌트
-/// (node 467:16059)에 대응합니다.
+/// 입력 컨트롤은 caller가 `@ViewBuilder`로 자유롭게 지정. 우측 hint는
+/// 감지 결과(초록, ``TrailingHint/detected(_:)``) 또는 validation 경고(빨강,
+/// ``TrailingHint/warning(_:)``)를 표시합니다.
 ///
-/// 실제 입력 컨트롤은 caller가 `@ViewBuilder` content로 자유롭게 지정 —
-/// ``DVTextField``, ``DVDropdown``, ``DVMultilineTextField``, ``DVChipsField``
-/// 등 어떤 뷰든 넣을 수 있습니다.
-///
-/// ## 시각 스펙
-///
-/// - Label 로우와 입력 슬롯 사이 vertical spacing: 10pt
-/// - Label: ``DVFont/bodyMD`` (13pt medium), ``DVColor/gray700``
-/// - 필수 표시 `(*)`: ``DVColor/warning`` (Figma `#c83535`)
-/// - Trailing hint: 라벨 로우 우측 정렬, 1줄 tail truncation
-///   - ``TrailingHint/detected(_:)``: ``DVColor/vaultGreen`` — 감지 엔진이 서비스 인식했을 때
-///   - ``TrailingHint/warning(_:)``: ``DVColor/warning`` — validation 실패 메시지
-///
-/// ## 사이즈
-///
-/// 컴포넌트 너비는 ``DVComponentSize`` 를 따르며, 내부 입력 뷰의 너비와
-/// 일치시켜야 라벨 로우가 정렬됩니다.
-///
-/// ## 사용
-///
-/// ```swift
-/// // 감지 엔진 결과 표시
-/// DVLabeledField("Name", isRequired: true, trailingHint: .detected("GitHub"), size: .lg) {
-///     DVTextField("e.g DeVault", text: $name, size: .lg)
-/// }
-///
-/// // Validation 실패 메시지
-/// DVLabeledField("Value", isRequired: true, trailingHint: .warning("필수 항목입니다"), size: .lg) {
-///     DVTextField("value", text: $value, size: .lg)
-/// }
-///
-/// // 힌트 없음
-/// DVLabeledField("Memo", size: .lg) {
-///     DVTextField("optional", text: $memo, size: .lg)
-/// }
-/// ```
+/// 내부 입력 뷰와 ``DVComponentSize``를 일치시켜야 라벨 로우가 정렬됩니다.
 public struct DVLabeledField<Content: View>: View {
 
     // MARK: - Types

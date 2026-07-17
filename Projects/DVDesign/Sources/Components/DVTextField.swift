@@ -28,30 +28,10 @@ import SwiftUI
 /// 너비는 ``DVComponentSize``의 `width`를 그대로 따릅니다. 높이는 28pt
 /// 고정. 폼 안에서 다른 사이즈를 섞어 쓰지 않는 것을 권장.
 ///
-/// ## Secure 모드 (민감 값 마스킹)
+/// ## Secure 모드
 ///
-/// `isSecure: true`로 생성하면 입력값이 `SecureField`로 마스킹되고,
-/// 필드 우측에 눈 아이콘 토글이 자동으로 표시됩니다. 사용자가 눈을 클릭하면
-/// 마스킹이 잠시 해제되어 값 확인이 가능합니다.
-///
-/// 마스킹 여부는 내부 `@State`로 관리되므로 caller는 `text` 바인딩만 신경 쓰면 됩니다.
-///
-/// ```swift
-/// @State private var apiKey = ""
-///
-/// DVTextField("secret value", text: $apiKey, size: .lg, isSecure: true)
-/// ```
-///
-/// > SwiftUI 특성상 `SecureField ↔ TextField` 토글 시 포커스가 잠깐 초기화되는데,
-/// > 이는 시스템 컨트롤의 알려진 동작이며 정상적인 사용에서 큰 영향을 주지 않습니다.
-///
-/// ## 사용
-///
-/// ```swift
-/// @State private var name = ""
-///
-/// DVTextField("e.g DeVault", text: $name, size: .md)
-/// ```
+/// `isSecure: true`이면 값이 `SecureField`로 마스킹되고 우측에 눈 아이콘 토글이
+/// 자동 표시됩니다. 마스킹 상태는 내부 `@State`로 관리됩니다.
 public struct DVTextField: View {
 
     // MARK: - Properties

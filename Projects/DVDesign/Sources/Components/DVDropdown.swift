@@ -2,48 +2,11 @@
 
 import SwiftUI
 
-/// Devault 디자인 시스템의 드롭다운 (읽기 전용 필드 + 시스템 Menu).
+/// 읽기 전용 트리거 필드 + macOS 시스템 Menu 팝오버.
 ///
-/// `DVDropdown`은 Figma의 "Filled (ReadOnly)" 스타일 트리거 필드와
-/// macOS 시스템 Menu 팝오버를 결합한 컴포넌트입니다.
-///
-/// 트리거만 디자인 토큰으로 커스텀 스타일링하고, 팝오버 렌더링과 hover/선택
-/// 하이라이트, separator, 키보드 네비게이션은 시스템 `Menu`에 위임합니다.
-///
-/// ## 시각 스펙 (트리거)
-///
-/// - 높이: 28pt 고정
-/// - 배경: ``DVColor/gray300`` (filled)
-/// - 라디우스: 6pt
-/// - 좌 padding: 8pt, 우 padding: 4pt
-/// - 표시 텍스트: ``DVFont/bodyLG``, ``DVColor/gray900``
-/// - 우측 chevron: `chevron.down`, ``DVFont/captionMDSemibold``, 24×24 슬롯
-///
-/// ## 사이즈
-///
-/// 너비는 ``DVComponentSize``의 ``DVComponentSize/width``를 그대로 따릅니다.
-///
-/// ## Menu content
-///
-/// 팝오버 내용은 호출자가 `@ViewBuilder`로 제공합니다. SwiftUI의 `Menu`가
-/// 기대하는 어떤 뷰든 넣을 수 있으며, 시스템이 정렬·하이라이트·구분선을
-/// 자동으로 렌더링합니다.
-///
-/// ```swift
-/// enum Project: Hashable { case cheerLot, drinkiG }
-/// @State private var selection: Project?
-///
-/// DVDropdown(selection?.name ?? "Select Project", size: .sm) {
-///     Button("CheerLot")  { selection = .cheerLot }
-///     Button("DrinkiG")   { selection = .drinkiG }
-///     Divider()
-///     Button {
-///         // add new project
-///     } label: {
-///         Label("Add New Project", systemImage: "plus")
-///     }
-/// }
-/// ```
+/// 트리거만 디자인 토큰으로 스타일링하고, 팝오버 렌더링·정렬·하이라이트·
+/// 키보드 네비게이션은 시스템 `Menu`에 위임합니다. 팝오버 내용은 caller가
+/// `@ViewBuilder`로 자유롭게 제공.
 public struct DVDropdown<Content: View>: View {
 
     // MARK: - Properties
