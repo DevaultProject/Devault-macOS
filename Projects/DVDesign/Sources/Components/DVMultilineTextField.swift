@@ -2,43 +2,10 @@
 
 import SwiftUI
 
-/// Devault 디자인 시스템의 여러 줄 입력 필드.
+/// 여러 줄 입력 필드. ``DVTextField``의 세로 확장 버전.
 ///
-/// `DVMultilineTextField`는 ``DVTextField``의 세로 확장 버전입니다.
-/// Service Account credentialJSON, SSH privateKey, Env Var Set content 등
-/// 여러 줄에 걸친 텍스트 입력이 필요한 곳에서 사용합니다.
-///
-/// SwiftUI 시스템 `TextEditor`를 그대로 사용하면서 디자인 토큰
-/// (``DVColor``, ``DVComponentSize``)으로 시각 속성만 덧입힙니다.
-///
-/// ## 시각 상태
-///
-/// | 상태 | 표현 |
-/// |------|------|
-/// | Empty | `text == ""` — 좌측 상단에 placeholder(``DVColor/gray400``) 오버레이 |
-/// | Active | `!text.isEmpty` — 입력 텍스트가 ``DVColor/gray900``로 표시 |
-/// | Focus | 시스템 커서가 ``DVColor/vaultGreen``으로 점멸 |
-///
-/// 외곽선은 항상 1pt ``DVColor/gray300``으로 유지 (``DVTextField``와 동일).
-///
-/// ## 사이즈
-///
-/// 너비는 ``DVComponentSize``의 ``DVComponentSize/width``를 그대로 따릅니다.
-/// 높이는 ``minHeight`` 이상으로 확장 — 내용이 늘어나면 세로로 커지고,
-/// 부모 `ScrollView`가 전체 스크롤을 담당합니다.
-///
-/// ## 사용
-///
-/// ```swift
-/// @State private var content = ""
-///
-/// DVMultilineTextField(
-///     "e.g DATABASE_URL=postgres://...",
-///     text: $content,
-///     size: .lg,
-///     minHeight: 120
-/// )
-/// ```
+/// 너비는 ``DVComponentSize``, 높이는 `height` 파라미터로 고정.
+/// 내용이 초과하면 내부에서 세로 스크롤됩니다.
 public struct DVMultilineTextField: View {
 
     // MARK: - Properties
