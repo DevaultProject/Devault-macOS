@@ -9,6 +9,10 @@ import SwiftUI
 /// ``TrailingHint/warning(_:)``)를 표시합니다.
 ///
 /// 내부 입력 뷰와 ``DVComponentSize``를 일치시켜야 라벨 로우가 정렬됩니다.
+///
+/// > TODO(size-env): 현재는 caller가 wrapper와 내부 input에 동일한 `size`를
+/// > 각각 전달해야 함. 향후 `EnvironmentValues.dvComponentSize`를 도입해
+/// > wrapper가 자식에게 자동 전파하는 방식으로 개선 여지 있음.
 public struct DVLabeledField<Content: View>: View {
 
     // MARK: - Types

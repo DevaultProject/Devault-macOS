@@ -10,8 +10,8 @@ public struct DVChip: View {
 
     // MARK: - Properties
 
-    public let text: String
-    public let action: () -> Void
+    private let text: String
+    private let action: () -> Void
 
     // MARK: - Init
 
