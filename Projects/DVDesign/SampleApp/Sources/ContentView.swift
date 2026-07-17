@@ -60,6 +60,8 @@ struct ContentView: View {
             TextFieldPreviewView()
         case "DVTextContainer":
             TextContainerPreviewView()
+        case "DVChip":
+            DVChipPreviewView()
         default:
             ComponentPlaceholderView(name: component.name)
         }
@@ -103,6 +105,7 @@ private struct Component: Hashable {
         Component(name: "DVRadioButtonGroup"),
         Component(name: "DVTextContainer"),
         Component(name: "DVTextField"),
+        Component(name: "DVChip"),
 //        Component(name: "DVInputField"),
 //        Component(name: "DVDropDown"),
     ]
