@@ -10,6 +10,9 @@ struct TextFieldPreviewView: View {
     @State private var sm = ""
     @State private var md = "DeVault"
     @State private var lg = ""
+    @State private var secureEmpty = ""
+    @State private var secureFilled = "ghp_1234567890abcdef"
+    @State private var secureSm = "sk_test_abc123"
 
     var body: some View {
         ScrollView {
@@ -31,6 +34,18 @@ struct TextFieldPreviewView: View {
                     labeled("SM (330pt)") { DVTextField("SM", text: $sm, size: .sm) }
                     labeled("MD (380pt)") { DVTextField("MD", text: $md, size: .md) }
                     labeled("LG (700pt)") { DVTextField("LG", text: $lg, size: .lg) }
+                }
+
+                section(title: "Secure (민감 값 마스킹)") {
+                    labeled("빈 상태") {
+                        DVTextField("secret value", text: $secureEmpty, size: .lg, isSecure: true)
+                    }
+                    labeled("값 있음 — 눈 아이콘 클릭 시 토글") {
+                        DVTextField("secret value", text: $secureFilled, size: .lg, isSecure: true)
+                    }
+                    labeled("SM 사이즈") {
+                        DVTextField("token", text: $secureSm, size: .sm, isSecure: true)
+                    }
                 }
             }
             .padding(24)

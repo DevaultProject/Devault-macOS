@@ -28,6 +28,23 @@ import SwiftUI
 /// 너비는 ``DVComponentSize``의 `width`를 그대로 따릅니다. 높이는 28pt
 /// 고정. 폼 안에서 다른 사이즈를 섞어 쓰지 않는 것을 권장.
 ///
+/// ## Secure 모드 (민감 값 마스킹)
+///
+/// `isSecure: true`로 생성하면 입력값이 `SecureField`로 마스킹되고,
+/// 필드 우측에 눈 아이콘 토글이 자동으로 표시됩니다. 사용자가 눈을 클릭하면
+/// 마스킹이 잠시 해제되어 값 확인이 가능합니다.
+///
+/// 마스킹 여부는 내부 `@State`로 관리되므로 caller는 `text` 바인딩만 신경 쓰면 됩니다.
+///
+/// ```swift
+/// @State private var apiKey = ""
+///
+/// DVTextField("secret value", text: $apiKey, size: .lg, isSecure: true)
+/// ```
+///
+/// > SwiftUI 특성상 `SecureField ↔ TextField` 토글 시 포커스가 잠깐 초기화되는데,
+/// > 이는 시스템 컨트롤의 알려진 동작이며 정상적인 사용에서 큰 영향을 주지 않습니다.
+///
 /// ## 사용
 ///
 /// ```swift
@@ -36,9 +53,17 @@ import SwiftUI
 /// DVTextField("e.g DeVault", text: $name, size: .md)
 /// ```
 public struct DVTextField: View {
+
+    // MARK: - Properties
+
     private let placeholder: String
     @Binding private var text: String
     private let size: DVComponentSize
+    private let isSecure: Bool
+
+    @State private var isRevealed = false
+
+    // MARK: - Init
 
     /// 텍스트 필드를 생성합니다.
     ///
@@ -48,26 +73,29 @@ public struct DVTextField: View {
     ///   - text: 입력 값에 대한 양방향 바인딩. 시스템 `TextField` 에 그대로
     ///     전달되므로 IME(한글/일본어/중국어 등) 입력도 정상 동작합니다.
     ///   - size: 너비 변형. 기본값은 ``DVComponentSize/md``.
+    ///   - isSecure: 민감 정보 마스킹 여부. `true`이면 `SecureField` 사용 +
+    ///     우측 눈 아이콘 토글이 자동으로 추가됩니다. 기본값 `false`.
     public init(
         _ placeholder: String,
         text: Binding<String>,
-        size: DVComponentSize = .md
+        size: DVComponentSize = .md,
+        isSecure: Bool = false
     ) {
         self.placeholder = placeholder
         self._text = text
         self.size = size
+        self.isSecure = isSecure
     }
 
+    // MARK: - Body
+
     public var body: some View {
-        TextField(
-            "",
-            text: $text,
-            prompt: Text(placeholder).foregroundStyle(Color.dv(.gray400))
-        )
-        .textFieldStyle(.plain)
-        .font(DVFont.bodyLG.font)
-        .foregroundStyle(Color.dv(.gray900))
-        .tint(Color.dv(.vaultGreen))
+        HStack(spacing: 0) {
+            inputField
+            if isSecure {
+                revealToggle
+            }
+        }
         .padding(.leading, 8)
         .padding(.trailing, 4)
         .frame(width: size.width, height: 28)
@@ -75,6 +103,42 @@ public struct DVTextField: View {
             RoundedRectangle(cornerRadius: 6)
                 .stroke(Color.dv(.gray300), lineWidth: 1)
         }
+    }
+}
+
+// MARK: - Subviews
+
+extension DVTextField {
+
+    private var promptText: Text {
+        Text(placeholder).foregroundStyle(Color.dv(.gray400))
+    }
+
+    @ViewBuilder
+    private var inputField: some View {
+        Group {
+            if isSecure && !isRevealed {
+                SecureField("", text: $text, prompt: promptText)
+            } else {
+                TextField("", text: $text, prompt: promptText)
+            }
+        }
+        .textFieldStyle(.plain)
+        .font(DVFont.bodyLG.font)
+        .foregroundStyle(Color.dv(.gray900))
+        .tint(Color.dv(.vaultGreen))
+    }
+
+    private var revealToggle: some View {
+        Button {
+            isRevealed.toggle()
+        } label: {
+            Image(systemName: isRevealed ? "eye.slash" : "eye")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Color.dv(.gray900))
+                .frame(width: 24, height: 24)
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -92,6 +156,11 @@ public struct DVTextField: View {
 
 #Preview("Sizes") {
     DVTextFieldSizesPreview()
+        .padding()
+}
+
+#Preview("Secure") {
+    DVTextFieldSecurePreview()
         .padding()
 }
 
@@ -121,6 +190,18 @@ private struct DVTextFieldSizesPreview: View {
             DVTextField("SM", text: $sm, size: .sm)
             DVTextField("MD", text: $md, size: .md)
             DVTextField("LG", text: $lg, size: .lg)
+        }
+    }
+}
+
+private struct DVTextFieldSecurePreview: View {
+    @State private var apiKey = "ghp_1234567890abcdef"
+    @State private var empty = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            DVTextField("secret value", text: $apiKey, size: .lg, isSecure: true)
+            DVTextField("empty secure", text: $empty, size: .lg, isSecure: true)
         }
     }
 }
