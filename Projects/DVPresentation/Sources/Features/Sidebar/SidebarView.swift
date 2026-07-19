@@ -32,7 +32,7 @@ extension SidebarView {
       filterGrid
         .padding(.bottom, 10)
       projectSection
-      Spacer()
+        .frame(maxHeight: .infinity)
       bottomBar
         .padding(.bottom, 10)
     }
@@ -78,6 +78,8 @@ extension SidebarView {
         .padding(.horizontal, 8)
       if store.isProjectSectionExpanded {
         projectList
+      } else {
+        Spacer(minLength: 0)
       }
     }
   }
@@ -89,11 +91,13 @@ extension SidebarView {
         .foregroundStyle(Color.dv(.vaultGreen))
       Spacer()
       projectHeaderButton(icon: "plus.circle") { store.send(.didTapAddProject) }
+        .accessibilityLabel("Add Project")
       projectHeaderButton(
         icon: store.isProjectSectionExpanded ? "chevron.down" : "chevron.up"
       ) {
         store.send(.didToggleProjectSection)
       }
+      .accessibilityLabel(store.isProjectSectionExpanded ? "Collapse Projects" : "Expand Projects")
     }
   }
 
@@ -110,6 +114,7 @@ extension SidebarView {
         },
         set: { index in
           if let index { store.send(.didSelect(.project(index))) }
+          // TODO: nil(deselect) 처리 — content 컬럼 연결 시 결정
         }
       )
     ) {
@@ -126,15 +131,16 @@ extension SidebarView {
     }
     .listStyle(.sidebar)
     .scrollContentBackground(.hidden)
-    .frame(maxHeight: 200)
     .padding(.horizontal, -12)
   }
 
   private var bottomBar: some View {
     HStack {
       circleIconButton(icon: "gearshape") { store.send(.didTapSettingsButton) }
+        .accessibilityLabel("Settings")
       Spacer()
       circleIconButton(icon: "plus") { store.send(.didTapAddButton) }
+        .accessibilityLabel("Add Secret")
     }
   }
 
@@ -162,10 +168,26 @@ extension SidebarView {
 // MARK: - Preview
 
 #Preview {
-  SidebarView(
-    store: Store(initialState: SidebarFeature.State()) {
-      SidebarFeature()
-    }
-  )
-  .frame(width: 240)
+  Group {
+    SidebarView(
+      store: Store(initialState: SidebarFeature.State()) {
+        SidebarFeature()
+      }
+    )
+    .frame(width: 200)
+
+    SidebarView(
+      store: Store(initialState: SidebarFeature.State()) {
+        SidebarFeature()
+      }
+    )
+    .frame(width: 250)
+
+    SidebarView(
+      store: Store(initialState: SidebarFeature.State()) {
+        SidebarFeature()
+      }
+    )
+    .frame(width: 270)
+  }
 }
