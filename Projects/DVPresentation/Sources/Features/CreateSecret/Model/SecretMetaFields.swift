@@ -15,7 +15,7 @@ struct SecretMetaFields: Equatable {
     /// 모든 secretType에서 required.
     var name: String = ""
     
-    /// 연결할 Project ID 목록. 0개(미연결) 또는 여러 개 선택 가능.
+    /// 연결할 Project ID 목록. 도메인은 다중을 지원하며, UI가 현재 단일 선택으로 제한(0개 또는 1개)한다.
     var projectIds: [Project.ID] = []
     
     /// 단일 chip. 빈 문자열이면 저장 시 `nil`로 매핑.
