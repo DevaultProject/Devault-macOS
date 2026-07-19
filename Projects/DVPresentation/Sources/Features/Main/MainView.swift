@@ -38,7 +38,7 @@ extension MainView {
 
   private var sidebar: some View {
     SidebarView(store: store.scope(state: \.sidebar, action: \.sidebar))
-      .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 300)
+      .navigationSplitViewColumnWidth(min: 200, ideal: 250, max: 270)
   }
 
   private var contentColumn: some View {
