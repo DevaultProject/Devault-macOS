@@ -14,7 +14,21 @@ let project = Project.project(
                 .domain(),
                 .design(),
                 .core(),
-                
+
+                // 3rd-party dependency
+                .tca(),
+            ]
+        ),
+        .tests(
+            name: "DVPresentationTests",
+            dependencies: [
+                // SUT
+                .presentation(),
+
+                // internal dependency
+                .domain(),
+                .core(),
+
                 // 3rd-party dependency
                 .tca(),
             ]
