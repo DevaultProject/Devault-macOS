@@ -1,6 +1,7 @@
 // Copyright © 2026 Devault. All rights reserved
 
 import ComposableArchitecture
+import DVCore
 import DVDomain
 import Foundation
 
@@ -18,11 +19,14 @@ extension ProjectClient: TestDependencyKey {
     
     public static let previewValue = ProjectClient(
         fetchProjects: {
-            [
+            Log.info("[Preview mock] ProjectClient.fetchProjects 호출됨", category: .domain)
+            let projects = [
                 Project(id: UUID(), name: "Backend",        createdAt: Date(), updatedAt: Date()),
                 Project(id: UUID(), name: "Mobile",         createdAt: Date(), updatedAt: Date()),
                 Project(id: UUID(), name: "Infrastructure", createdAt: Date(), updatedAt: Date()),
             ]
+            Log.debug("[Preview mock] → \(projects.count) projects 반환", category: .domain)
+            return projects
         }
     )
 }

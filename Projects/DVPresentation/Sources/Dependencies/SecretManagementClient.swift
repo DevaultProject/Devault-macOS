@@ -1,6 +1,7 @@
 // Copyright © 2026 Devault. All rights reserved
 
 import ComposableArchitecture
+import DVCore
 import DVDomain
 import Foundation
 
@@ -22,8 +23,23 @@ extension SecretManagementClient: TestDependencyKey {
     public static let testValue = SecretManagementClient()
     
     public static let previewValue = SecretManagementClient(
-        createSecret: { draft, _, _ in
-            Secret(
+        createSecret: { draft, payload, projectIds in
+            Log.info(
+                """
+                [Preview mock] SecretManagementClient.createSecret 호출됨
+                  name: \(draft.name)
+                  secretType: \(draft.secretType)
+                  subType: \(draft.subType.map { String(describing: $0) } ?? "nil")
+                  service: \(draft.service ?? "nil")
+                  environment: \(draft.environment ?? "nil")
+                  expiresAt: \(draft.expiresAt.map { String(describing: $0) } ?? "nil")
+                  memo: \(draft.memo ?? "nil")
+                  payload: \(payload)
+                  projectIds: \(projectIds)
+                """,
+                category: .domain
+            )
+            return Secret(
                 id: UUID(),
                 name: draft.name,
                 secretType: draft.secretType,
