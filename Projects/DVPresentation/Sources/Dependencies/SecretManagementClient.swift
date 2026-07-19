@@ -1,0 +1,54 @@
+// Copyright © 2026 Devault. All rights reserved
+
+import ComposableArchitecture
+import DVDomain
+import Foundation
+
+/// Secret 생성/편집/삭제 Flow에서 소비하는 Client.
+/// Live 조립은 Devault(App 타겟)에서 `CreateSecretUseCase.execute`의 두 overload를 `CreateSecretPayload` case 분기로 호출.
+@DependencyClient
+public struct SecretManagementClient: Sendable {
+    
+    /// Secret을 생성하고 지정된 Project들에 연결한다.
+    /// `CreateSecretPayload` case에 따라 metadata 유무를 판단, 도메인 UseCase 두 overload 중 하나로 dispatch.
+    public var createSecret: @Sendable (
+        _ draft: SecretDraft,
+        _ payload: CreateSecretPayload,
+        _ projectIds: [UUID]
+    ) async throws -> Secret
+}
+
+extension SecretManagementClient: TestDependencyKey {
+    public static let testValue = SecretManagementClient()
+    
+    public static let previewValue = SecretManagementClient(
+        createSecret: { draft, _, _ in
+            Secret(
+                id: UUID(),
+                name: draft.name,
+                secretType: draft.secretType,
+                subType: draft.subType,
+                service: draft.service,
+                environment: draft.environment,
+                expiresAt: draft.expiresAt,
+                memo: draft.memo,
+                liked: draft.liked,
+                createdAt: Date(),
+                updatedAt: Date(),
+                payload: SecretPayload(
+                    encryptedData: Data(),
+                    keyTag: "preview",
+                    schemaVersion: 1
+                ),
+                metadata: nil
+            )
+        }
+    )
+}
+
+public extension DependencyValues {
+    var secretManagementClient: SecretManagementClient {
+        get { self[SecretManagementClient.self] }
+        set { self[SecretManagementClient.self] = newValue }
+    }
+}
