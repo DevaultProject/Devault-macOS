@@ -47,8 +47,8 @@ public struct SidebarFeature {
 
   @ObservableState
   public struct State: Equatable {
-    var selection: SidebarSelection = .filter(.all)
-    var isProjectSectionExpanded: Bool = true
+    public internal(set) var selection: SidebarSelection = .filter(.all)
+    public internal(set) var isProjectSectionExpanded: Bool = true
 
     public init() {}
   }
