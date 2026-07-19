@@ -28,9 +28,17 @@ struct CreateSecretView: View {
 
 extension CreateSecretView {
 
-    /// FIXED TOP. subtype 탭 바 포함 예정.
+    /// FIXED TOP. SecretType 타이틀 + subtype radio 탭바.
     private var header: some View {
-        placeholderBar(label: "Header", height: 64)
+        CreateSecretHeaderView(
+            secretType: store.secretType,
+            selectedSubType: store.selectedSubType,
+            onSelectSubType: { subType in
+                store.send(.set(\.selectedSubType, subType))
+            }
+        )
+        .padding(.horizontal, 24)
+        .padding(.top, 24)
     }
 
     /// 중간 스크롤 영역. CommonMetaSection · TypeSpecific 서브뷰가 들어갈 자리.
@@ -57,14 +65,6 @@ extension CreateSecretView {
         )
     }
 
-    private func placeholderBar(label: String, height: CGFloat) -> some View {
-        Text("\(label) — TBD")
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity)
-            .frame(height: height)
-            .background(Color.gray.opacity(0.12))
-    }
 }
 
 // MARK: - Preview
@@ -94,4 +94,13 @@ extension CreateSecretView {
         }
     )
     .previewWidth(.wide)
+}
+
+#Preview("Database · no subs · Medium") {
+    CreateSecretView(
+        store: Store(initialState: .init(secretType: .database)) {
+            CreateSecretFeature()
+        }
+    )
+    .previewWidth(.medium)
 }
