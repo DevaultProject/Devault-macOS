@@ -215,7 +215,7 @@ struct CreateSecretFeature {
 
 // MARK: - AlertState presets
 
-private extension AlertState where Action == CreateSecretFeature.Action.Alert {
+extension AlertState where Action == CreateSecretFeature.Action.Alert {
     static var confirmCancel: Self {
         Self {
             TextState("Discard changes?", bundle: .module)
