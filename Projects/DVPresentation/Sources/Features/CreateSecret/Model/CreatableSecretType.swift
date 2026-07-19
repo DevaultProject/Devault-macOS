@@ -10,8 +10,8 @@ enum CreatableSecretType: String, CaseIterable, Hashable {
     case sshAndCredentials
     case environmentVariableSet
     case etc
-
-    /// `CreateSecretHeader` 상단 타이틀에 표기되는 라벨. DVPresentation 모듈의 String Catalog 룩업 대상.
+    
+    /// CreateSecret 화면의 상단 타이틀 라벨. String Catalog 룩업 대상.
     var displayName: LocalizedStringResource {
         switch self {
         case .apiKeyToken:            return .module("API Keys/Token")
@@ -22,8 +22,8 @@ enum CreatableSecretType: String, CaseIterable, Hashable {
         case .etc:                    return .module("Etc")
         }
     }
-
-    /// `CreateSecretHeader` 내 서브 탭바를 구성할 하위 타입 목록. 빈 배열이면 탭바 미표시.
+    
+    /// 상단 서브 탭바를 구성할 하위 타입 목록. 빈 배열이면 탭바 미표시.
     var availableSubTypes: [CreatableSecretSubType] {
         switch self {
         case .apiKeyToken:            return [.apiKey, .accessToken, .webhookSecret]
@@ -34,7 +34,7 @@ enum CreatableSecretType: String, CaseIterable, Hashable {
         case .etc:                    return [.licenseKey, .custom]
         }
     }
-
+    
     /// 도메인 enum으로 변환할 때 사용.
     var domainType: SecretType {
         switch self {
