@@ -91,14 +91,13 @@ private struct DVCategoryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .background(backgroundColor(isPressed: configuration.isPressed))
+            .background(backgroundColor)
             .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
-    private func backgroundColor(isPressed: Bool) -> Color {
+    private var backgroundColor: Color {
         if isSelected { return Color.dv(.vaultGreen) }
-        if isPressed  { return Color.dv(.gray300) }
-        if isHovered  { return Color.dv(.gray200) }
+        if isHovered  { return Color.dv(.gray300) }
         return Color.dv(.gray200)
     }
 }
