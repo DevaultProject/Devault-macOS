@@ -15,8 +15,9 @@ public struct AddToProjectFeature {
   @ObservableState
   public struct State: Equatable {
     public let secretID: Secret.ID
-    public internal(set) var projects: IdentifiedArrayOf<Project> = []
-    public internal(set) var isLoading = false
+    public internal(set) var projectsState: LoadingState<IdentifiedArrayOf<Project>, ProjectUseCaseError> = .idle
+    public internal(set) var selectedProjectID: Project.ID?
+    @Presents var destination: Destination.State?
 
     public init(secretID: Secret.ID) {
       self.secretID = secretID
@@ -30,7 +31,9 @@ public struct AddToProjectFeature {
     // MARK: - View
 
     case task
-    case didTapProject(id: Project.ID)
+    case didSelectProject(id: Project.ID?)
+    case didTapCreateNewProject
+    case didTapDone
     case didTapCancel
 
     // MARK: - Internal
@@ -40,6 +43,8 @@ public struct AddToProjectFeature {
 
     // MARK: - Child
 
+    case destination(PresentationAction<Destination.Action>)
+
     // MARK: - Delegate
 
     case delegate(Delegate)
@@ -47,6 +52,13 @@ public struct AddToProjectFeature {
     public enum Delegate: Equatable {
       case projectLinked
     }
+  }
+
+  // MARK: - Destination
+
+  @Reducer
+  public enum Destination {
+    case createProject(CreateProjectFeature)
   }
 
   // MARK: - Dependencies
@@ -64,7 +76,7 @@ public struct AddToProjectFeature {
     Reduce { state, action in
       switch action {
       case .task:
-        state.isLoading = true
+        state.projectsState = .loading
         return .run { send in
           do {
             let projects = try await secretClient.fetchProjects()
@@ -75,18 +87,41 @@ public struct AddToProjectFeature {
         }
 
       case .projectsResponse(.success(let projects)):
-        state.isLoading = false
-        state.projects = IdentifiedArray(uniqueElements: projects)
+        state.projectsState = .loaded(IdentifiedArray(uniqueElements: projects))
         return .none
 
-      case .projectsResponse(.failure):
-        state.isLoading = false
+      case .projectsResponse(.failure(let error)):
+        state.projectsState = .failed(error)
         return .none
 
-      case .didTapProject(let id):
+      case .didSelectProject(let id):
+        state.selectedProjectID = id
+        return .none
+
+      case .didTapCreateNewProject:
+        state.destination = .createProject(CreateProjectFeature.State())
+        return .none
+
+      case .destination(.presented(.createProject(.delegate(.projectCreated(let project))))):
+        var projects: IdentifiedArrayOf<Project> = {
+          if case let .loaded(projects) = state.projectsState { return projects }
+          return []
+        }()
+        projects.append(project)
+        state.projectsState = .loaded(projects)
+        state.selectedProjectID = project.id
+        return .none
+
+      case .destination:
+        return .none
+
+      case .didTapDone:
+        guard let projectID = state.selectedProjectID else {
+          return .none
+        }
         return .run { [secretID = state.secretID] send in
           do {
-            try await secretClient.linkProject(secretID, id)
+            try await secretClient.linkProject(secretID, projectID)
             await send(.linkResponse(.success(secretID)))
           } catch {
             await send(.linkResponse(.failure(SecretUseCaseError.map(error))))
@@ -109,5 +144,12 @@ public struct AddToProjectFeature {
         return .none
       }
     }
+    .ifLet(\.$destination, action: \.destination)
   }
 }
+
+// MARK: - Destination Equatable
+
+// swift-composable-architecture는 @Reducer enum의 State/Action에 Equatable을 자동으로 붙이지 않는다.
+extension AddToProjectFeature.Destination.State: Equatable {}
+extension AddToProjectFeature.Destination.Action: Equatable {}
