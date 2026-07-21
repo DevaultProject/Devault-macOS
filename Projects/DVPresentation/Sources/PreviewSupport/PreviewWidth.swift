@@ -6,27 +6,27 @@ import SwiftUI
 /// SwiftUI Preview 편의를 위한 너비 프리셋 (macOS NavigationSplitView 기준).
 /// 각 `#Preview` 블록에서 하나씩 골라 `previewWidth(_:)`로 붙인다.
 ///
+/// `FormLayoutMode.dualThreshold`(828pt)와 정합적으로 배치 — narrow/medium은 single 모드,
+/// wide/extraWide는 dual 모드를 자연스럽게 트리거한다.
+///
 /// ```swift
-/// #Preview("Narrow · 360pt") {
+/// #Preview("Narrow · 440pt") {
 ///     CreateSecretView(store: ...).previewWidth(.narrow)
-/// }
-/// #Preview("Medium · 560pt") {
-///     CreateSecretView(store: ...).previewWidth(.medium)
 /// }
 /// ```
 enum PreviewWidth: CGFloat {
 
-    /// 사이드바 + inspector 모두 열린 상태의 좁은 detail 폭.
-    case narrow = 360
+    /// single 모드 최소 폭. `.md`(380) + horizontal padding(24×2)이 여유 있게 들어가는 최소치.
+    case narrow = 440
 
-    /// 표준 detail 폭.
-    case medium = 560
+    /// single 모드 표준 폭.
+    case medium = 700
 
-    /// 사이드바만 열린 상태의 넓은 detail 폭.
-    case wide = 820
+    /// dual 모드 최소 폭. `FormLayoutMode.dualThreshold`(828pt) 위.
+    case wide = 900
 
-    /// 사이드바/inspector 모두 닫힌 최대 확장 폭.
-    case extraWide = 1100
+    /// dual 모드 최대 확장 폭.
+    case extraWide = 1200
 }
 
 extension View {
