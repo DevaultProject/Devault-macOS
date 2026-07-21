@@ -71,6 +71,8 @@ struct ServiceAccountFields: Equatable {
 
 struct DatabaseFields: Equatable {
     var linkString: String = ""
+    /// `DatabaseMetadata.sslRequired`. 사용자 명시 토글, 기본 false.
+    var sslRequired: Bool = false
 }
 
 struct SSHKeyFields: Equatable {
@@ -86,6 +88,8 @@ struct SSLCertFields: Equatable {
     /// SSH의 `privateKey`와 필드명 충돌 회피용. `SSLCertPayload.privateKey`로 매핑.
     var sslPrivateKey: String = ""
     var certificateChain: String = ""
+    /// `SSLCertMetadata.renewCommand`. optional.
+    var renewCommand: String = ""
 }
 
 struct EnvSetFields: Equatable {
