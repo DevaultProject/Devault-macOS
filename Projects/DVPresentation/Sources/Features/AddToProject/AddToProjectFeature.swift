@@ -8,24 +8,24 @@ import DVDomain
 // MARK: - AddToProjectFeature
 
 @Reducer
-struct AddToProjectFeature {
+public struct AddToProjectFeature {
 
   // MARK: - State
 
   @ObservableState
-  struct State: Equatable {
-    let secretID: Secret.ID
-    var projects: IdentifiedArrayOf<Project> = []
-    var isLoading = false
+  public struct State: Equatable {
+    public let secretID: Secret.ID
+    public internal(set) var projects: IdentifiedArrayOf<Project> = []
+    public internal(set) var isLoading = false
 
-    init(secretID: Secret.ID) {
+    public init(secretID: Secret.ID) {
       self.secretID = secretID
     }
   }
 
   // MARK: - Action
 
-  enum Action: Equatable {
+  public enum Action: Equatable {
 
     // MARK: - View
 
@@ -44,7 +44,7 @@ struct AddToProjectFeature {
 
     case delegate(Delegate)
 
-    enum Delegate: Equatable {
+    public enum Delegate: Equatable {
       case projectLinked
     }
   }
@@ -56,11 +56,11 @@ struct AddToProjectFeature {
 
   // MARK: - Init
 
-  init() {}
+  public init() {}
 
   // MARK: - Body
 
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
       case .task:

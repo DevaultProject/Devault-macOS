@@ -186,7 +186,7 @@ extension SecretListView {
     case .liked: return "Star"
     case .expired: return "Expired"
     case .deleted: return "Deleted"
-    case .project: return "Project"
+    case .project: return store.projectName ?? "Project"
     }
   }
 
@@ -313,6 +313,22 @@ private struct SortMenuRow: View {
 #Preview("Deleted - 정렬 없음, 우클릭: Recover/Delete Forever") {
   SecretListView(
     store: Store(initialState: SecretListFeature.State(collection: .deleted)) {
+      SecretListFeature()
+    } withDependencies: {
+      $0.secretClient = .previewValue
+    }
+  )
+  .frame(width: 300, height: 500)
+}
+
+#Preview("Project - CheerLot에 속한 Secret만") {
+  SecretListView(
+    store: Store(
+      initialState: SecretListFeature.State(
+        collection: .project(id: [Project].preview[0].id),
+        projectName: [Project].preview[0].name
+      )
+    ) {
       SecretListFeature()
     } withDependencies: {
       $0.secretClient = .previewValue

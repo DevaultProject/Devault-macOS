@@ -8,21 +8,25 @@ import DVDomain
 // MARK: - SecretListFeature
 
 @Reducer
-struct SecretListFeature {
+public struct SecretListFeature {
 
   // MARK: - State
 
   @ObservableState
-  struct State: Equatable {
-    let collection: SecretQuery.Collection
-    var secretsState: LoadingState<IdentifiedArrayOf<Secret>, SecretUseCaseError> = .idle
-    var selectedSecretID: Secret.ID?
-    var searchText = ""
-    var sort: SecretQuery.Sort = .recentlyAdded
+  public struct State: Equatable {
+    public let collection: SecretQuery.Collection
+    /// `.project`일 때 표시할 프로젝트 이름. `SecretQuery.Collection.project`은 id만 가지고 있어서,
+    /// 어떤 프로젝트인지 알고 있는 호출부(사이드바)가 이름을 함께 넘겨준다.
+    public let projectName: String?
+    public internal(set) var secretsState: LoadingState<IdentifiedArrayOf<Secret>, SecretUseCaseError> = .idle
+    public internal(set) var selectedSecretID: Secret.ID?
+    public internal(set) var searchText = ""
+    public internal(set) var sort: SecretQuery.Sort = .recentlyAdded
     @Presents var destination: Destination.State?
 
-    init(collection: SecretQuery.Collection = .all) {
+    public init(collection: SecretQuery.Collection = .all, projectName: String? = nil) {
       self.collection = collection
+      self.projectName = projectName
     }
 
     /// `.expired`는 "이미 지남 + N일 이내 예정"을 한 화면에서 섹션으로 나눠 보여준다.
@@ -52,7 +56,7 @@ struct SecretListFeature {
 
   // MARK: - Action
 
-  enum Action: Equatable {
+  public enum Action: Equatable {
 
     // MARK: - View
 
@@ -78,7 +82,7 @@ struct SecretListFeature {
 
     case delegate(Delegate)
 
-    enum Delegate: Equatable {
+    public enum Delegate: Equatable {
       case secretSelected(Secret.ID?)
     }
   }
@@ -86,7 +90,7 @@ struct SecretListFeature {
   // MARK: - Destination
 
   @Reducer
-  enum Destination {
+  public enum Destination {
     case addToProject(AddToProjectFeature)
   }
 
@@ -101,11 +105,11 @@ struct SecretListFeature {
 
   // MARK: - Init
 
-  init() {}
+  public init() {}
 
   // MARK: - Body
 
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
       case .task:
