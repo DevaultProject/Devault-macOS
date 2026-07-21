@@ -67,7 +67,10 @@ extension SecretMetaFields {
             
         case .database(let f):
             guard !f.linkString.isEmpty else { return .failure(.missingRequired(.linkString)) }
-            return .success(.database(DatabasePayload(linkString: f.linkString), nil))
+            return .success(.database(
+                DatabasePayload(linkString: f.linkString),
+                f.databaseMetadata
+            ))
             
         case .sshKey(let f):
             guard !f.privateKey.isEmpty else { return .failure(.missingRequired(.privateKey)) }
@@ -85,7 +88,7 @@ extension SecretMetaFields {
                     privateKey: f.sslPrivateKey,
                     certificateChain: f.certificateChain.nilIfEmpty
                 ),
-                nil
+                f.sslCertMetadata
             ))
             
         case .envSet(let f):
@@ -149,6 +152,21 @@ private extension SSHKeyFields {
         let usr = username.nilIfEmpty
         guard pub != nil || hst != nil || usr != nil else { return nil }
         return SSHKeyMetadata(publicKey: pub, keyType: nil, host: hst, username: usr)
+    }
+}
+
+private extension DatabaseFields {
+    /// 사용자가 명시적으로 sslRequired를 켰을 때만 metadata build.
+    var databaseMetadata: DatabaseMetadata? {
+        guard sslRequired else { return nil }
+        return DatabaseMetadata(sslRequired: true)
+    }
+}
+
+private extension SSLCertFields {
+    /// renewCommand가 비어 있으면 `nil`.
+    var sslCertMetadata: SSLCertMetadata? {
+        renewCommand.nilIfEmpty.map { SSLCertMetadata(renewCommand: $0) }
     }
 }
 
