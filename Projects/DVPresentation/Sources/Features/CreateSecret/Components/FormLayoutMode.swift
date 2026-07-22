@@ -9,6 +9,9 @@ import SwiftUI
 /// Environment(`\.formLayoutMode`)에 주입한다. 하위 뷰들(`AdaptiveFieldRow`, 각 Field 뷰)은
 /// Environment를 읽어 **같은 판단**으로 자기 레이아웃/사이즈를 결정한다 —
 /// 각 row가 독립적으로 판단해서 서로 다른 결과가 나오는 사고 방지.
+///
+/// TODO(#41-followup): `CreateSecretView.body`에 `GeometryReader` + `.environment(\.formLayoutMode, ...)` 주입 wiring 필요.
+/// 현재는 default `.dual`이 하위 뷰에 흘러가고 있음 (반응형 동작 안 함).
 enum FormLayoutMode: Equatable {
 
     /// 2-column row 가능. 컨테이너 폭이 임계값 이상일 때.

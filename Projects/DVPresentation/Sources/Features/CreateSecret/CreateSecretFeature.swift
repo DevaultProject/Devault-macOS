@@ -27,6 +27,7 @@ struct CreateSecretFeature {
         var validationErrors: [SecretMetaFields.FieldID: String] = [:]
 
         /// "Auto-detected: <service>" 인라인 힌트. 감지 엔진에서 채워짐 (필드별 단일 문자열).
+        /// TODO(#41-followup): 감지 엔진 wiring + SectionView가 `trailingHint(.detected)`로 소비하는 지점에서 이 필드 갱신.
         var detectedServices: [SecretMetaFields.FieldID: String] = [:]
 
         /// 감지 엔진이 넘겨준 service chip 후보 목록. `ServicesFieldView`가 chip으로 표시.
@@ -149,6 +150,7 @@ struct CreateSecretFeature {
 
             case .saveResponse(.failure):
                 state.isSaving = false
+                // TODO(#41-followup): 저장 실패를 사용자에게 표시 (alert or 인라인 에러 state). 현재는 isSaving만 해제.
                 return .none
 
             case .didDetectServiceCandidates(let candidates):
