@@ -18,12 +18,10 @@ struct SecretMetaFields: Equatable {
     /// 연결할 Project ID 목록. 도메인은 다중을 지원하며, UI가 현재 단일 선택으로 제한(0개 또는 1개)한다.
     var projectIds: [Project.ID] = []
     
-    /// 단일 chip. 빈 문자열이면 저장 시 `nil`로 매핑.
+    /// 사용자가 텍스트필드에 입력한 service 값. 빈 문자열이면 저장 시 `nil`로 매핑.
+    /// chip 후보는 State 최상위 `serviceCandidates`에서 관리 — 이 필드는 최종 입력 값만 유지.
     var service: String = ""
-    
-    /// chip 입력 중인 텍스트. 저장 대상 아닌 순수 UI 상태.
-    var servicesInput: String = ""
-    
+
     var expireDate: Date?
     
     /// `SecretDraft.environment`에 `.rawValue`로 저장.
@@ -43,7 +41,6 @@ struct SecretMetaFields: Equatable {
         name: String = "",
         projectIds: [Project.ID] = [],
         service: String = "",
-        servicesInput: String = "",
         expireDate: Date? = nil,
         environment: SecretEnvironment = .dev,
         memo: String = ""
@@ -52,7 +49,6 @@ struct SecretMetaFields: Equatable {
         self.name = name
         self.projectIds = projectIds
         self.service = service
-        self.servicesInput = servicesInput
         self.expireDate = expireDate
         self.environment = environment
         self.memo = memo
