@@ -26,8 +26,11 @@ struct CreateSecretFeature {
         /// 도메인 매핑 실패로 누락된 필드에 대한 인라인 경고. Save 시도 시 세팅.
         var validationErrors: [SecretMetaFields.FieldID: String] = [:]
 
-        /// "Auto-detected: <service>" 인라인 힌트. 감지 엔진에서 채워짐.
+        /// "Auto-detected: <service>" 인라인 힌트. 감지 엔진에서 채워짐 (필드별 단일 문자열).
         var detectedServices: [SecretMetaFields.FieldID: String] = [:]
+
+        /// 감지 엔진이 넘겨준 service chip 후보 목록. `ServicesFieldView`가 chip으로 표시.
+        var serviceCandidates: [String] = []
 
         var isSaving = false
 
@@ -58,14 +61,12 @@ struct CreateSecretFeature {
         case binding(BindingAction<State>)
         case didTapCancel
         case didTapSave
-        /// 서비스 chip 클릭 → 편집 상태로 복귀 (`servicesInput`으로 문자열 옮기고 `service` 비움).
-        case didTapServiceChip(String)
 
         // MARK: - Internal
 
         case projectsResponse(Result<[Project], ProjectUseCaseError>)
         case saveResponse(Result<Secret, SecretUseCaseError>)
-        /// 감지 엔진이 후보 서비스를 넘겨줄 훅. 실제 wiring은 별도.
+        /// 감지 엔진이 후보 서비스를 넘겨주면 `state.serviceCandidates`에 저장.
         case didDetectServiceCandidates([String])
 
         // MARK: - Child
@@ -132,11 +133,6 @@ struct CreateSecretFeature {
             case .didTapSave:
                 return handleSave(state: &state)
 
-            case .didTapServiceChip(let chip):
-                state.meta.servicesInput = chip
-                state.meta.service = ""
-                return .none
-
             // MARK: Internal
 
             case .projectsResponse(.success(let projects)):
@@ -155,7 +151,8 @@ struct CreateSecretFeature {
                 state.isSaving = false
                 return .none
 
-            case .didDetectServiceCandidates:
+            case .didDetectServiceCandidates(let candidates):
+                state.serviceCandidates = candidates
                 return .none
 
             // MARK: Child

@@ -143,20 +143,16 @@ struct CreateSecretFeatureTests {
         await store.receive(.delegate(.cancelled))
     }
 
-    // MARK: - didTapServiceChip
+    // MARK: - didDetectServiceCandidates
 
-    @Test("didTapServiceChip: chip 내용이 servicesInput으로 옮겨지고 service는 clear")
-    func didTapServiceChip() async {
-        var initialState = CreateSecretFeature.State(secretType: .apiKeyToken)
-        initialState.meta.service = "github"
-
-        let store = TestStore(initialState: initialState) {
+    @Test("didDetectServiceCandidates: 후보 목록이 state.serviceCandidates에 저장됨")
+    func didDetectServiceCandidates() async {
+        let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
             CreateSecretFeature()
         }
 
-        await store.send(.didTapServiceChip("github")) {
-            $0.meta.servicesInput = "github"
-            $0.meta.service = ""
+        await store.send(.didDetectServiceCandidates(["github.com", "gitlab.com"])) {
+            $0.serviceCandidates = ["github.com", "gitlab.com"]
         }
     }
 
