@@ -44,6 +44,25 @@ struct SecretListFeatureTests {
         }
     }
 
+    @Test("didTapRetry는 failed 상태에서 다시 loading으로 전환하고 재조회한다")
+    func retryRefetchesAfterFailure() async {
+        let secret = makeSecret(name: "GitHub API Key")
+        var initialState = SecretListFeature.State()
+        initialState.secretsState = .failed(.unexpected)
+        let store = TestStore(initialState: initialState) {
+            SecretListFeature()
+        } withDependencies: {
+            $0.secretClient.fetchByQuery = { _ in [secret] }
+        }
+
+        await store.send(.didTapRetry) {
+            $0.secretsState = .loading
+        }
+        await store.receive(.secretsResponse(.success([secret]))) {
+            $0.secretsState = .loaded([secret])
+        }
+    }
+
     @Test("task는 State의 collection이 반영된 query로 조회한다")
     func taskUsesCollectionInQuery() async {
         let secret = makeSecret(name: "Database Password")
