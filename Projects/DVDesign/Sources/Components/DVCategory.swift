@@ -9,6 +9,7 @@ public struct DVCategory: View {
     public let title: String
     public let count: Int
     public let systemImage: String
+    public let iconColor: Color
     public let isSelected: Bool
     public let action: () -> Void
 
@@ -20,12 +21,14 @@ public struct DVCategory: View {
         title: String,
         count: Int,
         systemImage: String,
+        iconColor: Color = Color.dv(.gray800),
         isSelected: Bool,
         action: @escaping () -> Void
     ) {
         self.title = title
         self.count = count
         self.systemImage = systemImage
+        self.iconColor = iconColor
         self.isSelected = isSelected
         self.action = action
     }
@@ -65,7 +68,7 @@ extension DVCategory {
     private var iconView: some View {
         Image(systemName: systemImage)
             .dvFont(.headingLG)
-            .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray800))
+            .foregroundStyle(isSelected ? Color.dv(.white) : iconColor)
             .frame(width: 24, height: 24)
     }
 
