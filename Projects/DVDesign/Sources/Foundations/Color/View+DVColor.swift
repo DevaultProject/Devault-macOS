@@ -10,4 +10,8 @@ public extension View {
     func dvBackgroundColor(_ token: DVColor) -> some View {
         self.background(token.color)
     }
+
+    func dvScreenBackground(_ token: DVColor = .gray100) -> some View {
+        self.background(token.color.ignoresSafeArea())
+    }
 }

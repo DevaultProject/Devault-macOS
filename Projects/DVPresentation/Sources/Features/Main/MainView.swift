@@ -3,6 +3,7 @@
 import SwiftUI
 
 import ComposableArchitecture
+import DVDesign
 
 // MARK: - MainView
 
@@ -16,6 +17,7 @@ struct MainView: View {
 
   var body: some View {
     content
+      .dvScreenBackground()
       .task { store.send(.task) }
   }
 }
