@@ -39,11 +39,16 @@ private struct DVFloatingPanelPresenter<PanelContent: View>: NSViewRepresentable
     }
 
     func makeNSView(context: Context) -> NSView {
-        NSView(frame: .zero)
+        let anchorView = AnchorView(frame: .zero)
+        anchorView.onWindowChange = { [weak coordinator = context.coordinator] in
+            coordinator?.anchorViewWindowDidChange()
+        }
+        return anchorView
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
         context.coordinator.anchorView = nsView
+        context.coordinator.latestContent = panelContent
         if isPresented {
             context.coordinator.showPanel(with: panelContent())
         } else {
@@ -54,6 +59,17 @@ private struct DVFloatingPanelPresenter<PanelContent: View>: NSViewRepresentable
     static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
         coordinator.closePanel()
     }
+
+    /// `anchorView.window`가 아직 nil인 시점(첫 렌더, 시트/화면 재진입 등)에
+    /// 패널을 띄우려는 시도가 무시되지 않도록, 윈도우에 실제로 붙는 순간을 감지한다.
+    private final class AnchorView: NSView {
+        var onWindowChange: (() -> Void)?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            onWindowChange?()
+        }
+    }
 }
 
 // MARK: - Coordinator
@@ -63,6 +79,7 @@ extension DVFloatingPanelPresenter {
     final class Coordinator: NSObject {
         private let isPresentedBinding: Binding<Bool>
         weak var anchorView: NSView?
+        var latestContent: (() -> PanelContent)?
         private var panel: NSPanel?
         private var eventMonitor: Any?
 
@@ -70,8 +87,22 @@ extension DVFloatingPanelPresenter {
             self.isPresentedBinding = isPresented
         }
 
+        /// `anchorView`가 새 윈도우에 붙었을 때 호출된다. 그 사이 `isPresented`가
+        /// true였는데 윈도우가 없어 패널을 못 띄웠던 경우 여기서 다시 시도한다.
+        func anchorViewWindowDidChange() {
+            guard panel == nil, isPresentedBinding.wrappedValue, let latestContent else {
+                return
+            }
+            showPanel(with: latestContent())
+        }
+
         func showPanel(with content: PanelContent) {
-            guard panel == nil, let anchorView, let window = anchorView.window else {
+            if let panel {
+                (panel.contentView as? NSHostingView<PanelContent>)?.rootView = content
+                return
+            }
+
+            guard let anchorView, let window = anchorView.window else {
                 return
             }
 
