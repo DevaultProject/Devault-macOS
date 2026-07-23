@@ -59,6 +59,10 @@ public struct OnboardingFeature {
     }
   }
 
+  // MARK: - Dependencies
+
+  @Dependency(\.continuousClock) var clock
+
   // MARK: - Init
 
   public init() {}
@@ -81,7 +85,11 @@ public struct OnboardingFeature {
 
       case .didTapEnableSync:
         state.step = .syncing
-        return .none
+        return .run { send in
+          // TODO: 실제 iCloud sync 완료 콜백으로 교체
+          try await clock.sleep(for: .seconds(3))
+          await send(.syncingCompleted)
+        }
 
       case .syncingCompleted:
         return .send(.delegate(.completed))
