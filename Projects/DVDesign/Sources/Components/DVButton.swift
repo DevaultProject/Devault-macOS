@@ -8,40 +8,42 @@ public struct DVButton: View {
 
     public enum Style {
         case primary
+        case primarySmall
         case secondary
 
         var cornerRadius: CGFloat {
             switch self {
-            case .primary:   return 20
-            case .secondary: return 6
+            case .primary, .primarySmall: return 20
+            case .secondary:              return 6
             }
         }
 
         var height: CGFloat {
             switch self {
-            case .primary:   return 40
-            case .secondary: return 24
+            case .primary, .primarySmall: return 40
+            case .secondary:              return 24
             }
         }
 
         var horizontalPadding: CGFloat {
             switch self {
-            case .primary:   return 16
-            case .secondary: return 16
+            case .primary, .primarySmall: return 16
+            case .secondary:              return 16
             }
         }
 
         var width: CGFloat {
             switch self {
-            case .primary:   return 242
-            case .secondary: return 74
+            case .primary:      return 242
+            case .primarySmall: return 134
+            case .secondary:    return 74
             }
         }
 
         var font: DVFont {
             switch self {
-            case .primary:   return .bodyLG
-            case .secondary: return .bodyMD
+            case .primary, .primarySmall: return .bodyLG
+            case .secondary:              return .bodyMD
             }
         }
     }
@@ -108,7 +110,7 @@ private struct DVButtonStyle: ButtonStyle {
 
     private var foregroundColor: Color {
         switch style {
-        case .primary:
+        case .primary, .primarySmall:
             return Color.dv(.white)
         case .secondary:
             return isEnabled ? Color.dv(.gray800) : Color.dv(.gray400)
@@ -117,7 +119,7 @@ private struct DVButtonStyle: ButtonStyle {
 
     private func backgroundColor(isPressed: Bool) -> Color {
         switch style {
-        case .primary:
+        case .primary, .primarySmall:
             if !isEnabled { return Color.dv(.vaultGreenTint) }
             if isPressed || isHovered { return Color.dv(.vaultGreenDark) }
             return Color.dv(.vaultGreen)
