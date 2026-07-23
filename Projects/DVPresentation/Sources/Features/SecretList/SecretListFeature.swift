@@ -68,6 +68,7 @@ public struct SecretListFeature {
     case didTapDelete(id: Secret.ID)
     case didTapRecover(id: Secret.ID)
     case didTapDeleteForever(id: Secret.ID)
+    case didTapRetry
 
     // MARK: - Internal
 
@@ -112,7 +113,7 @@ public struct SecretListFeature {
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case .task:
+      case .task, .didTapRetry:
         state.secretsState = .loading
         return fetchSecretsEffect(query: state.query, debounced: false)
 

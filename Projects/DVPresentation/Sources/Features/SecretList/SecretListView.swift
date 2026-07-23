@@ -43,7 +43,14 @@ extension SecretListView {
         )
         .padding(.horizontal, 12)
 
-        list
+        switch store.secretsState {
+        case .failed:
+          errorView
+        case .loaded(let secrets) where secrets.isEmpty:
+          emptyView
+        default:
+          list
+        }
       }
 
       if isSortMenuPresented {
@@ -171,6 +178,34 @@ extension SecretListView {
       store.send(.didSelectSort(value))
       isSortMenuPresented = false
     }
+  }
+
+  private var errorView: some View {
+    VStack(spacing: 12) {
+      Spacer()
+      Image(systemName: "exclamationmark.triangle")
+        .dvFont(.bodyLG)
+        .foregroundStyle(Color.dv(.gray400))
+      Text("목록을 불러오지 못했어요")
+        .dvFont(.bodyMD)
+        .foregroundStyle(Color.dv(.gray500))
+      DVButton(titleText: "Retry", style: .secondary) {
+        store.send(.didTapRetry)
+      }
+      Spacer()
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+  }
+
+  private var emptyView: some View {
+    VStack(spacing: 12) {
+      Spacer()
+      Text("시크릿이 없어요")
+        .dvFont(.bodyMD)
+        .foregroundStyle(Color.dv(.gray400))
+      Spacer()
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
   }
 
   private var secrets: IdentifiedArrayOf<Secret> {
