@@ -13,7 +13,6 @@ struct DevaultApp: App {
         }
       )
       .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .ignoresSafeArea()
     }
     .windowStyle(.hiddenTitleBar)
     .defaultSize(width: 800, height: 600)

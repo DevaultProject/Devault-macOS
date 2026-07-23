@@ -13,6 +13,7 @@ public struct AppFeature {
 
   @ObservableState
   public struct State: Equatable {
+    // 세 프로퍼티 중 항상 하나만 non-nil — reducer 로직으로 불변식 보장
     public internal(set) var onboarding: OnboardingContainerFeature.State?
     public internal(set) var locked: LockFeature.State?
     public internal(set) var main: MainFeature.State?
