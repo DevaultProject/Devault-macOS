@@ -55,18 +55,32 @@ extension SidebarView {
   }
 
   private var filterGrid: some View {
-    LazyVGrid(
-      columns: [GridItem(.flexible()), GridItem(.flexible())],
-      spacing: 12
-    ) {
-      ForEach(SidebarFilter.allCases, id: \.self) { filter in
-        DVCategory(
-          title: filter.title,
-          count: 0,
-          systemImage: filter.icon,
-          isSelected: store.selection == .filter(filter)
-        ) {
-          store.send(.didSelect(.filter(filter)))
+    VStack(spacing: 12) {
+      DVCategory(
+        title: SidebarFilter.all.title,
+        count: 0,
+        systemImage: SidebarFilter.all.icon,
+        isSelected: store.selection == .filter(.all)
+      ) {
+        store.send(.didSelect(.filter(.all)))
+      }
+      .frame(height: 72)
+        
+      LazyVGrid(
+        columns: [GridItem(.flexible()), GridItem(.flexible())],
+        spacing: 12
+      ) {
+        ForEach([SidebarFilter.starred, .notice, .expired, .deleted], id: \.self) { filter in
+          DVCategory(
+            title: filter.title,
+            count: 0,
+            systemImage: filter.icon,
+            iconColor: filter.iconColor,
+            isSelected: store.selection == .filter(filter)
+          ) {
+            store.send(.didSelect(.filter(filter)))
+          }
+          .frame(height: 72)
         }
       }
     }
@@ -161,6 +175,18 @@ extension SidebarView {
         .foregroundStyle(Color.dv(.white))
     }
     .buttonStyle(.plain)
+  }
+}
+
+// MARK: - SidebarFilter + View
+
+private extension SidebarFilter {
+  var iconColor: Color {
+    switch self {
+    case .notice:  Color.dv(.warning)
+    case .expired: Color.dv(.danger)
+    default:       Color.dv(.gray800)
+    }
   }
 }
 
