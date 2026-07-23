@@ -104,8 +104,7 @@ extension SidebarView {
   // TODO: - contextMenu 확정 후 추후에 Action 추가
   private var projectList: some View {
     let projects = ["Project A", "Project B", "Project C"]
-    // List(selection:)은 Int?를 요구하지만 store.selection은 SidebarSelection(enum)이라
-    // 타입 불일치로 $store 직접 바인딩 불가 → 의도적 manual Binding 사용
+    // List(selection:)은 Int?를 요구하지만 store.selection은 SidebarSelection(enum)이라 타입 불일치로 $store 직접 바인딩 불가 → 의도적 manual Binding 사용
     return List(
       selection: Binding(
         get: {
