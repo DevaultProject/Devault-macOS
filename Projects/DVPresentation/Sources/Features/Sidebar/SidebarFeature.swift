@@ -9,13 +9,15 @@ import ComposableArchitecture
 public enum SidebarFilter: Equatable, CaseIterable, Hashable {
   case all
   case starred
+  case notice
   case expired
   case deleted
 
   var title: String {
     switch self {
-    case .all: "All"
+    case .all:     "All"
     case .starred: "Star"
+    case .notice:  "Notice"
     case .expired: "Expired"
     case .deleted: "Deleted"
     }
@@ -23,12 +25,14 @@ public enum SidebarFilter: Equatable, CaseIterable, Hashable {
 
   var icon: String {
     switch self {
-    case .all: "square.grid.2x2.fill"
+    case .all:     "square.grid.2x2.fill"
     case .starred: "star.fill"
-    case .expired: "exclamationmark"
+    case .notice:  "exclamationmark"
+    case .expired: "clock.badge.xmark"
     case .deleted: "trash"
     }
   }
+
 }
 
 // MARK: - SidebarSelection
