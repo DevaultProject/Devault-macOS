@@ -33,15 +33,8 @@ public struct OnboardingView: View {
 extension OnboardingView {
 
   private var content: some View {
-    ZStack {
-      stepContent
-      VStack {
-        Spacer()
-        DVStepIndicator(totalSteps: 4, currentStep: store.currentStepIndex)
-          .padding(.bottom, 40)
-      }
-    }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    stepContent
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
   }
 
   @ViewBuilder

@@ -32,17 +32,8 @@ public struct LockView: View {
 extension LockView {
 
   private var content: some View {
-    ZStack {
-      unlockView
-      if store.isPostOnboarding {
-        VStack {
-          Spacer()
-          DVStepIndicator(totalSteps: 4, currentStep: 3)
-            .padding(.bottom, 40)
-        }
-      }
-    }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    unlockView
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
   }
 
   private var unlockView: some View {
