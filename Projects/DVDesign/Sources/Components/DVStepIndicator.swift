@@ -33,7 +33,7 @@ extension DVStepIndicator {
 
     private func dot(isActive: Bool) -> some View {
         RoundedRectangle(cornerRadius: 4)
-            .fill(isActive ? Color.dv(.vaultGreen) : Color.dv(.gray300))
+            .fill(isActive ? Color.dv(.vaultGreen) : Color.dv(.gray500))
             .frame(width: isActive ? 24 : 8, height: 8)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isActive)
     }
