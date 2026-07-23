@@ -19,5 +19,9 @@ let package = Package(
             url: "https://github.com/pointfreeco/swift-composable-architecture",
             from: "1.26.0"
         ),
+        .package(
+            url: "https://github.com/airbnb/lottie-spm",
+            from: "4.6.0"
+        ),
     ]
 )
