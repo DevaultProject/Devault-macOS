@@ -26,6 +26,7 @@ struct AddToProjectView: View {
       ) { createProjectStore in
         CreateProjectView(store: createProjectStore)
       }
+      .alert($store.scope(state: \.alert, action: \.alert))
   }
 }
 

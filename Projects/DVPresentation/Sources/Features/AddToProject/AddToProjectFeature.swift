@@ -18,6 +18,7 @@ public struct AddToProjectFeature {
     public internal(set) var projectsState: LoadingState<IdentifiedArrayOf<Project>, ProjectUseCaseError> = .idle
     public internal(set) var selectedProjectID: Project.ID?
     @Presents var destination: Destination.State?
+    @Presents var alert: AlertState<Action.Alert>?
 
     public init(secretID: Secret.ID) {
       self.secretID = secretID
@@ -44,6 +45,7 @@ public struct AddToProjectFeature {
     // MARK: - Child
 
     case destination(PresentationAction<Destination.Action>)
+    case alert(PresentationAction<Alert>)
 
     // MARK: - Delegate
 
@@ -52,6 +54,8 @@ public struct AddToProjectFeature {
     public enum Delegate: Equatable {
       case projectLinked
     }
+
+    public enum Alert: Equatable {}
   }
 
   // MARK: - Destination
@@ -135,16 +139,27 @@ public struct AddToProjectFeature {
         }
 
       case .linkResponse(.failure):
+        state.alert = AlertState {
+          TextState("프로젝트에 추가하지 못했어요")
+        } actions: {
+          ButtonState(role: .cancel) { TextState("확인") }
+        } message: {
+          TextState("잠시 후 다시 시도해주세요.")
+        }
         return .none
 
       case .didTapCancel:
         return .run { _ in await dismiss() }
+
+      case .alert:
+        return .none
 
       case .delegate:
         return .none
       }
     }
     .ifLet(\.$destination, action: \.destination)
+    .ifLet(\.$alert, action: \.alert)
   }
 }
 

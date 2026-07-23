@@ -179,6 +179,27 @@ struct SecretListFeatureTests {
         }
     }
 
+    @Test("didTapDelete는 softDelete가 실패하면 alert를 띄우고 재조회하지 않는다")
+    func deleteShowsAlertOnFailure() async {
+        let secretID = UUID()
+        let store = TestStore(initialState: SecretListFeature.State()) {
+            SecretListFeature()
+        } withDependencies: {
+            $0.secretClient.softDelete = { _ in throw SecretUseCaseError.unexpected }
+        }
+
+        await store.send(.didTapDelete(id: secretID))
+        await store.receive(.mutationResponse(.failure(.unexpected))) {
+            $0.alert = AlertState {
+                TextState("작업을 완료하지 못했어요")
+            } actions: {
+                ButtonState(role: .cancel) { TextState("확인") }
+            } message: {
+                TextState("잠시 후 다시 시도해주세요.")
+            }
+        }
+    }
+
     @Test("didTapRecover는 restore를 호출하고 성공하면 목록을 재조회한다")
     func recoverRefetchesOnSuccess() async {
         let secret = makeSecret(name: "GitHub API Key")

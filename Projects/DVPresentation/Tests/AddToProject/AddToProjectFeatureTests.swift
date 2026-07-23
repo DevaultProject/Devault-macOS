@@ -78,6 +78,29 @@ struct AddToProjectFeatureTests {
         #expect(didDismiss)
     }
 
+    @Test("didTapDone은 연결에 실패하면 alert를 띄우고 dismiss하지 않는다")
+    func doneShowsAlertOnFailure() async {
+        let project = makeProject(name: "CheerLot")
+        var initialState = AddToProjectFeature.State(secretID: UUID())
+        initialState.selectedProjectID = project.id
+        let store = TestStore(initialState: initialState) {
+            AddToProjectFeature()
+        } withDependencies: {
+            $0.secretClient.linkProject = { _, _ in throw SecretUseCaseError.unexpected }
+        }
+
+        await store.send(.didTapDone)
+        await store.receive(.linkResponse(.failure(.unexpected))) {
+            $0.alert = AlertState {
+                TextState("프로젝트에 추가하지 못했어요")
+            } actions: {
+                ButtonState(role: .cancel) { TextState("확인") }
+            } message: {
+                TextState("잠시 후 다시 시도해주세요.")
+            }
+        }
+    }
+
     @Test("didTapCreateNewProject는 CreateProject destination을 연다")
     func createNewProjectPresentsDestination() async {
         let store = TestStore(initialState: AddToProjectFeature.State(secretID: UUID())) {

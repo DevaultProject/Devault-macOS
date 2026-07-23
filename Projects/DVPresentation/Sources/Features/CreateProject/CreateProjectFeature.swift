@@ -16,6 +16,7 @@ public struct CreateProjectFeature {
   public struct State: Equatable {
     public internal(set) var name = ""
     public internal(set) var isCreating = false
+    @Presents var alert: AlertState<Action.Alert>?
 
     public init() {}
   }
@@ -34,6 +35,10 @@ public struct CreateProjectFeature {
 
     case createResponse(Result<Project, ProjectUseCaseError>)
 
+    // MARK: - Child
+
+    case alert(PresentationAction<Alert>)
+
     // MARK: - Delegate
 
     case delegate(Delegate)
@@ -41,6 +46,8 @@ public struct CreateProjectFeature {
     public enum Delegate: Equatable {
       case projectCreated(Project)
     }
+
+    public enum Alert: Equatable {}
   }
 
   // MARK: - Dependencies
@@ -85,14 +92,25 @@ public struct CreateProjectFeature {
 
       case .createResponse(.failure):
         state.isCreating = false
+        state.alert = AlertState {
+          TextState("프로젝트를 만들지 못했어요")
+        } actions: {
+          ButtonState(role: .cancel) { TextState("확인") }
+        } message: {
+          TextState("잠시 후 다시 시도해주세요.")
+        }
         return .none
 
       case .didTapCancel:
         return .run { _ in await dismiss() }
 
+      case .alert:
+        return .none
+
       case .delegate:
         return .none
       }
     }
+    .ifLet(\.$alert, action: \.alert)
   }
 }
