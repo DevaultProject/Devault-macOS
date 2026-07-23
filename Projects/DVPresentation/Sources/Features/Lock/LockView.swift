@@ -56,7 +56,7 @@ extension LockView {
 
   private var appIconWithLogoView: some View {
     VStack(spacing: 20) {
-      RoundedRectangle(cornerRadius: 16)
+      RoundedRectangle(cornerRadius: 20)
         .fill(Color.dv(.gray800))
         .frame(width: 80, height: 80)
       (
