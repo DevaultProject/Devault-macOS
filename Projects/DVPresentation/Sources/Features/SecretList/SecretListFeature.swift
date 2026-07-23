@@ -23,6 +23,7 @@ public struct SecretListFeature {
     public internal(set) var searchText = ""
     public internal(set) var sort: SecretQuery.Sort = .recentlyAdded
     @Presents var destination: Destination.State?
+    @Presents var alert: AlertState<Action.Alert>?
 
     public init(collection: SecretQuery.Collection = .all, projectName: String? = nil) {
       self.collection = collection
@@ -78,6 +79,7 @@ public struct SecretListFeature {
     // MARK: - Child
 
     case destination(PresentationAction<Destination.Action>)
+    case alert(PresentationAction<Alert>)
 
     // MARK: - Delegate
 
@@ -86,6 +88,8 @@ public struct SecretListFeature {
     public enum Delegate: Equatable {
       case secretSelected(Secret.ID?)
     }
+
+    public enum Alert: Equatable {}
   }
 
   // MARK: - Destination
@@ -154,9 +158,19 @@ public struct SecretListFeature {
         return fetchSecretsEffect(query: state.query, debounced: false)
 
       case .mutationResponse(.failure):
+        state.alert = AlertState {
+          TextState("작업을 완료하지 못했어요")
+        } actions: {
+          ButtonState(role: .cancel) { TextState("확인") }
+        } message: {
+          TextState("잠시 후 다시 시도해주세요.")
+        }
         return .none
 
       case .destination:
+        return .none
+
+      case .alert:
         return .none
 
       case .delegate:
@@ -164,6 +178,7 @@ public struct SecretListFeature {
       }
     }
     .ifLet(\.$destination, action: \.destination)
+    .ifLet(\.$alert, action: \.alert)
   }
 
   // MARK: - Helpers

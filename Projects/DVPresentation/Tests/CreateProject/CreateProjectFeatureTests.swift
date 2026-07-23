@@ -48,6 +48,32 @@ struct CreateProjectFeatureTests {
         #expect(didDismiss)
     }
 
+    @Test("didTapCreate는 생성에 실패하면 alert를 띄우고 dismiss하지 않는다")
+    func createShowsAlertOnFailure() async {
+        let store = TestStore(initialState: CreateProjectFeature.State()) {
+            CreateProjectFeature()
+        } withDependencies: {
+            $0.secretClient.createProject = { _ in throw ProjectUseCaseError.unexpected }
+        }
+
+        await store.send(.didChangeName("DeVault")) {
+            $0.name = "DeVault"
+        }
+        await store.send(.didTapCreate) {
+            $0.isCreating = true
+        }
+        await store.receive(.createResponse(.failure(.unexpected))) {
+            $0.isCreating = false
+            $0.alert = AlertState {
+                TextState("프로젝트를 만들지 못했어요")
+            } actions: {
+                ButtonState(role: .cancel) { TextState("확인") }
+            } message: {
+                TextState("잠시 후 다시 시도해주세요.")
+            }
+        }
+    }
+
     @Test("didTapCancel은 dismiss한다")
     func cancelDismisses() async {
         var didDismiss = false

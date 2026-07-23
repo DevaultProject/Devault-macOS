@@ -17,6 +17,7 @@ struct CreateProjectView: View {
 
   var body: some View {
     content
+      .alert($store.scope(state: \.alert, action: \.alert))
   }
 }
 

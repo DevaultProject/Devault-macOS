@@ -26,6 +26,7 @@ struct SecretListView: View {
       ) { addToProjectStore in
         AddToProjectView(store: addToProjectStore)
       }
+      .alert($store.scope(state: \.alert, action: \.alert))
   }
 }
 
@@ -248,6 +249,40 @@ extension SecretListView {
       set: { store.send(.didChangeSearchText($0)) }
     )
   }
+
+  /// 체크마크 + 호버 하이라이트를 갖는 네이티브 메뉴 스타일 행. 이 화면 전용 — 재사용 필요해지면 DVDesign으로 승격.
+  private struct SortMenuRow: View {
+
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+      Button(action: action) {
+        HStack(spacing: 6) {
+          Image(systemName: "checkmark")
+            .dvFont(.bodyMD)
+            .opacity(isSelected ? 1 : 0)
+          Text(title)
+            .dvFont(.bodyMD)
+          Spacer(minLength: 8)
+        }
+        .foregroundStyle(isHovered ? Color(nsColor: .alternateSelectedControlTextColor) : Color.dv(.gray900))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+          RoundedRectangle(cornerRadius: 8)
+            .fill(isHovered ? Color(nsColor: .selectedContentBackgroundColor) : Color.clear)
+        }
+        .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .onHover { isHovered = $0 }
+    }
+  }
 }
 
 // MARK: - ExpiryBucket
@@ -282,42 +317,6 @@ private enum ExpiryBucket: CaseIterable, Identifiable {
     case .within30Days:
       return expiresAt >= sevenDaysOut && expiresAt <= thirtyDaysOut
     }
-  }
-}
-
-// MARK: - SortMenuRow
-
-/// 체크마크 + 호버 하이라이트를 갖는 네이티브 메뉴 스타일 행. 이 화면 전용 — 재사용 필요해지면 DVDesign으로 승격.
-private struct SortMenuRow: View {
-
-  let title: String
-  let isSelected: Bool
-  let action: () -> Void
-
-  @State private var isHovered = false
-
-  var body: some View {
-    Button(action: action) {
-      HStack(spacing: 6) {
-        Image(systemName: "checkmark")
-          .dvFont(.bodyMD)
-          .opacity(isSelected ? 1 : 0)
-        Text(title)
-          .dvFont(.bodyMD)
-        Spacer(minLength: 8)
-      }
-      .foregroundStyle(isHovered ? Color(nsColor: .alternateSelectedControlTextColor) : Color.dv(.gray900))
-      .padding(.horizontal, 10)
-      .padding(.vertical, 6)
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .background {
-        RoundedRectangle(cornerRadius: 8)
-          .fill(isHovered ? Color(nsColor: .selectedContentBackgroundColor) : Color.clear)
-      }
-      .contentShape(Rectangle())
-    }
-    .buttonStyle(.plain)
-    .onHover { isHovered = $0 }
   }
 }
 
