@@ -30,8 +30,15 @@ public struct AppView: View {
 
 extension AppView {
 
+  @ViewBuilder
   private var content: some View {
-    MainView(store: store.scope(state: \.main, action: \.main))
+    if let store = store.scope(state: \.onboarding, action: \.onboarding) {
+      OnboardingContainerView(store: store)
+    } else if let store = store.scope(state: \.locked, action: \.locked) {
+      LockView(store: store)
+    } else if let store = store.scope(state: \.main, action: \.main) {
+      MainView(store: store)
+    }
   }
 }
 
@@ -41,6 +48,9 @@ extension AppView {
   AppView(
     store: Store(initialState: AppFeature.State()) {
       AppFeature()
+    } withDependencies: {
+      $0.onboardingStatus.hasCompleted = { false }
+      $0.onboardingStatus.setCompleted = { }
     }
   )
 }
