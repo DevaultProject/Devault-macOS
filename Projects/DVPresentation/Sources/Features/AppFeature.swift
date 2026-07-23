@@ -1,6 +1,6 @@
 // Copyright © 2026 Devault. All rights reserved
 
-import SwiftUI
+import Foundation
 
 import ComposableArchitecture
 
@@ -13,7 +13,9 @@ public struct AppFeature {
 
   @ObservableState
   public struct State: Equatable {
-    var main: MainFeature.State = .init()
+    public internal(set) var onboarding: OnboardingContainerFeature.State?
+    public internal(set) var locked: LockFeature.State?
+    public internal(set) var main: MainFeature.State?
 
     public init() {}
   }
@@ -28,6 +30,8 @@ public struct AppFeature {
 
     // MARK: - Child
 
+    case onboarding(OnboardingContainerFeature.Action)
+    case locked(LockFeature.Action)
     case main(MainFeature.Action)
 
     // MARK: - Delegate
@@ -37,6 +41,10 @@ public struct AppFeature {
     public enum Delegate: Equatable {}
   }
 
+  // MARK: - Dependencies
+
+  @Dependency(\.onboardingStatus) var onboardingStatus
+
   // MARK: - Init
 
   public init() {}
@@ -44,12 +52,31 @@ public struct AppFeature {
   // MARK: - Body
 
   public var body: some ReducerOf<Self> {
-    Scope(state: \.main, action: \.main) {
-      MainFeature()
-    }
     Reduce { state, action in
       switch action {
       case .task:
+        if onboardingStatus.hasCompleted() {
+          state.locked = .init(isPostOnboarding: false)
+        } else {
+          state.onboarding = .init()
+        }
+        return .none
+
+      case .onboarding(.delegate(.completed)):
+        state.onboarding = nil
+        state.main = .init()
+        onboardingStatus.setCompleted()
+        return .none
+
+      case .onboarding:
+        return .none
+
+      case .locked(.delegate(.unlockCompleted)):
+        state.locked = nil
+        state.main = .init()
+        return .none
+
+      case .locked:
         return .none
 
       case .main:
@@ -58,6 +85,15 @@ public struct AppFeature {
       case .delegate:
         return .none
       }
+    }
+    .ifLet(\.onboarding, action: \.onboarding) {
+      OnboardingContainerFeature()
+    }
+    .ifLet(\.locked, action: \.locked) {
+      LockFeature()
+    }
+    .ifLet(\.main, action: \.main) {
+      MainFeature()
     }
   }
 }
