@@ -4,7 +4,7 @@ import DVDesign
 import SwiftUI
 
 /// Database 서브뷰 전용 "SSL Required" 체크박스 필드.
-/// `DatabaseFields.sslRequired`에 바인딩. 라벨과 체크박스를 인라인 배치.
+/// `DatabaseFields.isSSLRequired`에 바인딩. 라벨과 체크박스를 인라인 배치.
 struct SSLRequiredFieldView: View {
 
     @Binding var isChecked: Bool

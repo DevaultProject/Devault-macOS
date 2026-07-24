@@ -12,6 +12,16 @@ struct FooterActionsView: View {
     let onSave: () -> Void
 
     var body: some View {
+        actions
+            .padding(.top, 8)
+    }
+}
+
+// MARK: - Subviews
+
+extension FooterActionsView {
+
+    private var actions: some View {
         HStack {
             Spacer()
             HStack(spacing: 10) {
@@ -19,53 +29,52 @@ struct FooterActionsView: View {
                 SaveButtonView(isEnabled: isSaveEnabled, action: onSave)
             }
         }
-        .padding(.top, 8)
     }
-}
 
-/// DVButton의 secondary 지오메트리를 재사용하되, enabled 시 vaultGreen 배경으로 강조하는 Save 전용 버튼.
-/// 재사용 필요 시 DVDesign에 새 `DVButton.Style` variant로 승격 예정.
-private struct SaveButtonView: View {
+    /// DVButton의 secondary 지오메트리를 재사용하되, enabled 시 vaultGreen 배경으로 강조하는 Save 전용 버튼.
+    /// 재사용 필요 시 DVDesign에 새 `DVButton.Style` variant로 승격 예정.
+    private struct SaveButtonView: View {
 
-    let isEnabled: Bool
-    let action: () -> Void
+        let isEnabled: Bool
+        let action: () -> Void
 
-    @State private var isHovered = false
+        @State private var isHovered = false
 
-    var body: some View {
-        Button(action: action) {
-            Text("Save")
-                .dvFont(.bodyMD)
-                .frame(width: 74, height: 24)
-                .padding(.horizontal, 16)
-                .contentShape(Rectangle())
+        var body: some View {
+            Button(action: action) {
+                Text("Save")
+                    .dvFont(.bodyMD)
+                    .frame(width: 74, height: 24)
+                    .padding(.horizontal, 16)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(SaveButtonStyle(isHovered: isHovered))
+            .disabled(!isEnabled)
+            .onHover { isHovered = $0 }
         }
-        .buttonStyle(SaveButtonStyle(isHovered: isHovered))
-        .disabled(!isEnabled)
-        .onHover { isHovered = $0 }
-    }
-}
-
-private struct SaveButtonStyle: ButtonStyle {
-
-    let isHovered: Bool
-
-    @Environment(\.isEnabled) private var isEnabled
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundStyle(foregroundColor)
-            .background(backgroundColor(isPressed: configuration.isPressed))
-            .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 
-    private var foregroundColor: Color {
-        isEnabled ? Color.dv(.white) : Color.dv(.gray400)
-    }
+    private struct SaveButtonStyle: ButtonStyle {
 
-    private func backgroundColor(isPressed: Bool) -> Color {
-        guard isEnabled else { return Color.dv(.gray100) }
-        return (isPressed || isHovered) ? Color.dv(.vaultGreenDark) : Color.dv(.vaultGreen)
+        let isHovered: Bool
+
+        @Environment(\.isEnabled) private var isEnabled
+
+        func makeBody(configuration: Configuration) -> some View {
+            configuration.label
+                .foregroundStyle(foregroundColor)
+                .background(backgroundColor(isPressed: configuration.isPressed))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+
+        private var foregroundColor: Color {
+            isEnabled ? Color.dv(.white) : Color.dv(.gray400)
+        }
+
+        private func backgroundColor(isPressed: Bool) -> Color {
+            guard isEnabled else { return Color.dv(.gray100) }
+            return (isPressed || isHovered) ? Color.dv(.vaultGreenDark) : Color.dv(.vaultGreen)
+        }
     }
 }
 

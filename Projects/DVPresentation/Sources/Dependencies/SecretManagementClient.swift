@@ -62,8 +62,8 @@ extension SecretManagementClient: TestDependencyKey {
     )
 }
 
-public extension DependencyValues {
-    var secretManagementClient: SecretManagementClient {
+extension DependencyValues {
+    public var secretManagementClient: SecretManagementClient {
         get { self[SecretManagementClient.self] }
         set { self[SecretManagementClient.self] = newValue }
     }
