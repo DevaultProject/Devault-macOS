@@ -4,9 +4,10 @@ import DVDesign
 import SwiftUI
 
 /// CreateSecret 폼의 Expire Date 필드 (optional).
-/// `SecretMetaFields.expireDate`(`Date?`)에 바인딩.
+/// `SecretMetaFields.expireDate`(`Date?`)에 바인딩. 기본값은 nil("No expire")이며,
+/// 체크박스로 "만료 설정"을 활성화하면 `defaultInitialDate`(오늘+30일)로 초기화되고 DatePicker가 노출된다.
 ///
-/// 임시로 SwiftUI `DatePicker(.compact)` 사용 — macOS native 트리거 + 시스템 팝오버.
+/// 임시로 SwiftUI `DatePicker(.stepperField)` 사용 — macOS native 트리거.
 /// DV 브랜드 색상만 `.tint`로 통일. 디자인 완성도가 필요해지면 별도 이슈에서 `DVCalendarPicker` 개발 후 교체.
 struct ExpireDateFieldView: View {
 
@@ -16,25 +17,45 @@ struct ExpireDateFieldView: View {
 
     private var size: DVComponentSize { mode.pairedFieldSize }
 
-    /// `DatePicker`가 non-optional `Date`를 요구하므로 optional 바인딩 shim.
-    /// get: `nil`이면 오늘 표시. set: 사용자 선택을 그대로 반영.
+    /// `expireDate != nil`이 checked 상태의 유일한 진실 — 별도 로컬 State를 두면 바인딩 소스와 어긋남.
+    private var isChecked: Bool { expireDate != nil }
+
+    /// `DatePicker`가 non-optional `Date`를 요구하므로 옵셔널 shim.
+    /// checked 상태에서만 렌더되기 때문에 get의 폴백은 방어용.
     private var dateBinding: Binding<Date> {
         Binding(
-            get: { expireDate ?? Date() },
+            get: { expireDate ?? Self.defaultInitialDate() },
             set: { expireDate = $0 }
         )
     }
 
+    /// 체크박스를 처음 켰을 때 세팅되는 기본 만료일. 대부분의 secret에 관용적인 30일.
+    private static func defaultInitialDate() -> Date {
+        Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
+    }
+
     var body: some View {
         DVLabeledField("Expire Date", size: size) {
-            DatePicker(
-                "",
-                selection: dateBinding,
-                displayedComponents: [.date]
-            )
-            .datePickerStyle(.stepperField)
-            .labelsHidden()
-            .tint(Color.dv(.vaultGreen))
+            HStack(spacing: 8) {
+                DVCheckBox(isChecked: isChecked) {
+                    expireDate = isChecked ? nil : Self.defaultInitialDate()
+                }
+
+                if isChecked {
+                    DatePicker(
+                        "",
+                        selection: dateBinding,
+                        displayedComponents: [.date]
+                    )
+                    .datePickerStyle(.stepperField)
+                    .labelsHidden()
+                    .tint(Color.dv(.vaultGreen))
+                } else {
+                    Text("No expire")
+                        .dvFont(.bodyMD)
+                        .foregroundStyle(Color.dv(.gray500))
+                }
+            }
             .frame(width: size.width, alignment: .leading)
         }
     }
@@ -44,7 +65,7 @@ struct ExpireDateFieldView: View {
 
 #if DEBUG
 
-#Preview("Not set · Dual") {
+#Preview("No expire (default) · Dual") {
     ExpireDateFieldPreview()
         .padding()
         .environment(\.formLayoutMode, .dual)

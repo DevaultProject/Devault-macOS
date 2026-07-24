@@ -31,8 +31,8 @@ extension ProjectClient: TestDependencyKey {
     )
 }
 
-public extension DependencyValues {
-    var projectClient: ProjectClient {
+extension DependencyValues {
+    public var projectClient: ProjectClient {
         get { self[ProjectClient.self] }
         set { self[ProjectClient.self] = newValue }
     }

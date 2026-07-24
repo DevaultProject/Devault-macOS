@@ -74,7 +74,7 @@ struct ServiceAccountFields: Equatable {
 struct DatabaseFields: Equatable {
     var linkString: String = ""
     /// `DatabaseMetadata.sslRequired`. 사용자 명시 토글, 기본 false.
-    var sslRequired: Bool = false
+    var isSSLRequired: Bool = false
 }
 
 struct SSHKeyFields: Equatable {

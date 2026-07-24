@@ -4,28 +4,47 @@ import DVDomain
 import Foundation
 
 extension SecretMetaFields {
-    
+
+    // MARK: - 필수 필드 판정 (단일 진실)
+
+    /// 각 content case에서 누락된 첫 required 필드의 `FieldID`.
+    /// `isValid`와 `toCreateSecretPayload`가 공유하는 유일한 required 규칙 정의부 —
+    /// 규칙 변경 시 이 프로퍼티만 수정하면 실시간 검증과 실제 저장 검증이 자동으로 정합된다.
+    var missingRequiredFieldID: FieldID? {
+        switch content {
+        case .apiKeyToken(let f):
+            return f.value.isEmpty ? .value : nil
+        case .oauthClient(let f):
+            if f.clientId.isEmpty { return .clientId }
+            return f.clientSecret.isEmpty ? .clientSecret : nil
+        case .serviceAccount(let f):
+            return f.credentialJSON.isEmpty ? .credentialJSON : nil
+        case .database(let f):
+            return f.linkString.isEmpty ? .linkString : nil
+        case .sshKey(let f):
+            return f.privateKey.isEmpty ? .privateKey : nil
+        case .sslTlsCertificate(let f):
+            if f.certificate.isEmpty { return .certificate }
+            return f.sslPrivateKey.isEmpty ? .sslPrivateKey : nil
+        case .envSet(let f):
+            return f.envContent.isEmpty ? .envContent : nil
+        case .licenseKey(let f):
+            return f.licenseKey.isEmpty ? .licenseKey : nil
+        case .custom(let f):
+            return f.value.isEmpty ? .value : nil
+        }
+    }
+
     // MARK: - 실시간 UI 검증
 
-    /// Create 버튼 disable/enable 판정용. `name` + 각 content case별 required 필드만 검사한다.
+    /// Create 버튼 disable/enable 판정용. `name` + `missingRequiredFieldID`만 검사한다.
     func isValid(
         for type: CreatableSecretType,
         subType: CreatableSecretSubType?
     ) -> Bool {
-        guard !name.isEmpty else { return false }
-        switch content {
-        case .apiKeyToken(let f):        return !f.value.isEmpty
-        case .oauthClient(let f):        return !f.clientId.isEmpty && !f.clientSecret.isEmpty
-        case .serviceAccount(let f):     return !f.credentialJSON.isEmpty
-        case .database(let f):           return !f.linkString.isEmpty
-        case .sshKey(let f):             return !f.privateKey.isEmpty
-        case .sslTlsCertificate(let f):  return !f.certificate.isEmpty && !f.sslPrivateKey.isEmpty
-        case .envSet(let f):             return !f.envContent.isEmpty
-        case .licenseKey(let f):         return !f.licenseKey.isEmpty
-        case .custom(let f):             return !f.value.isEmpty
-        }
+        !name.isEmpty && missingRequiredFieldID == nil
     }
-    
+
     // MARK: - 도메인 매핑
 
     /// content case별로 payload + metadata를 조립. 필수 필드 누락 시 `.missingRequired`로 폼에 인라인 경고를 트리거.
@@ -37,10 +56,12 @@ extension SecretMetaFields {
         guard !name.isEmpty else {
             return .failure(.missingRequired(.name))
         }
-        
+        if let missing = missingRequiredFieldID {
+            return .failure(.missingRequired(missing))
+        }
+
         switch content {
         case .apiKeyToken(let f):
-            guard !f.value.isEmpty else { return .failure(.missingRequired(.value)) }
             let payload = APIKeyPayload(value: f.value)
             let meta = f.apiKeyMetadata
             switch subType {
@@ -49,39 +70,32 @@ extension SecretMetaFields {
             case .webhookSecret: return .success(.webhookSecret(payload, meta))
             default:             return .failure(.invalidTypeCombination)
             }
-            
+
         case .oauthClient(let f):
-            guard !f.clientId.isEmpty else { return .failure(.missingRequired(.clientId)) }
-            guard !f.clientSecret.isEmpty else { return .failure(.missingRequired(.clientSecret)) }
             return .success(.oauthClient(
                 OAuthClientPayload(clientId: f.clientId, clientSecret: f.clientSecret),
                 f.oauthClientMetadata
             ))
-            
+
         case .serviceAccount(let f):
-            guard !f.credentialJSON.isEmpty else { return .failure(.missingRequired(.credentialJSON)) }
             return .success(.serviceAccount(
                 ServiceAccountPayload(credentialJSON: f.credentialJSON),
                 f.serviceAccountMetadata
             ))
-            
+
         case .database(let f):
-            guard !f.linkString.isEmpty else { return .failure(.missingRequired(.linkString)) }
             return .success(.database(
                 DatabasePayload(linkString: f.linkString),
                 f.databaseMetadata
             ))
-            
+
         case .sshKey(let f):
-            guard !f.privateKey.isEmpty else { return .failure(.missingRequired(.privateKey)) }
             return .success(.sshKey(
                 SSHKeyPayload(privateKey: f.privateKey, passphrase: f.passphrase.nilIfEmpty),
                 f.sshKeyMetadata
             ))
-            
+
         case .sslTlsCertificate(let f):
-            guard !f.certificate.isEmpty else { return .failure(.missingRequired(.certificate)) }
-            guard !f.sslPrivateKey.isEmpty else { return .failure(.missingRequired(.sslPrivateKey)) }
             return .success(.sslTlsCertificate(
                 SSLCertPayload(
                     certificate: f.certificate,
@@ -90,20 +104,17 @@ extension SecretMetaFields {
                 ),
                 f.sslCertMetadata
             ))
-            
+
         case .envSet(let f):
-            guard !f.envContent.isEmpty else { return .failure(.missingRequired(.envContent)) }
             return .success(.environmentVariableSet(EnvSetPayload(content: f.envContent)))
-            
+
         case .licenseKey(let f):
-            guard !f.licenseKey.isEmpty else { return .failure(.missingRequired(.licenseKey)) }
             return .success(.licenseKey(
                 LicenseKeyPayload(licenseKey: f.licenseKey),
                 f.licenseKeyMetadata
             ))
-            
+
         case .custom(let f):
-            guard !f.value.isEmpty else { return .failure(.missingRequired(.value)) }
             return .success(.custom(CustomPayload(value: f.value)))
         }
     }
@@ -163,9 +174,9 @@ private extension SSHKeyFields {
 }
 
 private extension DatabaseFields {
-    /// 사용자가 명시적으로 sslRequired를 켰을 때만 metadata build.
+    /// 사용자가 명시적으로 SSL Required를 켰을 때만 metadata build.
     var databaseMetadata: DatabaseMetadata? {
-        guard sslRequired else { return nil }
+        guard isSSLRequired else { return nil }
         return DatabaseMetadata(sslRequired: true)
     }
 }
