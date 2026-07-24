@@ -47,8 +47,10 @@ struct CreateSecretFeature {
         }
 
         /// Create 버튼의 disable/enable 판정.
+        /// 필수 필드 검증은 `didTapSave`가 `handleSave`에서 수행해 `validationErrors`를 채운다 —
+        /// 여기서 사전 차단하면 인라인 warning이 절대 안 뜨므로 저장 중 재클릭만 막는다.
         var isSaveEnabled: Bool {
-            meta.isValid(for: secretType, subType: selectedSubType) && !isSaving
+            !isSaving
         }
     }
 
@@ -142,6 +144,8 @@ struct CreateSecretFeature {
 
             case .projectsResponse(.failure):
                 state.availableProjects = []
+                // TODO(#41-followup): 재시도/오프라인 배지 등 상세 처리는 후속 작업에서 대체.
+                state.alert = .projectLoadFailed
                 return .none
 
             case .saveResponse(.success(let secret)):
@@ -225,6 +229,19 @@ extension AlertState where Action == CreateSecretFeature.Action.Alert {
             ButtonState(role: .cancel) {
                 TextState("Keep editing", bundle: .module)
             }
+        }
+    }
+
+    /// 프로젝트 로드 실패 시 노출. 껍데기 — 재시도/오프라인 배지 등은 후속 작업에서 대체.
+    static var projectLoadFailed: Self {
+        Self {
+            TextState("Failed to load projects", bundle: .module)
+        } actions: {
+            ButtonState(role: .cancel) {
+                TextState("OK", bundle: .module)
+            }
+        } message: {
+            TextState("The project list couldn't be loaded. Please try again later.", bundle: .module)
         }
     }
 }
