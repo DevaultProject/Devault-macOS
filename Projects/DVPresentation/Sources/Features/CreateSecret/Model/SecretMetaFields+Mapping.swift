@@ -62,7 +62,7 @@ extension SecretMetaFields {
             guard !f.credentialJSON.isEmpty else { return .failure(.missingRequired(.credentialJSON)) }
             return .success(.serviceAccount(
                 ServiceAccountPayload(credentialJSON: f.credentialJSON),
-                nil
+                f.serviceAccountMetadata
             ))
             
         case .database(let f):
@@ -131,6 +131,13 @@ private extension APIKeyTokenFields {
     /// scope가 비어 있으면 `nil`.
     var apiKeyMetadata: APIKeyMetadata? {
         scope.nilIfEmpty.map { APIKeyMetadata(scope: $0) }
+    }
+}
+
+private extension ServiceAccountFields {
+    /// authority가 비어 있으면 `nil`. projectId / accountEmail은 아직 UI 미노출로 항상 nil.
+    var serviceAccountMetadata: ServiceAccountMetadata? {
+        authority.nilIfEmpty.map { ServiceAccountMetadata(authority: $0) }
     }
 }
 

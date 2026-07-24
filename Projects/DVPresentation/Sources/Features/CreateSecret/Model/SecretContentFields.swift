@@ -67,6 +67,8 @@ struct OAuthClientFields: Equatable {
 
 struct ServiceAccountFields: Equatable {
     var credentialJSON: String = ""
+    /// `ServiceAccountMetadata.authority`. optional. UI 라벨은 "Authority / Scope".
+    var authority: String = ""
 }
 
 struct DatabaseFields: Equatable {

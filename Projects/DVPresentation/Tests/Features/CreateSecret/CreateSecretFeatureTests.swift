@@ -32,7 +32,7 @@ struct CreateSecretFeatureTests {
         }
     }
 
-    @Test("task 실패: availableProjects는 빈 배열 유지")
+    @Test("task 실패: availableProjects는 빈 배열 유지 + projectLoadFailed alert 노출")
     func task_failure() async {
         let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
             CreateSecretFeature()
@@ -43,7 +43,9 @@ struct CreateSecretFeatureTests {
         }
 
         await store.send(.task)
-        await store.receive(.projectsResponse(.failure(.unexpected)))
+        await store.receive(.projectsResponse(.failure(.unexpected))) {
+            $0.alert = .projectLoadFailed
+        }
     }
 
     // MARK: - selectedSubType binding
@@ -156,102 +158,110 @@ struct CreateSecretFeatureTests {
         }
     }
 
-    // MARK: - isSaveEnabled matrix
+    // MARK: - isSaveEnabled
 
-    @Test("isSaveEnabled: apiKeyToken 3개 서브타입 모두 name + value 요구")
-    func isSaveEnabled_apiKeyToken() {
+    @Test("isSaveEnabled: 저장 중이 아니면 항상 true — 필수 필드 검증은 didTapSave에서 수행")
+    func isSaveEnabled_onlyBlocksWhileSaving() {
+        var state = CreateSecretFeature.State(secretType: .apiKeyToken)
+        #expect(state.isSaveEnabled == true, "초기 상태(빈 필드)에도 활성 — 탭 시점에 인라인 warning 노출을 위함")
+        state.isSaving = true
+        #expect(state.isSaveEnabled == false, "저장 중엔 재클릭 차단")
+    }
+
+    // MARK: - meta.isValid matrix
+
+    @Test("meta.isValid: apiKeyToken 3개 서브타입 모두 name + value 요구")
+    func metaIsValid_apiKeyToken() {
         for subType in [CreatableSecretSubType.apiKey, .accessToken, .webhookSecret] {
             var state = CreateSecretFeature.State(secretType: .apiKeyToken)
             state.selectedSubType = subType
-            #expect(state.isSaveEnabled == false, "\(subType): 초기값 비활성")
+            #expect(state.meta.isValid(for: .apiKeyToken, subType: subType) == false, "\(subType): 초기값 무효")
             state.meta.name = "n"
-            #expect(state.isSaveEnabled == false, "\(subType): value 없어서 비활성")
+            #expect(state.meta.isValid(for: .apiKeyToken, subType: subType) == false, "\(subType): value 없어서 무효")
             state.meta.content = .apiKeyToken(APIKeyTokenFields(value: "v"))
-            #expect(state.isSaveEnabled == true, "\(subType): 필수 필드 충족")
-            state.isSaving = true
-            #expect(state.isSaveEnabled == false, "\(subType): 저장 중일 땐 비활성")
+            #expect(state.meta.isValid(for: .apiKeyToken, subType: subType) == true, "\(subType): 필수 필드 충족")
         }
     }
 
-    @Test("isSaveEnabled: oauthClient는 clientId + clientSecret 모두 요구")
-    func isSaveEnabled_oauthClient() {
+    @Test("meta.isValid: oauthClient는 clientId + clientSecret 모두 요구")
+    func metaIsValid_oauthClient() {
         var state = CreateSecretFeature.State(secretType: .oauth)
         state.meta.name = "n"
-        #expect(state.isSaveEnabled == false)
+        #expect(state.meta.isValid(for: .oauth, subType: .oauthClient) == false)
         state.meta.content = .oauthClient(OAuthClientFields(clientId: "id"))
-        #expect(state.isSaveEnabled == false)
+        #expect(state.meta.isValid(for: .oauth, subType: .oauthClient) == false)
         state.meta.content = .oauthClient(OAuthClientFields(clientId: "id", clientSecret: "sec"))
-        #expect(state.isSaveEnabled == true)
+        #expect(state.meta.isValid(for: .oauth, subType: .oauthClient) == true)
     }
 
-    @Test("isSaveEnabled: serviceAccount는 credentialJSON 요구")
-    func isSaveEnabled_serviceAccount() {
+    @Test("meta.isValid: serviceAccount는 credentialJSON 요구")
+    func metaIsValid_serviceAccount() {
         var state = CreateSecretFeature.State(secretType: .oauth)
         state.selectedSubType = .serviceAccount
         state.meta.content = .serviceAccount(ServiceAccountFields())
         state.meta.name = "n"
-        #expect(state.isSaveEnabled == false)
+        #expect(state.meta.isValid(for: .oauth, subType: .serviceAccount) == false)
         state.meta.content = .serviceAccount(ServiceAccountFields(credentialJSON: "{}"))
-        #expect(state.isSaveEnabled == true)
+        #expect(state.meta.isValid(for: .oauth, subType: .serviceAccount) == true)
     }
 
-    @Test("isSaveEnabled: database는 linkString 요구")
-    func isSaveEnabled_database() {
+    @Test("meta.isValid: database는 linkString 요구")
+    func metaIsValid_database() {
         var state = CreateSecretFeature.State(secretType: .database)
         state.meta.name = "n"
-        #expect(state.isSaveEnabled == false)
+        #expect(state.meta.isValid(for: .database, subType: nil) == false)
         state.meta.content = .database(DatabaseFields(linkString: "postgres://..."))
-        #expect(state.isSaveEnabled == true)
+        #expect(state.meta.isValid(for: .database, subType: nil) == true)
     }
 
-    @Test("isSaveEnabled: sshKey는 privateKey 요구")
-    func isSaveEnabled_sshKey() {
+    @Test("meta.isValid: sshKey는 privateKey 요구")
+    func metaIsValid_sshKey() {
         var state = CreateSecretFeature.State(secretType: .sshAndCredentials)
         state.meta.name = "n"
-        #expect(state.isSaveEnabled == false)
+        #expect(state.meta.isValid(for: .sshAndCredentials, subType: .sshKey) == false)
         state.meta.content = .sshKey(SSHKeyFields(privateKey: "pk"))
-        #expect(state.isSaveEnabled == true)
+        #expect(state.meta.isValid(for: .sshAndCredentials, subType: .sshKey) == true)
     }
 
-    @Test("isSaveEnabled: sslTlsCertificate는 certificate + sslPrivateKey 모두 요구")
-    func isSaveEnabled_sslTlsCertificate() {
+    @Test("meta.isValid: sslTlsCertificate는 certificate + sslPrivateKey 모두 요구")
+    func metaIsValid_sslTlsCertificate() {
         var state = CreateSecretFeature.State(secretType: .sshAndCredentials)
         state.selectedSubType = .sslTlsCertificate
         state.meta.content = .sslTlsCertificate(SSLCertFields())
         state.meta.name = "n"
-        #expect(state.isSaveEnabled == false)
+        #expect(state.meta.isValid(for: .sshAndCredentials, subType: .sslTlsCertificate) == false)
         state.meta.content = .sslTlsCertificate(SSLCertFields(certificate: "c"))
-        #expect(state.isSaveEnabled == false)
+        #expect(state.meta.isValid(for: .sshAndCredentials, subType: .sslTlsCertificate) == false)
         state.meta.content = .sslTlsCertificate(SSLCertFields(certificate: "c", sslPrivateKey: "pk"))
-        #expect(state.isSaveEnabled == true)
+        #expect(state.meta.isValid(for: .sshAndCredentials, subType: .sslTlsCertificate) == true)
     }
 
-    @Test("isSaveEnabled: environmentVariableSet는 envContent 요구")
-    func isSaveEnabled_envSet() {
+    @Test("meta.isValid: environmentVariableSet는 envContent 요구")
+    func metaIsValid_envSet() {
         var state = CreateSecretFeature.State(secretType: .environmentVariableSet)
         state.meta.name = "n"
-        #expect(state.isSaveEnabled == false)
+        #expect(state.meta.isValid(for: .environmentVariableSet, subType: nil) == false)
         state.meta.content = .envSet(EnvSetFields(envContent: "FOO=bar"))
-        #expect(state.isSaveEnabled == true)
+        #expect(state.meta.isValid(for: .environmentVariableSet, subType: nil) == true)
     }
 
-    @Test("isSaveEnabled: licenseKey는 licenseKey 필드 요구")
-    func isSaveEnabled_licenseKey() {
+    @Test("meta.isValid: licenseKey는 licenseKey 필드 요구")
+    func metaIsValid_licenseKey() {
         var state = CreateSecretFeature.State(secretType: .etc)
         state.meta.name = "n"
-        #expect(state.isSaveEnabled == false)
+        #expect(state.meta.isValid(for: .etc, subType: .licenseKey) == false)
         state.meta.content = .licenseKey(LicenseKeyFields(licenseKey: "lk"))
-        #expect(state.isSaveEnabled == true)
+        #expect(state.meta.isValid(for: .etc, subType: .licenseKey) == true)
     }
 
-    @Test("isSaveEnabled: custom은 value 요구")
-    func isSaveEnabled_custom() {
+    @Test("meta.isValid: custom은 value 요구")
+    func metaIsValid_custom() {
         var state = CreateSecretFeature.State(secretType: .etc)
         state.selectedSubType = .custom
         state.meta.content = .custom(CustomFields())
         state.meta.name = "n"
-        #expect(state.isSaveEnabled == false)
+        #expect(state.meta.isValid(for: .etc, subType: .custom) == false)
         state.meta.content = .custom(CustomFields(value: "v"))
-        #expect(state.isSaveEnabled == true)
+        #expect(state.meta.isValid(for: .etc, subType: .custom) == true)
     }
 }
