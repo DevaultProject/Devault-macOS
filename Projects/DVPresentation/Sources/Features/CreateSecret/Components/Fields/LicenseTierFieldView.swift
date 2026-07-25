@@ -15,7 +15,7 @@ struct LicenseTierFieldView: View {
     private var size: DVComponentSize { mode.pairedFieldSize }
 
     var body: some View {
-        DVLabeledField("Type", size: size) {
+        DVLabeledField(.module("Type"), size: size) {
             DVRadioButtonGroup(
                 items: LicenseTier.allCases.map {
                     .init($0, title: String(localized: $0.displayName))

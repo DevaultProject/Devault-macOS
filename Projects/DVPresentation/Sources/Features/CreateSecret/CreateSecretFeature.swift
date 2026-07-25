@@ -226,7 +226,7 @@ struct CreateSecretFeature {
             }
 
         case .failure(.missingRequired(let fieldID)):
-            state.validationErrors[fieldID] = "Required"
+            state.validationErrors[fieldID] = .module("Required")
             return .none
 
         case .failure(.invalidTypeCombination):

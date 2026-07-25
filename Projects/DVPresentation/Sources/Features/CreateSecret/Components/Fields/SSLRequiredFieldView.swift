@@ -11,7 +11,7 @@ struct SSLRequiredFieldView: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Text("SSL Required")
+            Text(.module("SSL Required"))
                 .dvFont(.bodyMD)
                 .foregroundStyle(Color.dv(.gray700))
             DVCheckBox(isChecked: isChecked) { isChecked.toggle() }

@@ -42,8 +42,8 @@ struct CustomSectionView: View {
             )
 
             LabeledTextFieldView(
-                label: "Value",
-                placeholder: "e.g custom-secret-value",
+                label: .module("Value"),
+                placeholder: .module("e.g custom-secret-value"),
                 text: $custom.value,
                 isRequired: true,
                 sizeMode: .fullWidth,
@@ -81,7 +81,7 @@ struct CustomSectionView: View {
             return .warning(warning)
         }
         if let detected = detectedServices[id] {
-            return .detected("Auto-detected: \(detected)")
+            return .detected(.module("Auto-detected: \(detected)"))
         }
         return nil
     }

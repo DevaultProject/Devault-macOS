@@ -11,8 +11,8 @@ struct NameFieldView: View {
 
     var body: some View {
         LabeledTextFieldView(
-            label: "Name",
-            placeholder: "e.g DeVault",
+            label: .module("Name"),
+            placeholder: .module("e.g DeVault"),
             text: $name,
             isRequired: true,
             sizeMode: .fullWidth,

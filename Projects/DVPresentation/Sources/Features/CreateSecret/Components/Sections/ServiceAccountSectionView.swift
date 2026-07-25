@@ -42,8 +42,8 @@ struct ServiceAccountSectionView: View {
             )
 
             LabeledTextFieldView(
-                label: "Certification JSON",
-                placeholder: #"e.g {"type": "service_account", ...}"#,
+                label: .module("Certification JSON"),
+                placeholder: .module(#"e.g {"type": "service_account", ...}"#),
                 text: $serviceAccount.credentialJSON,
                 isRequired: true,
                 sizeMode: .fullWidth,
@@ -73,8 +73,8 @@ struct ServiceAccountSectionView: View {
             }
 
             LabeledTextFieldView(
-                label: "Authority / Scope",
-                placeholder: "e.g organization-admin",
+                label: .module("Authority / Scope"),
+                placeholder: .module("e.g organization-admin"),
                 text: $serviceAccount.authority,
                 sizeMode: .fullWidth
             )
@@ -90,7 +90,7 @@ struct ServiceAccountSectionView: View {
             return .warning(warning)
         }
         if let detected = detectedServices[id] {
-            return .detected("Auto-detected: \(detected)")
+            return .detected(.module("Auto-detected: \(detected)"))
         }
         return nil
     }

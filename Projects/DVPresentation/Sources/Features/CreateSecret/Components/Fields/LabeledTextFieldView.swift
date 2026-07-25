@@ -114,8 +114,8 @@ private struct LabeledTextFieldPreview: View {
 
     var body: some View {
         LabeledTextFieldView(
-            label: "Sample",
-            placeholder: "e.g DeVault",
+            label: .module("Sample"),
+            placeholder: .module("e.g DeVault"),
             text: $text,
             isRequired: true,
             isSecure: isSecure,

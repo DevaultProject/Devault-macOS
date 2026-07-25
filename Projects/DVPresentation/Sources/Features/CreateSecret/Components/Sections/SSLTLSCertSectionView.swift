@@ -40,8 +40,8 @@ struct SSLTLSCertSectionView: View {
             )
 
             LabeledTextFieldView(
-                label: "Certificate",
-                placeholder: "e.g -----BEGIN CERTIFICATE-----",
+                label: .module("Certificate"),
+                placeholder: .module("e.g -----BEGIN CERTIFICATE-----"),
                 text: $sslCert.certificate,
                 isRequired: true,
                 sizeMode: .fullWidth,
@@ -49,8 +49,8 @@ struct SSLTLSCertSectionView: View {
             )
 
             LabeledTextFieldView(
-                label: "Private Key",
-                placeholder: "e.g -----BEGIN PRIVATE KEY-----",
+                label: .module("Private Key"),
+                placeholder: .module("e.g -----BEGIN PRIVATE KEY-----"),
                 text: $sslCert.sslPrivateKey,
                 isRequired: true,
                 sizeMode: .fullWidth,
@@ -69,15 +69,15 @@ struct SSLTLSCertSectionView: View {
             }
 
             LabeledTextFieldView(
-                label: "Certificate Chain",
-                placeholder: "optional",
+                label: .module("Certificate Chain"),
+                placeholder: .module("optional"),
                 text: $sslCert.certificateChain,
                 sizeMode: .fullWidth
             )
 
             LabeledTextFieldView(
-                label: "Renew Command",
-                placeholder: "e.g certbot renew",
+                label: .module("Renew Command"),
+                placeholder: .module("e.g certbot renew"),
                 text: $sslCert.renewCommand,
                 sizeMode: .fullWidth
             )
@@ -93,7 +93,7 @@ struct SSLTLSCertSectionView: View {
             return .warning(warning)
         }
         if let detected = detectedServices[id] {
-            return .detected("Auto-detected: \(detected)")
+            return .detected(.module("Auto-detected: \(detected)"))
         }
         return nil
     }

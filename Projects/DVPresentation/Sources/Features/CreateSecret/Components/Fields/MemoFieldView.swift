@@ -10,8 +10,8 @@ struct MemoFieldView: View {
 
     var body: some View {
         LabeledTextFieldView(
-            label: "Memo",
-            placeholder: "optional",
+            label: .module("Memo"),
+            placeholder: .module("optional"),
             text: $memo,
             sizeMode: .fullWidth
         )

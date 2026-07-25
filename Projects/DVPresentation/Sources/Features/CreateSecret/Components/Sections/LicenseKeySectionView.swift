@@ -43,8 +43,8 @@ struct LicenseKeySectionView: View {
             )
 
             LabeledTextFieldView(
-                label: "License Key",
-                placeholder: "e.g XXXXX-XXXXX-XXXXX-XXXXX",
+                label: .module("License Key"),
+                placeholder: .module("e.g XXXXX-XXXXX-XXXXX-XXXXX"),
                 text: $licenseKey.licenseKey,
                 isRequired: true,
                 sizeMode: .fullWidth,
@@ -72,22 +72,22 @@ struct LicenseKeySectionView: View {
             }
 
             LabeledTextFieldView(
-                label: "Support Email",
-                placeholder: "e.g support@example.com",
+                label: .module("Support Email"),
+                placeholder: .module("e.g support@example.com"),
                 text: $licenseKey.registrationEmail,
                 sizeMode: .fullWidth
             )
 
             LabeledTextFieldView(
-                label: "Website",
-                placeholder: "e.g https://example.com",
+                label: .module("Website"),
+                placeholder: .module("e.g https://example.com"),
                 text: $licenseKey.website,
                 sizeMode: .fullWidth
             )
 
             LabeledTextFieldView(
-                label: "Order Number",
-                placeholder: "e.g ORD-2026-0001",
+                label: .module("Order Number"),
+                placeholder: .module("e.g ORD-2026-0001"),
                 text: $licenseKey.orderNumber,
                 sizeMode: .fullWidth
             )
@@ -103,7 +103,7 @@ struct LicenseKeySectionView: View {
             return .warning(warning)
         }
         if let detected = detectedServices[id] {
-            return .detected("Auto-detected: \(detected)")
+            return .detected(.module("Auto-detected: \(detected)"))
         }
         return nil
     }

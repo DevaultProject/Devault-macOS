@@ -27,16 +27,16 @@ struct ProjectFieldView: View {
     }
 
     var body: some View {
-        DVLabeledField("Project", size: size) {
+        DVLabeledField(.module("Project"), size: size) {
             DVMultiSelectDropdown(
-                "Select Project",
+                .module("Select Project"),
                 items: availableProjects,
                 selection: setBinding,
                 label: \.name,
                 size: size,
                 onCreate: onCreateProject,
-                createLabel: "Add new project",
-                emptyMessage: "No projects yet",
+                createLabel: .module("Add new project"),
+                emptyMessage: .module("No projects yet"),
                 groupsSelectedAtTop: true
             )
         }

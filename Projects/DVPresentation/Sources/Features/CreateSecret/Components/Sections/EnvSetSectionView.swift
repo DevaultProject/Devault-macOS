@@ -40,8 +40,8 @@ struct EnvSetSectionView: View {
             )
 
             LabeledTextFieldView(
-                label: "envSet List",
-                placeholder: "e.g FOO=bar\\nBAZ=qux",
+                label: .module("envSet List"),
+                placeholder: .module("e.g FOO=bar\\nBAZ=qux"),
                 text: $envSet.envContent,
                 isRequired: true,
                 sizeMode: .fullWidth,
@@ -70,7 +70,7 @@ struct EnvSetSectionView: View {
             return .warning(warning)
         }
         if let detected = detectedServices[id] {
-            return .detected("Auto-detected: \(detected)")
+            return .detected(.module("Auto-detected: \(detected)"))
         }
         return nil
     }
