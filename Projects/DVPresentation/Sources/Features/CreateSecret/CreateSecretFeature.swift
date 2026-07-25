@@ -212,6 +212,8 @@ struct CreateSecretFeature {
                 secretType: state.secretType,
                 subType: state.selectedSubType
             )
+            #if DEBUG
+            // 개발 검증용 콘솔 dump — payload에 평문 시크릿이 포함되므로 반드시 Debug 빌드에서만 노출.
             Log.info(
                 """
                 [CreateSecret] Save 요청 준비 완료
@@ -223,6 +225,7 @@ struct CreateSecretFeature {
                 """,
                 category: .ui
             )
+            #endif
             return .run { [projectIds = state.meta.projectIds] send in
                 do {
                     let secret = try await secretManagementClient.createSecret(

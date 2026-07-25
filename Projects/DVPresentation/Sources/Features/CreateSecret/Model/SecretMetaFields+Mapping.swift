@@ -39,16 +39,6 @@ extension SecretMetaFields {
         }
     }
 
-    // MARK: - 실시간 UI 검증
-
-    /// Create 버튼 disable/enable 판정용. `name` + `missingRequiredFieldIDs`만 검사한다.
-    func isValid(
-        for type: CreatableSecretType,
-        subType: CreatableSecretSubType?
-    ) -> Bool {
-        !name.isEmpty && missingRequiredFieldIDs.isEmpty
-    }
-
     // MARK: - 도메인 매핑
 
     /// content case별로 payload + metadata를 조립. 필수 필드 누락 시 `.missingRequired`로 폼에 인라인 경고를 트리거.

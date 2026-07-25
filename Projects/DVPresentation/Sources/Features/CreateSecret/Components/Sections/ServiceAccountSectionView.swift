@@ -64,13 +64,10 @@ struct ServiceAccountSectionView: View, CreateSecretSectionHintProviding {
                 )
             }
 
-            /// 오른쪽 슬롯 비어있는 paired row — Environment 미노출로 ExpireDate 단독.
-            /// Color.clear로 슬롯 유지해 wide/narrow 모두 자연스러운 전환.
-            AdaptiveFieldRow {
+            // Environment 미노출: dual에선 왼쪽 반만 채우고 나머지 Spacer, single에선 단독.
+            AdaptiveFieldRow(left: {
                 ExpireDateFieldView(expireDate: $expireDate)
-            } right: {
-                Color.clear
-            }
+            })
 
             LabeledTextFieldView(
                 label: .module("Authority / Scope"),
