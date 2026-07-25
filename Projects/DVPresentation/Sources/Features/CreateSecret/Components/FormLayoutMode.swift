@@ -27,9 +27,9 @@ enum FormLayoutMode: Equatable {
 
     /// dual 모드로 전환하는 최소 컨테이너 폭.
     ///
-    /// 계산: `2 × DVComponentSize.md(380) + column gap(20) + horizontal padding(24 × 2)`
-    /// = `828pt`.
-    static let dualThreshold: CGFloat = 828
+    /// 계산: `2 × DVComponentSize.md(380) + AdaptiveFieldRow HStack spacing(16) + CreateSecretView horizontal padding(20 × 2)`
+    /// = `816pt`.
+    static let dualThreshold: CGFloat = 816
 
     /// 컨테이너 폭에 대응하는 모드 계산.
     static func mode(for containerWidth: CGFloat) -> FormLayoutMode {

@@ -242,6 +242,8 @@ struct CreateSecretFeature {
 
         case .failure(.missingRequired(let fieldIDs)):
             Log.warn("[CreateSecret] 필수 필드 누락: \(fieldIDs)", category: .ui)
+            // 이전 시도의 잔존 warning 제거 후 이번 검증 결과만 세팅.
+            state.validationErrors = [:]
             for fieldID in fieldIDs {
                 state.validationErrors[fieldID] = .module("Required")
             }

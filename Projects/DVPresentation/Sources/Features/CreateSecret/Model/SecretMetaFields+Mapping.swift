@@ -13,29 +13,29 @@ extension SecretMetaFields {
     var missingRequiredFieldIDs: [FieldID] {
         switch content {
         case .apiKeyToken(let f):
-            return f.value.isEmpty ? [.value] : []
+            return f.value.isBlank ? [.value] : []
         case .oauthClient(let f):
             var missing: [FieldID] = []
-            if f.clientId.isEmpty { missing.append(.clientId) }
-            if f.clientSecret.isEmpty { missing.append(.clientSecret) }
+            if f.clientId.isBlank { missing.append(.clientId) }
+            if f.clientSecret.isBlank { missing.append(.clientSecret) }
             return missing
         case .serviceAccount(let f):
-            return f.credentialJSON.isEmpty ? [.credentialJSON] : []
+            return f.credentialJSON.isBlank ? [.credentialJSON] : []
         case .database(let f):
-            return f.linkString.isEmpty ? [.linkString] : []
+            return f.linkString.isBlank ? [.linkString] : []
         case .sshKey(let f):
-            return f.privateKey.isEmpty ? [.privateKey] : []
+            return f.privateKey.isBlank ? [.privateKey] : []
         case .sslTlsCertificate(let f):
             var missing: [FieldID] = []
-            if f.certificate.isEmpty { missing.append(.certificate) }
-            if f.sslPrivateKey.isEmpty { missing.append(.sslPrivateKey) }
+            if f.certificate.isBlank { missing.append(.certificate) }
+            if f.sslPrivateKey.isBlank { missing.append(.sslPrivateKey) }
             return missing
         case .envSet(let f):
-            return f.envContent.isEmpty ? [.envContent] : []
+            return f.envContent.isBlank ? [.envContent] : []
         case .licenseKey(let f):
-            return f.licenseKey.isEmpty ? [.licenseKey] : []
+            return f.licenseKey.isBlank ? [.licenseKey] : []
         case .custom(let f):
-            return f.value.isEmpty ? [.value] : []
+            return f.value.isBlank ? [.value] : []
         }
     }
 
@@ -48,7 +48,7 @@ extension SecretMetaFields {
         subType: CreatableSecretSubType?
     ) -> Result<CreateSecretPayload, FormError> {
         var missing: [FieldID] = []
-        if name.isEmpty { missing.append(.name) }
+        if name.isBlank { missing.append(.name) }
         missing.append(contentsOf: missingRequiredFieldIDs)
         if !missing.isEmpty {
             return .failure(.missingRequired(missing))
@@ -196,4 +196,10 @@ private extension LicenseKeyFields {
 
 private extension String {
     var nilIfEmpty: String? { isEmpty ? nil : self }
+
+    /// 필수 필드 검증용 — whitespace만 있는 문자열도 미입력으로 처리.
+    /// `isEmpty`와의 차이: `"   "`는 `isEmpty=false`지만 `isBlank=true`.
+    var isBlank: Bool {
+        trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 }
