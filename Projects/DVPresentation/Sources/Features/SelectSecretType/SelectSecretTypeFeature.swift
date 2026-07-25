@@ -5,18 +5,18 @@ import ComposableArchitecture
 // MARK: - SelectSecretTypeFeature
 
 @Reducer
-struct SelectSecretTypeFeature {
+public struct SelectSecretTypeFeature {
 
     // MARK: - State
 
     @ObservableState
-    struct State: Equatable {
-        init() {}
+    public struct State: Equatable {
+        public init() {}
     }
 
     // MARK: - Action
 
-    enum Action: Equatable {
+    public enum Action: Equatable {
 
         // MARK: - View
 
@@ -26,18 +26,18 @@ struct SelectSecretTypeFeature {
 
         case delegate(Delegate)
 
-        enum Delegate: Equatable {
+        public enum Delegate: Equatable {
             case typeSelected(CreatableSecretType)
         }
     }
 
     // MARK: - Init
 
-    init() {}
+    public init() {}
 
     // MARK: - Body
 
-    var body: some ReducerOf<Self> {
+    public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
             case .didSelectType(let type):
