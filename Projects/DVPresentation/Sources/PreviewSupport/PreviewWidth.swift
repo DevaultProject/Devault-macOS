@@ -17,7 +17,7 @@ import SwiftUI
 enum PreviewWidth: CGFloat {
 
     /// single 모드 최소 폭. `.md`(380) + horizontal padding(24×2)이 여유 있게 들어가는 최소치.
-    case narrow = 440
+    case narrow = 540
 
     /// single 모드 표준 폭.
     case medium = 700
