@@ -197,7 +197,7 @@ private extension DVMultiSelectDropdown {
         HStack(spacing: 0) {
             Text(placeholder)
                 .dvFont(.bodyLG)
-                .foregroundStyle(Color.dv(.gray900))
+                .foregroundStyle(Color.dv(.gray600))
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: Metrics.triggerTrailingPadding)
@@ -225,7 +225,7 @@ private extension DVMultiSelectDropdown {
     var chevron: some View {
         Image(systemName: "chevron.down")
             .font(DVFont.captionMDSemibold.font)
-            .foregroundStyle(Color.black.opacity(0.85))
+            .foregroundStyle(Color.dv(.gray600))
             .frame(width: Metrics.chevronSize, height: Metrics.chevronSize)
     }
 
