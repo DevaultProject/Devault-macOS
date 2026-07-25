@@ -59,7 +59,7 @@ public struct SidebarFeature {
     var deletingProjectID: ProjectItem.ID?
     @Presents var alert: AlertState<Action.Alert>?
 
-    // B6: computed property — LoadingState에서 추출. 외부 참조(MainFeature, View)에서 LoadingState를 몰라도 됨
+    // computed property — LoadingState에서 추출. 외부 참조(MainFeature, View)에서 LoadingState를 몰라도 됨
     var projects: IdentifiedArrayOf<ProjectItem> {
       if case .loaded(let projects) = projectsState { return projects }
       return []
@@ -185,7 +185,7 @@ public struct SidebarFeature {
         let name = state.renameText
         state.renamingProjectID = nil
         state.renameText = ""
-        return .run { [id, name] send in  // E2: 캡처 리스트 명시
+        return .run { [id, name] send in  // 캡처 리스트 명시
           do {
             let updated = try await sidebarClient.renameProject(id, name)
             await send(.renameResponse(.success(updated)))
@@ -223,13 +223,13 @@ public struct SidebarFeature {
       case .didTapDelete(id: let id):
         guard let project = state.projects[id: id] else { return .none }
         state.deletingProjectID = id
-        state.alert = makeDeleteAlert(for: project)  // D3: helper로 분리
+        state.alert = makeDeleteAlert(for: project)  // helper로 분리
         return .none
 
       case .alert(.presented(.confirmDelete)):
         guard let id = state.deletingProjectID else { return .none }
         state.deletingProjectID = nil
-        return .run { [id] send in  // E2: 캡처 리스트 명시
+        return .run { [id] send in  // 캡처 리스트 명시
           do {
             try await sidebarClient.deleteProject(id)
             await send(.deleteResponse(.success(id)))
