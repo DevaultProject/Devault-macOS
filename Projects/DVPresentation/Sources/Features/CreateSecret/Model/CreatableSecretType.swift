@@ -2,6 +2,7 @@
 
 import DVDomain
 import Foundation
+import SwiftUI
 
 enum CreatableSecretType: String, CaseIterable, Hashable {
     case apiKeyToken
@@ -44,6 +45,22 @@ enum CreatableSecretType: String, CaseIterable, Hashable {
         case .sshAndCredentials:      return .sshAndCredentials
         case .environmentVariableSet: return .environmentVariableSet
         case .etc:                    return .etc
+        }
+    }
+
+    /// 타입 선택 화면의 카드 아이콘.
+    var icon: Image {
+        Image(systemName: iconSystemName)
+    }
+
+    private var iconSystemName: String {
+        switch self {
+        case .apiKeyToken:            return "key.fill"
+        case .oauth:                  return "person.badge.key.fill"
+        case .database:               return "cylinder.split.1x2.fill"
+        case .sshAndCredentials:      return "terminal.fill"
+        case .environmentVariableSet: return "curlybraces"
+        case .etc:                    return "ellipsis.circle.fill"
         }
     }
 }
