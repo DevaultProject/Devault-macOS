@@ -5,6 +5,9 @@ import SwiftUI
 public struct DVServiceLogo {
     public let assetName: String
     public let brandColor: Color
+    /// `false`면 SVG가 배경과 글리프를 한 path로 합쳐 그린다(예: KakaoTalk의 사각 배경+말풍선).
+    /// 이런 에셋은 `.template` 틴트를 걸면 배경까지 단색으로 뭉개지므로 원본 색상 그대로 그려야 한다.
+    public let rendersAsTemplate: Bool
 }
 
 /// `Secret.service` 자유 텍스트를 정규화해 번들된 브랜드 로고를 찾는다.
@@ -13,39 +16,42 @@ public enum ServiceLogoCatalog {
 
     public static func logo(forService service: String?) -> DVServiceLogo? {
         guard let service else { return nil }
-        guard let canonical = aliases[normalize(service)] else { return nil }
-        return entries[canonical]
+        return logosByAlias[normalize(service)]
     }
 
+    /// 영문/숫자만 남기고 비교한다. "Google Cloud"처럼 알려지지 않은 표기는
+    /// `aliases`에 미리 추가해두지 않는 한 조용히 매칭 실패해 이니셜 폴백으로 빠진다.
     private static func normalize(_ raw: String) -> String {
         raw.lowercased().filter { $0.isLetter || $0.isNumber }
     }
 
-    // 서비스별로 흔히 쓰이는 표기(별칭)를 대표 키로 매핑한다.
-    private static let aliases: [String: String] = [
-        "google": "google",
-        "gmail": "google",
-        "googleworkspace": "google",
-        "github": "github",
-        "naver": "naver",
-        "kakao": "kakaotalk",
-        "kakaotalk": "kakaotalk"
+    private struct Entry {
+        let logo: DVServiceLogo
+        let aliases: [String]
+    }
+
+    private static let entries: [Entry] = [
+        Entry(
+            logo: DVServiceLogo(assetName: "google", brandColor: Color(hex: 0x4285F4), rendersAsTemplate: true),
+            aliases: ["google", "gmail", "googleworkspace"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "github", brandColor: Color(hex: 0x181717), rendersAsTemplate: true),
+            aliases: ["github"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "naver", brandColor: Color(hex: 0x03C75A), rendersAsTemplate: true),
+            aliases: ["naver"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "kakaotalk", brandColor: Color(hex: 0xFFCD00), rendersAsTemplate: false),
+            aliases: ["kakao", "kakaotalk"]
+        ),
     ]
 
-    private static let entries: [String: DVServiceLogo] = [
-        "google": DVServiceLogo(assetName: "google", brandColor: Color(hex: 0x4285F4)),
-        "github": DVServiceLogo(assetName: "github", brandColor: Color(hex: 0x181717)),
-        "naver": DVServiceLogo(assetName: "naver", brandColor: Color(hex: 0x03C75A)),
-        "kakaotalk": DVServiceLogo(assetName: "kakaotalk", brandColor: Color(hex: 0xFFCD00))
-    ]
-}
-
-private extension Color {
-    init(hex: UInt32) {
-        self.init(
-            red: Double((hex >> 16) & 0xFF) / 255,
-            green: Double((hex >> 8) & 0xFF) / 255,
-            blue: Double(hex & 0xFF) / 255
-        )
+    private static let logosByAlias: [String: DVServiceLogo] = entries.reduce(into: [:]) { result, entry in
+        for alias in entry.aliases {
+            result[alias] = entry.logo
+        }
     }
 }
