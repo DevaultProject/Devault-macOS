@@ -15,13 +15,18 @@ struct CreateSecretView: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: 20) {
-            header
-            scrollContent
-            footer
+        GeometryReader { proxy in
+            VStack(spacing: 20) {
+                header
+                scrollContent
+                footer
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .environment(\.formLayoutMode, FormLayoutMode.mode(for: proxy.size.width))
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        // Min: apiKeyToken 3-radio 헤더의 자연 폭(~460pt)이 지배 제약. padding 40 + 여유 포함.
+        .frame(minWidth: 520, minHeight: 400)
         .task { await store.send(.task).finish() }
         .alert($store.scope(state: \.alert, action: \.alert))
         .sheet(item: $store.scope(state: \.createProject, action: \.createProject)) { store in
@@ -277,7 +282,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .dual)
     .previewWidth(.wide)
 }
 
@@ -287,7 +291,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .dual)
     .previewWidth(.wide)
 }
 
@@ -297,7 +300,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .single)
     .previewWidth(.narrow)
     .frame(height: 700)
 }
@@ -308,7 +310,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .single)
     .previewWidth(.medium)
 }
 
@@ -318,7 +319,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .dual)
     .previewWidth(.wide)
 }
 
@@ -328,7 +328,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .single)
     .previewWidth(.narrow)
     .frame(height: 700)
 }
@@ -339,7 +338,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .dual)
     .previewWidth(.wide)
 }
 
@@ -349,7 +347,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .single)
     .previewWidth(.narrow)
     .frame(height: 700)
 }
@@ -360,7 +357,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .dual)
     .previewWidth(.wide)
 }
 
@@ -370,7 +366,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .single)
     .previewWidth(.narrow)
     .frame(height: 700)
 }
@@ -381,7 +376,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .dual)
     .previewWidth(.wide)
 }
 
@@ -391,7 +385,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .single)
     .previewWidth(.narrow)
     .frame(height: 700)
 }
@@ -402,7 +395,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .dual)
     .previewWidth(.wide)
 }
 
@@ -412,7 +404,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .single)
     .previewWidth(.narrow)
     .frame(height: 700)
 }
@@ -423,7 +414,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .dual)
     .previewWidth(.wide)
 }
 
@@ -433,7 +423,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .single)
     .previewWidth(.narrow)
     .frame(height: 700)
 }
@@ -444,7 +433,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .dual)
     .previewWidth(.wide)
 }
 
@@ -454,7 +442,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .single)
     .previewWidth(.narrow)
     .frame(height: 700)
 }
@@ -465,7 +452,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .dual)
     .previewWidth(.wide)
 }
 
@@ -475,7 +461,6 @@ private func previewState(
             CreateSecretFeature()
         }
     )
-    .environment(\.formLayoutMode, .single)
     .previewWidth(.narrow)
     .frame(height: 700)
 }
