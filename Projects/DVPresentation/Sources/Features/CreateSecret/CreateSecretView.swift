@@ -107,16 +107,49 @@ extension CreateSecretView {
                 onCreateProject: { store.send(.didTapCreateProject) }
             )
 
+        case .etc:
+            etcSection
+        }
+    }
+
+    /// etc는 2개 subtype(licenseKey / custom)이 서로 다른 필드 구성 —
+    /// SectionView를 분리하고 selectedSubType으로 분기.
+    @ViewBuilder
+    private var etcSection: some View {
+        switch store.selectedSubType {
+        case .licenseKey:
+            LicenseKeySectionView(
+                name: $store.meta.name,
+                projectIds: $store.meta.projectIds,
+                service: $store.meta.service,
+                expireDate: $store.meta.expireDate,
+                memo: $store.meta.memo,
+                licenseKey: $store.meta.content.typed(\.licenseKey, default: LicenseKeyFields()),
+                availableProjects: store.availableProjects,
+                serviceCandidates: store.serviceCandidates,
+                validationErrors: store.validationErrors,
+                detectedServices: store.detectedServices,
+                onCreateProject: { store.send(.didTapCreateProject) }
+            )
+
+        case .custom:
+            CustomSectionView(
+                name: $store.meta.name,
+                projectIds: $store.meta.projectIds,
+                service: $store.meta.service,
+                expireDate: $store.meta.expireDate,
+                environment: $store.meta.environment,
+                memo: $store.meta.memo,
+                custom: $store.meta.content.typed(\.custom, default: CustomFields()),
+                availableProjects: store.availableProjects,
+                serviceCandidates: store.serviceCandidates,
+                validationErrors: store.validationErrors,
+                detectedServices: store.detectedServices,
+                onCreateProject: { store.send(.didTapCreateProject) }
+            )
+
         default:
-            // TODO(#41-followup): 나머지 SecretType별 SectionView 추가 (etc).
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(0..<8, id: \.self) { index in
-                    Text("Placeholder row \(index) — \(String(describing: store.secretType))")
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.gray.opacity(0.05))
-                }
-            }
+            EmptyView()
         }
     }
 
@@ -403,6 +436,86 @@ private func previewState(
     .environment(\.formLayoutMode, .single)
     .previewWidth(.narrow)
     .frame(height: 700)
+}
+
+#Preview("License Key · Wide (Dual)") {
+    CreateSecretView(
+        store: Store(initialState: etcPreviewState(subType: .licenseKey, fill: true)) {
+            CreateSecretFeature()
+        }
+    )
+    .environment(\.formLayoutMode, .dual)
+    .previewWidth(.wide)
+}
+
+#Preview("License Key · Narrow (Single)") {
+    CreateSecretView(
+        store: Store(initialState: etcPreviewState(subType: .licenseKey, fill: true)) {
+            CreateSecretFeature()
+        }
+    )
+    .environment(\.formLayoutMode, .single)
+    .previewWidth(.narrow)
+    .frame(height: 700)
+}
+
+#Preview("Custom · Wide (Dual)") {
+    CreateSecretView(
+        store: Store(initialState: etcPreviewState(subType: .custom, fill: true)) {
+            CreateSecretFeature()
+        }
+    )
+    .environment(\.formLayoutMode, .dual)
+    .previewWidth(.wide)
+}
+
+#Preview("Custom · Narrow (Single)") {
+    CreateSecretView(
+        store: Store(initialState: etcPreviewState(subType: .custom, fill: true)) {
+            CreateSecretFeature()
+        }
+    )
+    .environment(\.formLayoutMode, .single)
+    .previewWidth(.narrow)
+    .frame(height: 700)
+}
+
+private func etcPreviewState(
+    subType: CreatableSecretSubType,
+    fill: Bool = false
+) -> CreateSecretFeature.State {
+    var state = CreateSecretFeature.State(secretType: .etc)
+    state.selectedSubType = subType
+
+    let seed: [Project] = [
+        Project(id: UUID(), name: "DrinkiG", createdAt: Date(), updatedAt: Date()),
+    ]
+    state.availableProjects = seed
+    state.meta.projectIds = Array(seed.prefix(1).map(\.id))
+
+    guard fill else {
+        state.meta.content = .default(for: .etc, subType: subType)
+        return state
+    }
+
+    state.meta.name = subType == .licenseKey ? "JetBrains License" : "Legacy Custom Secret"
+    switch subType {
+    case .licenseKey:
+        state.meta.content = .licenseKey(
+            LicenseKeyFields(
+                licenseKey: "AAAA-BBBB-CCCC-DDDD-EEEE",
+                licenseTier: .team,
+                registrationEmail: "team@example.com",
+                orderNumber: "ORD-2026-0042",
+                website: "https://jetbrains.com"
+            )
+        )
+    case .custom:
+        state.meta.content = .custom(CustomFields(value: "abc123-legacy-value"))
+    default:
+        state.meta.content = .default(for: .etc, subType: subType)
+    }
+    return state
 }
 
 private func sshPreviewState(
