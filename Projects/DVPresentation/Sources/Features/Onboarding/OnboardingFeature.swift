@@ -11,7 +11,7 @@ public struct OnboardingFeature {
 
   // MARK: - Step
 
-  public enum Step: Equatable {
+  public enum Step: Equatable, CaseIterable {
     case welcome
     case security
     case icloudSync

@@ -18,7 +18,7 @@ public struct OnboardingContainerFeature {
 
     public init(showingLock: Bool = false) {
       if showingLock {
-        self.lock = .init(isPostOnboarding: true)
+        self.lock = .init()
       } else {
         self.onboarding = .init()
       }
@@ -26,7 +26,7 @@ public struct OnboardingContainerFeature {
 
     var currentStepIndex: Int {
       if let onboarding { return onboarding.currentStepIndex }
-      return 3
+      return OnboardingFeature.Step.allCases.count - 1
     }
   }
 
@@ -59,7 +59,7 @@ public struct OnboardingContainerFeature {
       switch action {
       case .onboarding(.delegate(.completed)):
         state.onboarding = nil
-        state.lock = .init(isPostOnboarding: true)
+        state.lock = .init()
         return .none
 
       case .onboarding:

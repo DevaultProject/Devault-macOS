@@ -13,11 +13,7 @@ public struct LockFeature {
 
   @ObservableState
   public struct State: Equatable {
-    public var isPostOnboarding: Bool
-
-    public init(isPostOnboarding: Bool = false) {
-      self.isPostOnboarding = isPostOnboarding
-    }
+    public init() {}
   }
 
   // MARK: - Action

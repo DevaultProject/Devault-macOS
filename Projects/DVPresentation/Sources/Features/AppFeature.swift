@@ -14,9 +14,9 @@ public struct AppFeature {
   @ObservableState
   public struct State: Equatable {
     // 세 프로퍼티 중 항상 하나만 non-nil — reducer 로직으로 불변식 보장
-    public internal(set) var onboarding: OnboardingContainerFeature.State?
-    public internal(set) var locked: LockFeature.State?
-    public internal(set) var main: MainFeature.State?
+    var onboarding: OnboardingContainerFeature.State?
+    var locked: LockFeature.State?
+    var main: MainFeature.State?
 
     public init() {}
   }
@@ -59,9 +59,9 @@ public struct AppFeature {
         state.onboarding = nil
         state.locked = nil
         state.main = nil
-          
+
         if onboardingStatus.hasCompleted() {
-          state.locked = .init(isPostOnboarding: false)
+          state.locked = .init()
         } else {
           state.onboarding = .init()
         }
@@ -70,8 +70,7 @@ public struct AppFeature {
       case .onboarding(.delegate(.completed)):
         state.onboarding = nil
         state.main = .init()
-        onboardingStatus.setCompleted()
-        return .none
+        return .run { _ in onboardingStatus.setCompleted() }
 
       case .onboarding:
         return .none
