@@ -7,19 +7,22 @@ struct DVVaultContainerPreviewView: View {
 
     @State private var selectedIndex: Int? = nil
 
-    private let vaults: [(String, String, DVVaultContainer.TrailingIcon?, String?)] = [
-        ("내가 설정한 이름",         "2026.04.01", nil, nil),
-        ("이름이름이름",            "2026.04.01", nil, nil),
-        ("Example",                "2026.03.27", nil, nil),
-        ("LongLongNameExampleVault","2026.04.01", nil, nil),
-        ("Google 계정",             "2026.04.01", nil, "google"),
-        ("GitHub 계정",             "2026.04.01", nil, "github"),
-        ("네이버 계정",              "2026.04.01", nil, "naver"),
-        ("카카오톡 계정",             "2026.04.01", nil, "kakaotalk"),
-        ("만료 임박 항목",            "2026.04.01", .expiringSoon, "google"),
-        ("이름이름이름",            "2026.04.01", .expiringSoon, nil),
-        ("만료된 항목",              "2026.03.27", .expired, "github"),
-        ("LongLongNameExampleVault","2025.04.01", .expired, nil),
+    /// `typeIcon`은 DVDesign이 알 필요 없는 실제 secretType과 무관한 값이라, 폴백 렌더링 확인용으로 하나만 재사용한다.
+    private let placeholderTypeIcon = Image(systemName: "key.fill")
+
+    private let vaults: [(String, String, DVVaultContainer.TrailingIcon?, String?, Bool)] = [
+        ("내가 설정한 이름",         "2026.04.01", nil, nil, true),
+        ("이름이름이름",            "2026.04.01", nil, nil, true),
+        ("Example",                "2026.03.27", nil, nil, true),
+        ("LongLongNameExampleVault","2026.04.01", nil, nil, true),
+        ("Google 계정",             "2026.04.01", nil, "google", false),
+        ("GitHub 계정",             "2026.04.01", nil, "github", false),
+        ("네이버 계정",              "2026.04.01", nil, "naver", false),
+        ("카카오톡 계정",             "2026.04.01", nil, "kakaotalk", false),
+        ("만료 임박 항목",            "2026.04.01", .expiringSoon, "google", false),
+        ("이름이름이름",            "2026.04.01", .expiringSoon, nil, true),
+        ("만료된 항목",              "2026.03.27", .expired, "github", false),
+        ("LongLongNameExampleVault","2025.04.01", .expired, nil, true),
     ]
 
     var body: some View {
@@ -65,6 +68,7 @@ extension DVVaultContainerPreviewView {
                     name: vaults[index].0,
                     date: vaults[index].1,
                     service: vaults[index].3,
+                    typeIcon: vaults[index].4 ? placeholderTypeIcon : nil,
                     trailingIcon: vaults[index].2,
                     isSelected: selectedIndex == index
                 )
