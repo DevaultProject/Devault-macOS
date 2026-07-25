@@ -56,6 +56,10 @@ public struct AppFeature {
     Reduce { state, action in
       switch action {
       case .task:
+        state.onboarding = nil
+        state.locked = nil
+        state.main = nil
+          
         if onboardingStatus.hasCompleted() {
           state.locked = .init(isPostOnboarding: false)
         } else {

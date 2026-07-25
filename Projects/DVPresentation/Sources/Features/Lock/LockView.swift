@@ -11,7 +11,7 @@ public struct LockView: View {
 
   // MARK: - Properties
 
-  @Bindable public var store: StoreOf<LockFeature>
+  @Bindable var store: StoreOf<LockFeature>
 
   // MARK: - Init
 
