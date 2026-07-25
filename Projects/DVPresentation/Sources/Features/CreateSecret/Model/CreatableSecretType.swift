@@ -4,7 +4,7 @@ import DVDomain
 import Foundation
 import SwiftUI
 
-enum CreatableSecretType: String, CaseIterable, Hashable {
+public enum CreatableSecretType: String, CaseIterable, Hashable {
     case apiKeyToken
     case oauth
     case database
