@@ -10,7 +10,7 @@ public struct AppView: View {
 
   // MARK: - Properties
 
-  @Bindable public var store: StoreOf<AppFeature>
+  @Bindable var store: StoreOf<AppFeature>
 
   // MARK: - Init
 

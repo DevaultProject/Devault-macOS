@@ -11,7 +11,7 @@ public struct OnboardingContainerView: View {
 
   // MARK: - Properties
 
-  @Bindable public var store: StoreOf<OnboardingContainerFeature>
+  @Bindable var store: StoreOf<OnboardingContainerFeature>
 
   // MARK: - Init
 
