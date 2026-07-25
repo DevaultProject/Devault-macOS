@@ -7,15 +7,19 @@ struct DVVaultContainerPreviewView: View {
 
     @State private var selectedIndex: Int? = nil
 
-    private let vaults: [(String, String, DVVaultContainer.TrailingIcon?)] = [
-        ("내가 설정한 이름",         "2026.04.01", nil),
-        ("이름이름이름",            "2026.04.01", nil),
-        ("Example",                "2026.03.27", nil),
-        ("LongLongNameExampleVault","2026.04.01", nil),
-        ("만료 임박 항목",            "2026.04.01", .expiringSoon),
-        ("이름이름이름",            "2026.04.01", .expiringSoon),
-        ("만료된 항목",              "2026.03.27", .expired),
-        ("LongLongNameExampleVault","2025.04.01", .expired),
+    private let vaults: [(String, String, DVVaultContainer.TrailingIcon?, String?)] = [
+        ("내가 설정한 이름",         "2026.04.01", nil, nil),
+        ("이름이름이름",            "2026.04.01", nil, nil),
+        ("Example",                "2026.03.27", nil, nil),
+        ("LongLongNameExampleVault","2026.04.01", nil, nil),
+        ("Google 계정",             "2026.04.01", nil, "google"),
+        ("GitHub 계정",             "2026.04.01", nil, "github"),
+        ("네이버 계정",              "2026.04.01", nil, "naver"),
+        ("카카오톡 계정",             "2026.04.01", nil, "kakaotalk"),
+        ("만료 임박 항목",            "2026.04.01", .expiringSoon, "google"),
+        ("이름이름이름",            "2026.04.01", .expiringSoon, nil),
+        ("만료된 항목",              "2026.03.27", .expired, "github"),
+        ("LongLongNameExampleVault","2025.04.01", .expired, nil),
     ]
 
     var body: some View {
@@ -60,6 +64,7 @@ extension DVVaultContainerPreviewView {
                 DVVaultContainer(
                     name: vaults[index].0,
                     date: vaults[index].1,
+                    service: vaults[index].3,
                     trailingIcon: vaults[index].2,
                     isSelected: selectedIndex == index
                 )
