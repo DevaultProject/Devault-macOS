@@ -292,6 +292,7 @@ private func previewState(
         }
     )
     .previewWidth(.wide)
+    .frame(height: 700)
 }
 
 #Preview("Narrow · Filled (Single, scrollable)") {
@@ -320,6 +321,7 @@ private func previewState(
         }
     )
     .previewWidth(.wide)
+    .frame(height: 700)
 }
 
 #Preview("OAuth Client · Narrow (Single, scrollable)") {
@@ -339,6 +341,7 @@ private func previewState(
         }
     )
     .previewWidth(.wide)
+    .frame(height: 700)
 }
 
 #Preview("Service Account · Narrow (Single)") {
@@ -358,6 +361,7 @@ private func previewState(
         }
     )
     .previewWidth(.wide)
+    .frame(height: 700)
 }
 
 #Preview("Database · Narrow (Single)") {
@@ -377,6 +381,7 @@ private func previewState(
         }
     )
     .previewWidth(.wide)
+    .frame(height: 700)
 }
 
 #Preview("SSH Key · Narrow (Single)") {
@@ -396,6 +401,7 @@ private func previewState(
         }
     )
     .previewWidth(.wide)
+    .frame(height: 700)
 }
 
 #Preview("SSL/TLS Cert · Narrow (Single)") {
@@ -415,6 +421,7 @@ private func previewState(
         }
     )
     .previewWidth(.wide)
+    .frame(height: 700)
 }
 
 #Preview("EnvSet · Narrow (Single)") {
