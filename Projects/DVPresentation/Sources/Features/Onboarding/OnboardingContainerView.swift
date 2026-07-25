@@ -64,13 +64,3 @@ extension OnboardingContainerView {
   .frame(width: 540, height: 400)
 }
 
-#Preview("Lock Step") {
-  OnboardingContainerView(
-    store: Store(
-      initialState: OnboardingContainerFeature.State(showingLock: true)
-    ) {
-      OnboardingContainerFeature()
-    }
-  )
-  .frame(width: 540, height: 400)
-}
