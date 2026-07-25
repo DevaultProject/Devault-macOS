@@ -9,41 +9,45 @@ public struct DVButton: View {
     public enum Style {
         case primary
         case primarySmall
+        /// 회색 배경 secondary 버튼 (Cancel 등).
         case secondary
+        /// secondary와 동일한 지오메트리에 vaultGreen 강조 배경 (Create/Save 등 확정 액션).
+        case secondaryProminent
 
         var cornerRadius: CGFloat {
             switch self {
-            case .primary, .primarySmall: return 20
-            case .secondary:              return 6
+            case .primary, .primarySmall:            return 20
+            case .secondary, .secondaryProminent:    return 6
             }
         }
 
-        var height: CGFloat {
+        var minHeight: CGFloat {
             switch self {
-            case .primary, .primarySmall: return 40
-            case .secondary:              return 24
+            case .primary, .primarySmall:            return 40
+            case .secondary, .secondaryProminent:    return 24
             }
         }
 
         var horizontalPadding: CGFloat {
             switch self {
-            case .primary, .primarySmall: return 16
-            case .secondary:              return 16
+            case .primary, .primarySmall,
+                 .secondary, .secondaryProminent:    return 16
             }
         }
 
-        var width: CGFloat {
+        /// 컨텐츠가 짧을 때 floor로 유지되는 최소 폭. text가 길면 자연 확장.
+        var minWidth: CGFloat {
             switch self {
-            case .primary:      return 242
-            case .primarySmall: return 134
-            case .secondary:    return 74
+            case .primary:                           return 242
+            case .primarySmall:                      return 134
+            case .secondary, .secondaryProminent:    return 74
             }
         }
 
         var font: DVFont {
             switch self {
-            case .primary, .primarySmall: return .bodyLG
-            case .secondary:              return .bodyMD
+            case .primary, .primarySmall:            return .bodyLG
+            case .secondary, .secondaryProminent:    return .bodyMD
             }
         }
     }
@@ -86,8 +90,8 @@ extension DVButton {
     private var labelView: some View {
         Text(titleText)
             .dvFont(style.font)
-            .frame(width: style.width, height: style.height)
             .padding(.horizontal, style.horizontalPadding)
+            .frame(minWidth: style.minWidth, minHeight: style.minHeight)
             .contentShape(Rectangle())
     }
 }
@@ -114,6 +118,8 @@ private struct DVButtonStyle: ButtonStyle {
             return Color.dv(.white)
         case .secondary:
             return isEnabled ? Color.dv(.gray800) : Color.dv(.gray400)
+        case .secondaryProminent:
+            return isEnabled ? Color.dv(.white) : Color.dv(.gray400)
         }
     }
 
@@ -127,6 +133,10 @@ private struct DVButtonStyle: ButtonStyle {
             if !isEnabled { return Color.dv(.gray100) }
             if isPressed || isHovered { return Color.dv(.gray200) }
             return Color.dv(.gray100)
+        case .secondaryProminent:
+            if !isEnabled { return Color.dv(.gray100) }
+            if isPressed || isHovered { return Color.dv(.vaultGreenDark) }
+            return Color.dv(.vaultGreen)
         }
     }
 }
