@@ -5,7 +5,6 @@ import SwiftUI
 
 import ComposableArchitecture
 import DVDesign
-import DVDomain
 
 // MARK: - AddToProjectView
 
@@ -130,7 +129,7 @@ extension AddToProjectView {
     return projects[id: id]?.name
   }
 
-  private var projects: IdentifiedArrayOf<Project> {
+  private var projects: IdentifiedArrayOf<ProjectItem> {
     if case let .loaded(projects) = store.projectsState {
       return projects
     }

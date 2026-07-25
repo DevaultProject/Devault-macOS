@@ -15,8 +15,8 @@ public struct AddToProjectFeature {
   @ObservableState
   public struct State: Equatable {
     public let secretID: Secret.ID
-    public internal(set) var projectsState: LoadingState<IdentifiedArrayOf<Project>, ProjectUseCaseError> = .idle
-    public internal(set) var selectedProjectID: Project.ID?
+    public internal(set) var projectsState: LoadingState<IdentifiedArrayOf<ProjectItem>, SidebarError> = .idle
+    public internal(set) var selectedProjectID: ProjectItem.ID?
     @Presents var destination: Destination.State?
     @Presents var alert: AlertState<Action.Alert>?
 
@@ -32,14 +32,14 @@ public struct AddToProjectFeature {
     // MARK: - View
 
     case task
-    case didSelectProject(id: Project.ID?)
+    case didSelectProject(id: ProjectItem.ID?)
     case didTapCreateNewProject
     case didTapDone
     case didTapCancel
 
     // MARK: - Internal
 
-    case projectsResponse(Result<[Project], ProjectUseCaseError>)
+    case projectsResponse(Result<[ProjectItem], SidebarError>)
     case linkResponse(Result<Secret.ID, SecretUseCaseError>)
 
     // MARK: - Child
@@ -67,6 +67,7 @@ public struct AddToProjectFeature {
 
   // MARK: - Dependencies
 
+  @Dependency(\.sidebarClient) var sidebarClient
   @Dependency(\.secretClient) var secretClient
   @Dependency(\.dismiss) var dismiss
 
@@ -83,10 +84,12 @@ public struct AddToProjectFeature {
         state.projectsState = .loading
         return .run { send in
           do {
-            let projects = try await secretClient.fetchProjects()
+            let projects = try await sidebarClient.fetchProjects()
             await send(.projectsResponse(.success(projects)))
+          } catch let error as SidebarError {
+            await send(.projectsResponse(.failure(error)))
           } catch {
-            await send(.projectsResponse(.failure(ProjectUseCaseError.map(error))))
+            await send(.projectsResponse(.failure(.fetchFailed)))
           }
         }
 
@@ -106,14 +109,14 @@ public struct AddToProjectFeature {
         state.destination = .createProject(CreateProjectFeature.State())
         return .none
 
-      case .destination(.presented(.createProject(.delegate(.projectCreated(let project))))):
-        var projects: IdentifiedArrayOf<Project> = {
+      case .destination(.presented(.createProject(.delegate(.projectCreated(let item))))):
+        var projects: IdentifiedArrayOf<ProjectItem> = {
           if case let .loaded(projects) = state.projectsState { return projects }
           return []
         }()
-        projects.append(project)
+        projects.append(item)
         state.projectsState = .loaded(projects)
-        state.selectedProjectID = project.id
+        state.selectedProjectID = item.id
         return .none
 
       case .destination:
