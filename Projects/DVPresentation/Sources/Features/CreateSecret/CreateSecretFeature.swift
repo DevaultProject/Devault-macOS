@@ -1,6 +1,7 @@
 // Copyright © 2026 Devault. All rights reserved
 
 import ComposableArchitecture
+import DVCore
 import DVDomain
 import Foundation
 
@@ -211,6 +212,17 @@ struct CreateSecretFeature {
                 secretType: state.secretType,
                 subType: state.selectedSubType
             )
+            Log.info(
+                """
+                [CreateSecret] Save 요청 준비 완료
+                  secretType    = \(state.secretType)
+                  subType       = \(String(describing: state.selectedSubType))
+                  draft         = \(draft)
+                  payload       = \(payload)
+                  projectIds    = \(state.meta.projectIds)
+                """,
+                category: .ui
+            )
             return .run { [projectIds = state.meta.projectIds] send in
                 do {
                     let secret = try await secretManagementClient.createSecret(
@@ -225,11 +237,15 @@ struct CreateSecretFeature {
                 }
             }
 
-        case .failure(.missingRequired(let fieldID)):
-            state.validationErrors[fieldID] = .module("Required")
+        case .failure(.missingRequired(let fieldIDs)):
+            Log.warn("[CreateSecret] 필수 필드 누락: \(fieldIDs)", category: .ui)
+            for fieldID in fieldIDs {
+                state.validationErrors[fieldID] = .module("Required")
+            }
             return .none
 
         case .failure(.invalidTypeCombination):
+            Log.error("[CreateSecret] invalid (secretType, subType) 조합", category: .ui)
             return .none
         }
     }
