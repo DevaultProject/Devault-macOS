@@ -7,42 +7,46 @@ extension SecretMetaFields {
 
     // MARK: - 필수 필드 판정 (단일 진실)
 
-    /// 각 content case에서 누락된 첫 required 필드의 `FieldID`.
+    /// 각 content case에서 누락된 모든 required 필드의 `FieldID` 목록.
     /// `isValid`와 `toCreateSecretPayload`가 공유하는 유일한 required 규칙 정의부 —
     /// 규칙 변경 시 이 프로퍼티만 수정하면 실시간 검증과 실제 저장 검증이 자동으로 정합된다.
-    var missingRequiredFieldID: FieldID? {
+    var missingRequiredFieldIDs: [FieldID] {
         switch content {
         case .apiKeyToken(let f):
-            return f.value.isEmpty ? .value : nil
+            return f.value.isEmpty ? [.value] : []
         case .oauthClient(let f):
-            if f.clientId.isEmpty { return .clientId }
-            return f.clientSecret.isEmpty ? .clientSecret : nil
+            var missing: [FieldID] = []
+            if f.clientId.isEmpty { missing.append(.clientId) }
+            if f.clientSecret.isEmpty { missing.append(.clientSecret) }
+            return missing
         case .serviceAccount(let f):
-            return f.credentialJSON.isEmpty ? .credentialJSON : nil
+            return f.credentialJSON.isEmpty ? [.credentialJSON] : []
         case .database(let f):
-            return f.linkString.isEmpty ? .linkString : nil
+            return f.linkString.isEmpty ? [.linkString] : []
         case .sshKey(let f):
-            return f.privateKey.isEmpty ? .privateKey : nil
+            return f.privateKey.isEmpty ? [.privateKey] : []
         case .sslTlsCertificate(let f):
-            if f.certificate.isEmpty { return .certificate }
-            return f.sslPrivateKey.isEmpty ? .sslPrivateKey : nil
+            var missing: [FieldID] = []
+            if f.certificate.isEmpty { missing.append(.certificate) }
+            if f.sslPrivateKey.isEmpty { missing.append(.sslPrivateKey) }
+            return missing
         case .envSet(let f):
-            return f.envContent.isEmpty ? .envContent : nil
+            return f.envContent.isEmpty ? [.envContent] : []
         case .licenseKey(let f):
-            return f.licenseKey.isEmpty ? .licenseKey : nil
+            return f.licenseKey.isEmpty ? [.licenseKey] : []
         case .custom(let f):
-            return f.value.isEmpty ? .value : nil
+            return f.value.isEmpty ? [.value] : []
         }
     }
 
     // MARK: - 실시간 UI 검증
 
-    /// Create 버튼 disable/enable 판정용. `name` + `missingRequiredFieldID`만 검사한다.
+    /// Create 버튼 disable/enable 판정용. `name` + `missingRequiredFieldIDs`만 검사한다.
     func isValid(
         for type: CreatableSecretType,
         subType: CreatableSecretSubType?
     ) -> Bool {
-        !name.isEmpty && missingRequiredFieldID == nil
+        !name.isEmpty && missingRequiredFieldIDs.isEmpty
     }
 
     // MARK: - 도메인 매핑
@@ -53,10 +57,10 @@ extension SecretMetaFields {
         secretType: CreatableSecretType,
         subType: CreatableSecretSubType?
     ) -> Result<CreateSecretPayload, FormError> {
-        guard !name.isEmpty else {
-            return .failure(.missingRequired(.name))
-        }
-        if let missing = missingRequiredFieldID {
+        var missing: [FieldID] = []
+        if name.isEmpty { missing.append(.name) }
+        missing.append(contentsOf: missingRequiredFieldIDs)
+        if !missing.isEmpty {
             return .failure(.missingRequired(missing))
         }
 

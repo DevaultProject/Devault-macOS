@@ -101,14 +101,14 @@ struct CreateSecretFeatureTests {
         await store.receive(.delegate(.secretCreated(createdId)))
     }
 
-    @Test("didTapSave 매핑 실패: name이 비어 있으면 validationErrors[.name] 세팅, Effect 미발행")
+    @Test("didTapSave 매핑 실패: 초기 상태(name + value 모두 빈값) → 둘 다 warning, Effect 미발행")
     func didTapSave_missingName() async {
         let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
             CreateSecretFeature()
         }
 
         await store.send(.didTapSave) {
-            $0.validationErrors = [.name: "Required"]
+            $0.validationErrors = [.name: "Required", .value: "Required"]
         }
         // Effect 미발행 — receive 없음
     }
@@ -125,6 +125,22 @@ struct CreateSecretFeatureTests {
 
         await store.send(.didTapSave) {
             $0.validationErrors = [.value: "Required"]
+        }
+    }
+
+    @Test("didTapSave 매핑 실패: name + type-specific 다중 누락 시 모두 세팅")
+    func didTapSave_multipleMissing() async {
+        // oauthClient는 clientId + clientSecret 둘 다 required — name까지 3개 모두 비면 3개 warning
+        let store = TestStore(initialState: .init(secretType: .oauth)) {
+            CreateSecretFeature()
+        }
+
+        await store.send(.didTapSave) {
+            $0.validationErrors = [
+                .name: "Required",
+                .clientId: "Required",
+                .clientSecret: "Required",
+            ]
         }
     }
 
