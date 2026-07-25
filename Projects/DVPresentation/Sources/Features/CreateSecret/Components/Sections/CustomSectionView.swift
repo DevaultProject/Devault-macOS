@@ -5,7 +5,7 @@ import DVDomain
 import SwiftUI
 
 /// `CreatableSecretType.etc`의 `.custom` 서브타입 폼 섹션 — 최소 구성 (5 rows).
-struct CustomSectionView: View {
+struct CustomSectionView: View, CreateSecretSectionHintProviding {
 
     // MARK: - Common Fields
 
@@ -75,16 +75,6 @@ struct CustomSectionView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// warning(validation) > detected(감지) 순.
-    private func hintFor(_ id: SecretMetaFields.FieldID) -> DVLabeledField<DVTextField>.TrailingHint? {
-        if let warning = validationErrors[id] {
-            return .warning(warning)
-        }
-        if let detected = detectedServices[id] {
-            return .detected(.module("Auto-detected: \(detected)"))
-        }
-        return nil
-    }
 }
 
 // MARK: - Preview

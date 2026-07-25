@@ -6,7 +6,7 @@ import SwiftUI
 
 /// `CreatableSecretType.etc`의 `.licenseKey` 서브타입 폼 섹션.
 /// Figma상 Environment 필드 없음 (LicenseTier "Type"이 오른쪽 페어 슬롯 차지) — common env 바인딩 제외.
-struct LicenseKeySectionView: View {
+struct LicenseKeySectionView: View, CreateSecretSectionHintProviding {
 
     // MARK: - Common Fields (Environment 없음 — Type이 대체)
 
@@ -97,16 +97,6 @@ struct LicenseKeySectionView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// warning(validation) > detected(감지) 순.
-    private func hintFor(_ id: SecretMetaFields.FieldID) -> DVLabeledField<DVTextField>.TrailingHint? {
-        if let warning = validationErrors[id] {
-            return .warning(warning)
-        }
-        if let detected = detectedServices[id] {
-            return .detected(.module("Auto-detected: \(detected)"))
-        }
-        return nil
-    }
 }
 
 // MARK: - Preview

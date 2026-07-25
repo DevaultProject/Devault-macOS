@@ -6,7 +6,7 @@ import SwiftUI
 
 /// `CreatableSecretType.environmentVariableSet` 폼 섹션 (subtype 없음).
 /// Figma상 Services / Expire Date 필드 없음 — common 바인딩에서도 제외.
-struct EnvSetSectionView: View {
+struct EnvSetSectionView: View, CreateSecretSectionHintProviding {
 
     // MARK: - Common Fields (Services / ExpireDate 없음)
 
@@ -64,16 +64,6 @@ struct EnvSetSectionView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// warning(validation) > detected(감지) 순.
-    private func hintFor(_ id: SecretMetaFields.FieldID) -> DVLabeledField<DVTextField>.TrailingHint? {
-        if let warning = validationErrors[id] {
-            return .warning(warning)
-        }
-        if let detected = detectedServices[id] {
-            return .detected(.module("Auto-detected: \(detected)"))
-        }
-        return nil
-    }
 }
 
 // MARK: - Preview

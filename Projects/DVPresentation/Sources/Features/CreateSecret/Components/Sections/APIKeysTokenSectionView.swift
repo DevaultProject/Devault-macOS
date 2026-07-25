@@ -6,7 +6,7 @@ import SwiftUI
 
 /// `CreatableSecretType.apiKeyToken`의 3 서브타입(apiKey / accessToken / webhookSecret)이
 /// 공유하는 폼 섹션 — 3 서브타입 모두 필드 구성 동일.
-struct APIKeysTokenSectionView: View {
+struct APIKeysTokenSectionView: View, CreateSecretSectionHintProviding {
 
     // MARK: - Common Fields
 

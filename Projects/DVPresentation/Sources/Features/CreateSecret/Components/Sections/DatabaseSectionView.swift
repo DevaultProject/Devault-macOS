@@ -5,7 +5,7 @@ import DVDomain
 import SwiftUI
 
 /// `CreatableSecretType.database` 폼 섹션 (subtype 없음).
-struct DatabaseSectionView: View {
+struct DatabaseSectionView: View, CreateSecretSectionHintProviding {
 
     // MARK: - Common Fields
 
@@ -77,16 +77,6 @@ struct DatabaseSectionView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// warning(validation) > detected(감지) 순.
-    private func hintFor(_ id: SecretMetaFields.FieldID) -> DVLabeledField<DVTextField>.TrailingHint? {
-        if let warning = validationErrors[id] {
-            return .warning(warning)
-        }
-        if let detected = detectedServices[id] {
-            return .detected(.module("Auto-detected: \(detected)"))
-        }
-        return nil
-    }
 }
 
 // MARK: - Preview
