@@ -35,12 +35,11 @@ struct DatabaseSectionView: View, CreateSecretSectionHintProviding {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            NameFieldView(
-                name: $name,
-                warning: validationErrors[.name]
-            )
-
+        FormSectionScaffold(
+            name: $name,
+            nameWarning: validationErrors[.name],
+            memo: $memo
+        ) {
             LabeledTextFieldView(
                 label: .module("Link String"),
                 placeholder: .module("e.g postgres://user:pass@host:5432/db"),
@@ -72,9 +71,7 @@ struct DatabaseSectionView: View, CreateSecretSectionHintProviding {
 
             SSLRequiredFieldView(isChecked: $database.isSSLRequired)
 
-            MemoFieldView(memo: $memo)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
 }

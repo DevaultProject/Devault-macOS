@@ -4,8 +4,8 @@ import SwiftUI
 
 /// `FormLayoutMode`에 따라 두 필드를 2-column HStack ↔ 1-column VStack으로 전환하는 래퍼.
 ///
-/// dual 모드: `HStack(spacing: 20)`으로 좌·우 필드 나란히.
-/// single 모드: `VStack(spacing: 20)`으로 위·아래 필드 스택.
+/// dual 모드: `HStack(spacing: 16)`으로 좌·우 필드 나란히.
+/// single 모드: `VStack(spacing: 16)`으로 위·아래 필드 스택.
 ///
 /// 슬롯 중 하나만 있는 1-arg 형태도 지원 — dual에선 비어있는 쪽에 `Spacer`, single에선
 /// 있는 슬롯만 단독 렌더 (빈 슬롯이 유령 spacing 안 남김).
@@ -46,7 +46,7 @@ struct AdaptiveFieldRow<Left: View, Right: View>: View {
     var body: some View {
         switch mode {
         case .dual:
-            HStack(alignment: .top, spacing: 20) {
+            HStack(alignment: .top, spacing: 16) {
                 if let left {
                     left()
                 } else {
@@ -60,7 +60,7 @@ struct AdaptiveFieldRow<Left: View, Right: View>: View {
             }
         case .single:
             if let left, let right {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 16) {
                     left()
                     right()
                 }

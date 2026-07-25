@@ -33,12 +33,11 @@ struct SSHKeySectionView: View, CreateSecretSectionHintProviding {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            NameFieldView(
-                name: $name,
-                warning: validationErrors[.name]
-            )
-
+        FormSectionScaffold(
+            name: $name,
+            nameWarning: validationErrors[.name],
+            memo: $memo
+        ) {
             LabeledTextFieldView(
                 label: .module("Private Key"),
                 placeholder: .module("e.g -----BEGIN OPENSSH PRIVATE KEY-----"),
@@ -89,9 +88,7 @@ struct SSHKeySectionView: View, CreateSecretSectionHintProviding {
                 )
             }
 
-            MemoFieldView(memo: $memo)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
 }
