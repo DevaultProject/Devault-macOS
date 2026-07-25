@@ -7,19 +7,32 @@ import SwiftUI
 /// dual 모드: `HStack(spacing: 20)`으로 좌·우 필드 나란히.
 /// single 모드: `VStack(spacing: 20)`으로 위·아래 필드 스택.
 ///
+/// 슬롯 중 하나만 있는 1-arg 형태도 지원 — dual에선 비어있는 쪽에 `Spacer`, single에선
+/// 있는 슬롯만 단독 렌더 (빈 슬롯이 유령 spacing 안 남김).
+///
 /// ```swift
 /// AdaptiveFieldRow {
 ///     ProjectFieldView(...)
 /// } right: {
 ///     ServicesFieldView(...)
 /// }
+///
+/// // 오른쪽 슬롯 없는 케이스 (Service Account의 Environment 미노출 등)
+/// AdaptiveFieldRow {
+///     ExpireDateFieldView(...)
+/// }
+///
+/// // 왼쪽 슬롯 없는 케이스 (dual에서 오른쪽 절반만 사용)
+/// AdaptiveFieldRow(right: {
+///     SomeFieldView(...)
+/// })
 /// ```
 struct AdaptiveFieldRow<Left: View, Right: View>: View {
 
     @Environment(\.formLayoutMode) private var mode
 
-    private let left: () -> Left
-    private let right: () -> Right
+    private let left: (() -> Left)?
+    private let right: (() -> Right)?
 
     init(
         @ViewBuilder left: @escaping () -> Left,
@@ -29,19 +42,50 @@ struct AdaptiveFieldRow<Left: View, Right: View>: View {
         self.right = right
     }
 
+    @ViewBuilder
     var body: some View {
         switch mode {
         case .dual:
             HStack(alignment: .top, spacing: 20) {
-                left()
-                right()
+                if let left {
+                    left()
+                } else {
+                    Spacer(minLength: 0)
+                }
+                if let right {
+                    right()
+                } else {
+                    Spacer(minLength: 0)
+                }
             }
         case .single:
-            VStack(alignment: .leading, spacing: 20) {
+            if let left, let right {
+                VStack(alignment: .leading, spacing: 20) {
+                    left()
+                    right()
+                }
+            } else if let left {
                 left()
+            } else if let right {
                 right()
             }
         }
+    }
+}
+
+extension AdaptiveFieldRow where Right == EmptyView {
+    /// 오른쪽 슬롯이 비어있는 케이스용 편의 init.
+    init(@ViewBuilder left: @escaping () -> Left) {
+        self.left = left
+        self.right = nil
+    }
+}
+
+extension AdaptiveFieldRow where Left == EmptyView {
+    /// 왼쪽 슬롯이 비어있는 케이스용 편의 init — 아직 소비처는 없으나 대칭성 유지.
+    init(@ViewBuilder right: @escaping () -> Right) {
+        self.left = nil
+        self.right = right
     }
 }
 

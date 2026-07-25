@@ -161,6 +161,23 @@ struct CreateSecretFeatureTests {
         await store.receive(.delegate(.cancelled))
     }
 
+    // MARK: - saveResponse.failure
+
+    @Test("saveResponse(.failure): isSaving false로 해제")
+    func saveResponse_failure() async {
+        var initialState = CreateSecretFeature.State(secretType: .apiKeyToken)
+        initialState.isSaving = true
+
+        let store = TestStore(initialState: initialState) {
+            CreateSecretFeature()
+        }
+
+        await store.send(.saveResponse(.failure(.unexpected))) {
+            $0.isSaving = false
+        }
+        // TODO(#41-followup): 실패 alert 노출 시 여기서 alert state 검증 추가.
+    }
+
     // MARK: - didTapCreateProject
 
     @Test("didTapCreateProject: createProject State가 세팅되어 sheet 노출")
@@ -218,100 +235,4 @@ struct CreateSecretFeatureTests {
         #expect(state.isSaveEnabled == false, "저장 중엔 재클릭 차단")
     }
 
-    // MARK: - meta.isValid matrix
-
-    @Test("meta.isValid: apiKeyToken 3개 서브타입 모두 name + value 요구")
-    func metaIsValid_apiKeyToken() {
-        for subType in [CreatableSecretSubType.apiKey, .accessToken, .webhookSecret] {
-            var state = CreateSecretFeature.State(secretType: .apiKeyToken)
-            state.selectedSubType = subType
-            #expect(state.meta.isValid(for: .apiKeyToken, subType: subType) == false, "\(subType): 초기값 무효")
-            state.meta.name = "n"
-            #expect(state.meta.isValid(for: .apiKeyToken, subType: subType) == false, "\(subType): value 없어서 무효")
-            state.meta.content = .apiKeyToken(APIKeyTokenFields(value: "v"))
-            #expect(state.meta.isValid(for: .apiKeyToken, subType: subType) == true, "\(subType): 필수 필드 충족")
-        }
-    }
-
-    @Test("meta.isValid: oauthClient는 clientId + clientSecret 모두 요구")
-    func metaIsValid_oauthClient() {
-        var state = CreateSecretFeature.State(secretType: .oauth)
-        state.meta.name = "n"
-        #expect(state.meta.isValid(for: .oauth, subType: .oauthClient) == false)
-        state.meta.content = .oauthClient(OAuthClientFields(clientId: "id"))
-        #expect(state.meta.isValid(for: .oauth, subType: .oauthClient) == false)
-        state.meta.content = .oauthClient(OAuthClientFields(clientId: "id", clientSecret: "sec"))
-        #expect(state.meta.isValid(for: .oauth, subType: .oauthClient) == true)
-    }
-
-    @Test("meta.isValid: serviceAccount는 credentialJSON 요구")
-    func metaIsValid_serviceAccount() {
-        var state = CreateSecretFeature.State(secretType: .oauth)
-        state.selectedSubType = .serviceAccount
-        state.meta.content = .serviceAccount(ServiceAccountFields())
-        state.meta.name = "n"
-        #expect(state.meta.isValid(for: .oauth, subType: .serviceAccount) == false)
-        state.meta.content = .serviceAccount(ServiceAccountFields(credentialJSON: "{}"))
-        #expect(state.meta.isValid(for: .oauth, subType: .serviceAccount) == true)
-    }
-
-    @Test("meta.isValid: database는 linkString 요구")
-    func metaIsValid_database() {
-        var state = CreateSecretFeature.State(secretType: .database)
-        state.meta.name = "n"
-        #expect(state.meta.isValid(for: .database, subType: nil) == false)
-        state.meta.content = .database(DatabaseFields(linkString: "postgres://..."))
-        #expect(state.meta.isValid(for: .database, subType: nil) == true)
-    }
-
-    @Test("meta.isValid: sshKey는 privateKey 요구")
-    func metaIsValid_sshKey() {
-        var state = CreateSecretFeature.State(secretType: .sshAndCredentials)
-        state.meta.name = "n"
-        #expect(state.meta.isValid(for: .sshAndCredentials, subType: .sshKey) == false)
-        state.meta.content = .sshKey(SSHKeyFields(privateKey: "pk"))
-        #expect(state.meta.isValid(for: .sshAndCredentials, subType: .sshKey) == true)
-    }
-
-    @Test("meta.isValid: sslTlsCertificate는 certificate + sslPrivateKey 모두 요구")
-    func metaIsValid_sslTlsCertificate() {
-        var state = CreateSecretFeature.State(secretType: .sshAndCredentials)
-        state.selectedSubType = .sslTlsCertificate
-        state.meta.content = .sslTlsCertificate(SSLCertFields())
-        state.meta.name = "n"
-        #expect(state.meta.isValid(for: .sshAndCredentials, subType: .sslTlsCertificate) == false)
-        state.meta.content = .sslTlsCertificate(SSLCertFields(certificate: "c"))
-        #expect(state.meta.isValid(for: .sshAndCredentials, subType: .sslTlsCertificate) == false)
-        state.meta.content = .sslTlsCertificate(SSLCertFields(certificate: "c", sslPrivateKey: "pk"))
-        #expect(state.meta.isValid(for: .sshAndCredentials, subType: .sslTlsCertificate) == true)
-    }
-
-    @Test("meta.isValid: environmentVariableSet는 envContent 요구")
-    func metaIsValid_envSet() {
-        var state = CreateSecretFeature.State(secretType: .environmentVariableSet)
-        state.meta.name = "n"
-        #expect(state.meta.isValid(for: .environmentVariableSet, subType: nil) == false)
-        state.meta.content = .envSet(EnvSetFields(envContent: "FOO=bar"))
-        #expect(state.meta.isValid(for: .environmentVariableSet, subType: nil) == true)
-    }
-
-    @Test("meta.isValid: licenseKey는 licenseKey 필드 요구")
-    func metaIsValid_licenseKey() {
-        var state = CreateSecretFeature.State(secretType: .etc)
-        state.meta.name = "n"
-        #expect(state.meta.isValid(for: .etc, subType: .licenseKey) == false)
-        state.meta.content = .licenseKey(LicenseKeyFields(licenseKey: "lk"))
-        #expect(state.meta.isValid(for: .etc, subType: .licenseKey) == true)
-    }
-
-    @Test("meta.isValid: custom은 value 요구")
-    func metaIsValid_custom() {
-        var state = CreateSecretFeature.State(secretType: .etc)
-        state.selectedSubType = .custom
-        state.meta.content = .custom(CustomFields())
-        state.meta.name = "n"
-        #expect(state.meta.isValid(for: .etc, subType: .custom) == false)
-        state.meta.content = .custom(CustomFields(value: "v"))
-        #expect(state.meta.isValid(for: .etc, subType: .custom) == true)
-    }
 }

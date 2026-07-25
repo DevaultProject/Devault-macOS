@@ -85,10 +85,11 @@ private extension ExpireDateFieldView {
     }
 
     /// `DatePicker`가 non-optional `Date`를 요구하므로 옵셔널 shim.
-    /// 스텝퍼는 set 상태에서만 렌더되므로 fallback은 방어용.
+    /// 스텝퍼는 `isSet == true`일 때만 렌더되므로 fallback(`Date()`)은 실행 안 되는 방어용 —
+    /// `defaultInitialDate()`를 재계산할 필요 없어 trivial expression으로 대체.
     var dateBinding: Binding<Date> {
         Binding(
-            get: { expireDate ?? Self.defaultInitialDate() },
+            get: { expireDate ?? Date() },
             set: { expireDate = $0 }
         )
     }
