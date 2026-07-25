@@ -21,6 +21,9 @@ struct CreateSecretView: View {
         }
         .task { await store.send(.task).finish() }
         .alert($store.scope(state: \.alert, action: \.alert))
+        .sheet(item: $store.scope(state: \.createProject, action: \.createProject)) { store in
+            CreateProjectView(store: store)
+        }
     }
 }
 

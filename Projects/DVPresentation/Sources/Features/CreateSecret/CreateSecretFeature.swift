@@ -37,6 +37,9 @@ struct CreateSecretFeature {
 
         @Presents var alert: AlertState<Action.Alert>?
 
+        /// 프로젝트 생성 시트 State. `didTapCreateProject` 시 세팅되어 sheet 노출.
+        @Presents var createProject: CreateProjectFeature.State?
+
         init(secretType: CreatableSecretType) {
             let initialSubType = secretType.availableSubTypes.first
             self.secretType = secretType
@@ -64,6 +67,7 @@ struct CreateSecretFeature {
         case binding(BindingAction<State>)
         case didTapCancel
         case didTapSave
+        case didTapCreateProject
 
         // MARK: - Internal
 
@@ -75,6 +79,7 @@ struct CreateSecretFeature {
         // MARK: - Child
 
         case alert(PresentationAction<Alert>)
+        case createProject(PresentationAction<CreateProjectFeature.Action>)
 
         // MARK: - Delegate
 
@@ -136,6 +141,10 @@ struct CreateSecretFeature {
             case .didTapSave:
                 return handleSave(state: &state)
 
+            case .didTapCreateProject:
+                state.createProject = CreateProjectFeature.State()
+                return .none
+
             // MARK: Internal
 
             case .projectsResponse(.success(let projects)):
@@ -169,6 +178,13 @@ struct CreateSecretFeature {
             case .alert:
                 return .none
 
+            case .createProject(.presented(.delegate(.projectCreated(let project)))):
+                state.availableProjects.append(project)
+                return .none
+
+            case .createProject:
+                return .none
+
             // MARK: Delegate
 
             case .delegate:
@@ -176,6 +192,9 @@ struct CreateSecretFeature {
             }
         }
         .ifLet(\.$alert, action: \.alert)
+        .ifLet(\.$createProject, action: \.createProject) {
+            CreateProjectFeature()
+        }
     }
 
     // MARK: - Helpers

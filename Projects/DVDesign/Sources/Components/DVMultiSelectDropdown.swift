@@ -66,7 +66,7 @@ fileprivate enum DropdownMetrics {
 /// - `onCreate` 콜백을 넘기면 푸터에 "+ Add new" 액션 노출.
 /// - `groupsSelectedAtTop`이 true거나 선택 2개 이상 + 전체 4개 이상이면
 ///   "Selected" / "All" 섹션으로 자동 분리.
-public struct DVMultiSelectDropdown<Item: Identifiable & Hashable>: View {
+public struct DVMultiSelectDropdown<Item: Identifiable>: View {
 
     /// 파일 스코프 `DropdownMetrics`를 이 컴포넌트의 컨텍스트에서 축약한 별칭.
     private typealias Metrics = DropdownMetrics
@@ -248,7 +248,7 @@ private extension DVMultiSelectDropdown {
 
 // MARK: - PopoverContent
 
-private struct PopoverContentView<Item: Identifiable & Hashable>: View {
+private struct PopoverContentView<Item: Identifiable>: View {
 
     let items: [Item]
     @Binding var selection: Set<Item.ID>
@@ -336,7 +336,7 @@ private struct SearchHeaderView: View {
 
 // MARK: - List bodies
 
-private struct FlatListView<Item: Identifiable & Hashable>: View {
+private struct FlatListView<Item: Identifiable>: View {
     let items: [Item]
     @Binding var selection: Set<Item.ID>
     let label: (Item) -> String
@@ -369,7 +369,7 @@ private struct FlatListView<Item: Identifiable & Hashable>: View {
     }
 }
 
-private struct SectionedListView<Item: Identifiable & Hashable>: View {
+private struct SectionedListView<Item: Identifiable>: View {
     let items: [Item]
     @Binding var selection: Set<Item.ID>
     /// 섹션 배치는 이 스냅샷 기준으로 고정 — 세션 중 selection 변경으로 재정렬되지 않음.

@@ -145,6 +145,40 @@ struct CreateSecretFeatureTests {
         await store.receive(.delegate(.cancelled))
     }
 
+    // MARK: - didTapCreateProject
+
+    @Test("didTapCreateProject: createProject State가 세팅되어 sheet 노출")
+    func didTapCreateProject_opensSheet() async {
+        let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
+            CreateSecretFeature()
+        }
+
+        await store.send(.didTapCreateProject) {
+            $0.createProject = CreateProjectFeature.State()
+        }
+    }
+
+    @Test("createProject 델리게이트: 생성된 프로젝트가 availableProjects에 추가")
+    func createProject_delegateProjectCreated_appendsToAvailable() async {
+        var initialState = CreateSecretFeature.State(secretType: .apiKeyToken)
+        initialState.createProject = CreateProjectFeature.State()
+
+        let store = TestStore(initialState: initialState) {
+            CreateSecretFeature()
+        }
+
+        let newProject = Project(
+            id: UUID(),
+            name: "New Project",
+            createdAt: Date(),
+            updatedAt: Date()
+        )
+
+        await store.send(.createProject(.presented(.delegate(.projectCreated(newProject))))) {
+            $0.availableProjects.append(newProject)
+        }
+    }
+
     // MARK: - didDetectServiceCandidates
 
     @Test("didDetectServiceCandidates: 후보 목록이 state.serviceCandidates에 저장됨")
