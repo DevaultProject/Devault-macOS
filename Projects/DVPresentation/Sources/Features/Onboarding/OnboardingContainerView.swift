@@ -36,7 +36,7 @@ extension OnboardingContainerView {
       stepView
       VStack {
         Spacer()
-        DVStepIndicator(totalSteps: 4, currentStep: store.currentStepIndex)
+        DVStepIndicator(totalSteps: OnboardingFeature.Step.allCases.count, currentStep: store.currentStepIndex)
           .padding(.bottom, 40)
       }
     }

@@ -8,8 +8,8 @@ import ComposableArchitecture
 
 @DependencyClient
 public struct OnboardingStatusClient {
-  public var hasCompleted: () -> Bool = { false }
-  public var setCompleted: () -> Void
+  public var hasCompleted: @Sendable () -> Bool = { false }
+  public var setCompleted: @Sendable () -> Void
 }
 
 // MARK: - DependencyKey
