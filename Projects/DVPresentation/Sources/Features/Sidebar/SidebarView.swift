@@ -12,12 +12,14 @@ struct SidebarView: View {
   // MARK: - Properties
 
   @Bindable var store: StoreOf<SidebarFeature>
+  @Environment(\.openWindow) private var openWindow
 
   // MARK: - Body
 
   var body: some View {
     content
       .task { store.send(.task) }
+      .alert($store.scope(state: \.alert, action: \.alert))
   }
 }
 
@@ -60,12 +62,12 @@ extension SidebarView {
         title: SidebarFilter.all.title,
         count: 0,
         systemImage: SidebarFilter.all.icon,
-        isSelected: store.selection == .filter(.all)
+        isSelected: !store.isCreatingSecret && store.selection == .filter(.all)
       ) {
         store.send(.didSelect(.filter(.all)))
       }
       .frame(height: 72)
-        
+
       LazyVGrid(
         columns: [GridItem(.flexible()), GridItem(.flexible())],
         spacing: 12
@@ -76,7 +78,7 @@ extension SidebarView {
             count: 0,
             systemImage: filter.icon,
             iconColor: filter.iconColor,
-            isSelected: store.selection == .filter(filter)
+            isSelected: !store.isCreatingSecret && store.selection == .filter(filter)
           ) {
             store.send(.didSelect(.filter(filter)))
           }
@@ -91,10 +93,30 @@ extension SidebarView {
       projectSectionHeader
         .padding(.horizontal, 8)
       if store.isProjectSectionExpanded {
-        projectList
+        projectSectionBody
       } else {
         Spacer(minLength: 0)
       }
+    }
+  }
+
+  @ViewBuilder
+  private var projectSectionBody: some View {
+    switch store.projectsState {
+    case .idle, .loading:
+      ProgressView()
+        .frame(maxWidth: .infinity)
+        .padding(.top, 8)
+      Spacer(minLength: 0)
+    case .loaded:
+      projectList
+    case .failed:
+      Text("불러오지 못했어요")
+        .dvFont(.bodyMD)
+        .foregroundStyle(Color.dv(.danger))
+        .frame(maxWidth: .infinity)
+        .padding(.top, 8)
+      Spacer(minLength: 0)
     }
   }
 
@@ -115,42 +137,69 @@ extension SidebarView {
     }
   }
 
-  // TODO: - contextMenu 확정 후 추후에 Action 추가
   private var projectList: some View {
-    let projects = ["Project A", "Project B", "Project C"]
-    // List(selection:)은 Int?를 요구하지만 store.selection은 SidebarSelection(enum)이라 타입 불일치로 $store 직접 바인딩 불가 → 의도적 manual Binding 사용
-    return List(
-      selection: Binding(
+    // List(selection:)은 ProjectItem.ID?를 요구하지만 store.selection은 SidebarSelection(enum)이라 타입 불일치로 $store 직접 바인딩 불가 → 의도적 manual Binding 사용
+    List(
+      selection: Binding<ProjectItem.ID?>(
         get: {
-          if case .project(let index) = store.selection { return index }
+          guard !store.isCreatingSecret else { return nil }
+          if case .project(id: let id) = store.selection { return id }
           return nil
         },
-        set: { index in
-          if let index { store.send(.didSelect(.project(index))) }
-          // TODO: nil(deselect) 처리 — content 컬럼 연결 시 결정
+        set: { id in
+          if let id { store.send(.didSelect(.project(id: id))) }
         }
       )
     ) {
-      ForEach(projects.indices, id: \.self) { index in
-        DVProjectContainer(name: projects[index], count: 0)
-          .tag(index)
+      ForEach(store.projects) { project in
+        projectRow(project)
+          .tag(project.id)
           .contextMenu {
-            Button("Rename") {}
-            Button("New Secret") {}
+            Button("Rename") { store.send(.didTapRename(id: project.id)) }
+            Button("New Secret") { store.send(.didTapAddButton) }
             Divider()
-            Button("Delete Project", role: .destructive) {}
+            Button("Delete Project", role: .destructive) {
+              store.send(.didTapDelete(id: project.id))
+            }
           }
       }
     }
     .listStyle(.sidebar)
     .scrollContentBackground(.hidden)
     .padding(.horizontal, -12)
+    .onKeyPress(.return) {
+      guard store.renamingProjectID == nil else { return .ignored }
+      if case .project(id: let id) = store.selection {
+        store.send(.didTapRename(id: id))
+        return .handled
+      }
+      return .ignored
+    }
+  }
+
+  @ViewBuilder
+  private func projectRow(_ project: ProjectItem) -> some View {
+    if store.renamingProjectID == project.id {
+      DVProjectRenameContainer(
+        text: Binding(
+          get: { store.renameText },
+          set: { store.send(.didChangeRenameText($0)) }
+        ),
+        onSubmit: { store.send(.didConfirmRename) },
+        onCancel: { store.send(.didCancelRename) }
+      )
+    } else {
+      DVProjectContainer(name: project.name, count: 0)
+    }
   }
 
   private var bottomBar: some View {
     HStack {
-      circleIconButton(icon: "gearshape") { store.send(.didTapSettingsButton) }
-        .accessibilityLabel("Settings")
+      circleIconButton(icon: "gearshape") {
+        store.send(.didTapSettingsButton)
+        openWindow(id: "settings")
+      }
+      .accessibilityLabel("Settings")
       Spacer()
       circleIconButton(icon: "plus") { store.send(.didTapAddButton) }
         .accessibilityLabel("Add Secret")
