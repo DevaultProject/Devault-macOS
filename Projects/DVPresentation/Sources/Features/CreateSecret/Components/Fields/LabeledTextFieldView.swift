@@ -9,20 +9,12 @@ import SwiftUI
 /// `sizeMode`가 `.fullWidth`면 dual=lg / single=md, `.paired`면 두 모드 모두 md.
 struct LabeledTextFieldView: View {
 
-    /// 이 필드가 폼에서 어떤 슬롯을 차지하는지.
-    enum SizeMode: Equatable {
-        /// 행 전체를 차지하는 필드 (Name, Value, Memo 등).
-        case fullWidth
-        /// 2-col row 안의 한 칸을 차지하는 필드.
-        case paired
-    }
-
     let label: String
     let placeholder: String
     @Binding var text: String
     var isRequired: Bool = false
     var isSecure: Bool = false
-    var sizeMode: SizeMode = .fullWidth
+    var sizeMode: FormSlotSize = .fullWidth
     var trailingHint: DVLabeledField<DVTextField>.TrailingHint?
 
     @Environment(\.formLayoutMode) private var mode
@@ -94,14 +86,14 @@ struct LabeledTextFieldView: View {
 }
 
 private struct LabeledTextFieldPreview: View {
-    let sizeMode: LabeledTextFieldView.SizeMode
+    let sizeMode: FormSlotSize
     var isSecure: Bool = false
     var hint: DVLabeledField<DVTextField>.TrailingHint?
 
     @State private var text: String
 
     init(
-        sizeMode: LabeledTextFieldView.SizeMode,
+        sizeMode: FormSlotSize,
         isSecure: Bool = false,
         hint: DVLabeledField<DVTextField>.TrailingHint? = nil,
         initial: String = ""
