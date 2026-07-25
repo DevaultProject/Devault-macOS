@@ -1,7 +1,6 @@
 // Copyright © 2026 Devault. All rights reserved
 
 import ComposableArchitecture
-import DVDomain
 import Foundation
 import Testing
 
@@ -11,80 +10,92 @@ import Testing
 @Suite("CreateProjectFeature")
 struct CreateProjectFeatureTests {
 
-    @Test("didTapCreate는 이름이 비어 있으면 아무 일도 안 한다")
-    func createIgnoresBlankName() async {
-        let store = TestStore(initialState: CreateProjectFeature.State()) {
-            CreateProjectFeature()
-        }
-
-        await store.send(.didChangeName("   ")) {
-            $0.name = "   "
-        }
-        await store.send(.didTapCreate)
+  @Test("didTapCreate는 이름이 비어 있으면 아무 일도 안 한다")
+  func createIgnoresBlankName() async {
+    let store = TestStore(initialState: CreateProjectFeature.State()) {
+      CreateProjectFeature()
     }
 
-    @Test("didTapCreate는 성공하면 delegate로 알리고 dismiss한다")
-    func createSucceedsAndDismisses() async {
-        let project = Project(id: UUID(), name: "DeVault", createdAt: .now, updatedAt: .now)
-        var didDismiss = false
-        let store = TestStore(initialState: CreateProjectFeature.State()) {
-            CreateProjectFeature()
-        } withDependencies: {
-            $0.secretClient.createProject = { _ in project }
-            $0.dismiss = DismissEffect { didDismiss = true }
-        }
+    await store.send(.didChangeName("   ")) {
+      $0.name = "   "
+    }
+    await store.send(.didTapCreate)
+  }
 
-        await store.send(.didChangeName("DeVault")) {
-            $0.name = "DeVault"
-        }
-        await store.send(.didTapCreate) {
-            $0.isCreating = true
-        }
-        await store.receive(.createResponse(.success(project))) {
-            $0.isCreating = false
-        }
-        await store.receive(.delegate(.projectCreated(project)))
-
-        #expect(didDismiss)
+  @Test("didTapCreate는 성공하면 delegate로 알리고 dismiss한다")
+  func createSucceedsAndDismisses() async {
+    let item = ProjectItem(id: UUID(), name: "DeVault")
+    var didDismiss = false
+    let store = TestStore(initialState: CreateProjectFeature.State()) {
+      CreateProjectFeature()
+    } withDependencies: {
+      $0.sidebarClient.createProject = { _ in item }
+      $0.dismiss = DismissEffect { didDismiss = true }
     }
 
-    @Test("didTapCreate는 생성에 실패하면 alert를 띄우고 dismiss하지 않는다")
-    func createShowsAlertOnFailure() async {
-        let store = TestStore(initialState: CreateProjectFeature.State()) {
-            CreateProjectFeature()
-        } withDependencies: {
-            $0.secretClient.createProject = { _ in throw ProjectUseCaseError.unexpected }
-        }
+    await store.send(.didChangeName("DeVault")) { $0.name = "DeVault" }
+    await store.send(.didTapCreate) { $0.isCreating = true }
+    await store.receive(.createResponse(.success(item))) { $0.isCreating = false }
+    await store.receive(.delegate(.projectCreated(item)))
 
-        await store.send(.didChangeName("DeVault")) {
-            $0.name = "DeVault"
-        }
-        await store.send(.didTapCreate) {
-            $0.isCreating = true
-        }
-        await store.receive(.createResponse(.failure(.unexpected))) {
-            $0.isCreating = false
-            $0.alert = AlertState {
-                TextState("프로젝트를 만들지 못했어요")
-            } actions: {
-                ButtonState(role: .cancel) { TextState("확인") }
-            } message: {
-                TextState("잠시 후 다시 시도해주세요.")
-            }
-        }
+    #expect(didDismiss)
+  }
+
+  @Test("didTapCreate는 이름 중복 실패 시 nameTaken alert를 띄운다")
+  func createShowsNameTakenAlert() async {
+    let store = TestStore(initialState: CreateProjectFeature.State()) {
+      CreateProjectFeature()
+    } withDependencies: {
+      $0.sidebarClient.createProject = { _ in throw SidebarError.nameTaken }
     }
 
-    @Test("didTapCancel은 dismiss한다")
-    func cancelDismisses() async {
-        var didDismiss = false
-        let store = TestStore(initialState: CreateProjectFeature.State()) {
-            CreateProjectFeature()
-        } withDependencies: {
-            $0.dismiss = DismissEffect { didDismiss = true }
-        }
-
-        await store.send(.didTapCancel)
-
-        #expect(didDismiss)
+    await store.send(.didChangeName("DeVault")) { $0.name = "DeVault" }
+    await store.send(.didTapCreate) { $0.isCreating = true }
+    await store.receive(.createResponse(.failure(.nameTaken))) {
+      $0.isCreating = false
+      $0.alert = AlertState {
+        TextState("이미 사용 중인 프로젝트 이름이에요")
+      } actions: {
+        ButtonState(role: .cancel) { TextState("확인") }
+      } message: {
+        TextState("다른 이름을 입력해주세요.")
+      }
     }
+  }
+
+  @Test("didTapCreate는 일반 실패 시 generic alert를 띄운다")
+  func createShowsGenericAlertOnFailure() async {
+    let store = TestStore(initialState: CreateProjectFeature.State()) {
+      CreateProjectFeature()
+    } withDependencies: {
+      $0.sidebarClient.createProject = { _ in throw SidebarError.createFailed }
+    }
+
+    await store.send(.didChangeName("DeVault")) { $0.name = "DeVault" }
+    await store.send(.didTapCreate) { $0.isCreating = true }
+    await store.receive(.createResponse(.failure(.createFailed))) {
+      $0.isCreating = false
+      $0.alert = AlertState {
+        TextState("프로젝트를 만들지 못했어요")
+      } actions: {
+        ButtonState(role: .cancel) { TextState("확인") }
+      } message: {
+        TextState("잠시 후 다시 시도해주세요.")
+      }
+    }
+  }
+
+  @Test("didTapCancel은 dismiss한다")
+  func cancelDismisses() async {
+    var didDismiss = false
+    let store = TestStore(initialState: CreateProjectFeature.State()) {
+      CreateProjectFeature()
+    } withDependencies: {
+      $0.dismiss = DismissEffect { didDismiss = true }
+    }
+
+    await store.send(.didTapCancel)
+
+    #expect(didDismiss)
+  }
 }
