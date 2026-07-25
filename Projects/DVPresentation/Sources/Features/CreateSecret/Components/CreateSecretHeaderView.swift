@@ -23,6 +23,7 @@ struct CreateSecretHeaderView: View {
                 tabBar
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var title: some View {
