@@ -3,7 +3,6 @@
 import Foundation
 
 import ComposableArchitecture
-import DVDomain
 
 // MARK: - CreateProjectFeature
 
@@ -33,7 +32,7 @@ public struct CreateProjectFeature {
 
     // MARK: - Internal
 
-    case createResponse(Result<Project, ProjectUseCaseError>)
+    case createResponse(Result<ProjectItem, SidebarError>)
 
     // MARK: - Child
 
@@ -44,7 +43,7 @@ public struct CreateProjectFeature {
     case delegate(Delegate)
 
     public enum Delegate: Equatable {
-      case projectCreated(Project)
+      case projectCreated(ProjectItem)
     }
 
     public enum Alert: Equatable {}
@@ -52,7 +51,7 @@ public struct CreateProjectFeature {
 
   // MARK: - Dependencies
 
-  @Dependency(\.secretClient) var secretClient
+  @Dependency(\.sidebarClient) var sidebarClient
   @Dependency(\.dismiss) var dismiss
 
   // MARK: - Init
@@ -76,19 +75,32 @@ public struct CreateProjectFeature {
         state.isCreating = true
         return .run { send in
           do {
-            let project = try await secretClient.createProject(trimmedName)
-            await send(.createResponse(.success(project)))
+            let item = try await sidebarClient.createProject(trimmedName)
+            await send(.createResponse(.success(item)))
+          } catch let error as SidebarError {
+            await send(.createResponse(.failure(error)))
           } catch {
-            await send(.createResponse(.failure(ProjectUseCaseError.map(error))))
+            await send(.createResponse(.failure(.createFailed)))
           }
         }
 
-      case .createResponse(.success(let project)):
+      case .createResponse(.success(let item)):
         state.isCreating = false
         return .run { send in
-          await send(.delegate(.projectCreated(project)))
+          await send(.delegate(.projectCreated(item)))
           await dismiss()
         }
+
+      case .createResponse(.failure(.nameTaken)):
+        state.isCreating = false
+        state.alert = AlertState {
+          TextState("이미 사용 중인 프로젝트 이름이에요")
+        } actions: {
+          ButtonState(role: .cancel) { TextState("확인") }
+        } message: {
+          TextState("다른 이름을 입력해주세요.")
+        }
+        return .none
 
       case .createResponse(.failure):
         state.isCreating = false
