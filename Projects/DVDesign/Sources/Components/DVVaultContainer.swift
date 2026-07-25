@@ -62,40 +62,61 @@ extension DVVaultContainer {
     @ViewBuilder
     private var avatarCircle: some View {
         if let logo = ServiceLogoCatalog.logo(forService: service) {
-            Circle()
-                .fill(logo.brandColor)
-                .frame(width: 44, height: 44)
-                .overlay(
+            logoAvatar(logo)
+        } else if let serviceInitial {
+            initialAvatar(serviceInitial)
+        } else {
+            typeIconAvatar
+        }
+    }
+
+    private func logoAvatar(_ logo: DVServiceLogo) -> some View {
+        Circle()
+            .fill(logo.brandColor)
+            .frame(width: 44, height: 44)
+            .overlay {
+                if logo.rendersAsTemplate {
                     Image(logo.assetName, bundle: .module)
                         .renderingMode(.template)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 22, height: 22)
                         .foregroundStyle(Color.dv(.white))
-                )
-        } else if let serviceInitial {
-            Circle()
-                .fill(Color.dv(.gray300))
-                .frame(width: 44, height: 44)
-                .overlay(
-                    Text(serviceInitial)
-                        .dvFont(.headingLG)
-                        .foregroundStyle(Color.dv(.gray600))
-                )
-        } else {
-            Circle()
-                .fill(Color.dv(.gray300))
-                .frame(width: 44, height: 44)
-                .overlay {
-                    if let typeIcon {
-                        typeIcon
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 20, height: 20)
-                            .foregroundStyle(Color.dv(.gray600))
-                    }
+                        .frame(width: 22, height: 22)
+                } else {
+                    // 배경+글리프가 한 path로 합쳐진 에셋: template 틴트를 걸지 않고 원본 색상 그대로 그린다.
+                    Image(logo.assetName, bundle: .module)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 22, height: 22)
                 }
-        }
+            }
+    }
+
+    private func initialAvatar(_ initial: String) -> some View {
+        Circle()
+            .fill(Color.dv(.gray300))
+            .frame(width: 44, height: 44)
+            .overlay(
+                Text(initial)
+                    .dvFont(.headingLG)
+                    .foregroundStyle(Color.dv(.gray600))
+            )
+    }
+
+    @ViewBuilder
+    private var typeIconAvatar: some View {
+        Circle()
+            .fill(Color.dv(.gray300))
+            .frame(width: 44, height: 44)
+            .overlay {
+                if let typeIcon {
+                    typeIcon
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                        .foregroundStyle(Color.dv(.gray600))
+                }
+            }
     }
 
     /// 로고 매칭에 실패했지만 `service` 자체는 채워져 있을 때 쓰는 중간 폴백.
