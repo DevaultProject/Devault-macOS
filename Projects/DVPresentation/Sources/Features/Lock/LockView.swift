@@ -61,18 +61,9 @@ extension LockView {
 
 // MARK: - Preview
 
-#Preview("Post Onboarding") {
+#Preview {
   LockView(
-    store: Store(initialState: LockFeature.State(isPostOnboarding: true)) {
-      LockFeature()
-    }
-  )
-  .frame(width: 540, height: 400)
-}
-
-#Preview("Re-entry / Locked") {
-  LockView(
-    store: Store(initialState: LockFeature.State(isPostOnboarding: false)) {
+    store: Store(initialState: LockFeature.State()) {
       LockFeature()
     }
   )

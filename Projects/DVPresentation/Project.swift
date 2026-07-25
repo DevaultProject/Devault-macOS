@@ -17,6 +17,7 @@ let project = Project.project(
 
                 // 3rd-party dependency
                 .tca(),
+                .lottie(),
             ]
         ),
         .tests(

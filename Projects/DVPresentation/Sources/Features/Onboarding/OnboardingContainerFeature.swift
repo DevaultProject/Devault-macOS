@@ -16,12 +16,8 @@ public struct OnboardingContainerFeature {
     var onboarding: OnboardingFeature.State?
     var lock: LockFeature.State?
 
-    public init(showingLock: Bool = false) {
-      if showingLock {
-        self.lock = .init()
-      } else {
-        self.onboarding = .init()
-      }
+    public init() {
+      self.onboarding = .init()
     }
 
     var currentStepIndex: Int {
