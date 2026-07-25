@@ -91,6 +91,9 @@ extension CreateSecretView {
                 onCreateProject: { store.send(.didTapCreateProject) }
             )
 
+        case .sshAndCredentials:
+            sshAndCredentialsSection
+
         default:
             // TODO(#41-followup): 나머지 SecretType별 SectionView 추가 (ssh/env/etc).
             VStack(alignment: .leading, spacing: 8) {
@@ -101,6 +104,42 @@ extension CreateSecretView {
                         .background(Color.gray.opacity(0.05))
                 }
             }
+        }
+    }
+
+    /// sshAndCredentials는 2개 subtype(sshKey / sslTlsCertificate)이 서로 다른 필드 구성 —
+    /// SectionView를 분리하고 selectedSubType으로 분기.
+    @ViewBuilder
+    private var sshAndCredentialsSection: some View {
+        switch store.selectedSubType {
+        case .sshKey:
+            SSHKeySectionView(
+                name: $store.meta.name,
+                projectIds: $store.meta.projectIds,
+                environment: $store.meta.environment,
+                memo: $store.meta.memo,
+                sshKey: $store.meta.content.typed(\.sshKey, default: SSHKeyFields()),
+                availableProjects: store.availableProjects,
+                validationErrors: store.validationErrors,
+                detectedServices: store.detectedServices,
+                onCreateProject: { store.send(.didTapCreateProject) }
+            )
+
+        case .sslTlsCertificate:
+            SSLTLSCertSectionView(
+                name: $store.meta.name,
+                projectIds: $store.meta.projectIds,
+                environment: $store.meta.environment,
+                memo: $store.meta.memo,
+                sslCert: $store.meta.content.typed(\.sslTlsCertificate, default: SSLCertFields()),
+                availableProjects: store.availableProjects,
+                validationErrors: store.validationErrors,
+                detectedServices: store.detectedServices,
+                onCreateProject: { store.send(.didTapCreateProject) }
+            )
+
+        default:
+            EmptyView()
         }
     }
 
@@ -288,6 +327,94 @@ private func previewState(
     .environment(\.formLayoutMode, .single)
     .previewWidth(.narrow)
     .frame(height: 700)
+}
+
+#Preview("SSH Key · Wide (Dual)") {
+    CreateSecretView(
+        store: Store(initialState: sshPreviewState(subType: .sshKey, fill: true)) {
+            CreateSecretFeature()
+        }
+    )
+    .environment(\.formLayoutMode, .dual)
+    .previewWidth(.wide)
+}
+
+#Preview("SSH Key · Narrow (Single)") {
+    CreateSecretView(
+        store: Store(initialState: sshPreviewState(subType: .sshKey, fill: true)) {
+            CreateSecretFeature()
+        }
+    )
+    .environment(\.formLayoutMode, .single)
+    .previewWidth(.narrow)
+    .frame(height: 700)
+}
+
+#Preview("SSL/TLS Cert · Wide (Dual)") {
+    CreateSecretView(
+        store: Store(initialState: sshPreviewState(subType: .sslTlsCertificate, fill: true)) {
+            CreateSecretFeature()
+        }
+    )
+    .environment(\.formLayoutMode, .dual)
+    .previewWidth(.wide)
+}
+
+#Preview("SSL/TLS Cert · Narrow (Single)") {
+    CreateSecretView(
+        store: Store(initialState: sshPreviewState(subType: .sslTlsCertificate, fill: true)) {
+            CreateSecretFeature()
+        }
+    )
+    .environment(\.formLayoutMode, .single)
+    .previewWidth(.narrow)
+    .frame(height: 700)
+}
+
+
+private func sshPreviewState(
+    subType: CreatableSecretSubType,
+    fill: Bool = false
+) -> CreateSecretFeature.State {
+    var state = CreateSecretFeature.State(secretType: .sshAndCredentials)
+    state.selectedSubType = subType
+
+    let seed: [Project] = [
+        Project(id: UUID(), name: "DrinkiG", createdAt: Date(), updatedAt: Date()),
+    ]
+    state.availableProjects = seed
+    state.meta.projectIds = Array(seed.prefix(1).map(\.id))
+
+    guard fill else {
+        state.meta.content = .default(for: .sshAndCredentials, subType: subType)
+        return state
+    }
+
+    state.meta.name = subType == .sshKey ? "Bastion SSH Key" : "example.com TLS"
+    switch subType {
+    case .sshKey:
+        state.meta.content = .sshKey(
+            SSHKeyFields(
+                privateKey: "-----BEGIN OPENSSH PRIVATE KEY-----\n...",
+                passphrase: "secret-phrase",
+                publicKey: "ssh-rsa AAAA...",
+                host: "bastion.example.com",
+                username: "ubuntu"
+            )
+        )
+    case .sslTlsCertificate:
+        state.meta.content = .sslTlsCertificate(
+            SSLCertFields(
+                certificate: "-----BEGIN CERTIFICATE-----\n...",
+                sslPrivateKey: "-----BEGIN PRIVATE KEY-----\n...",
+                certificateChain: "-----BEGIN CERTIFICATE-----\n...",
+                renewCommand: "certbot renew --cert-name example.com"
+            )
+        )
+    default:
+        state.meta.content = .default(for: .sshAndCredentials, subType: subType)
+    }
+    return state
 }
 
 private func databasePreviewState(fill: Bool = false) -> CreateSecretFeature.State {
