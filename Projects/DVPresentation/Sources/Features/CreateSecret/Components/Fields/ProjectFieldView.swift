@@ -15,7 +15,7 @@ struct ProjectFieldView: View {
     @Binding var projectIds: [Project.ID]
     let availableProjects: [Project]
     let onCreateProject: () -> Void
-    var sizeMode: LabeledTextFieldView.SizeMode = .fullWidth
+    var sizeMode: FormSlotSize = .fullWidth
 
     @Environment(\.formLayoutMode) private var mode
 

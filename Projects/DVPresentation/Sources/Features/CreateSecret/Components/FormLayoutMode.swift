@@ -3,6 +3,14 @@
 import DVDesign
 import SwiftUI
 
+/// 각 폼 필드가 폼 안에서 차지하는 슬롯. `FormLayoutMode`와 결합해 실 컴포넌트 사이즈로 매핑.
+enum FormSlotSize: Equatable {
+    /// 행 전체를 차지하는 필드 (Name, Value, Memo 등).
+    case fullWidth
+    /// 2-col row 안의 한 칸을 차지하는 필드.
+    case paired
+}
+
 /// CreateSecret 폼의 컨테이너 폭에 따라 2-column vs 1-column 레이아웃을 결정하는 모드.
 ///
 /// 상위 뷰(`CreateSecretView`)가 `GeometryReader`로 폭을 측정해 `mode(for:)`로 계산 후
