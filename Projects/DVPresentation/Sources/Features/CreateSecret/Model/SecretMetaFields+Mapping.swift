@@ -139,9 +139,9 @@ extension SecretMetaFields {
 // MARK: - Metadata builders (per sub-struct, nil-collapsing)
 
 private extension APIKeyTokenFields {
-    /// scope가 비어 있으면 `nil`.
+    /// authorityScope가 비어 있으면 `nil`. 도메인 필드명은 `APIKeyMetadata.scope`.
     var apiKeyMetadata: APIKeyMetadata? {
-        scope.nilIfEmpty.map { APIKeyMetadata(scope: $0) }
+        authorityScope.nilIfEmpty.map { APIKeyMetadata(scope: $0) }
     }
 }
 

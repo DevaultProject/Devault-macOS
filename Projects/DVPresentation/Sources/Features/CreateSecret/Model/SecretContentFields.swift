@@ -50,12 +50,12 @@ enum SecretContentFields: Equatable {
 
 // MARK: - Sub-struct payload
 
-/// apiKey / accessToken / webhookSecret 서브타입이 공유.
-/// 세 서브타입은 payload 스키마가 완전히 동일해 필드를 함께 쓴다 — 서브타입 간 스위칭 시엔 값이 유지된다.
+/// apiKey / accessToken / webhookSecret 서브타입이 공유 (payload 스키마 동일).
 struct APIKeyTokenFields: Equatable {
     var value: String = ""
-    /// `APIKeyMetadata.scope`. optional.
-    var scope: String = ""
+    /// UI 라벨 "Authority / Scope". `APIKeyMetadata.scope`로 매핑. optional.
+    /// `scope` 대신 `authorityScope` — `$binding.scope`가 TCA `Scope` 심볼과 충돌해 컴파일 실패.
+    var authorityScope: String = ""
 }
 
 struct OAuthClientFields: Equatable {
