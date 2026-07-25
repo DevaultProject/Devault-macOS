@@ -75,8 +75,24 @@ extension CreateSecretView {
         case .oauth:
             oauthSection
 
+        case .database:
+            DatabaseSectionView(
+                name: $store.meta.name,
+                projectIds: $store.meta.projectIds,
+                service: $store.meta.service,
+                expireDate: $store.meta.expireDate,
+                environment: $store.meta.environment,
+                memo: $store.meta.memo,
+                database: $store.meta.content.typed(\.database, default: DatabaseFields()),
+                availableProjects: store.availableProjects,
+                serviceCandidates: store.serviceCandidates,
+                validationErrors: store.validationErrors,
+                detectedServices: store.detectedServices,
+                onCreateProject: { store.send(.didTapCreateProject) }
+            )
+
         default:
-            // TODO(#41-followup): 나머지 SecretType별 SectionView 추가 (database/ssh/env/etc).
+            // TODO(#41-followup): 나머지 SecretType별 SectionView 추가 (ssh/env/etc).
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(0..<8, id: \.self) { index in
                     Text("Placeholder row \(index) — \(String(describing: store.secretType))")
@@ -253,13 +269,47 @@ private func previewState(
     .frame(height: 700)
 }
 
-#Preview("Database · placeholder (다른 타입 임시)") {
+#Preview("Database · Wide (Dual)") {
     CreateSecretView(
-        store: Store(initialState: .init(secretType: .database)) {
+        store: Store(initialState: databasePreviewState(fill: true)) {
             CreateSecretFeature()
         }
     )
-    .previewWidth(.medium)
+    .environment(\.formLayoutMode, .dual)
+    .previewWidth(.wide)
+}
+
+#Preview("Database · Narrow (Single)") {
+    CreateSecretView(
+        store: Store(initialState: databasePreviewState(fill: true)) {
+            CreateSecretFeature()
+        }
+    )
+    .environment(\.formLayoutMode, .single)
+    .previewWidth(.narrow)
+    .frame(height: 700)
+}
+
+private func databasePreviewState(fill: Bool = false) -> CreateSecretFeature.State {
+    var state = CreateSecretFeature.State(secretType: .database)
+
+    let seed: [Project] = [
+        Project(id: UUID(), name: "DrinkiG", createdAt: Date(), updatedAt: Date()),
+        Project(id: UUID(), name: "CheerLot", createdAt: Date(), updatedAt: Date()),
+    ]
+    state.availableProjects = seed
+    state.meta.projectIds = Array(seed.prefix(1).map(\.id))
+
+    guard fill else { return state }
+
+    state.meta.name = "Production PostgreSQL"
+    state.meta.content = .database(
+        DatabaseFields(
+            linkString: "postgres://user:pass@db.example.com:5432/main",
+            isSSLRequired: true
+        )
+    )
+    return state
 }
 
 private func oauthPreviewState(
