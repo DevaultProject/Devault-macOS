@@ -109,6 +109,8 @@ extension SecretListView {
     DVVaultContainer(
       name: secret.name,
       date: SecretDateFormatter.string(from: secret.updatedAt),
+      service: secret.service,
+      typeIcon: secret.secretType.icon,
       trailingIcon: trailingIcon(for: secret),
       isSelected: secret.id == store.selectedSecretID
     )
