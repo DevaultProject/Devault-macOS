@@ -24,9 +24,9 @@ struct ServicesFieldView: View {
     private var size: DVComponentSize { mode.pairedFieldSize }
 
     var body: some View {
-        DVLabeledField("Services", size: size) {
+        DVLabeledField(.module("Services"), size: size) {
             DVChipsField(
-                "e.g. github.com",
+                .module("e.g. github.com"),
                 chips: suggestedChips,
                 input: $input,
                 size: size

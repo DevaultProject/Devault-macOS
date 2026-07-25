@@ -14,7 +14,7 @@ struct EnvironmentFieldView: View {
     private var size: DVComponentSize { mode.pairedFieldSize }
 
     var body: some View {
-        DVLabeledField("Environment", size: size) {
+        DVLabeledField(.module("Environment"), size: size) {
             DVRadioButtonGroup(
                 items: SecretEnvironment.allCases.map {
                     .init($0, title: String(localized: $0.displayName))

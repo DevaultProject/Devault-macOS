@@ -42,8 +42,8 @@ struct OAuthClientSectionView: View {
             )
 
             LabeledTextFieldView(
-                label: "Client ID",
-                placeholder: "e.g my-app-client",
+                label: .module("Client ID"),
+                placeholder: .module("e.g my-app-client"),
                 text: $oauthClient.clientId,
                 isRequired: true,
                 sizeMode: .fullWidth,
@@ -51,8 +51,8 @@ struct OAuthClientSectionView: View {
             )
 
             LabeledTextFieldView(
-                label: "Client Secret",
-                placeholder: "e.g abc123secret",
+                label: .module("Client Secret"),
+                placeholder: .module("e.g abc123secret"),
                 text: $oauthClient.clientSecret,
                 isRequired: true,
                 sizeMode: .fullWidth,
@@ -80,15 +80,15 @@ struct OAuthClientSectionView: View {
             }
 
             LabeledTextFieldView(
-                label: "Redirect URL",
-                placeholder: "e.g https://app.example/oauth/callback",
+                label: .module("Redirect URL"),
+                placeholder: .module("e.g https://app.example/oauth/callback"),
                 text: $oauthClient.redirectUri,
                 sizeMode: .fullWidth
             )
 
             LabeledTextFieldView(
-                label: "Scope",
-                placeholder: "e.g read:user, write:issue",
+                label: .module("Scope"),
+                placeholder: .module("e.g read:user, write:issue"),
                 text: $oauthClient.scopes,
                 sizeMode: .fullWidth
             )
@@ -104,7 +104,7 @@ struct OAuthClientSectionView: View {
             return .warning(warning)
         }
         if let detected = detectedServices[id] {
-            return .detected("Auto-detected: \(detected)")
+            return .detected(.module("Auto-detected: \(detected)"))
         }
         return nil
     }

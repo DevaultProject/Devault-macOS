@@ -43,8 +43,8 @@ struct APIKeysTokenSectionView: View {
             )
 
             LabeledTextFieldView(
-                label: "Value",
-                placeholder: "e.g ghp_1234567890",
+                label: .module("Value"),
+                placeholder: .module("e.g ghp_1234567890"),
                 text: $apiKeyToken.value,
                 isRequired: true,
                 sizeMode: .fullWidth,
@@ -72,8 +72,8 @@ struct APIKeysTokenSectionView: View {
             }
 
             LabeledTextFieldView(
-                label: "Authority / Scope",
-                placeholder: "e.g repo:read, user:email",
+                label: .module("Authority / Scope"),
+                placeholder: .module("e.g repo:read, user:email"),
                 text: $apiKeyToken.authorityScope,
                 sizeMode: .fullWidth
             )
@@ -89,7 +89,7 @@ struct APIKeysTokenSectionView: View {
             return .warning(warning)
         }
         if let detected = detectedServices[.value] {
-            return .detected("Auto-detected: \(detected)")
+            return .detected(.module("Auto-detected: \(detected)"))
         }
         return nil
     }

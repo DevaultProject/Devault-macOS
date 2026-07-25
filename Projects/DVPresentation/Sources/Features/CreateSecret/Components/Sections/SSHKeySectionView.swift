@@ -40,8 +40,8 @@ struct SSHKeySectionView: View {
             )
 
             LabeledTextFieldView(
-                label: "Private Key",
-                placeholder: "e.g -----BEGIN OPENSSH PRIVATE KEY-----",
+                label: .module("Private Key"),
+                placeholder: .module("e.g -----BEGIN OPENSSH PRIVATE KEY-----"),
                 text: $sshKey.privateKey,
                 isRequired: true,
                 sizeMode: .fullWidth,
@@ -60,30 +60,30 @@ struct SSHKeySectionView: View {
             }
 
             LabeledTextFieldView(
-                label: "Public Key",
-                placeholder: "e.g ssh-rsa AAAA...",
+                label: .module("Public Key"),
+                placeholder: .module("e.g ssh-rsa AAAA..."),
                 text: $sshKey.publicKey,
                 sizeMode: .fullWidth
             )
 
             LabeledTextFieldView(
-                label: "PassPhrase",
-                placeholder: "optional",
+                label: .module("PassPhrase"),
+                placeholder: .module("optional"),
                 text: $sshKey.passphrase,
                 sizeMode: .fullWidth
             )
 
             AdaptiveFieldRow {
                 LabeledTextFieldView(
-                    label: "Host",
-                    placeholder: "e.g example.com",
+                    label: .module("Host"),
+                    placeholder: .module("e.g example.com"),
                     text: $sshKey.host,
                     sizeMode: .paired
                 )
             } right: {
                 LabeledTextFieldView(
-                    label: "Username",
-                    placeholder: "e.g root",
+                    label: .module("Username"),
+                    placeholder: .module("e.g root"),
                     text: $sshKey.username,
                     sizeMode: .paired
                 )
@@ -100,7 +100,7 @@ struct SSHKeySectionView: View {
             return .warning(warning)
         }
         if let detected = detectedServices[id] {
-            return .detected("Auto-detected: \(detected)")
+            return .detected(.module("Auto-detected: \(detected)"))
         }
         return nil
     }

@@ -42,8 +42,8 @@ struct DatabaseSectionView: View {
             )
 
             LabeledTextFieldView(
-                label: "Link String",
-                placeholder: "e.g postgres://user:pass@host:5432/db",
+                label: .module("Link String"),
+                placeholder: .module("e.g postgres://user:pass@host:5432/db"),
                 text: $database.linkString,
                 isRequired: true,
                 sizeMode: .fullWidth,
@@ -83,7 +83,7 @@ struct DatabaseSectionView: View {
             return .warning(warning)
         }
         if let detected = detectedServices[id] {
-            return .detected("Auto-detected: \(detected)")
+            return .detected(.module("Auto-detected: \(detected)"))
         }
         return nil
     }

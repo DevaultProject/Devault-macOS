@@ -25,7 +25,7 @@ extension FooterActionsView {
         HStack {
             Spacer()
             HStack(spacing: 10) {
-                DVButton(titleText: "Cancel", style: .secondary, action: onCancel)
+                DVButton(titleText: .module("Cancel"), style: .secondary, action: onCancel)
                 SaveButtonView(isEnabled: isSaveEnabled, action: onSave)
             }
         }
@@ -42,7 +42,7 @@ extension FooterActionsView {
 
         var body: some View {
             Button(action: action) {
-                Text("Save")
+                Text(.module("Save"))
                     .dvFont(.bodyMD)
                     .frame(width: 74, height: 24)
                     .padding(.horizontal, 16)

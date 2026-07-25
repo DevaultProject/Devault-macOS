@@ -4,10 +4,7 @@ import DVDesign
 import SwiftUI
 
 /// CreateSecret 폼의 Expire Date 필드 (optional).
-/// `SecretMetaFields.expireDate`(`Date?`)에 바인딩.
-///
-/// 날짜 포맷 `yyyy.MM.dd`는 native `.stepperField`가 locale-based라 미보장 —
-/// 커스텀 포맷은 D21 followup의 `DVDatePicker`에서 처리 예정.
+/// `SecretMetaFields.expireDate`(`Date?`)에 바인딩. 날짜 포맷은 native `.stepperField` locale 기준.
 struct ExpireDateFieldView: View {
 
     @Binding var expireDate: Date?
@@ -19,7 +16,7 @@ struct ExpireDateFieldView: View {
     private var isSet: Bool { expireDate != nil }
 
     var body: some View {
-        DVLabeledField("Expire Date", size: size) {
+        DVLabeledField(.module("Expire Date"), size: size) {
             HStack(spacing: 6) {
                 Group {
                     if isSet {
@@ -48,7 +45,7 @@ private extension ExpireDateFieldView {
         Button {
             expireDate = Self.defaultInitialDate()
         } label: {
-            Text("No expired")
+            Text(.module("No expired"))
                 .dvFont(.bodyLG)
                 .foregroundStyle(Color.dv(.gray600))
                 .lineLimit(1)
