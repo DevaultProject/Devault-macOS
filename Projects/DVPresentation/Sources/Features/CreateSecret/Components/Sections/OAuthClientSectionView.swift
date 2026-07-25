@@ -5,7 +5,7 @@ import DVDomain
 import SwiftUI
 
 /// `CreatableSecretType.oauth`의 `.oauthClient` 서브타입 폼 섹션.
-struct OAuthClientSectionView: View {
+struct OAuthClientSectionView: View, CreateSecretSectionHintProviding {
 
     // MARK: - Common Fields
 
@@ -98,16 +98,6 @@ struct OAuthClientSectionView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// warning(validation) > detected(감지) 순.
-    private func hintFor(_ id: SecretMetaFields.FieldID) -> DVLabeledField<DVTextField>.TrailingHint? {
-        if let warning = validationErrors[id] {
-            return .warning(warning)
-        }
-        if let detected = detectedServices[id] {
-            return .detected(.module("Auto-detected: \(detected)"))
-        }
-        return nil
-    }
 }
 
 // MARK: - Preview
