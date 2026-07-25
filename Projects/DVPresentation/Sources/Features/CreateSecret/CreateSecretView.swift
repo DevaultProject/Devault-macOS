@@ -94,8 +94,21 @@ extension CreateSecretView {
         case .sshAndCredentials:
             sshAndCredentialsSection
 
+        case .environmentVariableSet:
+            EnvSetSectionView(
+                name: $store.meta.name,
+                projectIds: $store.meta.projectIds,
+                environment: $store.meta.environment,
+                memo: $store.meta.memo,
+                envSet: $store.meta.content.typed(\.envSet, default: EnvSetFields()),
+                availableProjects: store.availableProjects,
+                validationErrors: store.validationErrors,
+                detectedServices: store.detectedServices,
+                onCreateProject: { store.send(.didTapCreateProject) }
+            )
+
         default:
-            // TODO(#41-followup): 나머지 SecretType별 SectionView 추가 (ssh/env/etc).
+            // TODO(#41-followup): 나머지 SecretType별 SectionView 추가 (etc).
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(0..<8, id: \.self) { index in
                     Text("Placeholder row \(index) — \(String(describing: store.secretType))")
@@ -371,6 +384,26 @@ private func previewState(
     .frame(height: 700)
 }
 
+#Preview("EnvSet · Wide (Dual)") {
+    CreateSecretView(
+        store: Store(initialState: envSetPreviewState(fill: true)) {
+            CreateSecretFeature()
+        }
+    )
+    .environment(\.formLayoutMode, .dual)
+    .previewWidth(.wide)
+}
+
+#Preview("EnvSet · Narrow (Single)") {
+    CreateSecretView(
+        store: Store(initialState: envSetPreviewState(fill: true)) {
+            CreateSecretFeature()
+        }
+    )
+    .environment(\.formLayoutMode, .single)
+    .previewWidth(.narrow)
+    .frame(height: 700)
+}
 
 private func sshPreviewState(
     subType: CreatableSecretSubType,
@@ -414,6 +447,24 @@ private func sshPreviewState(
     default:
         state.meta.content = .default(for: .sshAndCredentials, subType: subType)
     }
+    return state
+}
+
+private func envSetPreviewState(fill: Bool = false) -> CreateSecretFeature.State {
+    var state = CreateSecretFeature.State(secretType: .environmentVariableSet)
+
+    let seed: [Project] = [
+        Project(id: UUID(), name: "DrinkiG", createdAt: Date(), updatedAt: Date()),
+    ]
+    state.availableProjects = seed
+    state.meta.projectIds = Array(seed.prefix(1).map(\.id))
+
+    guard fill else { return state }
+
+    state.meta.name = "Backend .env"
+    state.meta.content = .envSet(
+        EnvSetFields(envContent: "DATABASE_URL=postgres://...\nSECRET_KEY=abc123")
+    )
     return state
 }
 
