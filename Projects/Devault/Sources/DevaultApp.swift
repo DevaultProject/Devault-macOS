@@ -16,5 +16,11 @@ struct DevaultApp: App {
     }
     .windowStyle(.hiddenTitleBar)
     .defaultSize(width: 800, height: 600)
+
+    WindowGroup("Settings", id: "settings") {
+      Text("Settings")
+        .frame(width: 500, height: 400)
+    }
+    .defaultSize(width: 500, height: 400)
   }
 }
