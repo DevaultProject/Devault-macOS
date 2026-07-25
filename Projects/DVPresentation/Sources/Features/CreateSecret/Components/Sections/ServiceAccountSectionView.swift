@@ -35,12 +35,11 @@ struct ServiceAccountSectionView: View, CreateSecretSectionHintProviding {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            NameFieldView(
-                name: $name,
-                warning: validationErrors[.name]
-            )
-
+        FormSectionScaffold(
+            name: $name,
+            nameWarning: validationErrors[.name],
+            memo: $memo
+        ) {
             LabeledTextFieldView(
                 label: .module("Certification JSON"),
                 placeholder: .module(#"e.g {"type": "service_account", ...}"#),
@@ -76,9 +75,7 @@ struct ServiceAccountSectionView: View, CreateSecretSectionHintProviding {
                 sizeMode: .fullWidth
             )
 
-            MemoFieldView(memo: $memo)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
 }

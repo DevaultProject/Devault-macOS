@@ -35,12 +35,11 @@ struct CustomSectionView: View, CreateSecretSectionHintProviding {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            NameFieldView(
-                name: $name,
-                warning: validationErrors[.name]
-            )
-
+        FormSectionScaffold(
+            name: $name,
+            nameWarning: validationErrors[.name],
+            memo: $memo
+        ) {
             LabeledTextFieldView(
                 label: .module("Value"),
                 placeholder: .module("e.g custom-secret-value"),
@@ -70,9 +69,7 @@ struct CustomSectionView: View, CreateSecretSectionHintProviding {
                 EnvironmentFieldView(environment: $environment)
             }
 
-            MemoFieldView(memo: $memo)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
 }

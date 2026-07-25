@@ -35,12 +35,11 @@ struct OAuthClientSectionView: View, CreateSecretSectionHintProviding {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            NameFieldView(
-                name: $name,
-                warning: validationErrors[.name]
-            )
-
+        FormSectionScaffold(
+            name: $name,
+            nameWarning: validationErrors[.name],
+            memo: $memo
+        ) {
             LabeledTextFieldView(
                 label: .module("Client ID"),
                 placeholder: .module("e.g my-app-client"),
@@ -93,9 +92,7 @@ struct OAuthClientSectionView: View, CreateSecretSectionHintProviding {
                 sizeMode: .fullWidth
             )
 
-            MemoFieldView(memo: $memo)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
 }

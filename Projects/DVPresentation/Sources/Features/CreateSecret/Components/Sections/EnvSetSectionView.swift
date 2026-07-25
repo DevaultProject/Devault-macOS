@@ -33,12 +33,11 @@ struct EnvSetSectionView: View, CreateSecretSectionHintProviding {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            NameFieldView(
-                name: $name,
-                warning: validationErrors[.name]
-            )
-
+        FormSectionScaffold(
+            name: $name,
+            nameWarning: validationErrors[.name],
+            memo: $memo
+        ) {
             LabeledTextFieldView(
                 label: .module("envSet List"),
                 placeholder: .module("e.g FOO=bar\\nBAZ=qux"),
@@ -59,9 +58,7 @@ struct EnvSetSectionView: View, CreateSecretSectionHintProviding {
                 EnvironmentFieldView(environment: $environment)
             }
 
-            MemoFieldView(memo: $memo)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
 }

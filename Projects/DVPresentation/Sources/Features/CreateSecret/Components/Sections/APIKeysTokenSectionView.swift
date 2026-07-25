@@ -36,12 +36,11 @@ struct APIKeysTokenSectionView: View, CreateSecretSectionHintProviding {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            NameFieldView(
-                name: $name,
-                warning: validationErrors[.name]
-            )
-
+        FormSectionScaffold(
+            name: $name,
+            nameWarning: validationErrors[.name],
+            memo: $memo
+        ) {
             LabeledTextFieldView(
                 label: .module("Value"),
                 placeholder: .module("e.g ghp_1234567890"),
@@ -77,10 +76,7 @@ struct APIKeysTokenSectionView: View, CreateSecretSectionHintProviding {
                 text: $apiKeyToken.authorityScope,
                 sizeMode: .fullWidth
             )
-
-            MemoFieldView(memo: $memo)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// Value 필드 우측 hint: warning(validation) > detected(감지) 순.
