@@ -46,7 +46,7 @@ struct OAuthClientSectionView: View, CreateSecretSectionHintProviding {
                 text: $oauthClient.clientId,
                 isRequired: true,
                 sizeMode: .fullWidth,
-                trailingHint: validationErrors[.clientId].map { .warning($0) }
+                trailingHint: hintFor(.clientId)
             )
 
             LabeledTextFieldView(

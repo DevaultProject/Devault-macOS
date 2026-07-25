@@ -128,6 +128,24 @@ struct CreateSecretFeatureTests {
         }
     }
 
+    @Test("didTapSave 재시도: 이전 validationErrors가 새 검증 결과로 대체됨 (해결된 필드 warning 사라짐)")
+    func didTapSave_retryReplacesPriorErrors() async {
+        var initialState = CreateSecretFeature.State(secretType: .apiKeyToken)
+        // 이전 시도의 잔존: name/value 둘 다 warning
+        initialState.validationErrors = [.name: "Required", .value: "Required"]
+        // 사용자가 name만 채운 상태
+        initialState.meta.name = "n"
+
+        let store = TestStore(initialState: initialState) {
+            CreateSecretFeature()
+        }
+
+        await store.send(.didTapSave) {
+            // .name warning 사라지고 .value만 남아야 함 (이전 [.name]은 리셋됨)
+            $0.validationErrors = [.value: "Required"]
+        }
+    }
+
     @Test("didTapSave 매핑 실패: name + type-specific 다중 누락 시 모두 세팅")
     func didTapSave_multipleMissing() async {
         // oauthClient는 clientId + clientSecret 둘 다 required — name까지 3개 모두 비면 3개 warning

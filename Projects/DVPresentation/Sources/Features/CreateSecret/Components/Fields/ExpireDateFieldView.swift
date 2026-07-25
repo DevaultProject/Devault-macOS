@@ -45,7 +45,7 @@ private extension ExpireDateFieldView {
         Button {
             expireDate = Self.defaultInitialDate()
         } label: {
-            Text(.module("No expired"))
+            Text(.module("No expiration"))
                 .dvFont(.bodyLG)
                 .foregroundStyle(Color.dv(.gray600))
                 .lineLimit(1)
