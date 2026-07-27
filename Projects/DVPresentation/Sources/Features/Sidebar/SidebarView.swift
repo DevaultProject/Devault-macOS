@@ -201,7 +201,6 @@ extension SidebarView {
   private var bottomBar: some View {
     HStack {
       circleIconButton(icon: "gearshape") {
-        store.send(.didTapSettingsButton)
         openWindow(id: "settings")
       }
       .accessibilityLabel("Settings")

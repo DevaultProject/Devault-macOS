@@ -77,7 +77,6 @@ public struct SidebarFeature {
     case task
     case didSelect(SidebarSelection)
     case didTapAddButton
-    case didTapSettingsButton
     case didTapAddProject
     case didToggleProjectSection
     case didTapRename(id: ProjectItem.ID)
@@ -85,6 +84,7 @@ public struct SidebarFeature {
     case didConfirmRename
     case didCancelRename
     case didTapDelete(id: ProjectItem.ID)
+    case setCreatingSecret(Bool)
 
     // MARK: - Internal
 
@@ -107,7 +107,6 @@ public struct SidebarFeature {
     public enum Delegate: Equatable {
       case selectionChanged(SidebarSelection)
       case addButtonTapped
-      case settingsButtonTapped
       case addProjectTapped
       case projectRenamed(ProjectItem)
     }
@@ -160,9 +159,6 @@ public struct SidebarFeature {
       case .didTapAddButton:
         return .send(.delegate(.addButtonTapped))
 
-      case .didTapSettingsButton:
-        return .send(.delegate(.settingsButtonTapped))
-
       case .didTapAddProject:
         return .send(.delegate(.addProjectTapped))
 
@@ -180,9 +176,14 @@ public struct SidebarFeature {
         state.renameText = text
         return .none
 
+      case .setCreatingSecret(let value):
+        state.isCreatingSecret = value
+        return .none
+
       case .didConfirmRename:
         guard let id = state.renamingProjectID else { return .none }
-        let name = state.renameText
+        let name = state.renameText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return .none }
         state.renamingProjectID = nil
         state.renameText = ""
         return .run { [id, name] send in  // 캡처 리스트 명시
@@ -202,22 +203,17 @@ public struct SidebarFeature {
         return .none
 
       case .renameResponse(.success(let updated)):
-        return .merge(
+        return .concatenate(
           .send(.delegate(.projectRenamed(updated))),
           .send(.task)
         )
 
       case .renameResponse(.failure(.nameTaken)):
-        state.alert = AlertState {
-          TextState("이미 사용 중인 이름이에요")
-        } actions: {
-          ButtonState(role: .cancel) { TextState("확인") }
-        } message: {
-          TextState("다른 프로젝트 이름을 입력해주세요.")
-        }
+        state.alert = makeRenameNameTakenAlert()
         return .none
 
       case .renameResponse(.failure):
+        state.alert = makeRenameFailedAlert()
         return .none
 
       case .didTapDelete(id: let id):
@@ -250,6 +246,7 @@ public struct SidebarFeature {
         return .send(.task)
 
       case .deleteResponse(.failure):
+        state.alert = makeDeleteFailedAlert()
         return .none
 
       case .delegate:
@@ -264,7 +261,6 @@ public struct SidebarFeature {
 
 private extension SidebarFeature {
 
-  // D3: AlertState 생성 로직 분리
   func makeDeleteAlert(for project: ProjectItem) -> AlertState<Action.Alert> {
     AlertState {
       TextState("'\(project.name)' 프로젝트를 삭제할까요?")
@@ -277,6 +273,36 @@ private extension SidebarFeature {
       }
     } message: {
       TextState("프로젝트에 속한 Secret과의 연결이 해제됩니다. Secret 자체는 삭제되지 않습니다.")
+    }
+  }
+
+  func makeRenameNameTakenAlert() -> AlertState<Action.Alert> {
+    AlertState {
+      TextState("이미 사용 중인 이름이에요")
+    } actions: {
+      ButtonState(role: .cancel) { TextState("확인") }
+    } message: {
+      TextState("다른 프로젝트 이름을 입력해주세요.")
+    }
+  }
+
+  func makeRenameFailedAlert() -> AlertState<Action.Alert> {
+    AlertState {
+      TextState("이름을 변경하지 못했어요")
+    } actions: {
+      ButtonState(role: .cancel) { TextState("확인") }
+    } message: {
+      TextState("잠시 후 다시 시도해주세요.")
+    }
+  }
+
+  func makeDeleteFailedAlert() -> AlertState<Action.Alert> {
+    AlertState {
+      TextState("프로젝트를 삭제하지 못했어요")
+    } actions: {
+      ButtonState(role: .cancel) { TextState("확인") }
+    } message: {
+      TextState("잠시 후 다시 시도해주세요.")
     }
   }
 }

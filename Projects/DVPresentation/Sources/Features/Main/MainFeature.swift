@@ -118,17 +118,12 @@ extension MainFeature {
     switch delegate {
     case .selectionChanged(let selection):
       state.selectSecretType = nil
-      state.sidebar.isCreatingSecret = false
       state.secretList = makeSecretListState(selection: selection, projects: state.sidebar.projects)
-      return .none
+      return .send(.sidebar(.setCreatingSecret(false)))
 
     case .addButtonTapped:
       state.selectSecretType = .init()
-      state.sidebar.isCreatingSecret = true
-      return .none
-
-    case .settingsButtonTapped:
-      return .none
+      return .send(.sidebar(.setCreatingSecret(true)))
 
     case .addProjectTapped:
       state.createProject = .init()
