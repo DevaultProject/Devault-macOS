@@ -13,7 +13,6 @@ struct SidebarView: View {
 
   @Bindable var store: StoreOf<SidebarFeature>
   @Environment(\.openWindow) private var openWindow
-  @FocusState private var isListFocused: Bool
 
   // MARK: - Body
 
@@ -168,10 +167,6 @@ extension SidebarView {
     .listStyle(.sidebar)
     .scrollContentBackground(.hidden)
     .padding(.horizontal, -12)
-    .focused($isListFocused)
-    .onChange(of: store.renamingProjectID) { _, id in
-      if id == nil { isListFocused = true }
-    }
     .onKeyPress(.return) {
       guard store.renamingProjectID == nil else { return .ignored }
       if case .project(id: let id) = store.selection {

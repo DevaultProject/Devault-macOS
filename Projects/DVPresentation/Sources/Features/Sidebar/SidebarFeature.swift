@@ -182,8 +182,7 @@ public struct SidebarFeature {
 
       case .didConfirmRename:
         guard let id = state.renamingProjectID else { return .none }
-        let name = state.renameText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return .none }
+        let name = state.renameText
         state.renamingProjectID = nil
         state.renameText = ""
         return .run { [id, name] send in  // 캡처 리스트 명시
