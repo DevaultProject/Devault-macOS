@@ -8,6 +8,8 @@ public struct DVProjectContainer: View {
 
     // MARK: - Properties
 
+    public static let projectIconSystemName = "tray"
+
     public let name: String
     public let count: Int
 
@@ -37,7 +39,7 @@ public struct DVProjectContainer: View {
 extension DVProjectContainer {
 
     private var projectIcon: some View {
-        Image(systemName: "tray")
+        Image(systemName: DVProjectContainer.projectIconSystemName)
             .dvFont(.captionLG)
             .foregroundStyle(Color.dv(.gray900))
     }
