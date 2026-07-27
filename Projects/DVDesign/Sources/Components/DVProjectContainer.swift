@@ -8,7 +8,7 @@ public struct DVProjectContainer: View {
 
     // MARK: - Properties
 
-    public static let projectIconSystemName = "tray"
+    static let projectIconSystemName = "tray"
 
     public let name: String
     public let count: Int
