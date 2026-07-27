@@ -13,6 +13,7 @@ public struct DVProjectRenameContainer: View {
     public var onCancel: () -> Void
 
     @FocusState private var isFocused: Bool
+    @State private var isHandled = false
 
     // MARK: - Init
 
@@ -30,18 +31,28 @@ public struct DVProjectRenameContainer: View {
 
     public var body: some View {
         HStack(spacing: 4) {
-            Image(systemName: "tray")
+            Image(systemName: DVProjectContainer.projectIconSystemName)
                 .dvFont(.captionLG)
                 .foregroundStyle(Color.dv(.gray900))
             TextField("", text: $text)
                 .dvFont(.bodyMD)
                 .textFieldStyle(.plain)
                 .focused($isFocused)
-                .onSubmit(onSubmit)
-                .onExitCommand(perform: onCancel)
+                .onSubmit {
+                    isHandled = true
+                    onSubmit()
+                }
+                .onExitCommand {
+                    isHandled = true
+                    onCancel()
+                }
         }
         .padding(2)
         .frame(minWidth: 120, alignment: .leading)
         .onAppear { isFocused = true }
+        .onChange(of: isFocused) { _, focused in
+            guard !focused, !isHandled else { return }
+            onSubmit()
+        }
     }
 }
