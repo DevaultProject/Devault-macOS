@@ -32,6 +32,7 @@ struct MainFeatureTests {
         projectName: "Backend"
       )
     }
+    await store.receive(.sidebar(.setCreatingSecret(false)))
   }
 
   @Test("selectionChanged는 selectSecretType을 닫고 isCreatingSecret을 false로 만든다")
@@ -49,8 +50,10 @@ struct MainFeatureTests {
     }
     await store.receive(.sidebar(.delegate(.selectionChanged(.filter(.all))))) {
       $0.selectSecretType = nil
-      $0.sidebar.isCreatingSecret = false
       $0.secretList = SecretListFeature.State(collection: .all)
+    }
+    await store.receive(.sidebar(.setCreatingSecret(false))) {
+      $0.sidebar.isCreatingSecret = false
     }
   }
 
@@ -63,6 +66,8 @@ struct MainFeatureTests {
     await store.send(.sidebar(.didTapAddButton))
     await store.receive(.sidebar(.delegate(.addButtonTapped))) {
       $0.selectSecretType = .init()
+    }
+    await store.receive(.sidebar(.setCreatingSecret(true))) {
       $0.sidebar.isCreatingSecret = true
     }
   }
