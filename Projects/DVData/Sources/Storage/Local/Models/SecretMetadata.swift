@@ -6,9 +6,9 @@ import SwiftData
 
 extension SwiftDataModel {
     @Model final class SecretMetadata {
-        var id: UUID
-        var metadataJSON: Data
-        var schemaVersion: Int
+        var id: UUID = UUID()
+        var metadataJSON: Data = Data()
+        var schemaVersion: Int = 1
 
         @Relationship
         var secret: Secret?

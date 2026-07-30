@@ -5,8 +5,8 @@ import SwiftData
 
 extension SwiftDataModel {
     @Model final class SecretProjectLink {
-        var linkKey: String
-        var linkedAt: Date
+        var linkKey: String = ""
+        var linkedAt: Date = Date()
 
         @Relationship
         var project: Project?

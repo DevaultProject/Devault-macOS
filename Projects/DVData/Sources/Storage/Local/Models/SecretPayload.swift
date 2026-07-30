@@ -6,10 +6,10 @@ import SwiftData
 
 extension SwiftDataModel {
     @Model final class SecretPayload {
-        var id: UUID
-        var encryptedData: Data
-        var keyTag: String
-        var schemaVersion: Int
+        var id: UUID = UUID()
+        var encryptedData: Data = Data()
+        var keyTag: String = ""
+        var schemaVersion: Int = 1
 
         @Relationship
         var secret: Secret?

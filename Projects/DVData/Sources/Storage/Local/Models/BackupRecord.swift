@@ -5,14 +5,14 @@ import SwiftData
 
 extension SwiftDataModel {
     @Model final class BackupRecord {
-        var id: UUID
-        var fileName: String
-        var filePath: String
-        var backupScope: String
-        var hasIndependentPassword: Bool
-        var keyTag: String
-        var totalSecrets: Int
-        var createdAt: Date
+        var id: UUID = UUID()
+        var fileName: String = ""
+        var filePath: String = ""
+        var backupScope: String = ""
+        var hasIndependentPassword: Bool = false
+        var keyTag: String = ""
+        var totalSecrets: Int = 0
+        var createdAt: Date = Date()
 
         init(
             id: UUID = UUID(),
