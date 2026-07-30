@@ -119,7 +119,7 @@ enum SecretFetchDescriptorBuilder {
             return #Predicate<SwiftDataModel.Secret> { secret in
                 secret.deletedAt == nil &&
                 secret.projectLinks.contains { link in
-                    link.project.id == projectID
+                    link.project != nil && link.project!.id == projectID
                 } &&
                 (!hasSecretType || secret.secretType == secretType) &&
                 (!hasService || secret.service == service) &&

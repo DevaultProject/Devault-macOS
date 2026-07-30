@@ -12,7 +12,7 @@ extension SwiftDataModel {
         var schemaVersion: Int
 
         @Relationship
-        var secret: Secret
+        var secret: Secret?
 
         init(
             id: UUID = UUID(),

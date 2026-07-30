@@ -9,10 +9,10 @@ extension SwiftDataModel {
         var linkedAt: Date
 
         @Relationship
-        var project: Project
+        var project: Project?
 
         @Relationship
-        var secret: Secret
+        var secret: Secret?
 
         init(
             project: Project,
