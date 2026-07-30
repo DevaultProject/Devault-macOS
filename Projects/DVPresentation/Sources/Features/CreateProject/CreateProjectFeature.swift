@@ -93,24 +93,12 @@ public struct CreateProjectFeature {
 
       case .createResponse(.failure(.nameTaken)):
         state.isCreating = false
-        state.alert = AlertState {
-          TextState("이미 사용 중인 프로젝트 이름이에요")
-        } actions: {
-          ButtonState(role: .cancel) { TextState("확인") }
-        } message: {
-          TextState("다른 이름을 입력해주세요.")
-        }
+        state.alert = makeCreateNameTakenAlert()
         return .none
 
       case .createResponse(.failure):
         state.isCreating = false
-        state.alert = AlertState {
-          TextState("프로젝트를 만들지 못했어요")
-        } actions: {
-          ButtonState(role: .cancel) { TextState("확인") }
-        } message: {
-          TextState("잠시 후 다시 시도해주세요.")
-        }
+        state.alert = makeCreateFailedAlert()
         return .none
 
       case .didTapCancel:
@@ -124,5 +112,30 @@ public struct CreateProjectFeature {
       }
     }
     .ifLet(\.$alert, action: \.alert)
+  }
+}
+
+// MARK: - Private
+
+private extension CreateProjectFeature {
+
+  func makeCreateNameTakenAlert() -> AlertState<Action.Alert> {
+    AlertState {
+      TextState("이미 사용 중인 프로젝트 이름이에요")
+    } actions: {
+      ButtonState(role: .cancel) { TextState("확인") }
+    } message: {
+      TextState("다른 이름을 입력해주세요.")
+    }
+  }
+
+  func makeCreateFailedAlert() -> AlertState<Action.Alert> {
+    AlertState {
+      TextState("프로젝트를 만들지 못했어요")
+    } actions: {
+      ButtonState(role: .cancel) { TextState("확인") }
+    } message: {
+      TextState("잠시 후 다시 시도해주세요.")
+    }
   }
 }
