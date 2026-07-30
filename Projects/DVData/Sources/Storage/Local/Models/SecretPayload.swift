@@ -6,7 +6,7 @@ import SwiftData
 
 extension SwiftDataModel {
     @Model final class SecretPayload {
-        @Attribute(.unique) var id: UUID
+        var id: UUID
         var encryptedData: Data
         var keyTag: String
         var schemaVersion: Int

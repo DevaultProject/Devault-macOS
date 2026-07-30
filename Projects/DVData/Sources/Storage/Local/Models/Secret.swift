@@ -6,7 +6,7 @@ import Foundation
 
 extension SwiftDataModel {
     @Model final class Secret {
-        @Attribute(.unique) var id: UUID
+        var id: UUID
         var name: String
         var secretType: String
         var subType: String?

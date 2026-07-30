@@ -6,7 +6,7 @@ import SwiftData
 
 extension SwiftDataModel {
     @Model final class Project {
-        @Attribute(.unique) var id: UUID
+        var id: UUID
         var name: String
         var createdAt: Date
         var updatedAt: Date
