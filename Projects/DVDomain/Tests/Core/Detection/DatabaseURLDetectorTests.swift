@@ -59,6 +59,30 @@ struct DatabaseURLDetectorTests {
         let result = sut.detect(.testing("https://example.com"), context: context)
         #expect(result == nil)
     }
+
+    // MARK: - Azure key=value fallback
+
+    @Test("Azure Storage 커넥션 문자열 → Azure Storage 후보")
+    func azureStorage() {
+        let raw = "DefaultEndpointsProtocol=https;AccountName=devault;AccountKey=abcd==;EndpointSuffix=core.windows.net"
+        let result = sut.detect(.testing(raw), context: context)
+        #expect(result?.candidates.first?.service == "Azure Storage")
+        #expect(result?.metadata == nil)
+    }
+
+    @Test("Azure Service Bus 커넥션 문자열 → Azure Service Bus 후보")
+    func azureServiceBus() {
+        let raw = "Endpoint=sb://devault.servicebus.windows.net/;SharedAccessKeyName=Root;SharedAccessKey=abc"
+        let result = sut.detect(.testing(raw), context: context)
+        #expect(result?.candidates.first?.service == "Azure Service Bus")
+    }
+
+    @Test("Azure SQL 커넥션 문자열 → Azure SQL 후보")
+    func azureSQL() {
+        let raw = "Server=tcp:devault.database.windows.net,1433;Database=devaultdb;User ID=admin;Password=secret;"
+        let result = sut.detect(.testing(raw), context: context)
+        #expect(result?.candidates.first?.service == "Azure SQL")
+    }
 }
 
 private struct StubDetectorContext: DetectorContext {
