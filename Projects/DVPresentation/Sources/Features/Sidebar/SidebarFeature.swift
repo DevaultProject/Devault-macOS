@@ -182,9 +182,13 @@ public struct SidebarFeature {
 
       case .didConfirmRename:
         guard let id = state.renamingProjectID else { return .none }
-        let name = state.renameText
+        let name = state.renameText.trimmingCharacters(in: .whitespacesAndNewlines)
         state.renamingProjectID = nil
         state.renameText = ""
+        guard !name.isEmpty else {
+          state.alert = makeRenameEmptyNameAlert()
+          return .none
+        }
         return .run { [id, name] send in  // 캡처 리스트 명시
           do {
             let updated = try await sidebarClient.renameProject(id, name)
@@ -282,6 +286,16 @@ private extension SidebarFeature {
       ButtonState(role: .cancel) { TextState("확인") }
     } message: {
       TextState("다른 프로젝트 이름을 입력해주세요.")
+    }
+  }
+
+  func makeRenameEmptyNameAlert() -> AlertState<Action.Alert> {
+    AlertState {
+      TextState("이름을 입력해주세요")
+    } actions: {
+      ButtonState(role: .cancel) { TextState("확인") }
+    } message: {
+      TextState("프로젝트 이름은 비워둘 수 없어요.")
     }
   }
 
