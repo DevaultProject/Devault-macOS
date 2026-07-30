@@ -24,6 +24,7 @@ public struct LockView: View {
   public var body: some View {
     content
       .dvScreenBackground()
+      .alert($store.scope(state: \.alert, action: \.alert))
   }
 }
 
