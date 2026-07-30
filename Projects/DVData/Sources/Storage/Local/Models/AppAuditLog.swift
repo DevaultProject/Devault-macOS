@@ -5,7 +5,7 @@ import SwiftData
 
 extension SwiftDataModel {
     @Model final class AppAuditLog {
-        @Attribute(.unique) var id: UUID
+        var id: UUID
         var eventType: String
         var actorContext: String
         var occurredAt: Date

@@ -5,7 +5,7 @@ import SwiftData
 
 extension SwiftDataModel {
     @Model final class BackupRecord {
-        @Attribute(.unique) var id: UUID
+        var id: UUID
         var fileName: String
         var filePath: String
         var backupScope: String

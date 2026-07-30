@@ -5,7 +5,7 @@ import SwiftData
 
 extension SwiftDataModel {
     @Model final class SecretProjectLink {
-        @Attribute(.unique) var linkKey: String
+        var linkKey: String
         var linkedAt: Date
 
         @Relationship
