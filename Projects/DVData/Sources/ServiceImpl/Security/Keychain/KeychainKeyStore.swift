@@ -38,6 +38,7 @@ extension KeychainKeyStore {
     /// Keychain에서 tag에 해당하는 raw key Data를 조회한다.
     private func loadKeyData(tag: String) throws -> Data? {
         var query = keyQuery(tag: tag)
+        query[kSecAttrSynchronizable] = kSecAttrSynchronizableAny
         let attributes: [CFString: Any] = [
             kSecReturnData: true,
             kSecMatchLimit: kSecMatchLimitOne,
@@ -65,7 +66,8 @@ extension KeychainKeyStore {
 
         let attributes: [CFString: Any] = [
             kSecValueData: data,
-            kSecAttrAccessible: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+            kSecAttrAccessible: kSecAttrAccessibleWhenUnlocked,
+            kSecAttrSynchronizable: true,
         ]
 
         var addQuery = query
