@@ -25,6 +25,7 @@ public struct OnboardingView: View {
   public var body: some View {
     content
       .dvScreenBackground()
+      .alert($store.scope(state: \.alert, action: \.alert))
   }
 }
 
@@ -76,7 +77,7 @@ extension OnboardingView {
   }
 
   // MARK: 1.2 iCloud Sync
-  // TODO: - 실제 iCloud sync 완료 콜백 받을 때 store.send(.syncingCompleted)
+
   private var icloudSyncView: some View {
     VStack(spacing: 20) {
       appIconWithTextView("Sync your secrets with iCloud?")

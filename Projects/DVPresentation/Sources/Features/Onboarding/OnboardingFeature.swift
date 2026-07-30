@@ -3,6 +3,7 @@
 import Foundation
 
 import ComposableArchitecture
+import DVDomain
 
 // MARK: - OnboardingFeature
 
@@ -23,6 +24,7 @@ public struct OnboardingFeature {
   @ObservableState
   public struct State: Equatable {
     public var step: Step = .welcome
+    @Presents var alert: AlertState<Action.Alert>?
 
     public init(step: Step = .welcome) {
       self.step = step
@@ -48,7 +50,17 @@ public struct OnboardingFeature {
     case didTapEnableTouchID
     case didTapNotNow
     case didTapEnableSync
+
+    // MARK: - Internal
+
+    case touchIDAuthSucceeded
+    case touchIDAuthFailed(UserAuthenticationError)
+    case iCloudSyncStatusResponse(ICloudAccountStatus)
     case syncingCompleted
+
+    // MARK: - Child
+
+    case alert(PresentationAction<Alert>)
 
     // MARK: - Delegate
 
@@ -57,11 +69,13 @@ public struct OnboardingFeature {
     public enum Delegate: Equatable {
       case completed
     }
+
+    public enum Alert: Equatable {}
   }
 
   // MARK: - Dependencies
 
-  @Dependency(\.continuousClock) var clock
+  @Dependency(\.onboardingClient) var onboardingClient
 
   // MARK: - Init
 
@@ -77,7 +91,23 @@ public struct OnboardingFeature {
         return .none
 
       case .didTapEnableTouchID:
+        return .run { send in
+          do {
+            try await onboardingClient.enableTouchID()
+            await send(.touchIDAuthSucceeded)
+          } catch let error as UserAuthenticationError {
+            await send(.touchIDAuthFailed(error))
+          } catch {
+            await send(.touchIDAuthFailed(.failed))
+          }
+        }
+
+      case .touchIDAuthSucceeded:
         state.step = .icloudSync
+        return .none
+
+      case .touchIDAuthFailed(let error):
+        state.alert = makeTouchIDFailedAlert(error)
         return .none
 
       case .didTapNotNow:
@@ -86,17 +116,75 @@ public struct OnboardingFeature {
       case .didTapEnableSync:
         state.step = .syncing
         return .run { send in
-          // TODO: 실제 iCloud sync 완료 콜백으로 교체
-          try await clock.sleep(for: .seconds(3))
-          await send(.syncingCompleted)
+          let status = await onboardingClient.enableICloudSync()
+          await send(.iCloudSyncStatusResponse(status))
         }
+
+      case .iCloudSyncStatusResponse(let status):
+        guard status == .available else {
+          state.step = .icloudSync
+          state.alert = makeICloudSyncUnavailableAlert(status)
+          return .none
+        }
+        return .send(.syncingCompleted)
 
       case .syncingCompleted:
         return .send(.delegate(.completed))
 
+      case .alert:
+        return .none
+
       case .delegate:
         return .none
       }
+    }
+    .ifLet(\.$alert, action: \.alert)
+  }
+}
+
+// MARK: - Private
+
+private extension OnboardingFeature {
+
+  func makeTouchIDFailedAlert(_ error: UserAuthenticationError) -> AlertState<Action.Alert> {
+    let message: String
+    switch error {
+    case .unavailable:
+      message = "시스템 설정에서 로그인 암호가 설정되어 있는지 확인해주세요."
+    case .cancelled:
+      message = "Touch ID 사용을 원하시면 다시 시도해주세요."
+    case .failed:
+      message = "다시 시도해주세요."
+    }
+    return AlertState {
+      TextState("인증하지 못했어요")
+    } actions: {
+      ButtonState(role: .cancel) { TextState("확인") }
+    } message: {
+      TextState(message)
+    }
+  }
+
+  func makeICloudSyncUnavailableAlert(_ status: ICloudAccountStatus) -> AlertState<Action.Alert> {
+    let message: String
+    switch status {
+    case .available:
+      message = "다시 시도해주세요."
+    case .noAccount:
+      message = "설정 앱에서 iCloud 로그인 후 다시 시도해주세요."
+    case .restricted:
+      message = "기기의 iCloud 사용 제한 설정을 확인해주세요."
+    case .temporarilyUnavailable:
+      message = "잠시 후 다시 시도해주세요."
+    case .couldNotDetermine:
+      message = "네트워크 연결을 확인하고 다시 시도해주세요."
+    }
+    return AlertState {
+      TextState("iCloud 동기화를 사용할 수 없어요")
+    } actions: {
+      ButtonState(role: .cancel) { TextState("확인") }
+    } message: {
+      TextState(message)
     }
   }
 }

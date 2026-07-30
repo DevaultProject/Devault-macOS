@@ -1,0 +1,34 @@
+// Copyright © 2026 Devault. All rights reserved
+
+import Foundation
+
+import ComposableArchitecture
+import DVDomain
+
+/// Onboarding Feature 전용 Client. 보안(Touch ID)·iCloud 동기화 단계에서 사용.
+/// Live 조립은 Devault(App 타겟)에서 `UserAuthenticationService`/`ICloudAccountService`를 wrap.
+@DependencyClient
+public struct OnboardingClient: Sendable {
+
+    /// Touch ID 또는 시스템 암호로 사용자를 인증한다. 실패 시 `UserAuthenticationError`를 throw한다.
+    public var enableTouchID: @Sendable () async throws -> Void
+
+    /// iCloud 계정 상태를 확인하고, 사용 가능하면 동기화 사용 설정을 저장한다.
+    public var enableICloudSync: @Sendable () async -> ICloudAccountStatus = { .couldNotDetermine }
+}
+
+extension OnboardingClient: TestDependencyKey {
+    public static let testValue = OnboardingClient()
+
+    public static let previewValue = OnboardingClient(
+        enableTouchID: { },
+        enableICloudSync: { .available }
+    )
+}
+
+extension DependencyValues {
+    public var onboardingClient: OnboardingClient {
+        get { self[OnboardingClient.self] }
+        set { self[OnboardingClient.self] = newValue }
+    }
+}
