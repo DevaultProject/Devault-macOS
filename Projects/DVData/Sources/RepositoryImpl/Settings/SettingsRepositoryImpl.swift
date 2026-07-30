@@ -7,9 +7,14 @@ import DVDomain
 public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
 
   private let defaults: UserDefaults
+  private let ubiquitousStore: NSUbiquitousKeyValueStore
 
-  public init(defaults: UserDefaults = .standard) {
+  public init(
+    defaults: UserDefaults = .standard,
+    ubiquitousStore: NSUbiquitousKeyValueStore = .default
+  ) {
     self.defaults = defaults
+    self.ubiquitousStore = ubiquitousStore
   }
 
   public func hasCompletedOnboarding() -> Bool {
@@ -20,11 +25,13 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
     defaults.set(true, forKey: .hasCompletedOnboarding)
   }
 
+  // iCloud 동기화 사용 여부는 기기가 아닌 사용자 단위 설정이라 NSUbiquitousKeyValueStore로 관리한다.
+  // (hasCompletedOnboarding은 기기별로 Touch ID 확인을 다시 거쳐야 해서 로컬 UserDefaults 유지)
   public func isICloudSyncEnabled() -> Bool {
-    defaults.bool(forKey: .isICloudSyncEnabled)
+    ubiquitousStore.bool(forKey: .isICloudSyncEnabled)
   }
 
   public func setICloudSyncEnabled(_ enabled: Bool) {
-    defaults.set(enabled, forKey: .isICloudSyncEnabled)
+    ubiquitousStore.set(enabled, forKey: .isICloudSyncEnabled)
   }
 }
