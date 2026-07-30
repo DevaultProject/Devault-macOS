@@ -10,8 +10,27 @@ struct DatabaseURLDetector: SecretDetector {
 
     func detect(_ value: SensitiveString, context: DetectorContext) -> DetectionResult? {
         value.withUnsafeAccess { raw in
-            detectAsURL(raw)
+            if let result = detectAsURL(raw) { return result }
+            return detectAsAzureConnectionString(raw)
         }
+    }
+
+    /// URL 파싱이 실패하는 Azure 스타일 `Key=Value;` 커넥션 문자열 매칭. metadata는 부여하지 않는다.
+    private func detectAsAzureConnectionString(_ raw: String) -> DetectionResult? {
+        if raw.contains("DefaultEndpointsProtocol=") && raw.contains("AccountName=") {
+            return azureResult(service: "Azure Storage", label: "Azure Storage Connection String")
+        }
+        if raw.contains("Endpoint=sb://") {
+            return azureResult(service: "Azure Service Bus", label: "Azure Service Bus Connection String")
+        }
+        if raw.contains("Server=") && raw.contains("Database=") {
+            return azureResult(service: "Azure SQL", label: "Azure SQL Connection String")
+        }
+        return nil
+    }
+
+    private func azureResult(service: String, label: String) -> DetectionResult {
+        DetectionResult(candidates: [.init(service: service, displayLabel: label, confidence: .high)])
     }
 
     private func detectAsURL(_ raw: String) -> DetectionResult? {
