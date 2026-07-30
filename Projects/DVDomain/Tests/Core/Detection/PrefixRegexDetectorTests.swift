@@ -54,10 +54,66 @@ struct PrefixRegexDetectorTests {
         #expect(result?.candidates.first?.service == "Hugging Face")
     }
 
-    @Test("prefix에 매칭 안 되면 nil (Phase A regex 없음)")
+    @Test("매칭되는 prefix · regex rule 없으면 nil")
     func noMatch() {
         let result = sut.detect(.testing("random_gibberish_no_prefix"), context: context)
         #expect(result == nil)
+    }
+
+    // MARK: - 확장 카탈로그 sanity
+
+    @Test("Stripe live · GitHub PAT · Notion secret_ · Google ya29. 등 개별 prefix 매칭")
+    func expandedPrefixCatalog() {
+        let cases: [(String, String)] = [
+            ("sk_live_abc123", "Stripe"),
+            ("ghp_abcdef1234567890", "GitHub"),
+            ("secret_notion_abc", "Notion"),
+            ("ya29.abcXYZ", "Google"),
+            ("xoxb-1-2-3", "Slack"),
+            ("dop_v1_abcdef", "DigitalOcean"),
+            ("NRAK-abcdef1234", "New Relic"),
+            ("shpat_abcdef123", "Shopify"),
+        ]
+        for (raw, expected) in cases {
+            let result = sut.detect(.testing(raw), context: context)
+            #expect(
+                result?.candidates.first?.service == expected,
+                "'\(raw)' should map to \(expected), got \(result?.candidates.first?.service ?? "nil")"
+            )
+        }
+    }
+
+    @Test("AKIA prefix은 minLength 20 미만이면 매칭 안 됨")
+    func awsAccessKeyMinLength() {
+        #expect(sut.detect(.testing("AKIA123"), context: context) == nil)
+        let ok = sut.detect(.testing("AKIA" + String(repeating: "A", count: 16)), context: context)
+        #expect(ok?.candidates.first?.service == "AWS")
+    }
+
+    @Test("HubSpot 토큰은 Airtable로 오탐되지 않는다 (`.` 컨텍스트 요구)")
+    func hubspotNotConfusedWithAirtable() {
+        let result = sut.detect(.testing("pat-na1-xxxxx-yyyy"), context: context)
+        #expect(result?.candidates.map(\.service) == ["HubSpot"])
+    }
+
+    @Test("Airtable 토큰(`.` 포함)은 Airtable로 매칭")
+    func airtableWithDot() {
+        let result = sut.detect(.testing("patAaBbCcDdEe.fghij1234"), context: context)
+        #expect(result?.candidates.first?.service == "Airtable")
+    }
+
+    @Test("Twilio Account SID regex — AC + 32자 hex")
+    func twilioSID() {
+        let raw = "AC" + String(repeating: "a", count: 32)
+        let result = sut.detect(.testing(raw), context: context)
+        #expect(result?.candidates.first?.service == "Twilio")
+    }
+
+    @Test("Sentry DSN regex")
+    func sentryDSN() {
+        let raw = "https://abcdef1234@o12345.ingest.sentry.io/1234567"
+        let result = sut.detect(.testing(raw), context: context)
+        #expect(result?.candidates.first?.service == "Sentry")
     }
 }
 
