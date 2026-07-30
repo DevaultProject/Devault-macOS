@@ -19,4 +19,12 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
   public func setOnboardingCompleted() {
     defaults.set(true, forKey: .hasCompletedOnboarding)
   }
+
+  public func isICloudSyncEnabled() -> Bool {
+    defaults.bool(forKey: .isICloudSyncEnabled)
+  }
+
+  public func setICloudSyncEnabled(_ enabled: Bool) {
+    defaults.set(enabled, forKey: .isICloudSyncEnabled)
+  }
 }
