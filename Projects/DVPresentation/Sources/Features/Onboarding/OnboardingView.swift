@@ -116,9 +116,10 @@ extension OnboardingView {
   // MARK: Shared
 
   private var appIcon: some View {
-    RoundedRectangle(cornerRadius: 20)
-      .fill(Color.dv(.gray800))
-      .frame(width: 80, height: 80)
+    Image.dv(.appIcon)
+      .resizable()
+      .scaledToFit()
+      .frame(width: 80)
   }
 
   private var appIconWithLogoView: some View {
