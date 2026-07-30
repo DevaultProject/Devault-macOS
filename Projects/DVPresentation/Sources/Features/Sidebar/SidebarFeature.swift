@@ -245,6 +245,10 @@ public struct SidebarFeature {
       case .deleteResponse(.success(let id)):
         if state.selection == .project(id: id) {
           state.selection = .filter(.all)
+          return .concatenate(
+            .send(.delegate(.selectionChanged(.filter(.all)))),
+            .send(.task)
+          )
         }
         return .send(.task)
 
