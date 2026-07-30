@@ -25,7 +25,10 @@ let project = Project.project(
                 // 3rd-party dependency
                 .tca(),
             ],
-            settings: .settings(base: ["DEVELOPMENT_TEAM": "UKY6HK6U6Y"])
+            settings: .settings(base: [
+                "DEVELOPMENT_TEAM": "UKY6HK6U6Y",
+                "ASSETCATALOG_COMPILER_APPICON_NAME": "Devault_IC",
+            ])
         ),
     ],
     schemes: [
