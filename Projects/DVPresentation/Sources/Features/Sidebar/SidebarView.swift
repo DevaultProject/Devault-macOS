@@ -41,17 +41,19 @@ extension SidebarView {
     .padding(.horizontal, 12)
   }
 
-  // 임시 로고뷰 입니다.
   private var logoView: some View {
-    HStack {
-      Rectangle()
-        .fill(Color.red)
-        .frame(width: 52, height: 28)
-        .overlay(
-          Text("LOGO")
-            .font(.system(size: 18, weight: .semibold))
-            .foregroundStyle(.black)
-        )
+    HStack(spacing: 4) {
+      Image.dv(.appIcon)
+        .resizable()
+        .scaledToFit()
+        .frame(width: 28)
+        
+      (
+        Text("De").foregroundStyle(Color.dv(.vaultDark))
+        +
+        Text("Vault").foregroundStyle(Color.dv(.vaultGreen))
+      )
+      .font(.dv(.headingXL))
       Spacer()
     }
   }

@@ -48,9 +48,10 @@ extension LockView {
 
   private var appIconWithLogoView: some View {
     VStack(spacing: 20) {
-      RoundedRectangle(cornerRadius: 20)
-        .fill(Color.dv(.gray800))
-        .frame(width: 80, height: 80)
+      Image.dv(.appIcon)
+        .resizable()
+        .scaledToFit()
+        .frame(width: 80)
       (
         Text("De").foregroundStyle(Color.dv(.vaultDark))
         + Text("Vault").foregroundStyle(Color.dv(.vaultGreen))
