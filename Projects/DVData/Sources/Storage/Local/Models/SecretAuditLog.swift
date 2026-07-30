@@ -5,16 +5,16 @@ import SwiftData
 
 extension SwiftDataModel {
     @Model final class SecretAuditLog {
-        var id: UUID
-        var eventType: String
-        var actorContext: String
-        var isSuspicious: Bool
-        var occurredAt: Date
-        
+        var id: UUID = UUID()
+        var eventType: String = ""
+        var actorContext: String = ""
+        var isSuspicious: Bool = false
+        var occurredAt: Date = Date()
+
         // MARK: - Snapshot field
-        var secretSnapshotId: UUID
-        var secretNameSnapshot: String
-        var secretTypeSnapshot: String
+        var secretSnapshotId: UUID = UUID()
+        var secretNameSnapshot: String = ""
+        var secretTypeSnapshot: String = ""
 
         @Relationship
         var secret: Secret?

@@ -5,10 +5,10 @@ import SwiftData
 
 extension SwiftDataModel {
     @Model final class AppAuditLog {
-        var id: UUID
-        var eventType: String
-        var actorContext: String
-        var occurredAt: Date
+        var id: UUID = UUID()
+        var eventType: String = ""
+        var actorContext: String = ""
+        var occurredAt: Date = Date()
 
         init(
             id: UUID = UUID(),

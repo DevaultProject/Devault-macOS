@@ -6,21 +6,21 @@ import Foundation
 
 extension SwiftDataModel {
     @Model final class Secret {
-        var id: UUID
-        var name: String
-        var secretType: String
+        var id: UUID = UUID()
+        var name: String = ""
+        var secretType: String = ""
         var subType: String?
         var service: String?
         var environment: String?
         var expiresAt: Date?
         var memo: String?
-        var liked: Bool
+        var liked: Bool = false
         var deletedAt: Date?
-        var createdAt: Date
-        var updatedAt: Date
+        var createdAt: Date = Date()
+        var updatedAt: Date = Date()
 
         @Relationship(deleteRule: .cascade, inverse: \SwiftDataModel.SecretProjectLink.secret)
-        var projectLinks: [SecretProjectLink]
+        var projectLinks: [SecretProjectLink] = []
 
         @Relationship(deleteRule: .cascade, inverse: \SwiftDataModel.SecretPayload.secret)
         var payload: SecretPayload?
@@ -29,7 +29,7 @@ extension SwiftDataModel {
         var metadata: SecretMetadata?
 
         @Relationship(deleteRule: .nullify, inverse: \SwiftDataModel.SecretAuditLog.secret)
-        var auditLogs: [SecretAuditLog]
+        var auditLogs: [SecretAuditLog] = []
 
         /// `SecretProjectLink`를 통해 연결된 프로젝트 목록을 반환하는 편의 접근자입니다.
         var projects: [Project] {
