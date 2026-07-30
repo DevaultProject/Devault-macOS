@@ -42,4 +42,22 @@ enum DetectionFixture {
     static let postgresURL = "postgres://user:pw@host.example.com:5432/mydb"
     static let neonURL = "postgres://user:pw@ep-cool-name.neon.tech/neondb"
     static let mongoSRV = "mongodb+srv://user:pw@cluster0.abc.mongodb.net/prod"
+
+    /// header/payload를 JSON → base64URL 인코딩해 서명 파트를 임의 문자열로 붙인 fake JWT.
+    static func jwt(
+        header: [String: Any] = ["alg": "HS256", "typ": "JWT"],
+        payload: [String: Any],
+        signature: String = "sig"
+    ) -> String {
+        let hd = try! JSONSerialization.data(withJSONObject: header, options: [.sortedKeys])
+        let pd = try! JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
+        return "\(base64URLEncode(hd)).\(base64URLEncode(pd)).\(signature)"
+    }
+
+    private static func base64URLEncode(_ data: Data) -> String {
+        data.base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
 }
