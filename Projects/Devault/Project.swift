@@ -7,21 +7,25 @@ let project = Project.project(
         .target(
             name: DVModule.Devault.name,
             product: .app,
+            bundleId: "com.devault.app",
             infoPlist: .extendingDefault(with: [
                 "CFBundleDisplayName": .string("Devault"),
+                "NSFaceIDUsageDescription": .string("저장된 시크릿을 안전하게 보호하기 위해 Touch ID를 사용합니다."),
             ]),
             sources: .sources,
-            resources: .default,
+            resources: [.glob(pattern: "Resources/**", excluding: ["Resources/*.entitlements"])],
+            entitlements: .file(path: "Resources/Devault.entitlements"),
             dependencies: [
                 // internal dependency
                 .presentation(),
                 .data(),
                 .domain(),
                 .core(),
-                
+
                 // 3rd-party dependency
                 .tca(),
-            ]
+            ],
+            settings: .settings(base: ["DEVELOPMENT_TEAM": "UKY6HK6U6Y"])
         ),
     ],
     schemes: [
