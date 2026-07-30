@@ -16,7 +16,7 @@ extension SwiftDataModel {
 
         /// `SecretProjectLink`를 통해 연결된 시크릿 목록을 반환하는 편의 접근자입니다.
         var secrets: [Secret] {
-            secretLinks.map(\.secret)
+            secretLinks.compactMap(\.secret)
         }
 
         init(
