@@ -75,7 +75,8 @@ enum BuiltInPrefixRules {
         .init(prefix: "oauth:", service: "Twitch", displayLabel: "Twitch IRC OAuth Token", confidence: .high),
         .init(prefix: "AAAA", minLength: 80,
               service: "Twitter", displayLabel: "Twitter Bearer Token", confidence: .medium),
-        .init(prefix: "EAA", service: "Meta", displayLabel: "Meta Access Token", confidence: .medium),
+        .init(prefix: "EAA", minLength: 50,
+              service: "Meta", displayLabel: "Meta Access Token", confidence: .medium),
     ]
 
     /// 모니터링 · 분석 서비스 prefix (Sentry DSN 등은 `BuiltInRegexRules` 참조).
@@ -95,7 +96,7 @@ enum BuiltInPrefixRules {
         .init(prefix: "lin_api_", service: "Linear", displayLabel: "Linear API Key", confidence: .high),
         .init(prefix: "sbp_", service: "Supabase", displayLabel: "Supabase Token", confidence: .high),
         .init(prefix: "pscale_tkn_", service: "PlanetScale", displayLabel: "PlanetScale Token", confidence: .high),
-        .init(prefix: "pat", requiresContext: ".",
+        .init(prefix: "pat", minLength: 20, requiresContext: ".",
               service: "Airtable", displayLabel: "Airtable Personal Token", confidence: .medium),
     ]
 
@@ -105,9 +106,8 @@ enum BuiltInPrefixRules {
     ]
 
     /// prefix 길이 내림차순으로 정렬한 통합 목록. 짧은 prefix(예: `sk-`)가 긴 prefix(예: `sk-ant-`)보다
-    /// 먼저 매칭돼 오탐하는 것을 막기 위한 순서 보장.
-    static var all: [PrefixRule] {
+    /// 먼저 매칭돼 오탐하는 것을 막기 위한 순서 보장. 한 번만 계산되도록 stored `let`.
+    static let all: [PrefixRule] =
         (ai + payments + devops + cloud + communication + monitoring + saas + oauth)
-            .sorted { $0.prefix.count > $1.prefix.count }
-    }
+        .sorted { $0.prefix.count > $1.prefix.count }
 }

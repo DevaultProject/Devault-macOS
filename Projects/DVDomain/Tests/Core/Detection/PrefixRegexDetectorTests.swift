@@ -115,6 +115,66 @@ struct PrefixRegexDetectorTests {
         let result = sut.detect(.testing(raw), context: context)
         #expect(result?.candidates.first?.service == "Sentry")
     }
+
+    @Test("Twitter Bearer AAAA prefix — 80자 미만이면 매칭 안 됨")
+    func twitterBearerMinLength() {
+        let short = "AAAA" + String(repeating: "x", count: 70)
+        #expect(sut.detect(.testing(short), context: context) == nil)
+        let ok = "AAAA" + String(repeating: "x", count: 76)
+        #expect(sut.detect(.testing(ok), context: context)?.candidates.first?.service == "Twitter")
+    }
+
+    @Test("Meta EAA prefix — 50자 미만이면 매칭 안 됨")
+    func metaMinLength() {
+        #expect(sut.detect(.testing("EAA"), context: context) == nil)
+        #expect(sut.detect(.testing("EAAshort"), context: context) == nil)
+        let ok = "EAA" + String(repeating: "x", count: 47)
+        #expect(sut.detect(.testing(ok), context: context)?.candidates.first?.service == "Meta")
+    }
+
+    @Test("Airtable — pat 시작이라도 20자 미만이면 오탐 없음 (예: `patient.txt`)")
+    func airtableMinLengthRejectsFalsePositive() {
+        #expect(sut.detect(.testing("patient.txt"), context: context) == nil)
+        #expect(sut.detect(.testing("pat.short"), context: context) == nil)
+    }
+
+    @Test("Discord regex — JSON blob 안 embedded substring은 wholeMatch로 걸러진다")
+    func discordSubstringNotFalsePositive() {
+        let embedded = #"{"token": "MTk4NjIyNDgzNDcxOTI1MjQ4.abcdef.abc123def456ghi789jkl0mnop"}"#
+        let result = sut.detect(.testing(embedded), context: context)
+        #expect(result?.candidates.first?.service != "Discord")
+    }
+
+    @Test("SendGrid SG. · Doppler dp.st. 개별 prefix")
+    func sendGridAndDoppler() {
+        #expect(sut.detect(.testing("SG.abc.def"), context: context)?.candidates.first?.service == "SendGrid")
+        #expect(sut.detect(.testing("dp.st.abcdef1234"), context: context)?.candidates.first?.service == "Doppler")
+    }
+
+    @Test("HashiCorp Vault s. — 24자 미만 미매칭, 24자 이상 매칭")
+    func hashiCorpBoundary() {
+        #expect(sut.detect(.testing("s.short"), context: context) == nil)
+        let ok = "s." + String(repeating: "a", count: 22) // total 24
+        #expect(sut.detect(.testing(ok), context: context)?.candidates.first?.service == "HashiCorp Vault")
+    }
+
+    @Test("Mailgun regex — key- + 32자 hex")
+    func mailgunRegex() {
+        let raw = "key-" + String(repeating: "a", count: 32)
+        #expect(sut.detect(.testing(raw), context: context)?.candidates.first?.service == "Mailgun")
+    }
+
+    @Test("Mailchimp regex — {32자}-us{숫자}")
+    func mailchimpRegex() {
+        let raw = String(repeating: "a", count: 32) + "-us1"
+        #expect(sut.detect(.testing(raw), context: context)?.candidates.first?.service == "Mailchimp")
+    }
+
+    @Test("Telegram regex — {숫자}:{35자}")
+    func telegramRegex() {
+        let raw = "123456789:" + String(repeating: "A", count: 35)
+        #expect(sut.detect(.testing(raw), context: context)?.candidates.first?.service == "Telegram")
+    }
 }
 
 private struct StubDetectorContext: DetectorContext {

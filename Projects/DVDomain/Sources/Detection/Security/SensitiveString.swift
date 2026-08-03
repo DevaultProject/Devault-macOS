@@ -47,8 +47,11 @@ final class SensitiveBox: @unchecked Sendable {
     init(bytes: [UInt8]) { self.bytes = bytes }
 
     deinit {
-        for i in 0..<bytes.count { bytes[i] = 0 }
-        _ = bytes.withUnsafeBufferPointer { $0 }
+        // `withUnsafeMutableBufferPointer` 안에서의 쓰기는 pointer 경유라 옵티마이저가 dead store로 제거하기 어렵다.
+        // Swift/LLVM 관점에서 완벽한 secure zero는 `memset_s` 등 C API가 필요하지만 DVDomain 스코프 밖.
+        bytes.withUnsafeMutableBufferPointer { buffer in
+            for i in buffer.indices { buffer[i] = 0 }
+        }
     }
 
     static func constantTimeEqual(_ a: [UInt8], _ b: [UInt8]) -> Bool {
