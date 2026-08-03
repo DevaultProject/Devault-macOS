@@ -147,28 +147,14 @@ public struct OnboardingFeature {
 private extension OnboardingFeature {
 
   func makeTouchIDFailedAlert(_ error: UserAuthenticationError) -> AlertState<Action.Alert> {
-    let message: String
-    switch error {
-    case .unavailable:
-      message = "시스템 설정에서 로그인 암호가 설정되어 있는지 확인해주세요."
-    case .cancelled:
-      message = "Touch ID 사용을 원하시면 다시 시도해주세요."
-    case .failed:
-      message = "다시 시도해주세요."
-    }
-    return AlertState {
-      TextState("인증하지 못했어요")
-    } actions: {
-      ButtonState(role: .cancel) { TextState("확인") }
-    } message: {
-      TextState(message)
-    }
+    makeUserAuthenticationFailedAlert(title: "인증하지 못했어요", error: error)
   }
 
   func makeICloudSyncUnavailableAlert(_ status: ICloudAccountStatus) -> AlertState<Action.Alert> {
     let message: String
     switch status {
     case .available:
+      assertionFailure("iCloudSyncStatusResponse가 이미 .available을 걸러내므로 도달 불가")
       message = "다시 시도해주세요."
     case .noAccount:
       message = "설정 앱에서 iCloud 로그인 후 다시 시도해주세요."

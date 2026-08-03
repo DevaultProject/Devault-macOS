@@ -95,21 +95,6 @@ public struct LockFeature {
 private extension LockFeature {
 
   func makeUnlockFailedAlert(_ error: UserAuthenticationError) -> AlertState<Action.Alert> {
-    let message: String
-    switch error {
-    case .unavailable:
-      message = "시스템 설정에서 로그인 암호가 설정되어 있는지 확인해주세요."
-    case .cancelled:
-      message = "다시 시도해주세요."
-    case .failed:
-      message = "다시 시도해주세요."
-    }
-    return AlertState {
-      TextState("잠금을 해제하지 못했어요")
-    } actions: {
-      ButtonState(role: .cancel) { TextState("확인") }
-    } message: {
-      TextState(message)
-    }
+    makeUserAuthenticationFailedAlert(title: "잠금을 해제하지 못했어요", error: error)
   }
 }
