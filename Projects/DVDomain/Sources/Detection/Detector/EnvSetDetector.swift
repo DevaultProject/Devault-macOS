@@ -47,6 +47,7 @@ struct EnvSetDetector: SecretDetector {
         return key.unicodeScalars.allSatisfy { allowed.contains($0) }
     }
 
+    /// 앞뒤 짝이 맞는 `"` 또는 `'`만 벗겨낸다. 내부에 escape된 따옴표(`\"`)는 별도 처리 없이 그대로 남긴다.
     private func stripQuotes(_ value: String) -> String {
         guard value.count >= 2 else { return value }
         let first = value.first!

@@ -63,6 +63,29 @@ struct JWTDetectorTests {
         #expect(result == nil)
     }
 
+    @Test("payload가 array이면 nil (dict 아님)")
+    func rejectsArrayPayload() {
+        let hd = try! JSONSerialization.data(withJSONObject: ["alg": "HS256"], options: [.sortedKeys])
+        let pd = try! JSONSerialization.data(withJSONObject: [1, 2, 3])
+        let header = hd.base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+        let payload = pd.base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+        let result = sut.detect(.testing("\(header).\(payload).sig"), context: context)
+        #expect(result == nil)
+    }
+
+    @Test("base64URL 알파벳 밖 문자 → nil (Base64URL이 조기 거절)")
+    func rejectsInvalidAlphabet() {
+        // `+`, `/`는 표준 base64이지 base64URL이 아님
+        let result = sut.detect(.testing("eyJ+.eyJ/.sig"), context: context)
+        #expect(result == nil)
+    }
+
     @Test("optional claim 없으면 해당 필드도 nil")
     func absentClaimsAreNil() {
         let raw = DetectionFixture.jwt(header: ["alg": "HS256"], payload: [:])
