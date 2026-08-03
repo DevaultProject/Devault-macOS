@@ -110,8 +110,8 @@ private extension SecretClient {
   }
 }
 
-public extension DependencyValues {
-  var secretClient: SecretClient {
+extension DependencyValues {
+  public var secretClient: SecretClient {
     get { self[SecretClient.self] }
     set { self[SecretClient.self] = newValue }
   }

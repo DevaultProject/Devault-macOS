@@ -2,8 +2,8 @@
 
 import SwiftUI
 
-public extension Image {
-    static func dv(_ token: DVImage) -> Image {
+extension Image {
+    public static func dv(_ token: DVImage) -> Image {
         token.image
     }
 }

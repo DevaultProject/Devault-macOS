@@ -17,8 +17,8 @@ import SwiftUI
 /// ```
 ///
 /// 패널 바깥을 클릭하면 자동으로 닫힌다(`isPresented`를 `false`로 되돌림).
-public extension View {
-    func floatingPanel<PanelContent: View>(
+extension View {
+    public func floatingPanel<PanelContent: View>(
         isPresented: Binding<Bool>,
         @ViewBuilder content: @escaping () -> PanelContent
     ) -> some View {

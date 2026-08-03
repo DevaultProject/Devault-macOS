@@ -28,8 +28,8 @@ public struct SecretQuery: Equatable, Sendable {
     }
 }
 
-public extension SecretQuery {
-    enum Collection: Equatable, Sendable {
+extension SecretQuery {
+    public enum Collection: Equatable, Sendable {
         case all
         case liked
         case expired(referenceDate: Date)
@@ -54,7 +54,7 @@ public extension SecretQuery {
         }
     }
 
-    enum Sort: Equatable, Sendable {
+    public enum Sort: Equatable, Sendable {
         case recentlyAdded
         case oldestFirst
         case expiringSoon
