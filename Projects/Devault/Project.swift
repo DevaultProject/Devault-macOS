@@ -35,7 +35,14 @@ let project = Project.project(
         .scheme(
             name: DVModule.Devault.name,
             buildAction: .buildAction(targets: [.target(DVModule.Devault.name)]),
-            runAction: .runAction(executable: .target(DVModule.Devault.name))
+            runAction: .runAction(
+                executable: .target(DVModule.Devault.name),
+                arguments: .arguments(
+                    launchArguments: [
+                        .launchArgument(name: "-com.apple.CoreData.CloudKitDebug 1", isEnabled: true),
+                    ]
+                )
+            )
         ),
     ]
 )
