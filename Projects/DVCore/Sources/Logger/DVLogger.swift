@@ -52,15 +52,15 @@ public protocol DVLogger {
     static var defaultCategory: LogCategory { get }
 }
 
-public extension DVLogger {
-    static var defaultCategory: LogCategory { .general }
+extension DVLogger {
+    public static var defaultCategory: LogCategory { .general }
 }
 
 // MARK: - Level Methods
 
-public extension DVLogger {
+extension DVLogger {
     /// 상세 디버그 로그. Debug 빌드 전용.
-    static func debug(_ message: @autoclosure () -> String, category: LogCategory? = nil,
+    public static func debug(_ message: @autoclosure () -> String, category: LogCategory? = nil,
                       file: String = #fileID, function: String = #function, line: Int = #line) {
         #if DEBUG
         emit(.debug, "⚪️", message(), category ?? defaultCategory, file, function, line)
@@ -68,7 +68,7 @@ public extension DVLogger {
     }
 
     /// 일반 정보 로그. Debug 빌드 전용.
-    static func info(_ message: @autoclosure () -> String, category: LogCategory? = nil,
+    public static func info(_ message: @autoclosure () -> String, category: LogCategory? = nil,
                      file: String = #fileID, function: String = #function, line: Int = #line) {
         #if DEBUG
         emit(.info, "🔵", message(), category ?? defaultCategory, file, function, line)
@@ -76,7 +76,7 @@ public extension DVLogger {
     }
 
     /// 경고 로그. Debug 빌드 전용.
-    static func warn(_ message: @autoclosure () -> String, category: LogCategory? = nil,
+    public static func warn(_ message: @autoclosure () -> String, category: LogCategory? = nil,
                      file: String = #fileID, function: String = #function, line: Int = #line) {
         #if DEBUG
         emit(.default, "🟡", message(), category ?? defaultCategory, file, function, line)
@@ -84,13 +84,13 @@ public extension DVLogger {
     }
 
     /// 에러 로그. 항상 기록되며 Release 에선 마스킹된다.
-    static func error(_ message: @autoclosure () -> String, category: LogCategory? = nil,
+    public static func error(_ message: @autoclosure () -> String, category: LogCategory? = nil,
                       file: String = #fileID, function: String = #function, line: Int = #line) {
         emit(.error, "🔴", message(), category ?? defaultCategory, file, function, line)
     }
 
     /// 치명적 에러 로그. 항상 기록되며 Release 에선 마스킹된다.
-    static func critical(_ message: @autoclosure () -> String, category: LogCategory? = nil,
+    public static func critical(_ message: @autoclosure () -> String, category: LogCategory? = nil,
                          file: String = #fileID, function: String = #function, line: Int = #line) {
         emit(.fault, "🟣", message(), category ?? defaultCategory, file, function, line)
     }
@@ -98,10 +98,10 @@ public extension DVLogger {
 
 // MARK: - measure
 
-public extension DVLogger {
+extension DVLogger {
     /// 동기 블록의 실행 시간을 `⏱ … - 12.34ms` 로 로깅한다. Release 에선 측정 없이 실행만 한다.
     @discardableResult
-    static func measure<T>(_ label: String, category: LogCategory? = nil,
+    public static func measure<T>(_ label: String, category: LogCategory? = nil,
                            file: String = #fileID, function: String = #function, line: Int = #line,
                            _ work: () throws -> T) rethrows -> T {
         #if DEBUG
@@ -117,7 +117,7 @@ public extension DVLogger {
 
     /// ``measure(_:category:file:function:line:_:)`` 의 async 버전.
     @discardableResult
-    static func measure<T>(_ label: String, category: LogCategory? = nil,
+    public static func measure<T>(_ label: String, category: LogCategory? = nil,
                            file: String = #fileID, function: String = #function, line: Int = #line,
                            _ work: () async throws -> T) async rethrows -> T {
         #if DEBUG

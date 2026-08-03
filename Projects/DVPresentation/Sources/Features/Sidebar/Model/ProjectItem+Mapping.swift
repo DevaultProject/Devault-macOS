@@ -2,8 +2,8 @@
 
 import DVDomain
 
-public extension ProjectItem {
-  init(_ project: Project) {
+extension ProjectItem {
+  public init(_ project: Project) {
     self.init(id: project.id, name: project.name)
   }
 }

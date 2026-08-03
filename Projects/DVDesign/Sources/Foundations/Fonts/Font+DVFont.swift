@@ -2,8 +2,8 @@
 
 import SwiftUI
 
-public extension Font {
-    static func dv(_ token: DVFont) -> Font {
+extension Font {
+    public static func dv(_ token: DVFont) -> Font {
         token.font
     }
 }

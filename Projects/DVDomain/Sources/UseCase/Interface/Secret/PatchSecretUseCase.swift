@@ -66,10 +66,10 @@ public protocol PatchSecretUseCase: Sendable {
     ) async throws -> Secret
 }
 
-public extension PatchSecretUseCase {
+extension PatchSecretUseCase {
     /// `update(id:patch:projectIDs: .unchanged)`의 편의 메서드.
     /// liked 토글, metadata 제거 등 Project 연결 변경이 없는 단순 필드 수정에 사용한다.
-    func updateSimple(id: UUID, with patch: SecretPatch) async throws -> Secret {
+    public func updateSimple(id: UUID, with patch: SecretPatch) async throws -> Secret {
         try await update(id: id, patch: patch, projectIDs: .unchanged)
     }
 }

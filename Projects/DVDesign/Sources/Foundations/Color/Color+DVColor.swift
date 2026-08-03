@@ -2,8 +2,8 @@
 
 import SwiftUI
 
-public extension Color {
-    static func dv(_ token: DVColor) -> Color {
+extension Color {
+    public static func dv(_ token: DVColor) -> Color {
         token.color
     }
 }
