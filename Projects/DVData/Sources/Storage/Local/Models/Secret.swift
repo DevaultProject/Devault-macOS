@@ -20,7 +20,7 @@ extension SwiftDataModel {
         var updatedAt: Date = Date()
 
         @Relationship(deleteRule: .cascade, inverse: \SwiftDataModel.SecretProjectLink.secret)
-        var projectLinks: [SecretProjectLink] = []
+        var projectLinks: [SecretProjectLink]? = []
 
         @Relationship(deleteRule: .cascade, inverse: \SwiftDataModel.SecretPayload.secret)
         var payload: SecretPayload?
@@ -29,11 +29,11 @@ extension SwiftDataModel {
         var metadata: SecretMetadata?
 
         @Relationship(deleteRule: .nullify, inverse: \SwiftDataModel.SecretAuditLog.secret)
-        var auditLogs: [SecretAuditLog] = []
+        var auditLogs: [SecretAuditLog]? = []
 
         /// `SecretProjectLink`를 통해 연결된 프로젝트 목록을 반환하는 편의 접근자입니다.
         var projects: [Project] {
-            projectLinks.compactMap(\.project)
+            (projectLinks ?? []).compactMap(\.project)
         }
 
         init(

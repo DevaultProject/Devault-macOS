@@ -12,11 +12,11 @@ extension SwiftDataModel {
         var updatedAt: Date = Date()
 
         @Relationship(deleteRule: .cascade, inverse: \SwiftDataModel.SecretProjectLink.project)
-        var secretLinks: [SecretProjectLink] = []
+        var secretLinks: [SecretProjectLink]? = []
 
         /// `SecretProjectLink`를 통해 연결된 시크릿 목록을 반환하는 편의 접근자입니다.
         var secrets: [Secret] {
-            secretLinks.compactMap(\.secret)
+            (secretLinks ?? []).compactMap(\.secret)
         }
 
         init(
