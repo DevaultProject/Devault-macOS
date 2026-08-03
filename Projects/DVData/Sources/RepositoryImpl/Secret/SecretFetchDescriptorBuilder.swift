@@ -118,9 +118,9 @@ enum SecretFetchDescriptorBuilder {
         case let .project(projectID):
             return #Predicate<SwiftDataModel.Secret> { secret in
                 secret.deletedAt == nil &&
-                secret.projectLinks.contains { link in
-                    link.project != nil && link.project!.id == projectID
-                } &&
+                secret.projectLinks?.contains { link in
+                    link.project?.id == projectID
+                } == true &&
                 (!hasSecretType || secret.secretType == secretType) &&
                 (!hasService || secret.service == service) &&
                 (!hasEnvironment || secret.environment == environment)
