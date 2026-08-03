@@ -78,7 +78,7 @@ public actor SecretRepositoryImpl: SecretRepository {
         do {
             let descriptor = SecretFetchDescriptorBuilder.make(from: query)
             let localSecrets = try modelContext.fetch(descriptor)
-            let domainSecrets = try localSecrets.map { try $0.toDomain() }
+            let domainSecrets = localSecrets.compactMap { try? $0.toDomain() }
             return InMemorySecretQueryFilter.apply(query, to: domainSecrets)
         } catch let error as SecretRepositoryError {
             throw error
@@ -282,7 +282,7 @@ public actor SecretRepositoryImpl: SecretRepository {
 
             apply(patch, to: localSecret)
 
-            let currentIDs = Set(localSecret.projects.map(\.id))
+            let currentIDs = Set((localSecret.projectLinks ?? []).map(\.projectID))
             let desiredIDs = Set(projectIDs)
 
             for projectID in desiredIDs.subtracting(currentIDs) {
