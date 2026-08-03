@@ -1,5 +1,6 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import DVCore
 import SwiftData
 
 public final class LocalStorage {
@@ -12,7 +13,7 @@ public final class LocalStorage {
     public static func makeDefault(iCloudSyncEnabled: Bool) throws -> LocalStorage {
         let configuration = ModelConfiguration(
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: iCloudSyncEnabled ? .private("iCloud.com.devault.app") : .none
+            cloudKitDatabase: iCloudSyncEnabled ? .private(ICloudContainer.identifier) : .none
         )
         let modelContainer = try ModelContainer(
             for: Schema.appSchema,
