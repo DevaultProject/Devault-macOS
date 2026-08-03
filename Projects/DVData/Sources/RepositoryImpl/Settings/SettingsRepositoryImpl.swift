@@ -26,12 +26,12 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
     defaults.set(true, forKey: .hasCompletedOnboarding)
   }
 
-  // iCloud 동기화 사용 여부: 사용자 단위 설정이므로 NSUbiquitousKeyValueStore로 관리
+  // iCloud 동기화 사용 여부는 독립적으로 켜야 하므로 로컬 UserDefaults로 관리
   public func isICloudSyncEnabled() -> Bool {
-    ubiquitousStore.bool(forKey: .isICloudSyncEnabled)
+    defaults.bool(forKey: .isICloudSyncEnabled)
   }
 
   public func setICloudSyncEnabled(_ enabled: Bool) {
-    ubiquitousStore.set(enabled, forKey: .isICloudSyncEnabled)
+    defaults.set(enabled, forKey: .isICloudSyncEnabled)
   }
 }

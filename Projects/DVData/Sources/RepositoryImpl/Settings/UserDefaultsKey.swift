@@ -4,6 +4,7 @@ import Foundation
 
 enum UserDefaultsKey: String {
   case hasCompletedOnboarding
+  case isICloudSyncEnabled
 }
 
 extension UserDefaults {
