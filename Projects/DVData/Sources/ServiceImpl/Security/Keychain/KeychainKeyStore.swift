@@ -7,18 +7,18 @@ import Security
 
 struct KeychainKeyStore: Sendable {
     private let service: String
-    
+
     /// Keychain generic password item을 구분할 service namespace를 설정한다.
     init(service: String) {
         self.service = service
     }
-    
+
     /// tag에 해당하는 symmetric key를 조회하고, 없으면 새 key를 생성해 Keychain에 저장한다.
     func getOrCreateSymmetricKey(tag: String) throws -> SymmetricKey {
         if let existing = try loadKeyData(tag: tag) {
             return SymmetricKey(data: existing)
         }
-        
+
         let generated = try generateKeyData()
         let resolved = try saveOrLoadExistingKeyData(generated, tag: tag)
         return SymmetricKey(data: resolved)
@@ -29,7 +29,7 @@ struct KeychainKeyStore: Sendable {
         guard let data = try loadKeyData(tag: tag) else {
             throw SecretCryptoError.keyUnavailable
         }
-        
+
         return SymmetricKey(data: data)
     }
 }
@@ -66,7 +66,7 @@ extension KeychainKeyStore {
 
         let attributes: [CFString: Any] = [
             kSecValueData: data,
-            kSecAttrAccessible: kSecAttrAccessibleWhenUnlocked,
+            kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock,
             kSecAttrSynchronizable: true,
         ]
 
@@ -95,6 +95,7 @@ extension KeychainKeyStore {
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
             kSecAttrAccount: tag,
+            kSecUseDataProtectionKeychain: true,
         ]
     }
 
