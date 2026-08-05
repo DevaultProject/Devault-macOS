@@ -33,7 +33,7 @@ public struct DVTitleBar: View {
             titleRow
             searchField
         }
-        .frame(width: 280)
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -72,8 +72,10 @@ extension DVTitleBar {
                 .dvFont(.bodyMD)
                 .foregroundStyle(Color.dv(.gray900))
                 .textFieldStyle(.plain)
+                .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 10)
+        .frame(maxWidth: .infinity)
         .frame(height: 36)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 18))

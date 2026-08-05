@@ -20,7 +20,7 @@ struct SecretListView: View {
 
   var body: some View {
     content
-      .task { store.send(.task) }
+      .task(id: store.collection) { store.send(.task) }
       .sheet(
         item: $store.scope(state: \.destination?.addToProject, action: \.destination.addToProject)
       ) { addToProjectStore in
@@ -189,7 +189,7 @@ extension SecretListView {
       Image(systemName: "exclamationmark.triangle")
         .dvFont(.bodyLG)
         .foregroundStyle(Color.dv(.gray400))
-      Text("목록을 불러오지 못했어요")
+      Text("Failed to load the list")
         .dvFont(.bodyMD)
         .foregroundStyle(Color.dv(.gray500))
       DVButton(titleText: "Retry", style: .secondary) {
@@ -203,7 +203,7 @@ extension SecretListView {
   private var emptyView: some View {
     VStack(spacing: 12) {
       Spacer()
-      Text("시크릿이 없어요")
+      Text("No secrets")
         .dvFont(.bodyMD)
         .foregroundStyle(Color.dv(.gray400))
       Spacer()
