@@ -100,6 +100,7 @@ struct CreateSecretFeature {
 
     @Dependency(\.secretManagementClient) var secretManagementClient
     @Dependency(\.projectClient) var projectClient
+    @Dependency(\.date.now) var now
 
     // MARK: - Init
 
@@ -181,7 +182,7 @@ struct CreateSecretFeature {
 
             case .createProject(.presented(.delegate(.projectCreated(let projectItem)))):
                 state.availableProjects.append(
-                    Project(id: projectItem.id, name: projectItem.name, createdAt: .now, updatedAt: .now)
+                    Project(id: projectItem.id, name: projectItem.name, createdAt: now, updatedAt: now)
                 )
                 return .none
 
