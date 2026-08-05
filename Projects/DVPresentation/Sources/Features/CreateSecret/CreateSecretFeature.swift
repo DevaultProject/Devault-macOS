@@ -179,8 +179,10 @@ struct CreateSecretFeature {
             case .alert:
                 return .none
 
-            case .createProject(.presented(.delegate(.projectCreated(let project)))):
-                state.availableProjects.append(project)
+            case .createProject(.presented(.delegate(.projectCreated(let projectItem)))):
+                state.availableProjects.append(
+                    Project(id: projectItem.id, name: projectItem.name, createdAt: .now, updatedAt: .now)
+                )
                 return .none
 
             case .createProject:

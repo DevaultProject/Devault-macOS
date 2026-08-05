@@ -64,6 +64,7 @@ extension MainView {
   private var contentColumn: some View {
     SecretListView(store: store.scope(state: \.secretList, action: \.secretList))
       .navigationTitle("")
+      .navigationSplitViewColumnWidth(min: 300, ideal: 320, max: 350)
   }
 
   private var detailColumn: some View {

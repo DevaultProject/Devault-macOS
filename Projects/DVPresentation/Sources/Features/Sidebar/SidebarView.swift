@@ -111,7 +111,7 @@ extension SidebarView {
     case .loaded:
       projectList
     case .failed:
-      Text("불러오지 못했어요")
+      Text("Failed to load")
         .dvFont(.bodyMD)
         .foregroundStyle(Color.dv(.danger))
         .frame(maxWidth: .infinity)
