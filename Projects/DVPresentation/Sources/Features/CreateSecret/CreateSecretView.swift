@@ -24,6 +24,7 @@ struct CreateSecretView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
             .environment(\.formLayoutMode, FormLayoutMode.mode(for: proxy.size.width))
+            .environment(\.isProjectLoading, store.isLoadingProjects)
         }
         // Min: apiKeyToken 3-radio 헤더의 자연 폭(~460pt)이 지배 제약. padding 40 + 여유 포함.
         .frame(minWidth: 520, minHeight: 400)
@@ -56,6 +57,17 @@ extension CreateSecretView {
             typeSpecificSection
         }
         .scrollIndicators(.hidden)
+        .disabled(store.isSaving)
+        .overlay {
+            if store.isSaving {
+                ZStack {
+                    Color.black.opacity(0.08)
+                    ProgressView()
+                        .controlSize(.regular)
+                }
+                .allowsHitTesting(true)
+            }
+        }
     }
 
     @ViewBuilder

@@ -55,4 +55,7 @@ extension EnvironmentValues {
     /// 현재 폼 레이아웃 모드. 기본 `.dual`.
     /// `CreateSecretView`가 `GeometryReader`로 계산해 명시적으로 주입한다.
     @Entry var formLayoutMode: FormLayoutMode = .dual
+
+    /// 프로젝트 목록을 로드 중인지 여부. `CreateSecretView`가 주입하면 `ProjectFieldView`가 소비.
+    @Entry var isProjectLoading: Bool = false
 }

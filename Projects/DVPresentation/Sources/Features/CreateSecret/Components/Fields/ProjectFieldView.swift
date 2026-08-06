@@ -18,6 +18,7 @@ struct ProjectFieldView: View {
     var sizeMode: FormSlotSize = .fullWidth
 
     @Environment(\.formLayoutMode) private var mode
+    @Environment(\.isProjectLoading) private var isProjectLoading
 
     private var size: DVComponentSize {
         switch sizeMode {
@@ -27,18 +28,28 @@ struct ProjectFieldView: View {
     }
 
     var body: some View {
-        DVLabeledField(.module("Project"), size: size) {
-            DVMultiSelectDropdown(
-                .module("Select Project"),
-                items: availableProjects,
-                selection: setBinding,
-                label: \.name,
-                size: size,
-                onCreate: onCreateProject,
-                createLabel: .module("Add new project"),
-                emptyMessage: .module("No projects yet"),
-                groupsSelectedAtTop: true
-            )
+        if isProjectLoading {
+            DVLabeledField(.module("Project"), size: size) {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Spacer()
+                }
+            }
+        } else {
+            DVLabeledField(.module("Project"), size: size) {
+                DVMultiSelectDropdown(
+                    .module("Select Project"),
+                    items: availableProjects,
+                    selection: setBinding,
+                    label: \.name,
+                    size: size,
+                    onCreate: onCreateProject,
+                    createLabel: .module("Add new project"),
+                    emptyMessage: .module("No projects yet"),
+                    groupsSelectedAtTop: true
+                )
+            }
         }
     }
 
