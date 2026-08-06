@@ -33,7 +33,16 @@ extension MainView {
 
   @ViewBuilder
   private var content: some View {
-    if let selectStore = store.scope(state: \.selectSecretType, action: \.selectSecretType) {
+    if let createSecretStore = store.scope(state: \.createSecret, action: \.createSecret) {
+      // 사이드바 + 시크릿 생성 폼 (2컬럼)
+      NavigationSplitView {
+        sidebarColumn
+      } detail: {
+        CreateSecretView(store: createSecretStore)
+      }
+      .navigationSplitViewStyle(.balanced)
+      .toolbarBackground(.hidden, for: .windowToolbar)
+    } else if let selectStore = store.scope(state: \.selectSecretType, action: \.selectSecretType) {
       // 사이드바 + 타입 선택 그리드 (2컬럼)
       NavigationSplitView {
         sidebarColumn

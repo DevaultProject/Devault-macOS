@@ -195,6 +195,14 @@ struct SidebarFeatureTests {
     state.projectsState = .loaded([item])
     state.selection = .project(id: item.id)
     state.deletingProjectID = item.id
+    state.alert = AlertState {
+      TextState("'\(item.name)' 프로젝트를 삭제할까요?")
+    } actions: {
+      ButtonState(role: .destructive, action: .confirmDelete) { TextState("삭제") }
+      ButtonState(role: .cancel) { TextState("취소") }
+    } message: {
+      TextState("프로젝트에 속한 Secret과의 연결이 해제됩니다. Secret 자체는 삭제되지 않습니다.")
+    }
 
     let store = TestStore(initialState: state) {
       SidebarFeature()
@@ -205,10 +213,12 @@ struct SidebarFeatureTests {
 
     await store.send(.alert(.presented(.confirmDelete))) {
       $0.deletingProjectID = nil
+      $0.alert = nil
     }
     await store.receive(.deleteResponse(.success(item.id))) {
       $0.selection = .filter(.all)
     }
+    await store.receive(.delegate(.selectionChanged(.filter(.all))))
     await store.receive(.task) {
       $0.projectsState = .loading
     }

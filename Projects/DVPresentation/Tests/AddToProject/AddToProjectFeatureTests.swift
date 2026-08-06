@@ -17,7 +17,7 @@ struct AddToProjectFeatureTests {
         let store = TestStore(initialState: AddToProjectFeature.State(secretID: UUID())) {
             AddToProjectFeature()
         } withDependencies: {
-            $0.secretClient.fetchProjects = { [project] }
+            $0.sidebarClient.fetchProjects = { [project] }
         }
 
         await store.send(.task) {
@@ -144,7 +144,7 @@ struct AddToProjectFeatureTests {
 
     // MARK: - Helpers
 
-    private func makeProject(name: String) -> Project {
-        Project(id: UUID(), name: name, createdAt: .now, updatedAt: .now)
+    private func makeProject(name: String) -> ProjectItem {
+        ProjectItem(id: UUID(), name: name)
     }
 }

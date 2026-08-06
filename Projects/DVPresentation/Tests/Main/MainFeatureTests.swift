@@ -40,6 +40,7 @@ struct MainFeatureTests {
     var initial = MainFeature.State()
     initial.selectSecretType = .init()
     initial.sidebar.isCreatingSecret = true
+    initial.sidebar.selection = .filter(.starred)
 
     let store = TestStore(initialState: initial) {
       MainFeature()
@@ -50,7 +51,6 @@ struct MainFeatureTests {
     }
     await store.receive(.sidebar(.delegate(.selectionChanged(.filter(.all))))) {
       $0.selectSecretType = nil
-      $0.secretList = SecretListFeature.State(collection: .all)
     }
     await store.receive(.sidebar(.setCreatingSecret(false))) {
       $0.sidebar.isCreatingSecret = false
