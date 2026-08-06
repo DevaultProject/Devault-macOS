@@ -11,9 +11,9 @@ import Testing
 @MainActor
 struct CreateSecretFeatureTests {
 
-    // MARK: - task
+    // MARK: - task / isLoadingProjects
 
-    @Test("task 성공: availableProjects가 로드된 목록으로 채워짐")
+    @Test("task 성공: isLoadingProjects true → false, availableProjects 채워짐")
     func task_success() async {
         let projects = [
             Project(id: UUID(), name: "Backend",  createdAt: Date(), updatedAt: Date()),
@@ -26,14 +26,37 @@ struct CreateSecretFeatureTests {
             $0.projectClient.fetchProjects = { projects }
         }
 
-        await store.send(.task)
+        await store.send(.task) {
+            $0.isLoadingProjects = true
+        }
         await store.receive(.projectsResponse(.success(projects))) {
+            $0.isLoadingProjects = false
             $0.availableProjects = projects
         }
     }
 
-    @Test("task 실패: availableProjects는 빈 배열 유지 + projectLoadFailed alert 노출")
+    @Test("task 실패: isLoadingProjects false 해제 + projectLoadFailed alert 노출")
     func task_failure() async {
+        let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
+            CreateSecretFeature()
+        } withDependencies: {
+            $0.projectClient.fetchProjects = {
+                throw ProjectUseCaseError.repositoryFailure(.storageUnavailable)
+            }
+        }
+
+        await store.send(.task) {
+            $0.isLoadingProjects = true
+        }
+        await store.receive(.projectsResponse(.failure(.repositoryFailure(.storageUnavailable)))) {
+            $0.isLoadingProjects = false
+            $0.availableProjects = []
+            $0.alert = .projectLoadFailed(ProjectLoadError.map(.repositoryFailure(.storageUnavailable)))
+        }
+    }
+
+    @Test("task 실패(.unexpected): alert 노출")
+    func task_failure_unexpected() async {
         let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
             CreateSecretFeature()
         } withDependencies: {
@@ -42,18 +65,23 @@ struct CreateSecretFeatureTests {
             }
         }
 
-        await store.send(.task)
+        await store.send(.task) {
+            $0.isLoadingProjects = true
+        }
         await store.receive(.projectsResponse(.failure(.unexpected))) {
-            $0.alert = .projectLoadFailed
+            $0.isLoadingProjects = false
+            $0.alert = .projectLoadFailed(.unexpected)
         }
     }
 
     // MARK: - selectedSubType binding
 
-    @Test("selectedSubType 변경: content가 새 case로 교체되고 validationErrors 초기화")
-    func binding_selectedSubType_swapsContentAndClearsErrors() async {
+    @Test("selectedSubType 변경: content 교체 + validationErrors / detection state 초기화")
+    func binding_selectedSubType_swapsContentAndClearsState() async {
         var initialState = CreateSecretFeature.State(secretType: .oauth)
         initialState.validationErrors = [.name: "Required"]
+        initialState.serviceCandidates = ["GitHub"]
+        initialState.detectedServices = [.clientSecret: "GitHub"]
         initialState.meta.content = .oauthClient(OAuthClientFields(clientId: "prev-id"))
 
         let store = TestStore(initialState: initialState) {
@@ -64,6 +92,64 @@ struct CreateSecretFeatureTests {
             $0.selectedSubType = .serviceAccount
             $0.meta.content = .default(for: .oauth, subType: .serviceAccount)
             $0.validationErrors = [:]
+            $0.serviceCandidates = []
+            $0.detectedServices = [:]
+        }
+    }
+
+    // MARK: - binding / detection
+
+    @Test("binding: 빈 value → 감지 결과 없음, candidates/detectedServices 초기화")
+    func binding_emptyValue_clearsDetection() async {
+        var initialState = CreateSecretFeature.State(secretType: .apiKeyToken)
+        initialState.serviceCandidates = ["GitHub"]
+        initialState.detectedServices = [.value: "GitHub"]
+
+        let store = TestStore(initialState: initialState) {
+            CreateSecretFeature()
+        } withDependencies: {
+            $0.detectionClient.detect = { _ in .none }
+        }
+
+        await store.send(.set(\.meta.content, .apiKeyToken(APIKeyTokenFields(value: "")))) {
+            $0.serviceCandidates = []
+            $0.detectedServices = [:]
+        }
+    }
+
+    @Test("binding: value 입력 → 감지 엔진 호출 → candidates / detectedServices 업데이트")
+    func binding_value_triggersDetection() async {
+        let candidate = ServiceCandidate(service: "GitHub", displayLabel: "GitHub PAT", confidence: .high)
+        let result = DetectionResult(candidates: [candidate])
+
+        let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
+            CreateSecretFeature()
+        } withDependencies: {
+            $0.detectionClient.detect = { _ in result }
+        }
+
+        await store.send(.set(\.meta.content, .apiKeyToken(APIKeyTokenFields(value: "ghp_1234567890")))) {
+            $0.meta.content = .apiKeyToken(APIKeyTokenFields(value: "ghp_1234567890"))
+            $0.serviceCandidates = ["GitHub"]
+            $0.detectedServices = [.value: "GitHub"]
+        }
+    }
+
+    @Test("binding: database linkString → 감지 결과가 detectedServices[.linkString]에 저장")
+    func binding_database_usesLinkStringFieldID() async {
+        let candidate = ServiceCandidate(service: "PostgreSQL", displayLabel: "PostgreSQL", confidence: .high)
+        let result = DetectionResult(candidates: [candidate])
+
+        let store = TestStore(initialState: .init(secretType: .database)) {
+            CreateSecretFeature()
+        } withDependencies: {
+            $0.detectionClient.detect = { _ in result }
+        }
+
+        await store.send(.set(\.meta.content, .database(DatabaseFields(linkString: "postgres://user:pass@host/db")))) {
+            $0.meta.content = .database(DatabaseFields(linkString: "postgres://user:pass@host/db"))
+            $0.serviceCandidates = ["PostgreSQL"]
+            $0.detectedServices = [.linkString: "PostgreSQL"]
         }
     }
 
@@ -101,8 +187,8 @@ struct CreateSecretFeatureTests {
         await store.receive(.delegate(.secretCreated(createdId)))
     }
 
-    @Test("didTapSave 매핑 실패: 초기 상태(name + value 모두 빈값) → 둘 다 warning, Effect 미발행")
-    func didTapSave_missingName() async {
+    @Test("didTapSave 매핑 실패: name + value 모두 빈값 → 둘 다 warning, Effect 미발행")
+    func didTapSave_missingBoth() async {
         let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
             CreateSecretFeature()
         }
@@ -110,14 +196,12 @@ struct CreateSecretFeatureTests {
         await store.send(.didTapSave) {
             $0.validationErrors = [.name: "Required", .value: "Required"]
         }
-        // Effect 미발행 — receive 없음
     }
 
-    @Test("didTapSave 매핑 실패: name 있으나 필수 필드 누락 시 해당 필드 지목")
-    func didTapSave_missingRequiredContent() async {
+    @Test("didTapSave 매핑 실패: name 있으나 value 누락")
+    func didTapSave_missingValue() async {
         var initialState = CreateSecretFeature.State(secretType: .apiKeyToken)
-        initialState.meta.name = "n"
-        // meta.content.apiKeyToken.value는 빈 문자열 (default)
+        initialState.meta.name = "MyKey"
 
         let store = TestStore(initialState: initialState) {
             CreateSecretFeature()
@@ -128,12 +212,10 @@ struct CreateSecretFeatureTests {
         }
     }
 
-    @Test("didTapSave 재시도: 이전 validationErrors가 새 검증 결과로 대체됨 (해결된 필드 warning 사라짐)")
+    @Test("didTapSave 재시도: 이전 validationErrors가 새 결과로 대체 (해결된 필드 warning 사라짐)")
     func didTapSave_retryReplacesPriorErrors() async {
         var initialState = CreateSecretFeature.State(secretType: .apiKeyToken)
-        // 이전 시도의 잔존: name/value 둘 다 warning
         initialState.validationErrors = [.name: "Required", .value: "Required"]
-        // 사용자가 name만 채운 상태
         initialState.meta.name = "n"
 
         let store = TestStore(initialState: initialState) {
@@ -141,14 +223,12 @@ struct CreateSecretFeatureTests {
         }
 
         await store.send(.didTapSave) {
-            // .name warning 사라지고 .value만 남아야 함 (이전 [.name]은 리셋됨)
             $0.validationErrors = [.value: "Required"]
         }
     }
 
-    @Test("didTapSave 매핑 실패: name + type-specific 다중 누락 시 모두 세팅")
-    func didTapSave_multipleMissing() async {
-        // oauthClient는 clientId + clientSecret 둘 다 required — name까지 3개 모두 비면 3개 warning
+    @Test("didTapSave 다중 누락: oauth 초기 상태 → name + clientId + clientSecret 모두 warning")
+    func didTapSave_oauth_multipleMissing() async {
         let store = TestStore(initialState: .init(secretType: .oauth)) {
             CreateSecretFeature()
         }
@@ -162,9 +242,56 @@ struct CreateSecretFeatureTests {
         }
     }
 
+    // MARK: - saveResponse failure → alert
+
+    @Test("saveResponse(.failure .unexpected): isSaving 해제 + unexpected alert 노출")
+    func saveResponse_failure_unexpected() async {
+        var initialState = CreateSecretFeature.State(secretType: .apiKeyToken)
+        initialState.isSaving = true
+
+        let store = TestStore(initialState: initialState) {
+            CreateSecretFeature()
+        }
+
+        await store.send(.saveResponse(.failure(.unexpected))) {
+            $0.isSaving = false
+            $0.alert = .createSecretFailed(.unexpected)
+        }
+    }
+
+    @Test("saveResponse(.failure .cryptoFailure .keyUnavailable): cryptoUnavailable alert 노출")
+    func saveResponse_failure_crypto() async {
+        var initialState = CreateSecretFeature.State(secretType: .apiKeyToken)
+        initialState.isSaving = true
+
+        let store = TestStore(initialState: initialState) {
+            CreateSecretFeature()
+        }
+
+        await store.send(.saveResponse(.failure(.cryptoFailure(.keyUnavailable)))) {
+            $0.isSaving = false
+            $0.alert = .createSecretFailed(.cryptoUnavailable)
+        }
+    }
+
+    @Test("saveResponse(.failure .authenticationFailure): authRequired alert 노출")
+    func saveResponse_failure_auth() async {
+        var initialState = CreateSecretFeature.State(secretType: .apiKeyToken)
+        initialState.isSaving = true
+
+        let store = TestStore(initialState: initialState) {
+            CreateSecretFeature()
+        }
+
+        await store.send(.saveResponse(.failure(.authenticationFailure(.cancelled)))) {
+            $0.isSaving = false
+            $0.alert = .createSecretFailed(.authRequired)
+        }
+    }
+
     // MARK: - didTapCancel
 
-    @Test("didTapCancel: alert 노출 → confirmCancel → alert dismiss + delegate(.cancelled)")
+    @Test("didTapCancel → confirmCancel alert → dismissed → delegate(.cancelled)")
     func didTapCancel_confirm() async {
         let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
             CreateSecretFeature()
@@ -179,26 +306,9 @@ struct CreateSecretFeatureTests {
         await store.receive(.delegate(.cancelled))
     }
 
-    // MARK: - saveResponse.failure
-
-    @Test("saveResponse(.failure): isSaving false로 해제")
-    func saveResponse_failure() async {
-        var initialState = CreateSecretFeature.State(secretType: .apiKeyToken)
-        initialState.isSaving = true
-
-        let store = TestStore(initialState: initialState) {
-            CreateSecretFeature()
-        }
-
-        await store.send(.saveResponse(.failure(.unexpected))) {
-            $0.isSaving = false
-        }
-        // TODO(#41-followup): 실패 alert 노출 시 여기서 alert state 검증 추가.
-    }
-
     // MARK: - didTapCreateProject
 
-    @Test("didTapCreateProject: createProject State가 세팅되어 sheet 노출")
+    @Test("didTapCreateProject: createProject State 세팅 → sheet 노출")
     func didTapCreateProject_opensSheet() async {
         let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
             CreateSecretFeature()
@@ -209,48 +319,133 @@ struct CreateSecretFeatureTests {
         }
     }
 
-    @Test("createProject 델리게이트: 생성된 프로젝트가 availableProjects에 추가")
-    func createProject_delegateProjectCreated_appendsToAvailable() async {
+    @Test("createProject delegate: 생성된 ProjectItem → availableProjects에 Project로 추가")
+    func createProject_delegate_appendsProject() async {
         var initialState = CreateSecretFeature.State(secretType: .apiKeyToken)
         initialState.createProject = CreateProjectFeature.State()
 
+        let fixedDate = Date(timeIntervalSince1970: 1_000_000)
+        let newItem = ProjectItem(id: UUID(), name: "New Project")
+
         let store = TestStore(initialState: initialState) {
             CreateSecretFeature()
+        } withDependencies: {
+            $0.date.now = fixedDate
         }
 
-        let newProject = Project(
-            id: UUID(),
-            name: "New Project",
-            createdAt: Date(),
-            updatedAt: Date()
-        )
-
-        await store.send(.createProject(.presented(.delegate(.projectCreated(newProject))))) {
-            $0.availableProjects.append(newProject)
-        }
-    }
-
-    // MARK: - didDetectServiceCandidates
-
-    @Test("didDetectServiceCandidates: 후보 목록이 state.serviceCandidates에 저장됨")
-    func didDetectServiceCandidates() async {
-        let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
-            CreateSecretFeature()
-        }
-
-        await store.send(.didDetectServiceCandidates(["github.com", "gitlab.com"])) {
-            $0.serviceCandidates = ["github.com", "gitlab.com"]
+        await store.send(.createProject(.presented(.delegate(.projectCreated(newItem))))) {
+            $0.availableProjects = [
+                Project(id: newItem.id, name: newItem.name, createdAt: fixedDate, updatedAt: fixedDate)
+            ]
         }
     }
 
     // MARK: - isSaveEnabled
 
-    @Test("isSaveEnabled: 저장 중이 아니면 항상 true — 필수 필드 검증은 didTapSave에서 수행")
-    func isSaveEnabled_onlyBlocksWhileSaving() {
-        var state = CreateSecretFeature.State(secretType: .apiKeyToken)
-        #expect(state.isSaveEnabled == true, "초기 상태(빈 필드)에도 활성 — 탭 시점에 인라인 warning 노출을 위함")
-        state.isSaving = true
-        #expect(state.isSaveEnabled == false, "저장 중엔 재클릭 차단")
+    @Test("isSaveEnabled: 초기 상태(빈 필드)에도 활성 — 필드 검증은 didTapSave에서")
+    func isSaveEnabled_initiallyTrue() {
+        let state = CreateSecretFeature.State(secretType: .apiKeyToken)
+        #expect(state.isSaveEnabled == true)
     }
 
+    @Test("isSaveEnabled: 저장 중에는 false")
+    func isSaveEnabled_falseWhileSaving() {
+        var state = CreateSecretFeature.State(secretType: .apiKeyToken)
+        state.isSaving = true
+        #expect(state.isSaveEnabled == false)
+    }
+}
+
+// MARK: - Error mapping unit tests
+
+@Suite("CreateSecretError")
+struct CreateSecretErrorMappingTests {
+
+    @Test("cryptoFailure.keyUnavailable → .cryptoUnavailable")
+    func map_keyUnavailable() {
+        #expect(CreateSecretError.map(.cryptoFailure(.keyUnavailable)) == .cryptoUnavailable)
+    }
+
+    @Test("cryptoFailure.keychainFailure → .cryptoUnavailable")
+    func map_keychainFailure() {
+        #expect(CreateSecretError.map(.cryptoFailure(.keychainFailure(status: -25300))) == .cryptoUnavailable)
+    }
+
+    @Test("cryptoFailure.encryptionFailed → .cryptoUnavailable")
+    func map_encryptionFailed() {
+        #expect(CreateSecretError.map(.cryptoFailure(.encryptionFailed)) == .cryptoUnavailable)
+    }
+
+    @Test("authenticationFailure → .authRequired")
+    func map_auth() {
+        #expect(CreateSecretError.map(.authenticationFailure(.cancelled)) == .authRequired)
+        #expect(CreateSecretError.map(.authenticationFailure(.failed)) == .authRequired)
+    }
+
+    @Test("repositoryFailure → .repositoryFailure")
+    func map_repository() {
+        #expect(CreateSecretError.map(.repositoryFailure(.storageUnavailable)) == .repositoryFailure)
+        #expect(CreateSecretError.map(.repositoryFailure(.persistenceFailed)) == .repositoryFailure)
+    }
+
+    @Test("unexpected → .unexpected")
+    func map_unexpected() {
+        #expect(CreateSecretError.map(.unexpected) == .unexpected)
+    }
+}
+
+@Suite("ProjectLoadError")
+struct ProjectLoadErrorMappingTests {
+
+    @Test("repositoryFailure → .repositoryFailure")
+    func map_repository() {
+        #expect(ProjectLoadError.map(.repositoryFailure(.storageUnavailable)) == .repositoryFailure)
+        #expect(ProjectLoadError.map(.repositoryFailure(.persistenceFailed)) == .repositoryFailure)
+    }
+
+    @Test("unexpected → .unexpected")
+    func map_unexpected() {
+        #expect(ProjectLoadError.map(.unexpected) == .unexpected)
+    }
+}
+
+// MARK: - Detection helpers unit tests
+
+@Suite("SecretMetaFields detection helpers")
+struct SecretMetaFieldsDetectionTests {
+
+    @Test("apiKeyToken: primaryDetectionValue = value, fieldID = .value")
+    func apiKeyToken() {
+        var fields = SecretMetaFields(content: .apiKeyToken(APIKeyTokenFields(value: "sk-abc")))
+        #expect(fields.primaryDetectionValue == "sk-abc")
+        #expect(fields.primaryDetectionFieldID == .value)
+    }
+
+    @Test("database: primaryDetectionValue = linkString, fieldID = .linkString")
+    func database() {
+        let fields = SecretMetaFields(content: .database(DatabaseFields(linkString: "postgres://host/db")))
+        #expect(fields.primaryDetectionValue == "postgres://host/db")
+        #expect(fields.primaryDetectionFieldID == .linkString)
+    }
+
+    @Test("serviceAccount: primaryDetectionValue = credentialJSON, fieldID = .credentialJSON")
+    func serviceAccount() {
+        let fields = SecretMetaFields(content: .serviceAccount(ServiceAccountFields(credentialJSON: "{}")))
+        #expect(fields.primaryDetectionValue == "{}")
+        #expect(fields.primaryDetectionFieldID == .credentialJSON)
+    }
+
+    @Test("sshKey: primaryDetectionValue = privateKey, fieldID = .privateKey")
+    func sshKey() {
+        let fields = SecretMetaFields(content: .sshKey(SSHKeyFields(privateKey: "-----BEGIN")))
+        #expect(fields.primaryDetectionValue == "-----BEGIN")
+        #expect(fields.primaryDetectionFieldID == .privateKey)
+    }
+
+    @Test("envSet: primaryDetectionValue = envContent, fieldID = .envContent")
+    func envSet() {
+        let fields = SecretMetaFields(content: .envSet(EnvSetFields(envContent: "K=V")))
+        #expect(fields.primaryDetectionValue == "K=V")
+        #expect(fields.primaryDetectionFieldID == .envContent)
+    }
 }

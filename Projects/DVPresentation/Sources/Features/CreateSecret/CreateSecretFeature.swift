@@ -8,12 +8,12 @@ import Foundation
 // MARK: - CreateSecretFeature
 
 @Reducer
-struct CreateSecretFeature {
+public struct CreateSecretFeature {
 
     // MARK: - State
 
     @ObservableState
-    struct State: Equatable {
+    public struct State: Equatable {
 
         /// 이전 화면에서 주입되는 SecretType. 이 화면 안에서는 변경 불가.
         let secretType: CreatableSecretType
@@ -27,8 +27,7 @@ struct CreateSecretFeature {
         /// 도메인 매핑 실패로 누락된 필드에 대한 인라인 경고. Save 시도 시 세팅.
         var validationErrors: [SecretMetaFields.FieldID: String] = [:]
 
-        /// "Auto-detected: <service>" 인라인 힌트. 감지 엔진에서 채워짐 (필드별 단일 문자열).
-        /// TODO(#41-followup): 감지 엔진 wiring + SectionView가 `trailingHint(.detected)`로 소비하는 지점에서 이 필드 갱신.
+        /// "Auto-detected: <service>" 인라인 힌트. 감지 엔진이 primaryDetectionFieldID 기준으로 채움.
         var detectedServices: [SecretMetaFields.FieldID: String] = [:]
 
         /// 감지 엔진이 넘겨준 service chip 후보 목록. `ServicesFieldView`가 chip으로 표시.
@@ -36,12 +35,15 @@ struct CreateSecretFeature {
 
         var isSaving = false
 
+        /// 프로젝트 목록을 로드 중인 동안 true. Project picker spinner용.
+        var isLoadingProjects = false
+
         @Presents var alert: AlertState<Action.Alert>?
 
         /// 프로젝트 생성 시트 State. `didTapCreateProject` 시 세팅되어 sheet 노출.
         @Presents var createProject: CreateProjectFeature.State?
 
-        init(secretType: CreatableSecretType) {
+        public init(secretType: CreatableSecretType) {
             let initialSubType = secretType.availableSubTypes.first
             self.secretType = secretType
             self.selectedSubType = initialSubType
@@ -60,7 +62,7 @@ struct CreateSecretFeature {
 
     // MARK: - Action
 
-    enum Action: BindableAction, Equatable {
+    public enum Action: BindableAction, Equatable {
 
         // MARK: - View
 
@@ -86,11 +88,11 @@ struct CreateSecretFeature {
 
         case delegate(Delegate)
 
-        enum Alert: Equatable {
+        public enum Alert: Equatable {
             case confirmCancel
         }
 
-        enum Delegate: Equatable {
+        public enum Delegate: Equatable {
             case secretCreated(Secret.ID)
             case cancelled
         }
@@ -100,21 +102,23 @@ struct CreateSecretFeature {
 
     @Dependency(\.secretManagementClient) var secretManagementClient
     @Dependency(\.projectClient) var projectClient
+    @Dependency(\.detectionClient) var detectionClient
     @Dependency(\.date.now) var now
 
     // MARK: - Init
 
-    init() {}
+    public init() {}
 
     // MARK: - Body
 
-    var body: some ReducerOf<Self> {
+    public var body: some ReducerOf<Self> {
         BindingReducer()
         Reduce { state, action in
             switch action {
             // MARK: View
 
             case .task:
+                state.isLoadingProjects = true
                 return .run { send in
                     do {
                         let projects = try await projectClient.fetchProjects()
@@ -131,9 +135,21 @@ struct CreateSecretFeature {
                     subType: state.selectedSubType
                 )
                 state.validationErrors = [:]
+                state.serviceCandidates = []
+                state.detectedServices = [:]
                 return .none
 
             case .binding:
+                let primary = state.meta.primaryDetectionValue
+                guard !primary.isEmpty else {
+                    state.serviceCandidates = []
+                    state.detectedServices = [:]
+                    return .none
+                }
+                let result = detectionClient.detect(SensitiveString(primary))
+                state.serviceCandidates = result.candidates.map(\.service)
+                let fieldID = state.meta.primaryDetectionFieldID
+                state.detectedServices[fieldID] = result.candidates.first?.service
                 return .none
 
             case .didTapCancel:
@@ -150,22 +166,23 @@ struct CreateSecretFeature {
             // MARK: Internal
 
             case .projectsResponse(.success(let projects)):
+                state.isLoadingProjects = false
                 state.availableProjects = projects
                 return .none
 
-            case .projectsResponse(.failure):
+            case .projectsResponse(.failure(let err)):
+                state.isLoadingProjects = false
                 state.availableProjects = []
-                // TODO(#41-followup): 재시도/오프라인 배지 등 상세 처리는 후속 작업에서 대체.
-                state.alert = .projectLoadFailed
+                state.alert = .projectLoadFailed(ProjectLoadError.map(err))
                 return .none
 
             case .saveResponse(.success(let secret)):
                 state.isSaving = false
                 return .send(.delegate(.secretCreated(secret.id)))
 
-            case .saveResponse(.failure):
+            case .saveResponse(.failure(let err)):
                 state.isSaving = false
-                // TODO(#41-followup): 저장 실패를 사용자에게 표시 (alert or 인라인 에러 state). 현재는 isSaving만 해제.
+                state.alert = .createSecretFailed(CreateSecretError.map(err))
                 return .none
 
             case .didDetectServiceCandidates(let candidates):
@@ -272,19 +289,6 @@ extension AlertState where Action == CreateSecretFeature.Action.Alert {
             ButtonState(role: .cancel) {
                 TextState("Keep editing", bundle: .module)
             }
-        }
-    }
-
-    /// 프로젝트 로드 실패 시 노출. 껍데기 — 재시도/오프라인 배지 등은 후속 작업에서 대체.
-    static var projectLoadFailed: Self {
-        Self {
-            TextState("Failed to load projects", bundle: .module)
-        } actions: {
-            ButtonState(role: .cancel) {
-                TextState("OK", bundle: .module)
-            }
-        } message: {
-            TextState("The project list couldn't be loaded. Please try again later.", bundle: .module)
         }
     }
 }

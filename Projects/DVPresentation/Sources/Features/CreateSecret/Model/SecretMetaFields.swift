@@ -55,7 +55,7 @@ struct SecretMetaFields: Equatable {
     }
     
     // MARK: - Field identity
-    
+
     /// 도메인 매핑 실패 시 어느 필드를 지목할지 식별하는 식별자. 검증 대상 필드만 포함.
     enum FieldID: Hashable {
         case name
@@ -69,5 +69,37 @@ struct SecretMetaFields: Equatable {
         case sslPrivateKey
         case envContent
         case licenseKey
+    }
+
+    // MARK: - Detection helpers
+
+    /// 감지 엔진에 전달할 주요 시크릿 값. 비어있으면 감지 생략.
+    var primaryDetectionValue: String {
+        switch content {
+        case .apiKeyToken(let f):     return f.value
+        case .oauthClient(let f):     return f.clientSecret
+        case .serviceAccount(let f):  return f.credentialJSON
+        case .database(let f):        return f.linkString
+        case .sshKey(let f):          return f.privateKey
+        case .sslTlsCertificate(let f): return f.certificate
+        case .envSet(let f):          return f.envContent
+        case .licenseKey(let f):      return f.licenseKey
+        case .custom(let f):          return f.value
+        }
+    }
+
+    /// `primaryDetectionValue`가 대응하는 FieldID — `detectedServices` 딕셔너리 키.
+    var primaryDetectionFieldID: FieldID {
+        switch content {
+        case .apiKeyToken:          return .value
+        case .oauthClient:          return .clientSecret
+        case .serviceAccount:       return .credentialJSON
+        case .database:             return .linkString
+        case .sshKey:               return .privateKey
+        case .sslTlsCertificate:    return .certificate
+        case .envSet:               return .envContent
+        case .licenseKey:           return .licenseKey
+        case .custom:               return .value
+        }
     }
 }
