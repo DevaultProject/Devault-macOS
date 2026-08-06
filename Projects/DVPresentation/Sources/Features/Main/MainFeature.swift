@@ -18,6 +18,8 @@ public struct MainFeature {
     /// sheet가 아닌 2-column NavigationSplitView 전환 용도이므로 @Presents 미사용
     var selectSecretType: SelectSecretTypeFeature.State?
     @Presents var createProject: CreateProjectFeature.State?
+    /// sheet가 아닌 2-column NavigationSplitView 전환 용도이므로 @Presents 미사용
+    var createSecret: CreateSecretFeature.State?
 
     public init() {}
   }
@@ -37,6 +39,7 @@ public struct MainFeature {
     case secretList(SecretListFeature.Action)
     case selectSecretType(SelectSecretTypeFeature.Action)
     case createProject(PresentationAction<CreateProjectFeature.Action>)
+    case createSecret(CreateSecretFeature.Action)
 
     // MARK: - Delegate
 
@@ -76,11 +79,23 @@ public struct MainFeature {
       case .secretList:
         return .none
 
-      case .selectSecretType(.delegate(.typeSelected)):
-        // TODO: createSecret 연결
+      case .selectSecretType(.delegate(.typeSelected(let secretType))):
+        state.createSecret = CreateSecretFeature.State(secretType: secretType)
         return .none
 
       case .selectSecretType:
+        return .none
+
+      case .createSecret(.delegate(.secretCreated(_))):
+        state.createSecret = nil
+        state.selectSecretType = nil
+        return .send(.sidebar(.setCreatingSecret(false)))
+
+      case .createSecret(.delegate(.cancelled)):
+        state.createSecret = nil
+        return .none
+
+      case .createSecret:
         return .none
 
       case .createProject(.presented(.delegate(.projectCreated(let item)))):
@@ -104,6 +119,9 @@ public struct MainFeature {
     .ifLet(\.$createProject, action: \.createProject) {
       CreateProjectFeature()
     }
+    .ifLet(\.createSecret, action: \.createSecret) {
+      CreateSecretFeature()
+    }
   }
 }
 
@@ -118,10 +136,12 @@ extension MainFeature {
     switch delegate {
     case .selectionChanged(let selection):
       state.selectSecretType = nil
+      state.createSecret = nil
       state.secretList = makeSecretListState(selection: selection, projects: state.sidebar.projects)
       return .send(.sidebar(.setCreatingSecret(false)))
 
     case .addButtonTapped:
+      state.createSecret = nil
       state.selectSecretType = .init()
       return .send(.sidebar(.setCreatingSecret(true)))
 
