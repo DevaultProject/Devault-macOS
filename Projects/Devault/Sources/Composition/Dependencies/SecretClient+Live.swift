@@ -8,10 +8,8 @@ import Foundation
 
 extension SecretClient: @retroactive DependencyKey {
     public static let liveValue: SecretClient = {
-        let container = LiveStorage.shared.modelContainer
-
-        let secretRepo: any SecretRepository = SecretRepositoryImpl(modelContainer: container)
-        let projectRepo: any ProjectRepository = ProjectRepositoryImpl(modelContainer: container)
+        let secretRepo = LiveRepositories.secret
+        let projectRepo = LiveRepositories.project
         let cryptoService: any SecretCryptoService = SecretCryptoServiceImpl()
         let authService: any UserAuthenticationService = LocalUserAuthenticationServiceImpl()
 
@@ -35,53 +33,25 @@ extension SecretClient: @retroactive DependencyKey {
 
         return SecretClient(
             fetchByQuery: { query in
-                do {
-                    return try await fetchSecretUseCase.fetch(query: query)
-                } catch {
-                    throw (error as? SecretUseCaseError) ?? .unexpected
-                }
+                try await fetchSecretUseCase.fetch(query: query)
             },
             softDelete: { id in
-                do {
-                    return try await deleteSecretUseCase.softDelete(id: id)
-                } catch {
-                    throw (error as? SecretUseCaseError) ?? .unexpected
-                }
+                try await deleteSecretUseCase.softDelete(id: id)
             },
             restore: { id in
-                do {
-                    return try await deleteSecretUseCase.restore(id: id)
-                } catch {
-                    throw (error as? SecretUseCaseError) ?? .unexpected
-                }
+                try await deleteSecretUseCase.restore(id: id)
             },
             permanentlyDelete: { id in
-                do {
-                    try await deleteSecretUseCase.permanentlyDelete(id: id)
-                } catch {
-                    throw (error as? SecretUseCaseError) ?? .unexpected
-                }
+                try await deleteSecretUseCase.permanentlyDelete(id: id)
             },
             fetchProjects: {
-                do {
-                    return try await fetchProjectUseCase.fetchAll()
-                } catch {
-                    throw (error as? ProjectUseCaseError) ?? .unexpected
-                }
+                try await fetchProjectUseCase.fetchAll()
             },
             createProject: { name in
-                do {
-                    return try await createProjectUseCase.execute(name: name)
-                } catch {
-                    throw (error as? ProjectUseCaseError) ?? .unexpected
-                }
+                try await createProjectUseCase.execute(name: name)
             },
             linkProject: { secretID, projectID in
-                do {
-                    try await relationUseCase.link(secretID: secretID, projectID: projectID)
-                } catch {
-                    throw (error as? SecretUseCaseError) ?? .unexpected
-                }
+                try await relationUseCase.link(secretID: secretID, projectID: projectID)
             }
         )
     }()

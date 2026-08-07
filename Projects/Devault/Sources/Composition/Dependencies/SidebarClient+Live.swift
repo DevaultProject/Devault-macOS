@@ -7,8 +7,7 @@ import DVPresentation
 
 extension SidebarClient: @retroactive DependencyKey {
   public static let liveValue: SidebarClient = {
-    let container = LiveStorage.shared.modelContainer
-    let repo: any ProjectRepository = ProjectRepositoryImpl(modelContainer: container)
+    let repo = LiveRepositories.project
 
     let fetchUseCase: any FetchProjectUseCase = FetchProjectUseCaseImpl(repository: repo)
     let createUseCase: any CreateProjectUseCase = CreateProjectUseCaseImpl(repository: repo)
