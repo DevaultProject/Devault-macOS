@@ -7,17 +7,13 @@ import DVPresentation
 
 extension ProjectClient: @retroactive DependencyKey {
     public static let liveValue: ProjectClient = {
-        let container = LiveStorage.shared.modelContainer
-        let repo: any ProjectRepository = ProjectRepositoryImpl(modelContainer: container)
-        let fetchUseCase: any FetchProjectUseCase = FetchProjectUseCaseImpl(repository: repo)
+        let fetchUseCase: any FetchProjectUseCase = FetchProjectUseCaseImpl(
+            repository: LiveRepositories.project
+        )
 
         return ProjectClient(
             fetchProjects: {
-                do {
-                    return try await fetchUseCase.fetchAll()
-                } catch {
-                    throw (error as? ProjectUseCaseError) ?? .unexpected
-                }
+                try await fetchUseCase.fetchAll()
             }
         )
     }()

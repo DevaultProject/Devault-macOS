@@ -8,11 +8,9 @@ import Foundation
 
 extension SecretManagementClient: @retroactive DependencyKey {
     public static let liveValue: SecretManagementClient = {
-        let container = LiveStorage.shared.modelContainer
-        let secretRepo: any SecretRepository = SecretRepositoryImpl(modelContainer: container)
         let cryptoService: any SecretCryptoService = SecretCryptoServiceImpl()
         let createUseCase: any CreateSecretUseCase = CreateSecretUseCaseImpl(
-            repository: secretRepo,
+            repository: LiveRepositories.secret,
             cryptoService: cryptoService
         )
         return SecretManagementClient(
