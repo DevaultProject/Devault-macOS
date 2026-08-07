@@ -72,6 +72,59 @@ struct MainFeatureTests {
     }
   }
 
+  // MARK: - CreateSecret Routing
+
+  @Test("typeSelected는 createSecret State를 세팅한다")
+  func typeSelectedSetsCreateSecret() async {
+    var initial = MainFeature.State()
+    initial.selectSecretType = .init()
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    }
+
+    await store.send(.selectSecretType(.delegate(.typeSelected(.apiKeyToken)))) {
+      $0.createSecret = CreateSecretFeature.State(secretType: .apiKeyToken)
+    }
+  }
+
+  @Test("secretCreated는 createSecret·selectSecretType을 닫고 isCreatingSecret을 false로 만든다")
+  func secretCreatedClearsCreationFlow() async {
+    let secretID = UUID()
+    var initial = MainFeature.State()
+    initial.selectSecretType = .init()
+    initial.createSecret = CreateSecretFeature.State(secretType: .apiKeyToken)
+    initial.sidebar.isCreatingSecret = true
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    }
+
+    await store.send(.createSecret(.delegate(.secretCreated(secretID)))) {
+      $0.createSecret = nil
+      $0.selectSecretType = nil
+    }
+    await store.receive(.sidebar(.setCreatingSecret(false))) {
+      $0.sidebar.isCreatingSecret = false
+    }
+  }
+
+  @Test("cancelled는 createSecret을 닫고 selectSecretType을 초기화해 타입 선택으로 돌아간다")
+  func cancelledResetsToTypeSelection() async {
+    var initial = MainFeature.State()
+    initial.selectSecretType = .init()
+    initial.createSecret = CreateSecretFeature.State(secretType: .apiKeyToken)
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    }
+
+    await store.send(.createSecret(.delegate(.cancelled))) {
+      $0.createSecret = nil
+      $0.selectSecretType = .init()
+    }
+  }
+
   @Test("addProjectTapped은 createProject sheet를 연다")
   func addProjectTappedOpensSheet() async {
     let store = TestStore(initialState: MainFeature.State()) {

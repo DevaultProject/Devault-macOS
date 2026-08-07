@@ -93,6 +93,7 @@ public struct MainFeature {
 
       case .createSecret(.delegate(.cancelled)):
         state.createSecret = nil
+        state.selectSecretType = .init()
         return .none
 
       case .createSecret:
