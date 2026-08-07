@@ -123,6 +123,8 @@ public struct CreateSecretFeature {
                     do {
                         let projects = try await projectClient.fetchProjects()
                         await send(.projectsResponse(.success(projects)))
+                    } catch is CancellationError {
+                        // ifLet이 feature를 해제할 때 effect가 취소됨 — state 자체가 사라지므로 별도 처리 불필요
                     } catch {
                         let mapped = (error as? ProjectUseCaseError) ?? .unexpected
                         await send(.projectsResponse(.failure(mapped)))
