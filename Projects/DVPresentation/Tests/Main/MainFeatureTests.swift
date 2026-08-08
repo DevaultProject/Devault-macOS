@@ -331,6 +331,69 @@ struct MainFeatureTests {
     }
   }
 
+  @Test("secretUpdated delegate는 목록을 재조회한다")
+  func secretUpdatedRefreshesList() async {
+    let secret = Secret(
+      id: UUID(),
+      name: "Test Token",
+      secretType: .apiKeyToken,
+      liked: true,
+      createdAt: Date(),
+      updatedAt: Date(),
+      payload: SecretPayload(encryptedData: Data(), keyTag: "test", schemaVersion: 1)
+    )
+
+    var initial = MainFeature.State()
+    initial.secretList.selectedSecretID = secret.id
+    initial.secretDetail = SecretDetailFeature.State(secret: secret)
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    } withDependencies: {
+      $0.secretClient.fetchByQuery = { _ in [secret] }
+    }
+
+    await store.send(.secretDetail(.delegate(.secretUpdated(secret))))
+    // refresh는 .loading으로 바꾸지 않는다 — 목록이 깜빡이지 않아야 한다.
+    await store.receive(.secretList(.refresh))
+    await store.receive(.secretList(.secretsResponse(.success([secret])))) {
+      $0.secretList.secretsState = .loaded(IdentifiedArray(uniqueElements: [secret]))
+    }
+    // detail은 유지된다 — 즐겨찾기 토글로 화면이 닫히면 안 된다.
+    #expect(store.state.secretDetail != nil)
+  }
+
+  @Test("deleted delegate는 detail을 닫고 목록을 재조회한다")
+  func secretDeletedClosesDetailAndRefreshes() async {
+    let secret = Secret(
+      id: UUID(),
+      name: "Test Token",
+      secretType: .apiKeyToken,
+      createdAt: Date(),
+      updatedAt: Date(),
+      payload: SecretPayload(encryptedData: Data(), keyTag: "test", schemaVersion: 1)
+    )
+
+    var initial = MainFeature.State()
+    initial.secretList.selectedSecretID = secret.id
+    initial.secretDetail = SecretDetailFeature.State(secret: secret)
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    } withDependencies: {
+      $0.secretClient.fetchByQuery = { _ in [] }
+    }
+
+    await store.send(.secretDetail(.delegate(.deleted(secret.id)))) {
+      $0.secretDetail = nil
+      $0.secretList.selectedSecretID = nil
+    }
+    await store.receive(.secretList(.refresh))
+    await store.receive(.secretList(.secretsResponse(.success([])))) {
+      $0.secretList.secretsState = .loaded([])
+    }
+  }
+
   // MARK: - Rename Delegate
 
   @Test("projectRenamed는 현재 선택된 프로젝트의 이름이면 secretList 타이틀을 갱신한다")
