@@ -61,34 +61,90 @@ private extension SecretClient {
       softDelete: { _ in .preview },
       restore: { _ in .preview },
       permanentlyDelete: { _ in },
-      // secretType만 분기하므로 live의 dispatchRevealPayload와 달리 subType별 case를
-      // 구분하지 않는다(.serviceAccount / .sslTlsCertificate / .custom / .accessToken /
-      // .webhookSecret). Preview·Test에서 payload 필드 구성이 실제 동작과 어긋나므로,
-      // SecretDetailView가 payload를 실제로 렌더링하는 후속 이슈에서
-      // (secretType, subType) 쌍 기준으로 맞춘다.
+      // live `dispatchRevealPayload`와 case 구성이 1:1로 일치해야 한다 —
+      // 한쪽만 바뀌면 프리뷰가 실제와 다른 payload 타입을 조용히 반환한다.
+      // metadata는 CreateSecret 폼이 실제로 입력받는 필드만 채운다(나머지는 live에서도 항상 nil).
       revealPayload: { secret in
-          switch secret.secretType {
-          case .apiKeyToken:
-              return .apiKey(APIKeyPayload(value: "preview_api_key"), nil)
-          case .oauth:
+          switch (secret.secretType, secret.subType) {
+          case (.apiKeyToken, .apiKey), (.apiKeyToken, nil):
+              return .apiKey(
+                APIKeyPayload(value: "preview_api_key"),
+                APIKeyMetadata(scope: "repo:read")
+              )
+          case (.apiKeyToken, .accessToken):
+              return .accessToken(
+                APIKeyPayload(value: "preview_access_token"),
+                APIKeyMetadata(scope: "user:email")
+              )
+          case (.apiKeyToken, .webhookSecret):
+              return .webhookSecret(
+                APIKeyPayload(value: "preview_webhook_secret"),
+                APIKeyMetadata(scope: "push, pull_request")
+              )
+          case (.oauth, .oauthClient), (.oauth, nil):
               return .oauthClient(
                 OAuthClientPayload(clientId: "preview_id", clientSecret: "preview_secret"),
-                nil
+                OAuthClientMetadata(
+                    redirectUri: "https://preview.devault.app/oauth/callback",
+                    scopes: "openid, profile, email"
+                )
               )
-          case .database:
-              return .database(DatabasePayload(linkString: "postgresql://preview:5432/db"), nil)
-          case .sshAndCredentials:
+          case (.oauth, .serviceAccount):
+              return .serviceAccount(
+                ServiceAccountPayload(
+                    credentialJSON: """
+                    {
+                      "type": "service_account",
+                      "project_id": "devault-preview",
+                      "client_email": "preview-bot@devault-preview.iam.gserviceaccount.com"
+                    }
+                    """
+                ),
+                ServiceAccountMetadata(authority: "organization-admin")
+              )
+          case (.database, _):
+              return .database(
+                DatabasePayload(linkString: "postgresql://preview:5432/db"),
+                DatabaseMetadata(sslRequired: true)
+              )
+          case (.sshAndCredentials, .sshKey), (.sshAndCredentials, nil):
               return .sshKey(
                 SSHKeyPayload(
                     privateKey: "-----BEGIN RSA PRIVATE KEY-----\npreview\n-----END RSA PRIVATE KEY-----",
                     passphrase: nil
                 ),
-                nil
+                SSHKeyMetadata(
+                    publicKey: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABpreview deploy@preview",
+                    host: "deploy.preview.internal",
+                    username: "deploy"
+                )
               )
-          case .environmentVariableSet:
+          case (.sshAndCredentials, .sslTlsCertificate):
+              return .sslTlsCertificate(
+                SSLCertPayload(
+                    certificate: "-----BEGIN CERTIFICATE-----\npreview\n-----END CERTIFICATE-----",
+                    privateKey: "-----BEGIN PRIVATE KEY-----\npreview\n-----END PRIVATE KEY-----",
+                    certificateChain: "-----BEGIN CERTIFICATE-----\npreview-intermediate\n-----END CERTIFICATE-----"
+                ),
+                SSLCertMetadata(renewCommand: "certbot renew --cert-name preview.devault.app")
+              )
+          case (.environmentVariableSet, _):
               return .environmentVariableSet(EnvSetPayload(content: "KEY=value\nOTHER=123"))
-          case .etc:
-              return .licenseKey(LicenseKeyPayload(licenseKey: "PREVIEW-LICENSE-1234"), nil)
+          case (.etc, .licenseKey), (.etc, nil):
+              return .licenseKey(
+                LicenseKeyPayload(licenseKey: "PREVIEW-LICENSE-1234"),
+                LicenseKeyMetadata(
+                    licenseType: "team",
+                    registrationEmail: "support@preview.devault.app",
+                    orderNumber: "DV-2026-000123",
+                    website: "https://preview.devault.app"
+                )
+              )
+          case (.etc, .custom):
+              return .custom(CustomPayload(value: "preview_custom_value"))
+          default:
+              assertionFailure("Unexpected (secretType, subType) combination: \(secret.secretType), \(String(describing: secret.subType))")
+              throw SecretUseCaseError.unexpected
           }
       },
       setLiked: { _, liked in
