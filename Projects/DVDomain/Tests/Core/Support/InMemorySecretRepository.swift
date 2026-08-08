@@ -73,7 +73,7 @@ public final class InMemorySecretRepository: SecretRepository, @unchecked Sendab
     public func count(_ query: SecretQuery) async throws -> Int {
         countQueryCount += 1
         if let error = errorOnCountQuery { throw error }
-        return secrets.count
+        return secrets.values.count { matches($0, query: query) }
     }
 
     public func patch(id: UUID, with patch: SecretPatch) async throws -> Secret {
@@ -150,6 +150,41 @@ public final class InMemorySecretRepository: SecretRepository, @unchecked Sendab
         secrets[id] = secret
         projectLinks[id] = Set(projectIDs)
         return secret
+    }
+}
+
+// MARK: - Query 판정
+
+private extension InMemorySecretRepository {
+
+    /// `SecretRepositoryImpl.count(_:)`의 predicate와 같은 규칙으로 Secret 하나를 판정한다.
+    ///
+    /// 전체 개수를 그대로 돌려주면 필터별 카운트가 모두 같은 값이어도 테스트가 통과하므로,
+    /// 실제 저장소와 동일한 의미를 여기서도 구현한다.
+    /// `searchText`·`sort`는 실제 count 경로에서도 무시되므로 여기서도 보지 않는다.
+    func matches(_ secret: Secret, query: SecretQuery) -> Bool {
+        matchesCollection(secret, collection: query.collection)
+            && (query.secretType.map { secret.secretType == $0 } ?? true)
+            && (query.service.flatMap { $0.isEmpty ? nil : $0 }.map { secret.service == $0 } ?? true)
+            && (query.environment.flatMap { $0.isEmpty ? nil : $0 }.map { secret.environment == $0 } ?? true)
+    }
+
+    func matchesCollection(_ secret: Secret, collection: SecretQuery.Collection) -> Bool {
+        // 만료일이 없으면 "만료되지 않음"으로 취급 — 실제 predicate의 `?? .distantFuture`와 같은 규칙.
+        let expiresAt = secret.expiresAt ?? .distantFuture
+
+        switch collection {
+        case .all:
+            return secret.deletedAt == nil && expiresAt >= .now
+        case .liked:
+            return secret.deletedAt == nil && secret.liked && expiresAt >= .now
+        case let .expired(referenceDate):
+            return secret.deletedAt == nil && expiresAt < referenceDate
+        case .deleted:
+            return secret.deletedAt != nil
+        case let .project(projectID):
+            return secret.deletedAt == nil && (projectLinks[secret.id]?.contains(projectID) ?? false)
+        }
     }
 }
 

@@ -120,7 +120,8 @@ public struct MainFeature {
       case .createSecret(.delegate(.secretCreated(_))):
         state.createSecret = nil
         state.selectSecretType = nil
-        return .merge(
+        // `.merge`는 도착 순서를 보장하지 않아 테스트가 깨지기 쉬우므로 순차 실행한다.
+        return .concatenate(
           .send(.sidebar(.setCreatingSecret(false))),
           .send(.sidebar(.countsRefreshRequested))
         )

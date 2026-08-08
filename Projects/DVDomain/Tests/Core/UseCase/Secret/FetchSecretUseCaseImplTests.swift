@@ -44,6 +44,59 @@ struct FetchSecretUseCaseImplTests {
         #expect(result.count == 2)
     }
 
+    // MARK: - count(query:)
+
+    @Test("count(query:)는 collection 조건에 맞는 개수만 센다")
+    func countAppliesCollection() async throws {
+        let repo = InMemorySecretRepository()
+        repo.seed(SecretFixture.make(id: UUID()))
+        repo.seed(SecretFixture.make(id: UUID(), liked: true))
+        repo.seed(SecretFixture.make(id: UUID(), deletedAt: .now))
+        let sut = makeSUT(repository: repo)
+
+        #expect(try await sut.count(query: SecretQuery(collection: .all)) == 2)
+        #expect(try await sut.count(query: SecretQuery(collection: .liked)) == 1)
+        #expect(try await sut.count(query: SecretQuery(collection: .deleted)) == 1)
+    }
+
+    @Test("count(query:)는 secretType·service·environment 필터를 함께 적용한다")
+    func countAppliesFieldFilters() async throws {
+        let repo = InMemorySecretRepository()
+        repo.seed(SecretFixture.make(id: UUID(), service: "github", environment: "prod"))
+        repo.seed(SecretFixture.make(id: UUID(), service: "github", environment: "dev"))
+        repo.seed(SecretFixture.make(id: UUID(), secretType: .database, service: "aws"))
+        let sut = makeSUT(repository: repo)
+
+        #expect(try await sut.count(query: SecretQuery(service: "github")) == 2)
+        #expect(try await sut.count(query: SecretQuery(service: "github", environment: "prod")) == 1)
+        #expect(try await sut.count(query: SecretQuery(secretType: .database)) == 1)
+    }
+
+    @Test("count(query:)는 만료된 Secret을 .all에서 제외하고 .expired에서만 센다")
+    func countSeparatesExpired() async throws {
+        let repo = InMemorySecretRepository()
+        let now = Date.now
+        repo.seed(SecretFixture.make(id: UUID(), expiresAt: now.addingTimeInterval(3600)))
+        repo.seed(SecretFixture.make(id: UUID(), expiresAt: now.addingTimeInterval(-3600)))
+        repo.seed(SecretFixture.make(id: UUID(), expiresAt: nil))
+        let sut = makeSUT(repository: repo)
+
+        // 만료일이 없는 Secret은 "만료되지 않음"으로 취급되어 .all에 포함된다.
+        #expect(try await sut.count(query: SecretQuery(collection: .all)) == 2)
+        #expect(try await sut.count(query: SecretQuery(collection: .expired(referenceDate: now))) == 1)
+    }
+
+    @Test("count(query:)는 Repository 에러를 SecretUseCaseError로 매핑한다")
+    func countMapsRepositoryError() async {
+        let repo = InMemorySecretRepository()
+        repo.errorOnCountQuery = .persistenceFailed
+        let sut = makeSUT(repository: repo)
+
+        await #expect(throws: SecretUseCaseError.repositoryFailure(.persistenceFailed)) {
+            _ = try await sut.count(query: SecretQuery())
+        }
+    }
+
     // MARK: - revealPayload
 
     @Test("revealPayload는 인증 후 fetch·decrypt를 호출한다")

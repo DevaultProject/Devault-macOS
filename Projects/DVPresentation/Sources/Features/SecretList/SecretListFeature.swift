@@ -158,10 +158,12 @@ public struct SecretListFeature {
       case .didTapDeleteForever(let id):
         return mutationEffect(id: id) { try await secretClient.permanentlyDelete(id) }
 
+      // 두 효과는 서로 독립적이지만 `.merge`는 도착 순서를 보장하지 않아 테스트가 깨지기 쉽다.
+      // 부모 갱신을 먼저 흘려보내고 재조회를 잇는다 (`.send`는 즉시 끝나므로 지연은 없다).
       case .mutationResponse(.success):
-        return .merge(
-          fetchSecretsEffect(query: state.query, debounced: false),
-          .send(.delegate(.secretsChanged))
+        return .concatenate(
+          .send(.delegate(.secretsChanged)),
+          fetchSecretsEffect(query: state.query, debounced: false)
         )
 
       case .mutationResponse(.failure):
@@ -176,9 +178,9 @@ public struct SecretListFeature {
 
       // 프로젝트 연결로 프로젝트별 개수가 바뀌므로 목록 갱신과 함께 부모에게도 알린다.
       case .destination(.presented(.addToProject(.delegate(.projectLinked)))):
-        return .merge(
-          fetchSecretsEffect(query: state.query, debounced: false),
-          .send(.delegate(.secretsChanged))
+        return .concatenate(
+          .send(.delegate(.secretsChanged)),
+          fetchSecretsEffect(query: state.query, debounced: false)
         )
 
       case .destination:
