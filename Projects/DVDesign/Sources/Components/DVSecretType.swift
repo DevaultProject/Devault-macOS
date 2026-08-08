@@ -49,10 +49,14 @@ extension DVSecretType {
         }
     }
 
+    /// 그리드 열이 좁아져도 라벨이 줄바꿈되지 않도록 고정한다.
+    /// 줄바꿈을 허용하면 행 높이가 커지면서 그리드 전체 높이가 연쇄적으로 늘어난다.
     private var typeLabel: some View {
         Text(labelText)
             .dvFont(.headingLG)
             .foregroundStyle(Color.dv(.gray900))
             .multilineTextAlignment(.center)
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
     }
 }
