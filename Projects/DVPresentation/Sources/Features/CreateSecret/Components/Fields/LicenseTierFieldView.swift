@@ -10,9 +10,9 @@ struct LicenseTierFieldView: View {
 
     @Binding var tier: LicenseTier
 
-    @Environment(\.formLayoutMode) private var mode
+    @Environment(\.formLayout) private var layout
 
-    private var size: DVComponentSize { mode.pairedFieldSize }
+    private var size: DVComponentSize { layout.size(for: .paired) }
 
     var body: some View {
         DVLabeledField(.module("Type"), size: size) {
@@ -34,21 +34,21 @@ struct LicenseTierFieldView: View {
 #Preview("Dual · Individual") {
     LicenseTierFieldPreview(initial: .individual)
         .padding()
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
 #Preview("Dual · Team") {
     LicenseTierFieldPreview(initial: .team)
         .padding()
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
 #Preview("Single · Enterprise") {
     LicenseTierFieldPreview(initial: .enterprise)
         .padding()
-        .environment(\.formLayoutMode, .single)
+        .formLayout(.single)
         .previewWidth(.narrow)
 }
 

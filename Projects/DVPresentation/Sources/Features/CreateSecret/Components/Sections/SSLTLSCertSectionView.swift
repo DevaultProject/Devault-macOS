@@ -98,7 +98,7 @@ private let previewProjects: [Project] = [
 #Preview("Empty · Dual (Wide)") {
     SSLTLSCertSectionPreview()
         .padding(24)
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
@@ -112,7 +112,7 @@ private let previewProjects: [Project] = [
         selectedProjectIds: Array(previewProjects.prefix(1).map(\.id))
     )
     .padding(24)
-    .environment(\.formLayoutMode, .dual)
+    .formLayout(.dual)
     .previewWidth(.wide)
 }
 
@@ -124,7 +124,7 @@ private let previewProjects: [Project] = [
         selectedProjectIds: Array(previewProjects.prefix(1).map(\.id))
     )
     .padding(24)
-    .environment(\.formLayoutMode, .single)
+    .formLayout(.single)
     .previewWidth(.narrow)
 }
 
@@ -133,7 +133,7 @@ private let previewProjects: [Project] = [
         errors: [.name: "Required", .certificate: "Required", .sslPrivateKey: "Required"]
     )
     .padding(24)
-    .environment(\.formLayoutMode, .dual)
+    .formLayout(.dual)
     .previewWidth(.wide)
 }
 
