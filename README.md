@@ -54,6 +54,24 @@ tuist generate
 - `Devault.xcworkspace`가 생성됩니다.
 - 이후 Xcode에서 `Devault.xcworkspace`를 열어 작업합니다.
 
+#### Apple Developer 팀 시트가 없다면
+
+앱 타겟은 iCloud(CloudKit) entitlement를 쓰기 때문에, 팀에 초대되지 않은 계정으로는 서명에 실패해 빌드되지 않습니다.
+이 경우 `tuist generate` 대신 아래 명령으로 워크스페이스를 생성하세요.
+
+```bash
+generate-local
+```
+
+- iCloud entitlement를 떼고 ad-hoc 서명("Sign to Run Locally")으로 빌드합니다. Apple ID 자체가 필요 없습니다.
+- 생성 이후 빌드/실행은 Xcode에서 평소와 동일합니다.
+- iCloud 동기화 기능만 사용할 수 없습니다. 온보딩에서 동기화를 켜면 안내 알럿이 뜨고 넘어갑니다.
+- 빌드마다 서명이 달라지므로 키체인 접근 허용을 다시 물어볼 수 있습니다.
+
+> `generate-local`은 `.mise.toml`이 저장소 안에서만 `scripts/`를 PATH에 얹어주는 덕에 접두사 없이 실행됩니다.
+> `command not found`가 뜨면 셸에 mise가 활성화되지 않은 것이니 `./setup.sh`를 먼저 실행하고,
+> 최초 1회는 `mise trust`로 설정 파일을 신뢰해야 합니다.
+
 ---
 
 ## 자주 쓰는 명령어
@@ -61,6 +79,7 @@ tuist generate
 | 명령어 | 설명 |
 |---|---|
 | `tuist generate` | Xcode 워크스페이스 재생성 |
+| `generate-local` | iCloud entitlement 없이 재생성 (팀 시트 없는 경우) |
 | `tuist install` | 외부 패키지 fetch (Package.swift 변경 시) |
 | `tuist clean` | Tuist 캐시 및 생성 파일 삭제 |
 | `./scripts/bootstrap_modules.sh` | 새 모듈 디렉토리 초기화 |

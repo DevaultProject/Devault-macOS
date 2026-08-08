@@ -1,0 +1,7 @@
+#!/bin/bash
+# Apple Developer 팀 시트가 없는 팀원용 워크스페이스 생성.
+# iCloud entitlement를 떼고 ad-hoc 서명으로 빌드되며, iCloud 동기화 기능만 사용할 수 없다.
+set -e
+
+cd "$(dirname "$0")/.."
+TUIST_LOCAL_SIGNING=1 tuist generate "$@"
