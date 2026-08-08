@@ -174,6 +174,7 @@ struct SecretListFeatureTests {
 
         await store.send(.didTapDelete(id: secret.id))
         await store.receive(.mutationResponse(.success(secret.id)))
+        await store.receive(.delegate(.secretsChanged))
         await store.receive(.secretsResponse(.success([]))) {
             $0.secretsState = .loaded([])
         }
@@ -212,6 +213,7 @@ struct SecretListFeatureTests {
 
         await store.send(.didTapRecover(id: secret.id))
         await store.receive(.mutationResponse(.success(secret.id)))
+        await store.receive(.delegate(.secretsChanged))
         await store.receive(.secretsResponse(.success([]))) {
             $0.secretsState = .loaded([])
         }
@@ -229,6 +231,7 @@ struct SecretListFeatureTests {
 
         await store.send(.didTapDeleteForever(id: secretID))
         await store.receive(.mutationResponse(.success(secretID)))
+        await store.receive(.delegate(.secretsChanged))
         await store.receive(.secretsResponse(.success([]))) {
             $0.secretsState = .loaded([])
         }

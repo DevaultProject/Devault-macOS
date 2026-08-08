@@ -54,6 +54,8 @@ public struct SidebarFeature {
     public internal(set) var isProjectSectionExpanded: Bool = true
     public internal(set) var isCreatingSecret: Bool = false
     var projectsState: LoadingState<IdentifiedArrayOf<ProjectItem>, SidebarError> = .idle
+    /// "아직 안 불러옴"과 "0건"을 구분하기 위해 LoadingState로 감싼다 (TCA_GUIDELINES 2.4).
+    var countsState: LoadingState<SecretCounts, SidebarError> = .idle
     var renamingProjectID: ProjectItem.ID?
     var renameText: String = ""
     var deletingProjectID: ProjectItem.ID?
@@ -63,6 +65,12 @@ public struct SidebarFeature {
     var projects: IdentifiedArrayOf<ProjectItem> {
       if case .loaded(let projects) = projectsState { return projects }
       return []
+    }
+
+    /// 로드 전·실패 시에는 nil. View가 "숫자 자리를 비울지" 판단할 수 있어야 하므로 옵셔널이다.
+    var counts: SecretCounts? {
+      if case .loaded(let counts) = countsState { return counts }
+      return nil
     }
 
     public init() {}
@@ -86,9 +94,13 @@ public struct SidebarFeature {
     case didTapDelete(id: ProjectItem.ID)
     case setCreatingSecret(Bool)
 
+    /// Secret이 생성·삭제·복구되어 개수만 다시 세야 할 때 부모(MainFeature)가 보낸다.
+    case countsRefreshRequested
+
     // MARK: - Internal
 
     case projectsResponse(Result<[ProjectItem], SidebarError>)
+    case countsResponse(Result<SecretCounts, SidebarError>)
     case renameResponse(Result<ProjectItem, SidebarError>)
     case deleteResponse(Result<ProjectItem.ID, SidebarError>)
 
@@ -114,11 +126,15 @@ public struct SidebarFeature {
 
   // MARK: - CancelID (E5)
 
-  private enum CancelID { case fetch }
+  private enum CancelID {
+    case fetch
+    case counts
+  }
 
   // MARK: - Dependencies
 
   @Dependency(\.sidebarClient) var sidebarClient
+  @Dependency(\.date.now) var now
 
   // MARK: - Init
 
@@ -131,6 +147,7 @@ public struct SidebarFeature {
       switch action {
       case .task:
         state.projectsState = .loading
+        state.countsState = .loading
         return .run { send in
           do {
             let projects = try await sidebarClient.fetchProjects()
@@ -146,10 +163,24 @@ public struct SidebarFeature {
       case .projectsResponse(.success(let projects)):
         let sorted = projects.sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
         state.projectsState = .loaded(IdentifiedArray(uniqueElements: sorted))
-        return .none
+        // 프로젝트별 개수를 세려면 ID 목록이 필요하므로 목록 로드 성공 후에 이어서 집계한다.
+        return countsEffect(projectIDs: sorted.map(\.id))
 
       case .projectsResponse(.failure(let error)):
         state.projectsState = .failed(error)
+        // 프로젝트 목록이 실패해도 필터 카드 개수는 독립적으로 유효하므로 집계는 계속 시도한다.
+        return countsEffect(projectIDs: [])
+
+      case .countsRefreshRequested:
+        state.countsState = .loading
+        return countsEffect(projectIDs: state.projects.map(\.id))
+
+      case .countsResponse(.success(let counts)):
+        state.countsState = .loaded(counts)
+        return .none
+
+      case .countsResponse(.failure(let error)):
+        state.countsState = .failed(error)
         return .none
 
       case .didSelect(let selection):
@@ -267,6 +298,21 @@ public struct SidebarFeature {
 // MARK: - Private
 
 private extension SidebarFeature {
+
+  /// 필터·프로젝트 개수 집계. 생성/삭제가 연달아 일어나면 직전 집계는 취소한다 (E3).
+  func countsEffect(projectIDs: [ProjectItem.ID]) -> Effect<Action> {
+    .run { [now] send in
+      do {
+        let counts = try await sidebarClient.fetchCounts(now, projectIDs)
+        await send(.countsResponse(.success(counts)))
+      } catch let error as SidebarError {
+        await send(.countsResponse(.failure(error)))
+      } catch {
+        await send(.countsResponse(.failure(.fetchFailed)))
+      }
+    }
+    .cancellable(id: CancelID.counts, cancelInFlight: true)
+  }
 
   func makeDeleteAlert(for project: ProjectItem) -> AlertState<Action.Alert> {
     AlertState {

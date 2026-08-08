@@ -53,7 +53,8 @@ public struct SecretListFeature {
   }
 
   /// Expired 탭에서 "예정" 섹션으로 함께 보여줄 최대 기간(일).
-  static let expiringSoonWindowDays = 30
+  /// 사이드바 Expired 카운트도 같은 window를 써야 목록과 수치가 일치하므로 public이다.
+  public static let expiringSoonWindowDays = 30
 
   // MARK: - Action
 
@@ -87,6 +88,9 @@ public struct SecretListFeature {
 
     public enum Delegate: Equatable {
       case secretSelected(Secret.ID?)
+      /// 삭제·복구·영구삭제·프로젝트 연결로 Secret 집합이 바뀌었음을 부모에게 알린다.
+      /// 부모가 사이드바 개수를 다시 세는 근거가 된다.
+      case secretsChanged
     }
 
     public enum Alert: Equatable {}
@@ -155,7 +159,10 @@ public struct SecretListFeature {
         return mutationEffect(id: id) { try await secretClient.permanentlyDelete(id) }
 
       case .mutationResponse(.success):
-        return fetchSecretsEffect(query: state.query, debounced: false)
+        return .merge(
+          fetchSecretsEffect(query: state.query, debounced: false),
+          .send(.delegate(.secretsChanged))
+        )
 
       case .mutationResponse(.failure):
         state.alert = AlertState {
@@ -166,6 +173,13 @@ public struct SecretListFeature {
           TextState("잠시 후 다시 시도해주세요.")
         }
         return .none
+
+      // 프로젝트 연결로 프로젝트별 개수가 바뀌므로 목록 갱신과 함께 부모에게도 알린다.
+      case .destination(.presented(.addToProject(.delegate(.projectLinked)))):
+        return .merge(
+          fetchSecretsEffect(query: state.query, debounced: false),
+          .send(.delegate(.secretsChanged))
+        )
 
       case .destination:
         return .none

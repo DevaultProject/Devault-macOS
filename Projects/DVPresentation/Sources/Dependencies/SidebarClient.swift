@@ -1,7 +1,8 @@
 // Copyright © 2026 Devault. All rights reserved
 
-import ComposableArchitecture
 import Foundation
+
+import ComposableArchitecture
 
 @DependencyClient
 public struct SidebarClient: Sendable {
@@ -9,6 +10,15 @@ public struct SidebarClient: Sendable {
   public var createProject: @Sendable (_ name: String) async throws -> ProjectItem
   public var renameProject: @Sendable (_ id: ProjectItem.ID, _ name: String) async throws -> ProjectItem
   public var deleteProject: @Sendable (_ id: ProjectItem.ID) async throws -> Void
+
+  /// 필터 카드·프로젝트 행에 표시할 Secret 개수를 한 번에 조회한다.
+  /// - Parameters:
+  ///   - referenceDate: Expired 집계 기준 시각. 호출부(Reducer)가 `@Dependency(\.date.now)`로 주입한다
+  ///   - projectIDs: 개수를 집계할 프로젝트 ID 목록
+  public var fetchCounts: @Sendable (
+    _ referenceDate: Date,
+    _ projectIDs: [ProjectItem.ID]
+  ) async throws -> SecretCounts
 }
 
 extension SidebarClient: TestDependencyKey {
@@ -18,7 +28,13 @@ extension SidebarClient: TestDependencyKey {
     fetchProjects: { ProjectItem.previews },
     createProject: { name in ProjectItem(id: UUID(), name: name) },
     renameProject: { id, name in ProjectItem(id: id, name: name) },
-    deleteProject: { _ in }
+    deleteProject: { _ in },
+    fetchCounts: { _, projectIDs in
+      SecretCounts(
+        byFilter: [.all: 12, .starred: 3, .notice: 2, .expired: 1, .deleted: 4],
+        byProject: Dictionary(uniqueKeysWithValues: projectIDs.enumerated().map { ($1, $0 + 1) })
+      )
+    }
   )
 }
 

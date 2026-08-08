@@ -1,7 +1,8 @@
 // Copyright © 2026 Devault. All rights reserved
 
-import ComposableArchitecture
 import SwiftUI
+
+import ComposableArchitecture
 
 // MARK: - MainFeature
 
@@ -51,6 +52,10 @@ public struct MainFeature {
     public enum Delegate: Equatable {}
   }
 
+  // MARK: - Dependencies
+
+  @Dependency(\.date.now) var now
+
   // MARK: - Init
 
   public init() {}
@@ -87,6 +92,10 @@ public struct MainFeature {
         }
         return .none
 
+      // 자식끼리 직접 연결하지 않고 공통 부모가 사이드바 개수 갱신을 지시한다 (TCA_GUIDELINES 7.4).
+      case .secretList(.delegate(.secretsChanged)):
+        return .send(.sidebar(.countsRefreshRequested))
+
       case .secretList:
         return .none
 
@@ -111,7 +120,10 @@ public struct MainFeature {
       case .createSecret(.delegate(.secretCreated(_))):
         state.createSecret = nil
         state.selectSecretType = nil
-        return .send(.sidebar(.setCreatingSecret(false)))
+        return .merge(
+          .send(.sidebar(.setCreatingSecret(false))),
+          .send(.sidebar(.countsRefreshRequested))
+        )
 
       case .createSecret(.delegate(.cancelled)):
         state.createSecret = nil
@@ -197,7 +209,7 @@ extension MainFeature {
       // TODO: 도메인 레이어에 .notice collection 추가 후 연결
       return .init(collection: .all)
     case .filter(.expired):
-      return .init(collection: .expired(referenceDate: Date()))
+      return .init(collection: .expired(referenceDate: now))
     case .filter(.deleted):
       return .init(collection: .deleted)
     case .project(id: let id):

@@ -18,6 +18,13 @@ public protocol SecretRepository: Sendable {
     /// - Returns: 조건에 부합하는 Secret 배열
     func fetch(_ query: SecretQuery) async throws -> [Secret]
 
+    /// 쿼리 조건에 맞는 Secret의 개수만 조회한다.
+    /// 엔티티를 메모리로 올리지 않으므로 `fetch(_:).count`보다 가볍고,
+    /// 손상된 레코드가 섞여 있어도 개수 집계는 실패하지 않는다.
+    /// - Parameter query: 필터 조건을 담은 SecretQuery. `sort`는 무시된다
+    /// - Returns: 조건에 부합하는 Secret 개수
+    func count(_ query: SecretQuery) async throws -> Int
+
     /// Secret의 지정 필드를 수정한다.
     /// - Parameters:
     ///   - id: 수정할 Secret의 ID

@@ -11,6 +11,38 @@ import Testing
 @Suite("MainFeature")
 struct MainFeatureTests {
 
+  /// 사이드바 카운트 집계의 기준 시각을 고정한다.
+  static let referenceDate = Date(timeIntervalSince1970: 1_700_000_000)
+
+  // MARK: - Count Refresh
+
+  @Test("secretList의 secretsChanged 델리게이트는 사이드바 카운트를 다시 세게 한다")
+  func secretsChangedRefreshesSidebarCounts() async {
+    let item = ProjectItem(id: UUID(), name: "Backend")
+    let counts = SecretCounts(byFilter: [.all: 3], byProject: [item.id: 1])
+
+    var initial = MainFeature.State()
+    initial.sidebar.projectsState = .loaded([item])
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    } withDependencies: {
+      $0.sidebarClient.fetchCounts = { _, projectIDs in
+        #expect(projectIDs == [item.id])
+        return counts
+      }
+      $0.date = .constant(Self.referenceDate)
+    }
+
+    await store.send(.secretList(.delegate(.secretsChanged)))
+    await store.receive(.sidebar(.countsRefreshRequested)) {
+      $0.sidebar.countsState = .loading
+    }
+    await store.receive(.sidebar(.countsResponse(.success(counts)))) {
+      $0.sidebar.countsState = .loaded(counts)
+    }
+  }
+
   // MARK: - Sidebar Delegate
 
   @Test("selectionChanged(.project)는 secretList를 해당 프로젝트로 갱신한다")
@@ -89,9 +121,10 @@ struct MainFeatureTests {
     }
   }
 
-  @Test("secretCreated는 createSecret·selectSecretType을 닫고 isCreatingSecret을 false로 만든다")
+  @Test("secretCreated는 생성 플로우를 닫고 사이드바 카운트를 다시 세게 한다")
   func secretCreatedClearsCreationFlow() async {
     let secretID = UUID()
+    let counts = SecretCounts(byFilter: [.all: 1], byProject: [:])
     var initial = MainFeature.State()
     initial.selectSecretType = .init()
     initial.createSecret = CreateSecretFeature.State(secretType: .apiKeyToken)
@@ -99,6 +132,9 @@ struct MainFeatureTests {
 
     let store = TestStore(initialState: initial) {
       MainFeature()
+    } withDependencies: {
+      $0.sidebarClient.fetchCounts = { _, _ in counts }
+      $0.date = .constant(Self.referenceDate)
     }
 
     await store.send(.createSecret(.delegate(.secretCreated(secretID)))) {
@@ -107,6 +143,12 @@ struct MainFeatureTests {
     }
     await store.receive(.sidebar(.setCreatingSecret(false))) {
       $0.sidebar.isCreatingSecret = false
+    }
+    await store.receive(.sidebar(.countsRefreshRequested)) {
+      $0.sidebar.countsState = .loading
+    }
+    await store.receive(.sidebar(.countsResponse(.success(counts)))) {
+      $0.sidebar.countsState = .loaded(counts)
     }
   }
 
@@ -152,6 +194,8 @@ struct MainFeatureTests {
       MainFeature()
     } withDependencies: {
       $0.sidebarClient.fetchProjects = { [item] }
+      $0.sidebarClient.fetchCounts = { _, _ in SecretCounts() }
+      $0.date = .constant(Self.referenceDate)
     }
 
     await store.send(.createProject(.presented(.delegate(.projectCreated(item))))) {
@@ -164,9 +208,13 @@ struct MainFeatureTests {
     }
     await store.receive(.sidebar(.task)) {
       $0.sidebar.projectsState = .loading
+      $0.sidebar.countsState = .loading
     }
     await store.receive(.sidebar(.projectsResponse(.success([item])))) {
       $0.sidebar.projectsState = .loaded([item])
+    }
+    await store.receive(.sidebar(.countsResponse(.success(SecretCounts())))) {
+      $0.sidebar.countsState = .loaded(SecretCounts())
     }
   }
 
@@ -182,6 +230,8 @@ struct MainFeatureTests {
       MainFeature()
     } withDependencies: {
       $0.sidebarClient.fetchProjects = { [item] }
+      $0.sidebarClient.fetchCounts = { _, _ in SecretCounts() }
+      $0.date = .constant(Self.referenceDate)
     }
 
     await store.send(.createProject(.presented(.delegate(.projectCreated(item))))) {
@@ -190,9 +240,13 @@ struct MainFeatureTests {
     }
     await store.receive(.sidebar(.task)) {
       $0.sidebar.projectsState = .loading
+      $0.sidebar.countsState = .loading
     }
     await store.receive(.sidebar(.projectsResponse(.success([item])))) {
       $0.sidebar.projectsState = .loaded([item])
+    }
+    await store.receive(.sidebar(.countsResponse(.success(SecretCounts())))) {
+      $0.sidebar.countsState = .loaded(SecretCounts())
     }
   }
 
@@ -296,6 +350,8 @@ struct MainFeatureTests {
       MainFeature()
     } withDependencies: {
       $0.sidebarClient.fetchProjects = { [renamed] }
+      $0.sidebarClient.fetchCounts = { _, _ in SecretCounts() }
+      $0.date = .constant(Self.referenceDate)
     }
 
     await store.send(.sidebar(.renameResponse(.success(renamed))))
@@ -309,9 +365,13 @@ struct MainFeatureTests {
     // 이후 refetch로 목록도 동기화
     await store.receive(.sidebar(.task)) {
       $0.sidebar.projectsState = .loading
+      $0.sidebar.countsState = .loading
     }
     await store.receive(.sidebar(.projectsResponse(.success([renamed])))) {
       $0.sidebar.projectsState = .loaded([renamed])
+    }
+    await store.receive(.sidebar(.countsResponse(.success(SecretCounts())))) {
+      $0.sidebar.countsState = .loaded(SecretCounts())
     }
   }
 }
