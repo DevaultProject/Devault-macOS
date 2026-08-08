@@ -77,8 +77,18 @@ extension MainView {
   }
 
   private var detailColumn: some View {
-    Text("Detail")
-      .navigationTitle("")
+    Group {
+      if let detailStore = store.scope(state: \.secretDetail, action: \.secretDetail) {
+        SecretDetailView(store: detailStore)
+      } else {
+        Text("선택한 Secret이 없습니다.")
+          .dvFont(.captionLG)
+          .foregroundStyle(Color.dv(.gray700))
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+      }
+    }
+    .navigationTitle("")
+    .navigationSplitViewColumnWidth(min: 420, ideal: 480)
   }
 }
 
