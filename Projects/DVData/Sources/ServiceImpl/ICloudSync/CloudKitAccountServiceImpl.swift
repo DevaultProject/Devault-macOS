@@ -28,6 +28,15 @@ public struct CloudKitAccountServiceImpl: ICloudAccountService {
             @unknown default:
                 return .couldNotDetermine
             }
+        } catch let error as CKError {
+            switch error.code {
+            case .networkUnavailable, .networkFailure:
+                return .networkUnavailable
+            case .notAuthenticated:
+                return .noAccount
+            default:
+                return .couldNotDetermine
+            }
         } catch {
             return .couldNotDetermine
         }

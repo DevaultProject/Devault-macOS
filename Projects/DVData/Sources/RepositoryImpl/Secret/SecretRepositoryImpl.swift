@@ -78,7 +78,16 @@ public actor SecretRepositoryImpl: SecretRepository {
         do {
             let descriptor = SecretFetchDescriptorBuilder.make(from: query)
             let localSecrets = try modelContext.fetch(descriptor)
-            let domainSecrets = localSecrets.compactMap { try? $0.toDomain() }
+            let domainSecrets = localSecrets.compactMap { localSecret -> DVDomain.Secret? in
+                do {
+                    return try localSecret.toDomain()
+                } catch {
+                    // CloudKit 동기화 지연 등으로 payload가 아직 도착하지 않았을 수 있어 목록에서만 건너뜀
+                    // 반복적으로 찍히면 진짜 손상된 레코드일 수 있으니 확인 필요
+                    Log.warn("Secret(\(localSecret.id)) 변환 실패, 목록에서 제외: \(error)", category: .storage)
+                    return nil
+                }
+            }
             return InMemorySecretQueryFilter.apply(query, to: domainSecrets)
         } catch let error as SecretRepositoryError {
             throw error

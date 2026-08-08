@@ -10,6 +10,8 @@ public enum ICloudAccountStatus: Equatable, Sendable {
     case restricted
     /// 일시적으로 사용할 수 없음
     case temporarilyUnavailable
+    /// 네트워크 문제로 상태 확인에 실패함
+    case networkUnavailable
     /// 상태를 확인하지 못함
     case couldNotDetermine
 }

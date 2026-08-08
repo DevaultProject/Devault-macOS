@@ -66,7 +66,7 @@ extension KeychainKeyStore {
 
         let attributes: [CFString: Any] = [
             kSecValueData: data,
-            kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock,
+            kSecAttrAccessible: kSecAttrAccessibleWhenUnlocked,
             kSecAttrSynchronizable: true,
         ]
 
