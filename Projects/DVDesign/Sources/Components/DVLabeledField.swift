@@ -66,7 +66,7 @@ public struct DVLabeledField<Content: View>: View {
             labelRow
             content()
         }
-        .frame(width: size.width, alignment: .leading)
+        .dvComponentWidth(size, alignment: .leading)
     }
 }
 

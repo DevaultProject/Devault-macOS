@@ -63,7 +63,7 @@ public struct DVChipsField: View {
                             )
                     }
                 }
-                .frame(width: size.width, alignment: .leading)
+                .dvComponentWidth(size, alignment: .leading)
             }
         }
         .animation(.spring(response: 0.5, dampingFraction: 0.85), value: visibleChips)
