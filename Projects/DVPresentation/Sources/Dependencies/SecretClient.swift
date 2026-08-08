@@ -16,6 +16,9 @@ public struct SecretClient: Sendable {
   public var softDelete: @Sendable (_ id: Secret.ID) async throws -> Secret
   public var restore: @Sendable (_ id: Secret.ID) async throws -> Secret
   public var permanentlyDelete: @Sendable (_ id: Secret.ID) async throws -> Void
+  /// 생체인증 후 Secret의 암호화된 payload를 복호화해 `CreateSecretPayload`로 반환한다.
+  /// secretType/subType에 따라 적절한 도메인 payload 타입으로 dispatch하고 metadata JSON을 병합한다.
+  public var revealPayload: @Sendable (_ secret: Secret) async throws -> CreateSecretPayload
 
   // MARK: - Project
 
@@ -53,9 +56,34 @@ private extension SecretClient {
       softDelete: { _ in .preview },
       restore: { _ in .preview },
       permanentlyDelete: { _ in },
+      revealPayload: { secret in
+          switch secret.secretType {
+          case .apiKeyToken:
+              return .apiKey(APIKeyPayload(value: "preview_api_key"), nil)
+          case .oauth:
+              return .oauthClient(
+                OAuthClientPayload(clientId: "preview_id", clientSecret: "preview_secret"),
+                nil
+              )
+          case .database:
+              return .database(DatabasePayload(linkString: "postgresql://preview:5432/db"), nil)
+          case .sshAndCredentials:
+              return .sshKey(
+                SSHKeyPayload(
+                    privateKey: "-----BEGIN RSA PRIVATE KEY-----\npreview\n-----END RSA PRIVATE KEY-----",
+                    passphrase: nil
+                ),
+                nil
+              )
+          case .environmentVariableSet:
+              return .environmentVariableSet(EnvSetPayload(content: "KEY=value\nOTHER=123"))
+          case .etc:
+              return .licenseKey(LicenseKeyPayload(licenseKey: "PREVIEW-LICENSE-1234"), nil)
+          }
+      },
       fetchProjects: { .preview },
       createProject: { name in
-        Project(id: UUID(), name: name, createdAt: .now, updatedAt: .now)
+          Project(id: UUID(), name: name, createdAt: .now, updatedAt: .now)
       },
       linkProject: { _, _ in }
     )
