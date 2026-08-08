@@ -11,13 +11,21 @@ public final class LocalStorage {
     }
 
     public static func makeDefault(iCloudSyncEnabled: Bool) throws -> LocalStorage {
-        let configuration = ModelConfiguration(
+        let syncedConfiguration = ModelConfiguration(
+            "Synced",
+            schema: Schema.syncedSchema,
             isStoredInMemoryOnly: false,
             cloudKitDatabase: iCloudSyncEnabled ? .private(ICloudContainer.identifier) : .none
         )
+        let localOnlyConfiguration = ModelConfiguration(
+            "LocalOnly",
+            schema: Schema.localOnlySchema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .none
+        )
         let modelContainer = try ModelContainer(
             for: Schema.appSchema,
-            configurations: configuration
+            configurations: syncedConfiguration, localOnlyConfiguration
         )
 
         return LocalStorage(modelContainer: modelContainer)

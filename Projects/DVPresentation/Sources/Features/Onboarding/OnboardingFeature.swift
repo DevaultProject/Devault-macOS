@@ -150,6 +150,8 @@ private extension OnboardingFeature {
     makeUserAuthenticationFailedAlert(title: "인증하지 못했어요", error: error)
   }
 
+  // 지금은 상태별로 알럿 문구만 구분한다. 동기화 진행 상태 표시, 재시도 유도 등 온보딩 iCloud UX 전반은
+  // 별도 이슈에서 다룰 예정이다.
   func makeICloudSyncUnavailableAlert(_ status: ICloudAccountStatus) -> AlertState<Action.Alert> {
     let message: String
     switch status {
@@ -162,8 +164,10 @@ private extension OnboardingFeature {
       message = "기기의 iCloud 사용 제한 설정을 확인해주세요."
     case .temporarilyUnavailable:
       message = "잠시 후 다시 시도해주세요."
-    case .couldNotDetermine:
+    case .networkUnavailable:
       message = "네트워크 연결을 확인하고 다시 시도해주세요."
+    case .couldNotDetermine:
+      message = "iCloud 상태를 확인하지 못했어요. 잠시 후 다시 시도해주세요."
     }
     return AlertState {
       TextState("iCloud 동기화를 사용할 수 없어요")
