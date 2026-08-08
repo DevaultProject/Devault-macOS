@@ -1,8 +1,9 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import Foundation
+
 import ComposableArchitecture
 import DVDomain
-import Foundation
 
 // MARK: - SecretDetailFeature
 
@@ -131,6 +132,8 @@ public struct SecretDetailFeature {
                 state.alert = .payloadRevealFailed(SecretDetailError.map(error))
                 return .none
 
+            // 편집 모드는 후속 이슈 범위다. 상태 전이가 없으므로 SecretDetailView는
+            // Edit / Cancel / Save 컨트롤을 노출하지 않으며, 여기서는 액션 case만 예약해 둔다.
             case .didTapEdit, .didTapCancelEdit, .didTapSave:
                 return .none
 

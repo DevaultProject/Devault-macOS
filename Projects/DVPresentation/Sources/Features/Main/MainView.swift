@@ -81,7 +81,7 @@ extension MainView {
       if let detailStore = store.scope(state: \.secretDetail, action: \.secretDetail) {
         SecretDetailView(store: detailStore)
       } else {
-        Text("선택한 Secret이 없습니다.")
+        Text(.module("No secret selected"))
           .dvFont(.captionLG)
           .foregroundStyle(Color.dv(.gray700))
           .frame(maxWidth: .infinity, maxHeight: .infinity)

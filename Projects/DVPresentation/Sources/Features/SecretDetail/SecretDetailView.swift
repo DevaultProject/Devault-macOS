@@ -1,9 +1,10 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import SwiftUI
+
 import ComposableArchitecture
 import DVDesign
 import DVDomain
-import SwiftUI
 
 // MARK: - SecretDetailView
 
@@ -44,6 +45,7 @@ public struct SecretDetailView: View {
             }
         }
         .task { store.send(.task) }
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
 
@@ -60,13 +62,8 @@ extension SecretDetailView {
                 }
                 .buttonStyle(.plain)
                 Spacer()
-                if store.mode == .viewing {
-                    Button { store.send(.didTapEdit) } label: {
-                        Image(systemName: "pencil")
-                            .imageScale(.medium)
-                    }
-                    .buttonStyle(.plain)
-                }
+                // 편집 모드는 후속 이슈에서 구현한다. 상태 전이가 없는 동안
+                // 눌러도 반응하지 않는 컨트롤을 노출하지 않기 위해 Edit 버튼을 숨긴다.
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
@@ -76,6 +73,9 @@ extension SecretDetailView {
 
     // MARK: Viewing
 
+    /// 현재는 name만 노출하는 뼈대다. 후속 이슈에서 `store.payloadState`의
+    /// loading / loaded / failed를 분기하고, loaded에서 `CreateSecretPayload`
+    /// 유형별 필드와 `store.secret` 메타 정보를 렌더링한다.
     @ViewBuilder
     private var viewingBody: some View {
         ScrollView {
@@ -91,6 +91,8 @@ extension SecretDetailView {
 
     // MARK: Editing
 
+    /// 편집 모드 진입 경로가 아직 없어 도달하지 않는다. 후속 이슈에서
+    /// `editFields` 바인딩과 SectionView 재사용으로 채운다.
     @ViewBuilder
     private var editingBody: some View {
         ScrollView {
