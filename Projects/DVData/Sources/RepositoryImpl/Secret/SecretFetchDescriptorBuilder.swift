@@ -3,6 +3,7 @@
 import Foundation
 import SwiftData
 
+import DVDomain
 
 /// Domain의 SecretQuery를 SwiftData의 FetchDescriptor<SwiftDataModel.Secret>로 바꾸는 타입
 enum SecretFetchDescriptorBuilder {
