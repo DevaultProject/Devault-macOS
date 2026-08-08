@@ -2,7 +2,7 @@
 
 import SwiftUI
 
-/// `FormLayoutMode`에 따라 두 필드를 2-column HStack ↔ 1-column VStack으로 전환하는 래퍼.
+/// `FormLayout`에 따라 두 필드를 2-column HStack ↔ 1-column VStack으로 전환하는 래퍼.
 ///
 /// dual 모드: `HStack(spacing: 16)`으로 좌·우 필드 나란히.
 /// single 모드: `VStack(spacing: 16)`으로 위·아래 필드 스택.
@@ -29,7 +29,7 @@ import SwiftUI
 /// ```
 struct AdaptiveFieldRow<Left: View, Right: View>: View {
 
-    @Environment(\.formLayoutMode) private var mode
+    @Environment(\.formLayout) private var layout
 
     private let left: (() -> Left)?
     private let right: (() -> Right)?
@@ -44,9 +44,9 @@ struct AdaptiveFieldRow<Left: View, Right: View>: View {
 
     @ViewBuilder
     var body: some View {
-        switch mode {
-        case .dual:
-            HStack(alignment: .top, spacing: 16) {
+        switch layout.pairAxis {
+        case .horizontal(let spacing):
+            HStack(alignment: .top, spacing: spacing) {
                 if let left {
                     left()
                 } else {
@@ -58,9 +58,9 @@ struct AdaptiveFieldRow<Left: View, Right: View>: View {
                     Spacer(minLength: 0)
                 }
             }
-        case .single:
+        case .vertical(let spacing):
             if let left, let right {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: spacing) {
                     left()
                     right()
                 }
@@ -100,7 +100,7 @@ extension AdaptiveFieldRow where Left == EmptyView {
         SamplePlaceholder(label: "Right", color: .green)
     }
     .padding(24)
-    .environment(\.formLayoutMode, .dual)
+    .formLayout(.dual)
     .previewWidth(.wide)
 }
 
@@ -111,7 +111,7 @@ extension AdaptiveFieldRow where Left == EmptyView {
         SamplePlaceholder(label: "Right", color: .green)
     }
     .padding(24)
-    .environment(\.formLayoutMode, .single)
+    .formLayout(.single)
     .previewWidth(.narrow)
 }
 
