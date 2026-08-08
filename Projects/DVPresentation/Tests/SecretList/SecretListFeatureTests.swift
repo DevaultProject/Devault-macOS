@@ -143,7 +143,7 @@ struct SecretListFeatureTests {
             return
         }
         let expectedWindowEnd = today.addingTimeInterval(
-            TimeInterval(SecretListFeature.expiringSoonWindowDays) * 86_400
+            TimeInterval(SecretQuery.Collection.expiringSoonWindowDays) * 86_400
         )
         #expect(windowEnd == expectedWindowEnd)
         #expect(query.sort == .expiringSoon)

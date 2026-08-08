@@ -189,7 +189,7 @@ extension SidebarView {
         onCancel: { store.send(.didCancelRename) }
       )
     } else {
-      DVProjectContainer(name: project.name, count: store.counts?.count(forProject: project.id) ?? 0)
+      DVProjectContainer(name: project.name, count: store.counts?.count(forProject: project.id))
     }
   }
 
@@ -205,10 +205,10 @@ extension SidebarView {
     }
   }
 
-  /// 개수는 로드 완료 후에만 실제 값을 갖는다. 로드 전·실패 시에는 0으로 표시한다
-  /// (State는 `countsState`로 "로드 전"과 "0건"을 구분해 들고 있다).
-  private func count(for filter: SidebarFilter) -> Int {
-    store.counts?.count(for: filter) ?? 0
+  /// 개수는 로드 완료 후에만 실제 값을 갖는다. 로드 전·실패 시에는 nil을 넘겨
+  /// 숫자 자리를 비운다 — 0으로 대체하면 "시크릿 없음"과 구분되지 않는다.
+  private func count(for filter: SidebarFilter) -> Int? {
+    store.counts?.count(for: filter)
   }
 
   private func projectHeaderButton(icon: String, action: @escaping () -> Void) -> some View {

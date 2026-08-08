@@ -7,7 +7,9 @@ public struct DVCategory: View {
     // MARK: - Properties
 
     public let title: String
-    public let count: Int
+    /// nil이면 개수 라벨을 그리지 않는다 — 아직 집계 전이거나 집계에 실패한 상태.
+    /// 0으로 대체하면 "시크릿 없음"으로 읽히므로 자리를 비워 두는 쪽을 택한다.
+    public let count: Int?
     public let systemImage: String
     public let iconColor: Color
     public let isSelected: Bool
@@ -19,7 +21,7 @@ public struct DVCategory: View {
 
     public init(
         title: String,
-        count: Int,
+        count: Int?,
         systemImage: String,
         iconColor: Color = Color.dv(.gray800),
         isSelected: Bool,
@@ -78,10 +80,13 @@ extension DVCategory {
             .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray900))
     }
 
+    @ViewBuilder
     private var countLabel: some View {
-        Text(count > 999 ? "999+" : "\(count)")
-            .dvFont(.bodyMD)
-            .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray600))
+        if let count {
+            Text(count > 999 ? "999+" : "\(count)")
+                .dvFont(.bodyMD)
+                .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray600))
+        }
     }
 }
 

@@ -107,12 +107,8 @@ private extension SidebarFilter {
       // TODO: 도메인 레이어에 .notice collection 추가 후 연결 (MainFeature도 동일하게 .all로 매핑 중)
       return .all
     case .expired:
-      // 목록의 Expired 탭은 "이미 지남 + N일 이내 예정"을 함께 보여주므로 같은 window를 적용한다.
-      return .expired(
-        referenceDate: referenceDate.addingTimeInterval(
-          TimeInterval(SecretListFeature.expiringSoonWindowDays) * 86_400
-        )
-      )
+      // 목록의 Expired 탭과 같은 window 계산을 공유한다.
+      return .expiringWindow(from: referenceDate)
     case .deleted:
       return .deleted
     }
