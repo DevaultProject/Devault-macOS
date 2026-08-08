@@ -186,6 +186,97 @@ struct SecretDetailFeatureTests {
         #expect(store.state.linkedProjects.isEmpty)
     }
 
+    // MARK: - payload 재시도
+
+    // `didTapRetryReveal`은 effect가 reveal 하나뿐이라 `task`처럼 수신 순서를 맞출 필요가 없다.
+    // `projectClient`를 일부러 스텁하지 않는다 — 재시도가 프로젝트 재조회까지 끌고 오면
+    // 미구현 dependency 호출로 실패한다.
+
+    @Test("didTapRetryReveal 성공: payloadState .loading → .loaded")
+    func retryReveal_success() async {
+        let secret = Self.makeSecret()
+        let payload = CreateSecretPayload.apiKey(APIKeyPayload(value: "test_token"), nil)
+
+        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.revealPayload = { _ in payload }
+        }
+
+        await store.send(.didTapRetryReveal) {
+            $0.payloadState = .loading
+        }
+        await store.receive(.payloadResponse(.success(payload))) {
+            $0.payloadState = .loaded(payload)
+        }
+    }
+
+    @Test("didTapRetryReveal 실패: payloadState .failed + alert 노출")
+    func retryReveal_failure() async {
+        let secret = Self.makeSecret()
+
+        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.revealPayload = { _ in throw SecretUseCaseError.cryptoFailure(.decryptionFailed) }
+        }
+
+        await store.send(.didTapRetryReveal) {
+            $0.payloadState = .loading
+        }
+        await store.receive(.payloadResponse(.failure(.cryptoFailure(.decryptionFailed)))) {
+            $0.payloadState = .failed(.cryptoFailure(.decryptionFailed))
+            $0.alert = .payloadRevealFailed(.decryptionFailed)
+        }
+    }
+
+    @Test("인증 취소 후 재시도: alert를 닫고 다시 시도하면 payload가 노출된다")
+    func retryReveal_afterAuthenticationCancellation() async {
+        let secret = Self.makeSecret()
+        let payload = CreateSecretPayload.apiKey(APIKeyPayload(value: "test_token"), nil)
+        let attemptCount = LockIsolated(0)
+
+        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.projectClient.fetchProjects = { throw CancellationError() }
+            $0.secretClient.fetchLinkedProjects = { _ in throw CancellationError() }
+            $0.secretClient.revealPayload = { _ in
+                let attempt = attemptCount.withValue { count -> Int in
+                    count += 1
+                    return count
+                }
+                // 첫 시도는 Touch ID 취소, 재시도는 성공.
+                if attempt == 1 {
+                    throw SecretUseCaseError.authenticationFailure(.cancelled)
+                }
+                return payload
+            }
+        }
+
+        await store.send(.task) {
+            $0.isLoadingProjects = true
+            $0.payloadState = .loading
+        }
+        await store.receive(.payloadResponse(.failure(.authenticationFailure(.cancelled)))) {
+            $0.payloadState = .failed(.authenticationFailure(.cancelled))
+            $0.alert = .payloadRevealFailed(.authRequired)
+        }
+
+        await store.send(.alert(.dismiss)) {
+            $0.alert = nil
+        }
+
+        await store.send(.didTapRetryReveal) {
+            $0.payloadState = .loading
+        }
+        await store.receive(.payloadResponse(.success(payload))) {
+            $0.payloadState = .loaded(payload)
+        }
+        // 매 시도가 생체인증을 새로 타므로 호출 횟수 자체가 재시도 성립의 근거다.
+        #expect(attemptCount.value == 2)
+    }
+
     // MARK: - Close delegate
 
     @Test("didTapClose는 delegate(.closed)를 emit한다")

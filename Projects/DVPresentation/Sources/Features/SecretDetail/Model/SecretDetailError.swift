@@ -33,6 +33,16 @@ enum SecretDetailError: Equatable {
             return .unexpected
         }
     }
+
+    /// 조회 화면에 남는 안내 문구. alert는 닫히면 사라지므로 원인은 화면에서도 읽혀야 한다.
+    var revealFailureMessage: LocalizedStringResource {
+        switch self {
+        case .authRequired:
+            return .module("Authentication is required to reveal this secret.")
+        case .decryptionFailed, .unexpected:
+            return .module("This secret could not be decrypted.")
+        }
+    }
 }
 
 // MARK: - AlertState Presets

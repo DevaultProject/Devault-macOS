@@ -55,6 +55,8 @@ public struct SecretDetailFeature {
         case task
         case binding(BindingAction<State>)
         case didTapClose
+        /// payload 복호화 재시도. 인증 취소로 `.failed`가 된 뒤 다시 시도할 유일한 경로다.
+        case didTapRetryReveal
         case didTapToggleLike
         case didTapDelete
         case didTapEdit
@@ -91,6 +93,8 @@ public struct SecretDetailFeature {
     private enum CancelID {
         /// 즐겨찾기 연타 시 이전 요청을 취소해 응답 순서가 뒤바뀌는 것을 막는다.
         case like
+        /// 재시도 연타 시 생체인증 프롬프트 요청이 겹쳐 쌓이는 것을 막는다.
+        case reveal
     }
 
     // MARK: - Dependencies
@@ -121,15 +125,7 @@ public struct SecretDetailFeature {
                             await send(.projectsResponse(.failure(.unexpected)))
                         }
                     },
-                    .run { [secret = state.secret] send in
-                        do {
-                            let payload = try await secretClient.revealPayload(secret)
-                            await send(.payloadResponse(.success(payload)))
-                        } catch is CancellationError {
-                        } catch {
-                            await send(.payloadResponse(.failure(SecretUseCaseError.map(error))))
-                        }
-                    },
+                    revealEffect(secret: state.secret),
                     .run { [id = state.secret.id] send in
                         do {
                             let projects = try await secretClient.fetchLinkedProjects(id)
@@ -140,6 +136,11 @@ public struct SecretDetailFeature {
                         }
                     }
                 )
+
+            // 프로젝트 목록은 이미 확보돼 있고 실패한 것은 복호화뿐이므로 reveal만 다시 태운다.
+            case .didTapRetryReveal:
+                state.payloadState = .loading
+                return revealEffect(secret: state.secret)
 
             // 디자인에서 close(×) 버튼을 제거했으므로 현재 이 액션을 발생시키는 UI 경로가 없다.
             // detail은 사이드바 전환·리스트 선택 해제(`secretSelected(nil)`)로 닫힌다.
@@ -231,5 +232,22 @@ public struct SecretDetailFeature {
             }
         }
         .ifLet(\.$alert, action: \.alert)
+    }
+
+    // MARK: - Effects
+
+    /// 진입(`task`)과 재시도(`didTapRetryReveal`)가 같은 조회를 쓴다.
+    /// `revealPayload`는 매번 생체인증을 타므로, 취소되면 재시도만으로 같은 지점부터 다시 진행돼야 한다.
+    private func revealEffect(secret: Secret) -> Effect<Action> {
+        .run { send in
+            do {
+                let payload = try await secretClient.revealPayload(secret)
+                await send(.payloadResponse(.success(payload)))
+            } catch is CancellationError {
+            } catch {
+                await send(.payloadResponse(.failure(SecretUseCaseError.map(error))))
+            }
+        }
+        .cancellable(id: CancelID.reveal, cancelInFlight: true)
     }
 }
