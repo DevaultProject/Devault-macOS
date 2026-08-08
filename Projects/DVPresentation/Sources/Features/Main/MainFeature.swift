@@ -20,6 +20,8 @@ public struct MainFeature {
     @Presents var createProject: CreateProjectFeature.State?
     /// sheet가 아닌 2-column NavigationSplitView 전환 용도이므로 @Presents 미사용
     var createSecret: CreateSecretFeature.State?
+    /// sheet가 아닌 3-column NavigationSplitView detail 컬럼 용도이므로 @Presents 미사용
+    var secretDetail: SecretDetailFeature.State?
 
     public init() {}
   }
@@ -40,6 +42,7 @@ public struct MainFeature {
     case selectSecretType(SelectSecretTypeFeature.Action)
     case createProject(PresentationAction<CreateProjectFeature.Action>)
     case createSecret(CreateSecretFeature.Action)
+    case secretDetail(SecretDetailFeature.Action)
 
     // MARK: - Delegate
 
@@ -76,7 +79,26 @@ public struct MainFeature {
       case .sidebar:
         return .none
 
+      case .secretList(.delegate(.secretSelected(let id))):
+        if let id, case .loaded(let secrets) = state.secretList.secretsState, let secret = secrets[id: id] {
+          state.secretDetail = SecretDetailFeature.State(secret: secret)
+        } else {
+          state.secretDetail = nil
+        }
+        return .none
+
       case .secretList:
+        return .none
+
+      case .secretDetail(.delegate(.closed)):
+        state.secretDetail = nil
+        state.secretList.selectedSecretID = nil
+        return .none
+
+      case .secretDetail(.delegate(.secretUpdated)):
+        return .none
+
+      case .secretDetail:
         return .none
 
       case .selectSecretType(.delegate(.typeSelected(let secretType))):
@@ -122,6 +144,9 @@ public struct MainFeature {
     }
     .ifLet(\.createSecret, action: \.createSecret) {
       CreateSecretFeature()
+    }
+    .ifLet(\.secretDetail, action: \.secretDetail) {
+      SecretDetailFeature()
     }
   }
 }

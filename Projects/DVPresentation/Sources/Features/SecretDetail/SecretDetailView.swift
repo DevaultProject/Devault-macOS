@@ -32,7 +32,6 @@ public struct SecretDetailView: View {
                 }
             }
             if store.mode == .editing {
-                // Issue C에서 FooterActionsView 연결
                 Divider()
                 HStack {
                     Spacer()
@@ -75,7 +74,7 @@ extension SecretDetailView {
         }
     }
 
-    // MARK: Viewing — 인터랙티브 컨트롤 완전 배제 (Issue B에서 완성)
+    // MARK: Viewing
 
     @ViewBuilder
     private var viewingBody: some View {
@@ -90,7 +89,7 @@ extension SecretDetailView {
         }
     }
 
-    // MARK: Editing — CreateSecret SectionView 재사용 (Issue C에서 완성)
+    // MARK: Editing
 
     @ViewBuilder
     private var editingBody: some View {

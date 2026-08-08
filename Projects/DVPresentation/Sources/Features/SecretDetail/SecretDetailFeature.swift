@@ -131,7 +131,6 @@ public struct SecretDetailFeature {
                 state.alert = .payloadRevealFailed(SecretDetailError.map(error))
                 return .none
 
-            // Issue C에서 구현
             case .didTapEdit, .didTapCancelEdit, .didTapSave:
                 return .none
 

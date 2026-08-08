@@ -1,6 +1,7 @@
 // Copyright © 2026 Devault. All rights reserved
 
 import ComposableArchitecture
+import DVDomain
 import Foundation
 import Testing
 
@@ -192,6 +193,87 @@ struct MainFeatureTests {
     }
     await store.receive(.sidebar(.projectsResponse(.success([item])))) {
       $0.sidebar.projectsState = .loaded([item])
+    }
+  }
+
+  // MARK: - SecretDetail Routing
+
+  @Test("secretSelected(id)는 해당 Secret으로 secretDetail을 세팅한다")
+  func secretSelectedSetsSecretDetail() async {
+    let secret = Secret(
+      id: UUID(),
+      name: "Test Token",
+      secretType: .apiKeyToken,
+      createdAt: Date(),
+      updatedAt: Date(),
+      payload: SecretPayload(encryptedData: Data(), keyTag: "test", schemaVersion: 1)
+    )
+
+    var initial = MainFeature.State()
+    initial.secretList.secretsState = .loaded([secret])
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    }
+
+    await store.send(.secretList(.didSelectSecret(id: secret.id))) {
+      $0.secretList.selectedSecretID = secret.id
+    }
+    await store.receive(.secretList(.delegate(.secretSelected(secret.id)))) {
+      $0.secretDetail = SecretDetailFeature.State(secret: secret)
+    }
+  }
+
+  @Test("secretSelected(nil)은 secretDetail을 닫는다")
+  func secretSelectedNilClearsSecretDetail() async {
+    let secret = Secret(
+      id: UUID(),
+      name: "Test Token",
+      secretType: .apiKeyToken,
+      createdAt: Date(),
+      updatedAt: Date(),
+      payload: SecretPayload(encryptedData: Data(), keyTag: "test", schemaVersion: 1)
+    )
+
+    var initial = MainFeature.State()
+    initial.secretList.secretsState = .loaded([secret])
+    initial.secretList.selectedSecretID = secret.id
+    initial.secretDetail = SecretDetailFeature.State(secret: secret)
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    }
+
+    await store.send(.secretList(.didSelectSecret(id: nil))) {
+      $0.secretList.selectedSecretID = nil
+    }
+    await store.receive(.secretList(.delegate(.secretSelected(nil)))) {
+      $0.secretDetail = nil
+    }
+  }
+
+  @Test("secretDetail closed delegate는 secretDetail과 selectedSecretID를 초기화한다")
+  func secretDetailClosedClearsDetail() async {
+    let secret = Secret(
+      id: UUID(),
+      name: "Test Token",
+      secretType: .apiKeyToken,
+      createdAt: Date(),
+      updatedAt: Date(),
+      payload: SecretPayload(encryptedData: Data(), keyTag: "test", schemaVersion: 1)
+    )
+
+    var initial = MainFeature.State()
+    initial.secretList.selectedSecretID = secret.id
+    initial.secretDetail = SecretDetailFeature.State(secret: secret)
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    }
+
+    await store.send(.secretDetail(.delegate(.closed))) {
+      $0.secretDetail = nil
+      $0.secretList.selectedSecretID = nil
     }
   }
 
