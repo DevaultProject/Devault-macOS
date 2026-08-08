@@ -25,14 +25,14 @@ struct MemoFieldView: View {
 #Preview("Empty · Dual") {
     MemoFieldPreview()
         .padding()
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
 #Preview("Filled · Single") {
     MemoFieldPreview(initial: "Rotate quarterly")
         .padding()
-        .environment(\.formLayoutMode, .single)
+        .formLayout(.single)
         .previewWidth(.narrow)
 }
 

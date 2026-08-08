@@ -17,14 +17,11 @@ struct ProjectFieldView: View {
     let onCreateProject: () -> Void
     var sizeMode: FormSlotSize = .fullWidth
 
-    @Environment(\.formLayoutMode) private var mode
+    @Environment(\.formLayout) private var layout
     @Environment(\.isProjectLoading) private var isProjectLoading
 
     private var size: DVComponentSize {
-        switch sizeMode {
-        case .fullWidth: return mode.fullWidthFieldSize
-        case .paired:    return mode.pairedFieldSize
-        }
+        layout.size(for: sizeMode)
     }
 
     var body: some View {
@@ -79,21 +76,21 @@ private let previewProjects: [Project] = [
 #Preview("Empty · Dual") {
     ProjectFieldPreview()
         .padding()
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
 #Preview("With selection · Single") {
     ProjectFieldPreview(initial: Array(previewProjects.prefix(2).map(\.id)))
         .padding()
-        .environment(\.formLayoutMode, .single)
+        .formLayout(.single)
         .previewWidth(.narrow)
 }
 
 #Preview("No projects yet") {
     ProjectFieldPreview(items: [])
         .padding()
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 

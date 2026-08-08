@@ -28,21 +28,21 @@ struct NameFieldView: View {
 #Preview("Empty · Dual") {
     NameFieldPreview()
         .padding()
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
 #Preview("Filled · Single") {
     NameFieldPreview(initial: "My API Key")
         .padding()
-        .environment(\.formLayoutMode, .single)
+        .formLayout(.single)
         .previewWidth(.narrow)
 }
 
 #Preview("With warning · Dual") {
     NameFieldPreview(warning: "Required")
         .padding()
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 

@@ -9,9 +9,9 @@ struct EnvironmentFieldView: View {
 
     @Binding var environment: SecretEnvironment
 
-    @Environment(\.formLayoutMode) private var mode
+    @Environment(\.formLayout) private var layout
 
-    private var size: DVComponentSize { mode.pairedFieldSize }
+    private var size: DVComponentSize { layout.size(for: .paired) }
 
     var body: some View {
         DVLabeledField(.module("Environment"), size: size) {
@@ -33,21 +33,21 @@ struct EnvironmentFieldView: View {
 #Preview("Dual · dev selected") {
     EnvironmentFieldPreview(initial: .dev)
         .padding()
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
 #Preview("Dual · staging selected") {
     EnvironmentFieldPreview(initial: .staging)
         .padding()
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
 #Preview("Single · prod selected") {
     EnvironmentFieldPreview(initial: .prod)
         .padding()
-        .environment(\.formLayoutMode, .single)
+        .formLayout(.single)
         .previewWidth(.narrow)
 }
 

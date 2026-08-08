@@ -110,7 +110,7 @@ private let previewProjects: [Project] = [
 #Preview("Empty · Dual (Wide)") {
     OAuthClientSectionPreview()
         .padding(24)
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
@@ -125,7 +125,7 @@ private let previewProjects: [Project] = [
         candidates: ["GitHub", "OAuth"]
     )
     .padding(24)
-    .environment(\.formLayoutMode, .dual)
+    .formLayout(.dual)
     .previewWidth(.wide)
 }
 
@@ -140,7 +140,7 @@ private let previewProjects: [Project] = [
         candidates: ["GitHub"]
     )
     .padding(24)
-    .environment(\.formLayoutMode, .single)
+    .formLayout(.single)
     .previewWidth(.narrow)
 }
 
@@ -149,7 +149,7 @@ private let previewProjects: [Project] = [
         errors: [.name: "Required", .clientId: "Required", .clientSecret: "Required"]
     )
     .padding(24)
-    .environment(\.formLayoutMode, .dual)
+    .formLayout(.dual)
     .previewWidth(.wide)
 }
 

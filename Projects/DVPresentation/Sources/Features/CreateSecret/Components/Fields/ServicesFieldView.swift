@@ -19,9 +19,9 @@ struct ServicesFieldView: View {
     /// 현재 사용자 입력. chip 탭 or 직접 타이핑으로 변경.
     @Binding var input: String
 
-    @Environment(\.formLayoutMode) private var mode
+    @Environment(\.formLayout) private var layout
 
-    private var size: DVComponentSize { mode.pairedFieldSize }
+    private var size: DVComponentSize { layout.size(for: .paired) }
 
     var body: some View {
         DVLabeledField(.module("Services"), size: size) {
@@ -42,14 +42,14 @@ struct ServicesFieldView: View {
 #Preview("Empty · No suggestions · Dual") {
     ServicesFieldPreview(suggestions: [])
         .padding()
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
 #Preview("With suggestions · Dual") {
     ServicesFieldPreview(suggestions: ["github.com", "gitlab.com", "bitbucket.org"])
         .padding()
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
@@ -59,7 +59,7 @@ struct ServicesFieldView: View {
         initialInput: "github.com"
     )
     .padding()
-    .environment(\.formLayoutMode, .single)
+    .formLayout(.single)
     .previewWidth(.narrow)
 }
 

@@ -86,7 +86,7 @@ private let previewProjects: [Project] = [
 #Preview("Empty · Dual (Wide)") {
     CustomSectionPreview()
         .padding(24)
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
@@ -98,7 +98,7 @@ private let previewProjects: [Project] = [
         candidates: ["Legacy"]
     )
     .padding(24)
-    .environment(\.formLayoutMode, .dual)
+    .formLayout(.dual)
     .previewWidth(.wide)
 }
 
@@ -109,7 +109,7 @@ private let previewProjects: [Project] = [
         selectedProjectIds: Array(previewProjects.prefix(1).map(\.id))
     )
     .padding(24)
-    .environment(\.formLayoutMode, .single)
+    .formLayout(.single)
     .previewWidth(.narrow)
 }
 
@@ -118,7 +118,7 @@ private let previewProjects: [Project] = [
         errors: [.name: "Required", .value: "Required"]
     )
     .padding(24)
-    .environment(\.formLayoutMode, .dual)
+    .formLayout(.dual)
     .previewWidth(.wide)
 }
 

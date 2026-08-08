@@ -5,7 +5,7 @@ import SwiftUI
 
 /// 라벨 + 텍스트 입력 (`DVLabeledField` + `DVTextField`)을 하나로 묶은 재사용 필드.
 ///
-/// `FormLayoutMode` Environment를 읽어 자기 컴포넌트 사이즈를 결정 —
+/// `FormLayout` Environment를 읽어 자기 컴포넌트 사이즈를 결정 —
 /// `sizeMode`가 `.fullWidth`면 dual=lg / single=md, `.paired`면 두 모드 모두 md.
 struct LabeledTextFieldView: View {
 
@@ -17,13 +17,10 @@ struct LabeledTextFieldView: View {
     var sizeMode: FormSlotSize = .fullWidth
     var trailingHint: DVLabeledField<DVTextField>.TrailingHint?
 
-    @Environment(\.formLayoutMode) private var mode
+    @Environment(\.formLayout) private var layout
 
     private var size: DVComponentSize {
-        switch sizeMode {
-        case .fullWidth: return mode.fullWidthFieldSize
-        case .paired:    return mode.pairedFieldSize
-        }
+        layout.size(for: sizeMode)
     }
 
     var body: some View {
@@ -45,21 +42,21 @@ struct LabeledTextFieldView: View {
 #Preview("Full-width · Dual") {
     LabeledTextFieldPreview(sizeMode: .fullWidth)
         .padding()
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
 #Preview("Full-width · Single") {
     LabeledTextFieldPreview(sizeMode: .fullWidth)
         .padding()
-        .environment(\.formLayoutMode, .single)
+        .formLayout(.single)
         .previewWidth(.narrow)
 }
 
 #Preview("Paired · Dual") {
     LabeledTextFieldPreview(sizeMode: .paired)
         .padding()
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
@@ -71,7 +68,7 @@ struct LabeledTextFieldView: View {
         initial: "ghp_1234567890"
     )
     .padding()
-    .environment(\.formLayoutMode, .dual)
+    .formLayout(.dual)
     .previewWidth(.wide)
 }
 
@@ -81,7 +78,7 @@ struct LabeledTextFieldView: View {
         hint: .warning("Required")
     )
     .padding()
-    .environment(\.formLayoutMode, .dual)
+    .formLayout(.dual)
     .previewWidth(.wide)
 }
 

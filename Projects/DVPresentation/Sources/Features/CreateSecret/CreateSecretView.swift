@@ -21,9 +21,9 @@ struct CreateSecretView: View {
                 scrollContent
                 footer
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, FormLayoutMetrics.horizontalPadding)
             .padding(.vertical, 16)
-            .environment(\.formLayoutMode, FormLayoutMode.mode(for: proxy.size.width))
+            .formLayout(StandaloneFormLayout.layout(for: proxy.size.width))
             .environment(\.isProjectLoading, store.isLoadingProjects)
         }
         // Min: apiKeyToken 3-radio 헤더의 자연 폭(~460pt)이 지배 제약. padding 40 + 여유 포함.

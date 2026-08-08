@@ -89,7 +89,7 @@ private let previewProjects: [Project] = [
 #Preview("Empty · Dual (Wide)") {
     DatabaseSectionPreview()
         .padding(24)
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
@@ -102,7 +102,7 @@ private let previewProjects: [Project] = [
         candidates: ["postgres", "db"]
     )
     .padding(24)
-    .environment(\.formLayoutMode, .dual)
+    .formLayout(.dual)
     .previewWidth(.wide)
 }
 
@@ -115,7 +115,7 @@ private let previewProjects: [Project] = [
         candidates: ["postgres"]
     )
     .padding(24)
-    .environment(\.formLayoutMode, .single)
+    .formLayout(.single)
     .previewWidth(.narrow)
 }
 
@@ -124,7 +124,7 @@ private let previewProjects: [Project] = [
         errors: [.name: "Required", .linkString: "Required"]
     )
     .padding(24)
-    .environment(\.formLayoutMode, .dual)
+    .formLayout(.dual)
     .previewWidth(.wide)
 }
 

@@ -9,9 +9,9 @@ struct ExpireDateFieldView: View {
 
     @Binding var expireDate: Date?
 
-    @Environment(\.formLayoutMode) private var mode
+    @Environment(\.formLayout) private var layout
 
-    private var size: DVComponentSize { mode.pairedFieldSize }
+    private var size: DVComponentSize { layout.size(for: .paired) }
 
     private var isSet: Bool { expireDate != nil }
 
@@ -29,7 +29,9 @@ struct ExpireDateFieldView: View {
 
                 trashButton
             }
-            .frame(width: size.width)
+            // `.frame(width: size.width)`를 직접 쓰면 `.fill` 정책에서 래퍼만 늘어나고
+            // 내부 컨트롤은 토큰 폭에 남아 어긋난다. DVDesign의 폭 정책 modifier를 따른다.
+            .dvComponentWidth(size)
         }
     }
 }
@@ -107,7 +109,7 @@ private extension ExpireDateFieldView {
 #Preview("No expired (nil) · Dual") {
     ExpireDateFieldPreview()
         .padding()
-        .environment(\.formLayoutMode, .dual)
+        .formLayout(.dual)
         .previewWidth(.wide)
 }
 
@@ -116,7 +118,7 @@ private extension ExpireDateFieldView {
         initial: Calendar.current.date(byAdding: .day, value: 30, to: Date())
     )
     .padding()
-    .environment(\.formLayoutMode, .dual)
+    .formLayout(.dual)
     .previewWidth(.wide)
 }
 
@@ -125,7 +127,7 @@ private extension ExpireDateFieldView {
         initial: Calendar.current.date(byAdding: .day, value: 30, to: Date())
     )
     .padding()
-    .environment(\.formLayoutMode, .single)
+    .formLayout(.single)
     .previewWidth(.narrow)
 }
 
