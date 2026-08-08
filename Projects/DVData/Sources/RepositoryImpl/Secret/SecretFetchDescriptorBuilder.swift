@@ -43,18 +43,30 @@ enum SecretFetchDescriptorBuilder {
         referenceDate: Date
     ) -> Predicate<SwiftDataModel.Secret> {
         let neverExpires = Date.distantFuture
+        let hasSecretType = query.secretType != nil
+        let secretType = query.secretType?.rawValue ?? ""
+        let hasService = !(query.service?.isEmpty ?? true)
+        let service = query.service ?? ""
+        let hasEnvironment = !(query.environment?.isEmpty ?? true)
+        let environment = query.environment ?? ""
 
         switch query.collection {
         case .all:
             return #Predicate<SwiftDataModel.Secret> { secret in
                 secret.deletedAt == nil &&
-                (secret.expiresAt ?? neverExpires) >= referenceDate
+                (secret.expiresAt ?? neverExpires) >= referenceDate &&
+                (!hasSecretType || secret.secretType == secretType) &&
+                (!hasService || secret.service == service) &&
+                (!hasEnvironment || secret.environment == environment)
             }
         case .liked:
             return #Predicate<SwiftDataModel.Secret> { secret in
                 secret.deletedAt == nil &&
                 secret.liked &&
-                (secret.expiresAt ?? neverExpires) >= referenceDate
+                (secret.expiresAt ?? neverExpires) >= referenceDate &&
+                (!hasSecretType || secret.secretType == secretType) &&
+                (!hasService || secret.service == service) &&
+                (!hasEnvironment || secret.environment == environment)
             }
         case .expired, .deleted, .project:
             return predicate(from: query)
