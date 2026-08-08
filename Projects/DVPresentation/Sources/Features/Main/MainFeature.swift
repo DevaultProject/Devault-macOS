@@ -104,8 +104,15 @@ public struct MainFeature {
         state.secretList.selectedSecretID = nil
         return .none
 
+      // 즐겨찾기·저장으로 Secret이 바뀌면 목록을 재조회한다. 단순 항목 교체로는
+      // liked / expired / project 같은 필터 컬렉션에서 조건을 벗어난 항목이 남는다.
       case .secretDetail(.delegate(.secretUpdated)):
-        return .none
+        return .send(.secretList(.refresh))
+
+      case .secretDetail(.delegate(.deleted)):
+        state.secretDetail = nil
+        state.secretList.selectedSecretID = nil
+        return .send(.secretList(.refresh))
 
       case .secretDetail:
         return .none
