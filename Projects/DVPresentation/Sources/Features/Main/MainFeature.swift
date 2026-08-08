@@ -163,6 +163,7 @@ extension MainFeature {
     case .selectionChanged(let selection):
       state.selectSecretType = nil
       state.createSecret = nil
+      state.secretDetail = nil
       state.secretList = makeSecretListState(selection: selection, projects: state.sidebar.projects)
       return .send(.sidebar(.setCreatingSecret(false)))
 
