@@ -56,6 +56,11 @@ private extension SecretClient {
       softDelete: { _ in .preview },
       restore: { _ in .preview },
       permanentlyDelete: { _ in },
+      // secretType만 분기하므로 live의 dispatchRevealPayload와 달리 subType별 case를
+      // 구분하지 않는다(.serviceAccount / .sslTlsCertificate / .custom / .accessToken /
+      // .webhookSecret). Preview·Test에서 payload 필드 구성이 실제 동작과 어긋나므로,
+      // SecretDetailView가 payload를 실제로 렌더링하는 후속 이슈에서
+      // (secretType, subType) 쌍 기준으로 맞춘다.
       revealPayload: { secret in
           switch secret.secretType {
           case .apiKeyToken:

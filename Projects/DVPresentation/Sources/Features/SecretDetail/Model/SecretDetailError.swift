@@ -1,8 +1,9 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import Foundation
+
 import ComposableArchitecture
 import DVDomain
-import Foundation
 
 // MARK: - SecretDetailError
 
