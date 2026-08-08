@@ -71,26 +71,46 @@ extension SecretDetailView {
 
     // MARK: Viewing
 
-    /// 헤더 + 공통 메타 필드까지 구현된 상태다. 후속 작업에서 `store.payloadState`의
-    /// loading / failed 분기와 타입별 payload 섹션(`primary` / `trailing` 슬롯)을 채운다.
+    /// 헤더 + 공통 메타 필드 + payload 복호화 상태까지 구현된 상태다. 후속 작업에서
+    /// 타입별 payload 섹션(`primary` / `trailing` 슬롯)을 채운다.
     /// `layout`을 파라미터로 받는다 — `@Environment`로 읽으면 이 뷰가 `formLayout(_:)`으로
     /// 주입한 값이 아니라 상위 환경 값을 보게 된다.
+    ///
+    /// 복호화 전에는 필드 스캐폴드를 **뷰 트리에서 제외**한다. 반투명 오버레이로 덮으면
+    /// 뒤의 필드가 비쳐 보여 어수선하다. 헤더는 두 경우 모두 남는다 —
+    /// 즐겨찾기·삭제는 복호화 없이 수행되므로 로딩 중에도 열려 있어야 한다.
     @ViewBuilder
     private func viewingBody(layout: FormLayout) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                header
-                // 공통 메타 필드는 payload 복호화와 무관하게 `Secret`에서 바로 나오므로
-                // `payloadState`를 기다리지 않고 그린다.
-                DetailSectionScaffoldView(
-                    secret: store.secret,
-                    linkedProjects: store.linkedProjects
-                )
+        if isPayloadRevealed {
+            ScrollView {
+                bodyStack {
+                    DetailSectionScaffoldView(
+                        secret: store.secret,
+                        linkedProjects: store.linkedProjects
+                    )
+                }
             }
-            .padding(.horizontal, FormLayoutMetrics.horizontalPadding)
-            .padding(.vertical, FormLayoutMetrics.horizontalPadding)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            // ScrollView로 감싸지 않는다 — 감싸면 상태 뷰가 남은 높이를 채우지 못해
+            // 헤더 바로 아래에 작게 붙는다.
+            bodyStack {
+                payloadStateView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
+    }
+
+    /// 헤더 + 본문 공통 컨테이너. 복호화 전후로 padding·정렬이 어긋나지 않게 한곳에 둔다.
+    private func bodyStack<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 20) {
+            header
+            content()
+        }
+        .padding(.horizontal, FormLayoutMetrics.horizontalPadding)
+        .padding(.vertical, FormLayoutMetrics.horizontalPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var header: some View {
@@ -105,6 +125,55 @@ extension SecretDetailView {
             onDelete: { store.send(.didTapDelete) }
         )
         .disabled(store.isDeleting)
+    }
+
+    // MARK: Payload state
+
+    private var isPayloadRevealed: Bool {
+        if case .loaded = store.payloadState { return true }
+        return false
+    }
+
+    /// 스크림이 없다 — 필드 스캐폴드가 뷰 트리에서 빠져 있어 덮을 대상이 없다.
+    @ViewBuilder
+    private var payloadStateView: some View {
+        switch store.payloadState {
+        // `.idle`은 `.task`가 즉시 `.loading`으로 바꾸므로 실제로 노출되지 않는다.
+        case .idle, .loading:
+            payloadLoadingView
+
+        case .failed(let error):
+            payloadFailureView(SecretDetailError.map(error))
+
+        case .loaded:
+            EmptyView()
+        }
+    }
+
+    private var payloadLoadingView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+                .controlSize(.regular)
+            Text(.module("Decrypting secret…"))
+                .dvFont(.bodyMD)
+                .foregroundStyle(Color.dv(.gray500))
+        }
+    }
+
+    private func payloadFailureView(_ error: SecretDetailError) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle")
+                .dvFont(.bodyLG)
+                .foregroundStyle(Color.dv(.gray400))
+            Text(error.revealFailureMessage)
+                .dvFont(.bodyMD)
+                .foregroundStyle(Color.dv(.gray500))
+                .multilineTextAlignment(.center)
+            DVButton(titleText: .module("Retry"), style: .secondary) {
+                store.send(.didTapRetryReveal)
+            }
+        }
+        .padding(.horizontal, FormLayoutMetrics.horizontalPadding)
     }
 
     // MARK: Editing
@@ -146,6 +215,48 @@ private let _previewSecret = Secret(
             initialState: SecretDetailFeature.State(secret: _previewSecret)
         ) {
             SecretDetailFeature()
+        }
+    )
+    .frame(width: 420, height: 700)
+}
+
+/// 인증 전 배치 확인용 — 헤더만 남고 필드 스캐폴드는 뷰 트리에서 빠져, 남은 영역을 로딩 뷰가 채운다.
+///
+/// `.task`가 진입 즉시 `payloadState`를 다시 쓰므로 초기 상태만으로는 상태가 유지되지 않는다.
+/// 응답하지 않는 스텁을 함께 넣어 로딩 표현을 화면에 남긴다.
+#Preview("SecretDetail · Payload Loading") {
+    SecretDetailView(
+        store: Store(
+            initialState: {
+                var state = SecretDetailFeature.State(secret: _previewSecret)
+                state.payloadState = .loading
+                return state
+            }()
+        ) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.revealPayload = { _ in try await Task.never() }
+        }
+    )
+    .frame(width: 420, height: 700)
+}
+
+/// 인증 취소 시나리오. alert를 닫으면 필드 영역 자리에 실패 문구와 재시도 버튼이 남는다 —
+/// 이 프리뷰가 확인하려는 지점이다. 헤더는 그대로 남아 즐겨찾기·삭제를 누를 수 있다.
+#Preview("SecretDetail · Payload Failed") {
+    SecretDetailView(
+        store: Store(
+            initialState: {
+                var state = SecretDetailFeature.State(secret: _previewSecret)
+                state.payloadState = .failed(.authenticationFailure(.cancelled))
+                return state
+            }()
+        ) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.revealPayload = { _ in
+                throw SecretUseCaseError.authenticationFailure(.cancelled)
+            }
         }
     )
     .frame(width: 420, height: 700)
