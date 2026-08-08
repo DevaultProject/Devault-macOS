@@ -18,9 +18,12 @@ import DVDomain
 /// Memo                              ← fullWidth
 /// ```
 ///
-/// 공통 메타 필드는 **payload 복호화 없이도 표시된다** — `Secret` 엔티티에서 바로 나오기 때문에
-/// `payloadState`가 `.loading` / `.failed`여도 이 스캐폴드는 그대로 그려진다.
+/// 공통 메타 필드는 `Secret` 엔티티에서 바로 나오므로 payload 복호화가 필요 없고,
 /// payload에 의존하는 필드만 `primary` / `trailing` 슬롯에 들어간다.
+///
+/// 다만 **복호화 전에는 호출부가 이 스캐폴드를 아예 렌더하지 않는다**(`SecretDetailView` 참고) —
+/// 값이 채워진 필드와 빈 필드가 섞이면 어디까지가 복호화된 정보인지 구분되지 않기 때문이다.
+/// 따라서 이 뷰는 "값을 보여줘도 되는 상태"만 가정하고 그린다.
 struct DetailSectionScaffoldView<Primary: View, Trailing: View>: View {
 
     let secret: Secret
