@@ -11,11 +11,12 @@ public struct DVProjectContainer: View {
     static let projectIconSystemName = "tray"
 
     public let name: String
-    public let count: Int
+    /// nil이면 개수 라벨을 그리지 않는다 (`DVCategory.count`와 같은 규칙).
+    public let count: Int?
 
     // MARK: - Init
 
-    public init(name: String, count: Int) {
+    public init(name: String, count: Int?) {
         self.name = name
         self.count = count
     }
@@ -53,10 +54,13 @@ extension DVProjectContainer {
             .frame(minWidth: 40, alignment: .leading)
     }
 
+    @ViewBuilder
     private var countLabel: some View {
-        Text(count > 999 ? "999+" : "\(count)")
-            .dvFont(.bodyMD)
-            .foregroundStyle(Color.dv(.gray400))
-            .fixedSize()
+        if let count {
+            Text(count > 999 ? "999+" : "\(count)")
+                .dvFont(.bodyMD)
+                .foregroundStyle(Color.dv(.gray400))
+                .fixedSize()
+        }
     }
 }

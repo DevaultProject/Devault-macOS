@@ -26,4 +26,32 @@ struct SecretQueryTests {
 
         #expect(a != b)
     }
+
+    @Test("expiringWindow는 기준일을 expiringSoonWindowDays만큼 민 expired 컬렉션을 만든다")
+    func expiringWindowShiftsReferenceDate() {
+        let today = Date(timeIntervalSince1970: 0)
+
+        let collection = SecretQuery.Collection.expiringWindow(from: today)
+
+        let expected = today.addingTimeInterval(
+            TimeInterval(SecretQuery.Collection.expiringSoonWindowDays) * 86_400
+        )
+        #expect(collection == .expired(referenceDate: expected))
+    }
+
+    @Test("expiringWindow는 이미 만료된 것과 window 이내 예정을 함께 담는다")
+    func expiringWindowCoversPastAndUpcoming() {
+        let today = Date(timeIntervalSince1970: 0)
+        let windowDays = TimeInterval(SecretQuery.Collection.expiringSoonWindowDays)
+
+        guard case let .expired(windowEnd) = SecretQuery.Collection.expiringWindow(from: today) else {
+            Issue.record("collection이 .expired가 아님")
+            return
+        }
+
+        // predicate는 `expiresAt < windowEnd` 단일 비교이므로, 경계 안쪽만 포함되어야 한다.
+        #expect(today.addingTimeInterval(-86_400) < windowEnd)
+        #expect(today.addingTimeInterval((windowDays - 1) * 86_400) < windowEnd)
+        #expect(today.addingTimeInterval((windowDays + 1) * 86_400) > windowEnd)
+    }
 }
