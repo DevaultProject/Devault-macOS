@@ -17,6 +17,7 @@ public final class InMemorySecretRepository: SecretRepository, @unchecked Sendab
     public var errorOnCreate: SecretRepositoryError?
     public var errorOnFetchByID: SecretRepositoryError?
     public var errorOnFetchQuery: SecretRepositoryError?
+    public var errorOnCountQuery: SecretRepositoryError?
     public var errorOnPatch: SecretRepositoryError?
     public var errorOnDelete: SecretRepositoryError?
     public var errorOnFetchProjects: SecretRepositoryError?
@@ -28,6 +29,7 @@ public final class InMemorySecretRepository: SecretRepository, @unchecked Sendab
     public private(set) var createCount = 0
     public private(set) var fetchByIDCount = 0
     public private(set) var fetchQueryCount = 0
+    public private(set) var countQueryCount = 0
     public private(set) var patchCount = 0
     public private(set) var deleteCount = 0
     public private(set) var fetchProjectsCount = 0
@@ -66,6 +68,12 @@ public final class InMemorySecretRepository: SecretRepository, @unchecked Sendab
         fetchQueryCount += 1
         if let error = errorOnFetchQuery { throw error }
         return Array(secrets.values)
+    }
+
+    public func count(_ query: SecretQuery) async throws -> Int {
+        countQueryCount += 1
+        if let error = errorOnCountQuery { throw error }
+        return secrets.count
     }
 
     public func patch(id: UUID, with patch: SecretPatch) async throws -> Secret {

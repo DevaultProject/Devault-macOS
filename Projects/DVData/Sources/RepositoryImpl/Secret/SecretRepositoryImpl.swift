@@ -1,8 +1,10 @@
 // Copyright © 2026 Devault. All rights reserved
 
-import DVDomain
 import Foundation
 import SwiftData
+
+import DVCore
+import DVDomain
 
 @ModelActor
 public actor SecretRepositoryImpl: SecretRepository {
@@ -81,6 +83,24 @@ public actor SecretRepositoryImpl: SecretRepository {
         } catch let error as SecretRepositoryError {
             throw error
         } catch {
+            throw SecretRepositoryError.persistenceFailed
+        }
+    }
+
+    /// 조건에 맞는 개수만 집계한다. 엔티티를 Domain으로 매핑하지 않으므로
+    /// 손상된 레코드가 섞여 있어도 실패하지 않는다.
+    public func count(_ query: SecretQuery) async throws -> Int {
+        do {
+            let descriptor = SecretFetchDescriptorBuilder.makeCountDescriptor(
+                from: query,
+                referenceDate: .now
+            )
+            return try modelContext.fetchCount(descriptor)
+        } catch {
+            Log.error(
+                "[SecretRepository] count 실패 — collection: \(query.collection), error: \(error)",
+                category: .data
+            )
             throw SecretRepositoryError.persistenceFailed
         }
     }

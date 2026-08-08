@@ -10,6 +10,9 @@ import Testing
 @Suite("SidebarFeature")
 struct SidebarFeatureTests {
 
+  /// Expired 카운트 기준 시각. `@Dependency(\.date.now)`를 고정해 집계 쿼리를 결정적으로 만든다.
+  static let referenceDate = Date(timeIntervalSince1970: 1_700_000_000)
+
   // MARK: - Fetch
 
   @Test("task는 프로젝트 목록을 fetch해 이름 순으로 정렬한다")
@@ -18,14 +21,18 @@ struct SidebarFeatureTests {
       ProjectItem(id: UUID(), name: "Mobile"),
       ProjectItem(id: UUID(), name: "Backend"),
     ]
+    let counts = SecretCounts(byFilter: [.all: 5], byProject: [:])
     let store = TestStore(initialState: SidebarFeature.State()) {
       SidebarFeature()
     } withDependencies: {
       $0.sidebarClient.fetchProjects = { projects }
+      $0.sidebarClient.fetchCounts = { _, _ in counts }
+      $0.date = .constant(Self.referenceDate)
     }
 
     await store.send(.task) {
       $0.projectsState = .loading
+      $0.countsState = .loading
     }
     await store.receive(.projectsResponse(.success(projects))) {
       $0.projectsState = .loaded(IdentifiedArray(uniqueElements: [
@@ -33,21 +40,88 @@ struct SidebarFeatureTests {
         ProjectItem(id: projects[0].id, name: "Mobile"),
       ]))
     }
+    await store.receive(.countsResponse(.success(counts))) {
+      $0.countsState = .loaded(counts)
+    }
   }
 
   @Test("task fetch 실패 시 projectsState가 .failed로 전환된다")
   func taskFetchFailureSetsFailedState() async {
+    let counts = SecretCounts(byFilter: [.all: 5], byProject: [:])
     let store = TestStore(initialState: SidebarFeature.State()) {
       SidebarFeature()
     } withDependencies: {
       $0.sidebarClient.fetchProjects = { throw SidebarError.fetchFailed }
+      $0.sidebarClient.fetchCounts = { _, _ in counts }
+      $0.date = .constant(Self.referenceDate)
     }
 
     await store.send(.task) {
       $0.projectsState = .loading
+      $0.countsState = .loading
     }
     await store.receive(.projectsResponse(.failure(.fetchFailed))) {
       $0.projectsState = .failed(.fetchFailed)
+    }
+    // 프로젝트 목록이 실패해도 필터 카드 개수는 독립적으로 집계된다.
+    await store.receive(.countsResponse(.success(counts))) {
+      $0.countsState = .loaded(counts)
+    }
+  }
+
+  // MARK: - Counts
+
+  @Test("초기 countsState는 idle이라 '로드 전'과 '0건'이 구분된다")
+  func initialCountsStateIsIdle() {
+    let state = SidebarFeature.State()
+
+    #expect(state.countsState == .idle)
+    #expect(state.counts == nil)
+  }
+
+  @Test("countsRefreshRequested는 현재 프로젝트 ID로 개수를 다시 집계한다")
+  func countsRefreshRequestedRecountsWithCurrentProjects() async {
+    let item = ProjectItem(id: UUID(), name: "Backend")
+    var state = SidebarFeature.State()
+    state.projectsState = .loaded([item])
+
+    let counts = SecretCounts(byFilter: [.all: 7], byProject: [item.id: 2])
+    let store = TestStore(initialState: state) {
+      SidebarFeature()
+    } withDependencies: {
+      $0.sidebarClient.fetchCounts = { date, projectIDs in
+        #expect(date == Self.referenceDate)
+        #expect(projectIDs == [item.id])
+        return counts
+      }
+      $0.date = .constant(Self.referenceDate)
+    }
+
+    await store.send(.countsRefreshRequested) {
+      $0.countsState = .loading
+    }
+    await store.receive(.countsResponse(.success(counts))) {
+      $0.countsState = .loaded(counts)
+      #expect($0.counts?.count(for: .all) == 7)
+      #expect($0.counts?.count(forProject: item.id) == 2)
+    }
+  }
+
+  @Test("카운트 집계 실패 시 countsState가 .failed로 전환된다")
+  func countsFailureSetsFailedState() async {
+    let store = TestStore(initialState: SidebarFeature.State()) {
+      SidebarFeature()
+    } withDependencies: {
+      $0.sidebarClient.fetchCounts = { _, _ in throw SidebarError.fetchFailed }
+      $0.date = .constant(Self.referenceDate)
+    }
+
+    await store.send(.countsRefreshRequested) {
+      $0.countsState = .loading
+    }
+    await store.receive(.countsResponse(.failure(.fetchFailed))) {
+      $0.countsState = .failed(.fetchFailed)
+      #expect($0.counts == nil)
     }
   }
 
@@ -101,6 +175,8 @@ struct SidebarFeatureTests {
     } withDependencies: {
       $0.sidebarClient.renameProject = { _, _ in renamed }
       $0.sidebarClient.fetchProjects = { [renamed] }
+      $0.sidebarClient.fetchCounts = { _, _ in SecretCounts() }
+      $0.date = .constant(Self.referenceDate)
     }
 
     await store.send(.didConfirmRename) {
@@ -111,9 +187,13 @@ struct SidebarFeatureTests {
     await store.receive(.delegate(.projectRenamed(renamed)))
     await store.receive(.task) {
       $0.projectsState = .loading
+      $0.countsState = .loading
     }
     await store.receive(.projectsResponse(.success([renamed]))) {
       $0.projectsState = .loaded([renamed])
+    }
+    await store.receive(.countsResponse(.success(SecretCounts()))) {
+      $0.countsState = .loaded(SecretCounts())
     }
   }
 
@@ -209,6 +289,8 @@ struct SidebarFeatureTests {
     } withDependencies: {
       $0.sidebarClient.deleteProject = { _ in }
       $0.sidebarClient.fetchProjects = { [] }
+      $0.sidebarClient.fetchCounts = { _, _ in SecretCounts() }
+      $0.date = .constant(Self.referenceDate)
     }
 
     await store.send(.alert(.presented(.confirmDelete))) {
@@ -221,9 +303,13 @@ struct SidebarFeatureTests {
     await store.receive(.delegate(.selectionChanged(.filter(.all))))
     await store.receive(.task) {
       $0.projectsState = .loading
+      $0.countsState = .loading
     }
     await store.receive(.projectsResponse(.success([]))) {
       $0.projectsState = .loaded([])
+    }
+    await store.receive(.countsResponse(.success(SecretCounts()))) {
+      $0.countsState = .loaded(SecretCounts())
     }
   }
 }
