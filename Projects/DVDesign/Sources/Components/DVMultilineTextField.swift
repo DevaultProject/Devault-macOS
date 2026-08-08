@@ -47,7 +47,7 @@ public struct DVMultilineTextField: View {
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 4)
-        .frame(width: size.width, height: height, alignment: .topLeading)
+        .dvComponentWidth(size, height: height, alignment: .topLeading)
         .background {
             RoundedRectangle(cornerRadius: 6)
                 .stroke(Color.dv(.gray300), lineWidth: 1)

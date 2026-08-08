@@ -205,7 +205,7 @@ private extension DVMultiSelectDropdown {
         }
         .padding(.leading, Metrics.triggerLeadingPadding)
         .padding(.trailing, Metrics.triggerTrailingPadding)
-        .frame(width: size.width, height: Metrics.triggerHeight)
+        .dvComponentWidth(size, height: Metrics.triggerHeight)
         .background(triggerBackground)
     }
 
@@ -218,7 +218,7 @@ private extension DVMultiSelectDropdown {
             }
         }
         .padding(Metrics.chipsPadding)
-        .frame(width: size.width, alignment: .leading)
+        .dvComponentWidth(size, alignment: .leading)
         .background(triggerBackground)
     }
 
