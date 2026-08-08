@@ -60,8 +60,19 @@ import SwiftUI
 ///     }
 /// }
 /// ```
+/// ## 읽기 전용 모드
+///
+/// 선택 상태를 **표시만** 하고 값 변경을 허용하지 않아야 하는 화면(예: 시크릿 조회)에서는
+/// ``init(readOnly:isSelected:)`` 또는 `isInteractive: false`를 사용합니다. 이 모드에서는
+/// 탭 제스처·포커스·Space 키 핸들러가 **뷰 트리에 아예 부착되지 않으며**, 접근성
+/// 트레이트도 `.isButton`을 갖지 않습니다.
+///
+/// `.disabled(true)`와 다른 점: `.disabled`는 컨트롤을 "비활성" 외관으로 바꾸지만
+/// 여기서는 **선택 상태의 색 표현을 그대로 유지**한 채 인터랙션만 제거합니다 —
+/// 조회 화면에서 선택된 서브타입이 흐리게 보이면 안 되기 때문입니다.
 public struct DVRadioButton<Label: View>: View {
     private let isSelected: Bool
+    private let isInteractive: Bool
     private let action: () -> Void
     private let label: () -> Label
 
@@ -75,37 +86,51 @@ public struct DVRadioButton<Label: View>: View {
     /// - Parameters:
     ///   - isSelected: 현재 선택 여부. 인디케이터의 색과 `.isSelected`
     ///     접근성 트레이트를 결정합니다.
+    ///   - isInteractive: `false`면 탭·포커스·Space 핸들러를 부착하지 않아
+    ///     값 변경이 불가능해집니다. 기본 `true`.
     ///   - action: 클릭/탭 또는 포커스 상태에서 **Space** 키를 누를 때
     ///     호출되는 클로저. 호출자가 `isSelected`의 원천 값을 직접
-    ///     갱신해야 합니다.
+    ///     갱신해야 합니다. `isInteractive == false`면 호출되지 않습니다.
     ///   - label: 인디케이터 우측에 3pt 간격으로 렌더링될 라벨을 만드는
     ///     뷰 빌더.
     public init(
         isSelected: Bool,
+        isInteractive: Bool = true,
         action: @escaping () -> Void,
         @ViewBuilder label: @escaping () -> Label
     ) {
         self.isSelected = isSelected
+        self.isInteractive = isInteractive
         self.action = action
         self.label = label
     }
 
     public var body: some View {
+        if isInteractive {
+            labelRow
+                .contentShape(Rectangle())
+                .onTapGesture(perform: action)
+                .focusable(true)
+                .focusEffectDisabled()
+                .onKeyPress(.space) {
+                    action()
+                    return .handled
+                }
+                .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        } else {
+            labelRow
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+        }
+    }
+
+    private var labelRow: some View {
         HStack(spacing: 3) {
             indicator
             label()
         }
         .padding(.vertical, 4)
         .padding(.horizontal, 2)
-        .contentShape(Rectangle())
-        .onTapGesture(perform: action)
-        .focusable(true)
-        .focusEffectDisabled()
-        .onKeyPress(.space) {
-            action()
-            return .handled
-        }
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
     private var indicator: some View {
@@ -151,6 +176,30 @@ extension DVRadioButton where Label == Text {
                 .foregroundStyle(Color.dv(.gray900))
         }
     }
+
+    /// 선택 상태를 표시만 하는 **읽기 전용** 텍스트 라디오 버튼을 생성합니다.
+    ///
+    /// 값 변경 액션이 아예 없으므로 조회 전용 화면에서 실수로 인터랙션이 붙는 것을
+    /// 컴파일 타임에 방지합니다. 선택 상태의 색 표현은 인터랙티브 모드와 동일합니다 —
+    /// `.disabled(true)`처럼 흐려지지 않습니다.
+    ///
+    /// ```swift
+    /// DVRadioButton(readOnly: "Access Token", isSelected: true)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - title: 인디케이터 옆에 ``DVFont/bodyMD``로 표시될 텍스트.
+    ///   - isSelected: 선택 상태. 인디케이터 색만 결정하며 사용자가 바꿀 수 없습니다.
+    public init(
+        readOnly title: String,
+        isSelected: Bool
+    ) {
+        self.init(isSelected: isSelected, isInteractive: false, action: {}) {
+            Text(title)
+                .font(DVFont.bodyMD.font)
+                .foregroundStyle(Color.dv(.gray900))
+        }
+    }
 }
 
 #Preview("Default") {
@@ -166,6 +215,15 @@ extension DVRadioButton where Label == Text {
 #Preview("Interactive") {
     DVRadioButtonInteractivePreview()
         .padding()
+}
+
+#Preview("Read-only (탭·포커스·Space 모두 무반응)") {
+    VStack(alignment: .leading, spacing: 12) {
+        DVRadioButton(readOnly: "API Key", isSelected: false)
+        DVRadioButton(readOnly: "Access Token", isSelected: true)
+        DVRadioButton(readOnly: "API Webhook Secret", isSelected: false)
+    }
+    .padding()
 }
 
 private struct DVRadioButtonInteractivePreview: View {
