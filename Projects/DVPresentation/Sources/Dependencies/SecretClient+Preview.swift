@@ -60,11 +60,108 @@ extension [Secret] {
     ]
   }()
 
+  /// `dummyClient().revealPayload`가 분기하는 `(secretType, subType)` 11개 조합을 전수로 담아
+  /// SecretDetail의 타입별 payload 섹션을 프리뷰로 확인하기 위한 픽스처.
+  /// 아바타 폴백·컬렉션 필터가 목적인 `preview`(전부 `subType == nil`)와 달리 조합 커버리지가 목적이므로,
+  /// 목록 계열 프리뷰는 `preview`를, 상세 화면 프리뷰는 이 배열을 쓴다.
+  ///
+  /// 조회 화면의 optional 메타 필드가 빈 상태로 렌더되는 경우도 함께 확인해야 해
+  /// `service` / `environment` / `expiresAt` / `memo`는 채운 항목과 nil인 항목을 섞어 둔다.
+  public static let previewSubTypeMatrix: [Secret] = [
+    secret(
+      name: "GitHub API 키 (apiKey)",
+      type: .apiKeyToken,
+      subType: .apiKey,
+      service: "github",
+      environment: SecretEnvironment.prod.rawValue,
+      expiresAt: .now.addingTimeInterval(30 * 86_400),
+      memo: "리포지토리 읽기 전용. 만료 2주 전 갱신.",
+      liked: true
+    ),
+    // 메타 필드 전부 nil — 빈 상태 렌더링 확인용
+    secret(
+      name: "GitHub Access Token (accessToken)",
+      type: .apiKeyToken,
+      subType: .accessToken
+    ),
+    secret(
+      name: "Stripe Webhook Secret (webhookSecret)",
+      type: .apiKeyToken,
+      subType: .webhookSecret,
+      service: "Stripe",
+      environment: SecretEnvironment.staging.rawValue,
+      memo: "결제 이벤트 서명 검증용."
+    ),
+    secret(
+      name: "Google OAuth 클라이언트 (oauthClient)",
+      type: .oauth,
+      subType: .oauthClient,
+      service: "google",
+      expiresAt: .now.addingTimeInterval(90 * 86_400),
+      liked: true
+    ),
+    secret(
+      name: "GCP 서비스 계정 (serviceAccount)",
+      type: .oauth,
+      subType: .serviceAccount,
+      environment: SecretEnvironment.prod.rawValue,
+      memo: "BigQuery 적재 배치 전용 계정."
+    ),
+    // database / environmentVariableSet은 availableSubTypes가 비어 있어 nil이 유일한 유효값
+    secret(
+      name: "CheerLot 운영 DB (subType 없음)",
+      type: .database,
+      service: "CheerLot",
+      environment: SecretEnvironment.dev.rawValue
+    ),
+    secret(
+      name: "배포 서버 SSH 키 (sshKey)",
+      type: .sshAndCredentials,
+      subType: .sshKey,
+      environment: SecretEnvironment.prod.rawValue,
+      expiresAt: .now.addingTimeInterval(7 * 86_400),
+      memo: "passphrase 없음. 배포 파이프라인에서만 사용."
+    ),
+    // 이미 만료된 항목 — 만료 배지 렌더링 확인용
+    secret(
+      name: "devault.app 인증서 (sslTlsCertificate)",
+      type: .sshAndCredentials,
+      subType: .sslTlsCertificate,
+      expiresAt: .now.addingTimeInterval(-86_400)
+    ),
+    secret(
+      name: "운영 .env 모음 (subType 없음)",
+      type: .environmentVariableSet,
+      environment: SecretEnvironment.staging.rawValue,
+      memo: "배포 시 CI 시크릿과 동기화 필요.",
+      liked: true
+    ),
+    secret(
+      name: "Sketch 라이선스 키 (licenseKey)",
+      type: .etc,
+      subType: .licenseKey,
+      expiresAt: .now.addingTimeInterval(365 * 86_400)
+    ),
+    // 여러 줄 memo — 상세 화면에서 줄바꿈 처리 확인용
+    secret(
+      name: "사내 커스텀 값 (custom)",
+      type: .etc,
+      subType: .custom,
+      memo: """
+      정해진 스키마가 없는 값.
+      담당자: 플랫폼팀
+      """
+    ),
+  ]
+
   private static func secret(
     name: String,
     type: SecretType,
+    subType: SecretSubType? = nil,
     service: String? = nil,
+    environment: String? = nil,
     expiresAt: Date? = nil,
+    memo: String? = nil,
     liked: Bool = false,
     deletedAt: Date? = nil
   ) -> Secret {
@@ -72,8 +169,11 @@ extension [Secret] {
       id: UUID(),
       name: name,
       secretType: type,
+      subType: subType,
       service: service,
+      environment: environment,
       expiresAt: expiresAt,
+      memo: memo,
       liked: liked,
       deletedAt: deletedAt,
       createdAt: .now,
