@@ -63,6 +63,10 @@ public struct SecretListFeature {
     case didTapRecover(id: Secret.ID)
     case didTapDeleteForever(id: Secret.ID)
     case didTapRetry
+    /// 외부(예: SecretDetail의 즐겨찾기·삭제)에서 목록 갱신을 요청할 때 사용.
+    /// `task`/`didTapRetry`와 달리 `secretsState`를 `.loading`으로 바꾸지 않아 목록이 깜빡이지 않는다 —
+    /// 내부 mutation(`mutationResponse(.success)`)이 재조회하는 방식과 동일하다.
+    case refresh
 
     // MARK: - Internal
 
@@ -115,6 +119,9 @@ public struct SecretListFeature {
       switch action {
       case .task, .didTapRetry:
         state.secretsState = .loading
+        return fetchSecretsEffect(query: state.query, debounced: false)
+
+      case .refresh:
         return fetchSecretsEffect(query: state.query, debounced: false)
 
       case .didChangeSearchText(let text):
