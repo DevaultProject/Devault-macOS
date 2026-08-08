@@ -39,6 +39,13 @@ extension MainView {
         sidebarColumn
       } detail: {
         CreateSecretView(store: createSecretStore)
+          // max는 주지 않는다 — 컬럼이 창을 채우지 못하면 윈도우 배경이 드러난다.
+          // 폼 폭 상한은 컬럼이 아니라 `CreateSecretView` 안의 `formMaxWidth()`가 담당한다.
+          // min 520은 CreateSecretView 자체 제약과 동일 — apiKeyToken 3-radio 헤더 폭이 지배한다.
+          .navigationSplitViewColumnWidth(
+            min: 520,
+            ideal: FormLayoutMetrics.maxFormWidth
+          )
       }
       .navigationSplitViewStyle(.balanced)
       .toolbarBackground(.hidden, for: .windowToolbar)
@@ -88,6 +95,8 @@ extension MainView {
       }
     }
     .navigationTitle("")
+    // max는 주지 않는다 — 컬럼이 창을 채우지 못하면 윈도우 배경이 양옆에 드러난다.
+    // 폼 폭 상한은 컬럼이 아니라 `SecretDetailView` 안의 `formMaxWidth()`가 담당한다.
     .navigationSplitViewColumnWidth(min: 420, ideal: 480)
   }
 }
