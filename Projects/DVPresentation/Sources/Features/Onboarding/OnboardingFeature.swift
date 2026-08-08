@@ -166,6 +166,9 @@ private extension OnboardingFeature {
       message = "잠시 후 다시 시도해주세요."
     case .networkUnavailable:
       message = "네트워크 연결을 확인하고 다시 시도해주세요."
+    case .configurationUnavailable:
+      // 앱 배포 설정(컨테이너 식별자, entitlement) 문제라 사용자가 재시도해도 해결되지 않음.
+      message = "iCloud 동기화를 지금 사용할 수 없어요. 나중에 다시 시도해주세요."
     case .couldNotDetermine:
       message = "iCloud 상태를 확인하지 못했어요. 잠시 후 다시 시도해주세요."
     }

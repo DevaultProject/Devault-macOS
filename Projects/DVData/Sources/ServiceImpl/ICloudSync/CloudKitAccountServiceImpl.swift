@@ -1,6 +1,7 @@
 // Copyright © 2026 Devault. All rights reserved
 
 import CloudKit
+import DVCore
 import DVDomain
 
 public struct CloudKitAccountServiceImpl: ICloudAccountService {
@@ -34,6 +35,10 @@ public struct CloudKitAccountServiceImpl: ICloudAccountService {
                 return .networkUnavailable
             case .notAuthenticated:
                 return .noAccount
+            case .badContainer, .missingEntitlement:
+                // container identifier 오타나 entitlement 누락 등 배포 설정 문제. 재시도로는 해결되지 않으므로 로그 추가
+                Log.error("iCloud 컨테이너 설정 오류: \(error)", category: .security)
+                return .configurationUnavailable
             default:
                 return .couldNotDetermine
             }
