@@ -61,7 +61,7 @@ struct SecretDetailFeatureTests {
             $0.isLoadingProjects = true
             $0.payloadState = .loading
         }
-        // projects, payload 응답 순서는 비결정적이므로 둘 다 receive
+        // mock이 동기 반환이므로 .merge 선언 순서대로 수신됨 (projects → payload)
         await store.receive(.projectsResponse(.success(projects))) {
             $0.isLoadingProjects = false
             $0.availableProjects = projects

@@ -104,6 +104,7 @@ private func dispatchRevealPayload(
         let p = try await useCase.revealPayload(id: secret.id, as: CustomPayload.self)
         return .custom(p)
     default:
+        assertionFailure("Unexpected (secretType, subType) combination: \(secret.secretType), \(String(describing: secret.subType))")
         throw SecretUseCaseError.unexpected
     }
 }
