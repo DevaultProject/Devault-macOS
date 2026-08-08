@@ -6,7 +6,7 @@ import ComposableArchitecture
 
 // MARK: - SidebarFilter
 
-public enum SidebarFilter: Equatable, CaseIterable, Hashable {
+public enum SidebarFilter: Equatable, CaseIterable, Hashable, Sendable {
   case all
   case starred
   case notice
