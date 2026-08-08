@@ -23,14 +23,18 @@ public struct SecretDetailFeature {
 
     @ObservableState
     public struct State: Equatable {
-        /// 원본 시크릿. let — 절대 바인딩 대상이 아님.
-        public let secret: Secret
+        /// 원본 시크릿. 즐겨찾기·저장 성공 시 reducer가 교체한다.
+        /// `internal(set)` — 모듈 외부(뷰)에서 바인딩 대상으로 쓸 수 없다.
+        /// `SecretListFeature.State.secretsState`와 동일한 접근 수준.
+        public internal(set) var secret: Secret
         public var mode: Mode = .viewing
         /// 수정 모드에서만 유효. viewing일 때는 반드시 nil.
         var editFields: SecretMetaFields?
         public var availableProjects: [Project] = []
         public var isSaving = false
         public var isLoadingProjects = false
+        /// 삭제 요청 진행 중. 진행 중에는 삭제 버튼을 비활성화한다.
+        public var isDeleting = false
         /// 복호화된 payload. .idle → .loading → .loaded / .failed 순서로 전이.
         public var payloadState: LoadingState<CreateSecretPayload, SecretUseCaseError> = .idle
         @Presents public var alert: AlertState<Action.Alert>?
@@ -48,6 +52,8 @@ public struct SecretDetailFeature {
         case task
         case binding(BindingAction<State>)
         case didTapClose
+        case didTapToggleLike
+        case didTapDelete
         case didTapEdit
         case didTapCancelEdit
         case didTapSave
@@ -55,6 +61,8 @@ public struct SecretDetailFeature {
         // MARK: Internal
         case projectsResponse(Result<[Project], ProjectUseCaseError>)
         case payloadResponse(Result<CreateSecretPayload, SecretUseCaseError>)
+        case likeResponse(Result<Secret, SecretUseCaseError>)
+        case deleteResponse(Result<Secret, SecretUseCaseError>)
 
         // MARK: Child
         case alert(PresentationAction<Alert>)
@@ -64,12 +72,21 @@ public struct SecretDetailFeature {
 
         public enum Alert: Equatable {
             case confirmDiscard
+            case confirmDelete
         }
 
         public enum Delegate: Equatable {
             case closed
             case secretUpdated(Secret)
+            case deleted(Secret.ID)
         }
+    }
+
+    // MARK: - Cancellation
+
+    private enum CancelID {
+        /// 즐겨찾기 연타 시 이전 요청을 취소해 응답 순서가 뒤바뀌는 것을 막는다.
+        case like
     }
 
     // MARK: - Dependencies
@@ -111,6 +128,9 @@ public struct SecretDetailFeature {
                     }
                 )
 
+            // 디자인에서 close(×) 버튼을 제거했으므로 현재 이 액션을 발생시키는 UI 경로가 없다.
+            // detail은 사이드바 전환·리스트 선택 해제(`secretSelected(nil)`)로 닫힌다.
+            // 삭제 성공 후 닫기에서 재사용할 예정이라 액션과 delegate는 유지한다.
             case .didTapClose:
                 return .send(.delegate(.closed))
 
@@ -132,8 +152,55 @@ public struct SecretDetailFeature {
                 state.alert = .payloadRevealFailed(SecretDetailError.map(error))
                 return .none
 
-            // 편집 모드는 후속 이슈 범위다. 상태 전이가 없으므로 SecretDetailView는
-            // Edit / Cancel / Save 컨트롤을 노출하지 않으며, 여기서는 액션 case만 예약해 둔다.
+            case .didTapToggleLike:
+                let liked = !state.secret.liked
+                return .run { [id = state.secret.id] send in
+                    do {
+                        let updated = try await secretClient.setLiked(id, liked)
+                        await send(.likeResponse(.success(updated)))
+                    } catch is CancellationError {
+                    } catch {
+                        await send(.likeResponse(.failure(SecretUseCaseError.map(error))))
+                    }
+                }
+                .cancellable(id: CancelID.like, cancelInFlight: true)
+
+            case .likeResponse(.success(let updated)):
+                state.secret = updated
+                return .send(.delegate(.secretUpdated(updated)))
+
+            case .likeResponse(.failure):
+                state.alert = .likeFailed
+                return .none
+
+            case .didTapDelete:
+                state.alert = .confirmDelete
+                return .none
+
+            case .alert(.presented(.confirmDelete)):
+                state.isDeleting = true
+                return .run { [id = state.secret.id] send in
+                    do {
+                        let deleted = try await secretClient.softDelete(id)
+                        await send(.deleteResponse(.success(deleted)))
+                    } catch is CancellationError {
+                    } catch {
+                        await send(.deleteResponse(.failure(SecretUseCaseError.map(error))))
+                    }
+                }
+
+            case .deleteResponse(.success(let deleted)):
+                state.isDeleting = false
+                return .send(.delegate(.deleted(deleted.id)))
+
+            case .deleteResponse(.failure):
+                state.isDeleting = false
+                state.alert = .deleteFailed
+                return .none
+
+            // 편집 모드는 후속 이슈 범위다. 상태 전이가 없으므로 헤더의 수정 버튼은
+            // `isEditEnabled: false`로 비활성 렌더되고 Cancel / Save 컨트롤은 노출되지 않는다.
+            // 여기서는 액션 case만 예약해 둔다.
             case .didTapEdit, .didTapCancelEdit, .didTapSave:
                 return .none
 

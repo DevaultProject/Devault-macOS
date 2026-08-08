@@ -79,6 +79,51 @@ extension AlertState where Action == SecretDetailFeature.Action.Alert {
         }
     }
 
+    /// 즐겨찾기 갱신 실패. payload 복호화가 없는 경로이므로 인증 실패는 나오지 않는다.
+    static var likeFailed: Self {
+        Self {
+            TextState("Failed to update favorite", bundle: .module)
+        } actions: {
+            ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
+        } message: {
+            TextState(
+                "An unexpected error occurred. Please try again.",
+                bundle: .module
+            )
+        }
+    }
+
+    static var confirmDelete: Self {
+        Self {
+            TextState("Move to trash?", bundle: .module)
+        } actions: {
+            ButtonState(role: .destructive, action: .confirmDelete) {
+                TextState("Delete", bundle: .module)
+            }
+            ButtonState(role: .cancel) {
+                TextState("Cancel", bundle: .module)
+            }
+        } message: {
+            TextState(
+                "You can restore it later from Trash.",
+                bundle: .module
+            )
+        }
+    }
+
+    static var deleteFailed: Self {
+        Self {
+            TextState("Failed to delete secret", bundle: .module)
+        } actions: {
+            ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
+        } message: {
+            TextState(
+                "An unexpected error occurred. Please try again.",
+                bundle: .module
+            )
+        }
+    }
+
     static var confirmDiscard: Self {
         Self {
             TextState("Discard changes?", bundle: .module)
