@@ -31,6 +31,9 @@ public struct SecretDetailFeature {
         /// 수정 모드에서만 유효. viewing일 때는 반드시 nil.
         var editFields: SecretMetaFields?
         public var availableProjects: [Project] = []
+        /// 이 Secret에 연결된 Project. `Secret` 엔티티에 프로젝트 정보가 없어 별도 조회한다.
+        /// 조회 화면의 Project 필드 표시와, 수정 진입 시 `projectIds` 초기값에 함께 쓰인다.
+        public var linkedProjects: [Project] = []
         public var isSaving = false
         public var isLoadingProjects = false
         /// 삭제 요청 진행 중. 진행 중에는 삭제 버튼을 비활성화한다.
@@ -60,6 +63,7 @@ public struct SecretDetailFeature {
 
         // MARK: Internal
         case projectsResponse(Result<[Project], ProjectUseCaseError>)
+        case linkedProjectsResponse(Result<[Project], SecretUseCaseError>)
         case payloadResponse(Result<CreateSecretPayload, SecretUseCaseError>)
         case likeResponse(Result<Secret, SecretUseCaseError>)
         case deleteResponse(Result<Secret, SecretUseCaseError>)
@@ -125,6 +129,15 @@ public struct SecretDetailFeature {
                         } catch {
                             await send(.payloadResponse(.failure(SecretUseCaseError.map(error))))
                         }
+                    },
+                    .run { [id = state.secret.id] send in
+                        do {
+                            let projects = try await secretClient.fetchLinkedProjects(id)
+                            await send(.linkedProjectsResponse(.success(projects)))
+                        } catch is CancellationError {
+                        } catch {
+                            await send(.linkedProjectsResponse(.failure(SecretUseCaseError.map(error))))
+                        }
                     }
                 )
 
@@ -141,6 +154,15 @@ public struct SecretDetailFeature {
 
             case .projectsResponse(.failure):
                 state.isLoadingProjects = false
+                return .none
+
+            case .linkedProjectsResponse(.success(let projects)):
+                state.linkedProjects = projects
+                return .none
+
+            // 연결 프로젝트 조회 실패는 alert를 띄우지 않는다 — 부가 정보이고,
+            // payload 복호화 실패 alert와 겹치면 사용자가 원인을 오해한다. 필드는 빈 값으로 남는다.
+            case .linkedProjectsResponse(.failure):
                 return .none
 
             case .payloadResponse(.success(let payload)):
