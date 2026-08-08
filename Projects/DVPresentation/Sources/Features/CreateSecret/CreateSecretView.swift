@@ -23,6 +23,8 @@ struct CreateSecretView: View {
             }
             .padding(.horizontal, FormLayoutMetrics.horizontalPadding)
             .padding(.vertical, 16)
+            // 프레임 상한. 없으면 본문 필드는 제자리인데 footer 버튼만 창 오른쪽 끝까지 밀려난다.
+            .formMaxWidth()
             .formLayout(StandaloneFormLayout.layout(for: proxy.size.width))
             .environment(\.isProjectLoading, store.isLoadingProjects)
         }
