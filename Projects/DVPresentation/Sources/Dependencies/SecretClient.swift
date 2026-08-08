@@ -19,6 +19,11 @@ public struct SecretClient: Sendable {
   /// 생체인증 후 Secret의 암호화된 payload를 복호화해 `CreateSecretPayload`로 반환한다.
   /// secretType/subType에 따라 적절한 도메인 payload 타입으로 dispatch하고 metadata JSON을 병합한다.
   public var revealPayload: @Sendable (_ secret: Secret) async throws -> CreateSecretPayload
+  /// 즐겨찾기 여부를 갱신하고 갱신된 Secret을 반환한다.
+  /// payload 복호화가 없으므로 **생체인증을 타지 않는다**(`PatchSecretUseCase.updateSimple`).
+  public var setLiked: @Sendable (_ id: Secret.ID, _ liked: Bool) async throws -> Secret
+  /// 해당 Secret에 연결된 Project 목록. `Secret` 엔티티에는 프로젝트 정보가 없어 별도 조회가 필요하다.
+  public var fetchLinkedProjects: @Sendable (_ secretID: Secret.ID) async throws -> [Project]
 
   // MARK: - Project
 
@@ -86,6 +91,12 @@ private extension SecretClient {
               return .licenseKey(LicenseKeyPayload(licenseKey: "PREVIEW-LICENSE-1234"), nil)
           }
       },
+      setLiked: { _, liked in
+          var secret = Secret.preview
+          secret.liked = liked
+          return secret
+      },
+      fetchLinkedProjects: { _ in Array([Project].preview.prefix(1)) },
       fetchProjects: { .preview },
       createProject: { name in
           Project(id: UUID(), name: name, createdAt: .now, updatedAt: .now)

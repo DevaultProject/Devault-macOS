@@ -24,6 +24,10 @@ extension SecretClient: @retroactive DependencyKey {
         let relationUseCase: any SecretProjectRelationUseCase = SecretProjectRelationUseCaseImpl(
             repository: secretRepo
         )
+        let patchSecretUseCase: any PatchSecretUseCase = PatchSecretUseCaseImpl(
+            repository: secretRepo,
+            cryptoService: cryptoService
+        )
         let fetchProjectUseCase: any FetchProjectUseCase = FetchProjectUseCaseImpl(
             repository: projectRepo
         )
@@ -46,7 +50,17 @@ extension SecretClient: @retroactive DependencyKey {
             },
             revealPayload: { secret in
                 try await dispatchRevealPayload(secret: secret, useCase: fetchSecretUseCase)
-            }, fetchProjects: {
+            },
+            setLiked: { id, liked in
+                try await patchSecretUseCase.updateSimple(
+                    id: id,
+                    with: SecretPatch(liked: .set(liked))
+                )
+            },
+            fetchLinkedProjects: { secretID in
+                try await fetchSecretUseCase.fetchProjects(secretID: secretID)
+            },
+            fetchProjects: {
                 try await fetchProjectUseCase.fetchAll()
             },
             createProject: { name in
