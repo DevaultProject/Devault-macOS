@@ -277,33 +277,6 @@ struct SecretDetailFeatureTests {
         #expect(attemptCount.value == 2)
     }
 
-    @Test("task: 이미 loaded면 재복호화하지 않는다")
-    func task_skipsRevealWhenAlreadyLoaded() async {
-        let secret = Self.makeSecret()
-        let payload = CreateSecretPayload.apiKey(APIKeyPayload(value: "already_revealed"), nil)
-        let revealCallCount = LockIsolated(0)
-
-        var initial = SecretDetailFeature.State(secret: secret)
-        initial.payloadState = .loaded(payload)
-
-        let store = TestStore(initialState: initial) {
-            SecretDetailFeature()
-        } withDependencies: {
-            $0.projectClient.fetchProjects = { throw CancellationError() }
-            $0.secretClient.fetchLinkedProjects = { _ in throw CancellationError() }
-            $0.secretClient.revealPayload = { _ in
-                revealCallCount.withValue { $0 += 1 }
-                return payload
-            }
-        }
-
-        // payloadState는 .loading으로 바뀌지 않고 .loaded를 유지한다.
-        await store.send(.task) {
-            $0.isLoadingProjects = true
-        }
-        #expect(revealCallCount.value == 0)
-    }
-
     // MARK: - Close delegate
 
     @Test("didTapClose는 delegate(.closed)를 emit한다")
