@@ -105,6 +105,38 @@ struct MainFeatureTests {
     }
   }
 
+  /// 생성 중에는 2컬럼이라 상세가 화면에서 사라지지만 State는 살아남는다. 정리하지 않으면
+  /// 생성을 마치고 3컬럼으로 돌아올 때 이전 상세가 다시 나타나고 Touch ID까지 다시 요구한다.
+  @Test("addButtonTapped은 조회 중이던 secretDetail과 목록 선택을 놓는다")
+  func addButtonTappedClearsViewingSecret() async {
+    let secret = Secret(
+      id: UUID(),
+      name: "Test Token",
+      secretType: .apiKeyToken,
+      createdAt: Date(),
+      updatedAt: Date(),
+      payload: SecretPayload(encryptedData: Data(), keyTag: "test", schemaVersion: 1)
+    )
+
+    var initial = MainFeature.State()
+    initial.secretList.selectedSecretID = secret.id
+    initial.secretDetail = SecretDetailFeature.State(secret: secret)
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    }
+
+    await store.send(.sidebar(.didTapAddButton))
+    await store.receive(.sidebar(.delegate(.addButtonTapped))) {
+      $0.selectSecretType = .init()
+      $0.secretDetail = nil
+      $0.secretList.selectedSecretID = nil
+    }
+    await store.receive(.sidebar(.setCreatingSecret(true))) {
+      $0.sidebar.isCreatingSecret = true
+    }
+  }
+
   // MARK: - CreateSecret Routing
 
   @Test("typeSelected는 createSecret State를 세팅한다")
