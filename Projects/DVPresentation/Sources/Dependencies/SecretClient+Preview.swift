@@ -67,6 +67,15 @@ extension [Secret] {
   ///
   /// 조회 화면의 optional 메타 필드가 빈 상태로 렌더되는 경우도 함께 확인해야 해
   /// `service` / `environment` / `expiresAt` / `memo`는 채운 항목과 nil인 항목을 섞어 둔다.
+  /// 각 항목은 **생성 화면이 그 타입에서 실제로 입력받는 필드만** 채운다.
+  /// 입력 경로가 없는 필드를 채우면 실제 데이터에 존재할 수 없는 상태가 되어,
+  /// 조회 화면에서 "값이 있는데 왜 안 보이지"로 오해하게 된다.
+  ///
+  /// | 타입 | Expire Date | Environment | Services |
+  /// |---|---|---|---|
+  /// | apiKeyToken · oauthClient · database · custom | ✓ | ✓ | ✓ |
+  /// | serviceAccount · licenseKey | ✓ | ✗ | ✓ |
+  /// | sshKey · sslTlsCertificate · envSet | ✗ | ✓ | ✗ |
   public static let previewSubTypeMatrix: [Secret] = [
     secret(
       name: "GitHub API 키 (apiKey)",
@@ -84,12 +93,14 @@ extension [Secret] {
       type: .apiKeyToken,
       subType: .accessToken
     ),
+    // 이미 만료된 항목 — Expired 컬렉션·만료 표시 확인용
     secret(
       name: "Stripe Webhook Secret (webhookSecret)",
       type: .apiKeyToken,
       subType: .webhookSecret,
       service: "Stripe",
       environment: SecretEnvironment.staging.rawValue,
+      expiresAt: .now.addingTimeInterval(-86_400),
       memo: "결제 이벤트 서명 검증용."
     ),
     secret(
@@ -104,7 +115,7 @@ extension [Secret] {
       name: "GCP 서비스 계정 (serviceAccount)",
       type: .oauth,
       subType: .serviceAccount,
-      environment: SecretEnvironment.prod.rawValue,
+      service: "gcp",
       memo: "BigQuery 적재 배치 전용 계정."
     ),
     // database / environmentVariableSet은 availableSubTypes가 비어 있어 nil이 유일한 유효값
@@ -119,15 +130,16 @@ extension [Secret] {
       type: .sshAndCredentials,
       subType: .sshKey,
       environment: SecretEnvironment.prod.rawValue,
-      expiresAt: .now.addingTimeInterval(7 * 86_400),
       memo: "passphrase 없음. 배포 파이프라인에서만 사용."
     ),
-    // 이미 만료된 항목 — 만료 배지 렌더링 확인용
+    // 생성 화면이 인증서 타입에서 Expire Date를 입력받지 않아 만료일이 비어 있다.
+    // PEM의 notAfter로 산출하는 것은 별도 이슈다.
     secret(
       name: "devault.app 인증서 (sslTlsCertificate)",
       type: .sshAndCredentials,
       subType: .sslTlsCertificate,
-      expiresAt: .now.addingTimeInterval(-86_400)
+      environment: SecretEnvironment.prod.rawValue,
+      memo: "Let's Encrypt. certbot 자동 갱신."
     ),
     secret(
       name: "운영 .env 모음 (subType 없음)",
