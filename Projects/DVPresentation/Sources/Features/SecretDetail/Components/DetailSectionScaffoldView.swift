@@ -4,46 +4,33 @@ import SwiftUI
 
 import DVDomain
 
-/// 조회 화면 공통 메타 필드 스캐폴드 — 생성 화면 `FormSectionScaffold`의 read-only 대응.
+/// 조회 화면 섹션들의 공통 bookend — 생성 화면 `FormSectionScaffold`의 read-only 대응.
 ///
-/// 필드 순서는 CreateSecret SectionView와 **동일하게** 맞춘다 (결정 B-2).
-/// `APIKeysTokenSectionView` 기준:
+/// Name 최상단, Memo 최하단, 행 간격을 타입 시스템으로 강제하고 중간 rows는 caller가
+/// `@ViewBuilder content`로 자유 구성한다.
 ///
-/// ```
-/// Name                              ← fullWidth
-/// primary()                         ← payload 주요 필드 (Value 등)
-/// Project        | Services         ← paired
-/// Expire Date    | Environment      ← paired
-/// trailing()                        ← payload 보조 필드 (Authority / Scope 등)
-/// Memo                              ← fullWidth
-/// ```
+/// **공통 페어 행(Project / Services / Expire Date / Environment)을 여기에 넣지 않는다.**
+/// 구성이 타입마다 다르기 때문이다 — `SSHKey`·`SSLTLSCert`·`EnvSet`은 `Project | Environment`이고
+/// Services·Expire Date 행이 없으며, `ServiceAccount`는 Expire Date가 단독 행이고,
+/// `LicenseKey`는 Environment 자리에 License Tier가 온다. 생성 화면도 같은 이유로
+/// 스캐폴드에 넣지 않고 각 섹션이 조립한다.
 ///
-/// 공통 메타 필드는 `Secret` 엔티티에서 바로 나오므로 payload 복호화가 필요 없고,
-/// payload에 의존하는 필드만 `primary` / `trailing` 슬롯에 들어간다.
-///
-/// 다만 **복호화 전에는 호출부가 이 스캐폴드를 아예 렌더하지 않는다**(`SecretDetailView` 참고) —
+/// 복호화 전에는 호출부가 이 스캐폴드를 아예 렌더하지 않는다(`SecretDetailView` 참고) —
 /// 값이 채워진 필드와 빈 필드가 섞이면 어디까지가 복호화된 정보인지 구분되지 않기 때문이다.
-/// 따라서 이 뷰는 "값을 보여줘도 되는 상태"만 가정하고 그린다.
-struct DetailSectionScaffoldView<Primary: View, Trailing: View>: View {
+struct DetailSectionScaffoldView<Content: View>: View {
 
     let secret: Secret
-    let linkedProjects: [Project]
 
-    private let primary: () -> Primary
-    private let trailing: () -> Trailing
+    private let content: () -> Content
 
     @Environment(\.formLayout) private var layout
 
     init(
         secret: Secret,
-        linkedProjects: [Project],
-        @ViewBuilder primary: @escaping () -> Primary,
-        @ViewBuilder trailing: @escaping () -> Trailing
+        @ViewBuilder content: @escaping () -> Content
     ) {
         self.secret = secret
-        self.linkedProjects = linkedProjects
-        self.primary = primary
-        self.trailing = trailing
+        self.content = content
     }
 
     var body: some View {
@@ -53,35 +40,7 @@ struct DetailSectionScaffoldView<Primary: View, Trailing: View>: View {
                 value: secret.name
             )
 
-            primary()
-
-            AdaptiveFieldRow {
-                // 다중 값이므로 텍스트 한 줄이 아니라 chip 컨테이너로 표시한다 —
-                // 생성 화면의 `DVMultiSelectDropdown` chip 트리거와 같은 모습.
-                DetailProjectFieldView(projects: linkedProjects, sizeMode: .paired)
-            } right: {
-                DetailReadOnlyFieldView(
-                    label: .module("Services"),
-                    value: secret.serviceDisplayText,
-                    sizeMode: .paired
-                )
-            }
-
-            AdaptiveFieldRow {
-                DetailReadOnlyFieldView(
-                    label: .module("Expire Date"),
-                    value: secret.expireDateDisplayText,
-                    sizeMode: .paired
-                )
-            } right: {
-                DetailReadOnlyFieldView(
-                    label: .module("Environment"),
-                    value: secret.environmentDisplayText,
-                    sizeMode: .paired
-                )
-            }
-
-            trailing()
+            content()
 
             DetailReadOnlyFieldView(
                 label: .module("Memo"),
@@ -92,65 +51,13 @@ struct DetailSectionScaffoldView<Primary: View, Trailing: View>: View {
     }
 }
 
-// MARK: - Convenience init
-
-extension DetailSectionScaffoldView where Trailing == EmptyView {
-
-    /// 공통 메타 필드 아래에 오는 payload 보조 필드가 없는 경우.
-    init(
-        secret: Secret,
-        linkedProjects: [Project],
-        @ViewBuilder primary: @escaping () -> Primary
-    ) {
-        self.init(secret: secret, linkedProjects: linkedProjects, primary: primary, trailing: { EmptyView() })
-    }
-}
-
-extension DetailSectionScaffoldView where Primary == EmptyView, Trailing == EmptyView {
-
-    /// payload 필드 없이 공통 메타 필드만 표시. payload 섹션 구현 전 임시 경로이기도 하다.
-    init(secret: Secret, linkedProjects: [Project]) {
-        self.init(
-            secret: secret,
-            linkedProjects: linkedProjects,
-            primary: { EmptyView() },
-            trailing: { EmptyView() }
-        )
-    }
-}
-
 // MARK: - Preview
 
 #if DEBUG
 
-private let _previewProjects: [Project] = [
-    Project(id: UUID(), name: "Backend", createdAt: Date(), updatedAt: Date()),
-]
-
-private func _previewSecret(
-    service: String? = "GitHub",
-    environment: String? = SecretEnvironment.prod.rawValue,
-    expiresAt: Date? = Date(timeIntervalSince1970: 1_800_000_000),
-    memo: String? = "Rotate quarterly"
-) -> Secret {
-    Secret(
-        id: UUID(),
-        name: "GitHub Personal Token",
-        secretType: .apiKeyToken,
-        subType: .accessToken,
-        service: service,
-        environment: environment,
-        expiresAt: expiresAt,
-        memo: memo,
-        createdAt: Date(),
-        updatedAt: Date(),
-        payload: SecretPayload(encryptedData: Data(), keyTag: "preview", schemaVersion: 1)
-    )
-}
-
-#Preview("Detail 컬럼 최소폭 (420 · 페어 2열 xs)") {
+#Preview("Detail 컬럼 최소폭 (420)") {
     ScrollView {
-        DetailSectionScaffoldView(secret: _previewSecret(), linkedProjects: _previewProjects) {
+        DetailSectionScaffoldView(secret: [Secret].previewSubTypeMatrix[0]) {
             DetailReadOnlyFieldView(
                 label: .module("Value"),
                 value: "ghp_1234567890abcdef",
@@ -164,35 +71,14 @@ private func _previewSecret(
     .previewWidth(420)
 }
 
-#Preview("Detail 넓은 컬럼 (700 · 페어가 함께 늘어남)") {
-    ScrollView {
-        DetailSectionScaffoldView(secret: _previewSecret(), linkedProjects: _previewProjects) {
-            DetailReadOnlyFieldView(
-                label: .module("Value"),
-                value: "ghp_1234567890abcdef",
-                isSensitive: true,
-                isCopyable: true
-            )
-        }
-        .padding(20)
-    }
-    .formLayout(.detailFluid)
-    .previewWidth(700)
-}
-
 #Preview("2열 폼 (dual)") {
     ScrollView {
-        DetailSectionScaffoldView(secret: _previewSecret(), linkedProjects: _previewProjects) {
+        DetailSectionScaffoldView(secret: [Secret].previewSubTypeMatrix[0]) {
             DetailReadOnlyFieldView(
                 label: .module("Value"),
                 value: "ghp_1234567890abcdef",
                 isSensitive: true,
                 isCopyable: true
-            )
-        } trailing: {
-            DetailReadOnlyFieldView(
-                label: .module("Authority / Scope"),
-                value: "repo:read, user:email"
             )
         }
         .padding(20)
@@ -201,13 +87,12 @@ private func _previewSecret(
     .previewWidth(.wide)
 }
 
-/// optional 필드가 모두 비어 있으면 `DVTextContainer`의 Empty 상태(박스만)로 표시된다.
-#Preview("optional 전부 비어있음") {
+/// Memo가 nil이면 `DVTextContainer`의 Empty 상태(박스만)로 표시된다.
+#Preview("Memo 비어있음") {
     ScrollView {
-        DetailSectionScaffoldView(
-            secret: _previewSecret(service: nil, environment: nil, expiresAt: nil, memo: nil),
-            linkedProjects: []
-        )
+        DetailSectionScaffoldView(secret: [Secret].previewSubTypeMatrix[1]) {
+            DetailReadOnlyFieldView(label: .module("Value"), value: "")
+        }
         .padding(20)
     }
     .formLayout(.detailFluid)
