@@ -15,7 +15,8 @@ struct SecretMetaFields: Equatable {
     /// 모든 secretType에서 required.
     var name: String = ""
     
-    /// 연결할 Project ID 목록. 도메인은 다중을 지원하며, UI가 현재 단일 선택으로 제한(0개 또는 1개)한다.
+    /// 연결할 Project ID 목록. 도메인·UI 모두 다중 연결을 지원한다 —
+    /// `DVMultiSelectDropdown`에 선택 개수 제한이 없다.
     var projectIds: [Project.ID] = []
     
     /// 사용자가 텍스트필드에 입력한 service 값. 빈 문자열이면 저장 시 `nil`로 매핑.

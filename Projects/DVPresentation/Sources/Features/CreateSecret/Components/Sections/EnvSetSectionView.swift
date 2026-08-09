@@ -40,7 +40,7 @@ struct EnvSetSectionView: View, CreateSecretSectionHintProviding {
         ) {
             LabeledTextFieldView(
                 label: .module("envSet List"),
-                placeholder: .module("e.g FOO=bar\\nBAZ=qux"),
+                placeholder: .module("e.g FOO=bar"),
                 text: $envSet.envContent,
                 isRequired: true,
                 sizeMode: .fullWidth,
