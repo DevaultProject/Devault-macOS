@@ -7,7 +7,7 @@ import DVDomain
 
 /// 조회 화면의 Project 필드 — 생성 화면 `ProjectFieldView`의 read-only 대응.
 ///
-/// 값이 여러 개일 수 있어 텍스트 한 줄(`DetailReadOnlyFieldView`)이 아니라
+/// 값이 개별 항목의 집합이라 텍스트(`DetailReadOnlyFieldView`)가 아니라
 /// `DVChipsContainer`로 표시한다. 생성 화면이 `DVMultiSelectDropdown`의 chip 트리거로
 /// 보여주는 것과 같은 모습이다.
 ///

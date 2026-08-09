@@ -41,8 +41,8 @@ struct DetailEnvSetSectionView: View {
 
 #if DEBUG
 
-/// 여러 줄 값이 단일 라인 컨테이너에 들어가는 케이스 — 생성 화면도 한 줄로 받으므로
-/// 넘치는 부분은 `DVTextContainer`의 가로 스크롤이 처리한다.
+/// 개행이 있는 값은 `DetailReadOnlyFieldView`가 멀티라인 컨테이너로 전환해 전체를 보여준다.
+/// 생성 화면은 여전히 한 줄로 입력받으므로 두 화면의 표현이 비대칭이다.
 #Preview("environmentVariableSet · matrix[8] (420)") {
     ScrollView {
         DetailEnvSetSectionView(
