@@ -136,13 +136,6 @@ public struct SecretDetailFeature {
                     },
                 ]
 
-                // 이미 복호화된 payload가 있으면 인증을 다시 요구하지 않는다. 평문이 State에 남아
-                // 있으므로 재인증이 보안을 더해주지 않고, 뷰가 다시 나타날 때마다 Touch ID가
-                // 뜨는 것만 성가시다. `.failed`는 가드하지 않는다 — 재진입은 재시도 기회다.
-                if case .loaded = state.payloadState {
-                    return .merge(effects)
-                }
-
                 state.payloadState = .loading
                 effects.append(revealEffect(secret: state.secret))
                 return .merge(effects)
