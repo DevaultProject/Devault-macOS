@@ -71,8 +71,8 @@ extension SecretDetailView {
 
     // MARK: Viewing
 
-    /// 헤더 + 공통 메타 필드 + payload 복호화 상태까지 구현된 상태다. 후속 작업에서
-    /// 타입별 payload 섹션(`primary` / `trailing` 슬롯)을 채운다.
+    /// 복호화된 payload가 도착한 뒤에만 타입별 섹션을 렌더한다 — 어떤 섹션을 그릴지는
+    /// `DetailPayloadSectionView`가 payload case로 결정한다.
     /// `layout`을 파라미터로 받는다 — `@Environment`로 읽으면 이 뷰가 `formLayout(_:)`으로
     /// 주입한 값이 아니라 상위 환경 값을 보게 된다.
     ///
@@ -81,12 +81,13 @@ extension SecretDetailView {
     /// 즐겨찾기·삭제는 복호화 없이 수행되므로 로딩 중에도 열려 있어야 한다.
     @ViewBuilder
     private func viewingBody(layout: FormLayout) -> some View {
-        if isPayloadRevealed {
+        if case .loaded(let payload) = store.payloadState {
             ScrollView {
                 bodyStack {
-                    DetailSectionScaffoldView(
+                    DetailPayloadSectionView(
                         secret: store.secret,
-                        linkedProjects: store.linkedProjects
+                        linkedProjects: store.linkedProjects,
+                        payload: payload
                     )
                 }
             }
@@ -128,11 +129,6 @@ extension SecretDetailView {
     }
 
     // MARK: Payload state
-
-    private var isPayloadRevealed: Bool {
-        if case .loaded = store.payloadState { return true }
-        return false
-    }
 
     /// 스크림이 없다 — 필드 스캐폴드가 뷰 트리에서 빠져 있어 덮을 대상이 없다.
     @ViewBuilder
@@ -198,18 +194,13 @@ extension SecretDetailView {
 
 #if DEBUG
 
-private let _previewSecret = Secret(
-    id: UUID(),
-    name: "GitHub Personal Token",
-    secretType: .apiKeyToken,
-    service: "GitHub",
-    environment: "production",
-    createdAt: Date(),
-    updatedAt: Date(),
-    payload: SecretPayload(encryptedData: Data(), keyTag: "preview", schemaVersion: 1)
-)
+/// 화면 프리뷰는 payload **상태**를 확인하는 자리다 — 타입별 섹션 조합은
+/// `DetailPayloadSectionView`의 sweep 프리뷰가 담당하므로 여기서 조합을 늘리지 않는다.
+private let _previewSecret = [Secret].previewSubTypeMatrix[0]
 
-#Preview("SecretDetail · Viewing") {
+/// `dummyClient().revealPayload`가 `matrix[0]`(apiKey)에 맞는 payload를 돌려주므로
+/// 별도 스텁 없이 `.loaded` 경로가 그려진다.
+#Preview("SecretDetail · Payload Loaded") {
     SecretDetailView(
         store: Store(
             initialState: SecretDetailFeature.State(secret: _previewSecret)
