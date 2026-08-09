@@ -6,13 +6,6 @@ import SwiftUI
 /// 선택 표시는 List(.sidebar) + `.tint(...)`에 위임, 컨텍스트 메뉴는 호출부에서 `.contextMenu`로 부착.
 public struct DVVaultContainer: View {
 
-    // MARK: - Types
-
-    public enum TrailingIcon {
-        case expiringSoon
-        case expired
-    }
-
     // MARK: - Properties
 
     public let name: String
@@ -20,7 +13,8 @@ public struct DVVaultContainer: View {
     public let service: String?
     /// `service`가 비어 있을 때만 쓰이는 최종 폴백. 호출부가 자신의 타입 분류에 맞는 SF Symbol 등을 넘긴다.
     public let typeIcon: Image?
-    public let trailingIcon: TrailingIcon?
+    /// 우측 만료 강조 아이콘. 어떤 단계로 볼지는 호출부의 만료 정책이 결정한다.
+    public let trailingIcon: DVExpiryEmphasis?
     public let isSelected: Bool
 
     // MARK: - Init
@@ -30,7 +24,7 @@ public struct DVVaultContainer: View {
         date: String,
         service: String? = nil,
         typeIcon: Image? = nil,
-        trailingIcon: TrailingIcon? = nil,
+        trailingIcon: DVExpiryEmphasis? = nil,
         isSelected: Bool = false
     ) {
         self.name = name
@@ -145,28 +139,9 @@ extension DVVaultContainer {
     @ViewBuilder
     private var trailingIconView: some View {
         if let trailingIcon {
-            Image(systemName: trailingIcon.iconName)
-                .foregroundStyle(isSelected ? Color.dv(.white) : trailingIcon.iconColor)
+            trailingIcon.icon
+                .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(trailingIcon.colorToken))
                 .fixedSize()
-        }
-    }
-}
-
-// MARK: - TrailingIcon Appearance
-
-extension DVVaultContainer.TrailingIcon {
-
-    fileprivate var iconName: String {
-        switch self {
-        case .expiringSoon: return "clock"
-        case .expired:      return "exclamationmark.circle"
-        }
-    }
-
-    fileprivate var iconColor: Color {
-        switch self {
-        case .expiringSoon: return Color.dv(.warning)
-        case .expired:      return Color.dv(.danger)
         }
     }
 }

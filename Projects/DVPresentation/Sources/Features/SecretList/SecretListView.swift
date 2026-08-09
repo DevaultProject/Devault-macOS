@@ -123,20 +123,11 @@ extension SecretListView {
     }
   }
 
-  /// All/Star/Expired/Deleted 어디서든 만료 상태를 알려준다: 이미 지났으면 느낌표, `expiringSoonThreshold` 이내면 시계.
-  private func trailingIcon(for secret: Secret) -> DVVaultContainer.TrailingIcon? {
-    guard let expiresAt = secret.expiresAt else { return nil }
-    let now = Date.now
-    if expiresAt < now {
-      return .expired
-    }
-    if expiresAt <= now.addingTimeInterval(Self.expiringSoonThreshold) {
-      return .expiringSoon
-    }
-    return nil
+  /// All/Star/Expired/Deleted 어디서든 만료 상태를 알려준다.
+  /// 임계값은 `SecretExpiryStatus`가 소유한다 — 조회 화면 Expire Date 필드와 같은 정책을 써야 한다.
+  private func trailingIcon(for secret: Secret) -> DVExpiryEmphasis? {
+    SecretExpiryStatus(expiresAt: secret.expiresAt)?.emphasis
   }
-
-  private static let expiringSoonThreshold: TimeInterval = 3 * 86_400
 
   /// All/Star/Expired는 "프로젝트에 추가/삭제", Deleted는 "복구/영구 삭제"를 보여준다.
   @ViewBuilder

@@ -35,11 +35,7 @@ struct DetailLicenseKeySectionView: View {
             }
 
             AdaptiveFieldRow {
-                DetailReadOnlyFieldView(
-                    label: .module("Expire Date"),
-                    value: secret.expireDateDisplayText,
-                    sizeMode: .paired
-                )
+                DetailExpireDateFieldView(secret: secret)
             } right: {
                 DetailReadOnlyFieldView(
                     label: .module("Type"),

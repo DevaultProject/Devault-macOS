@@ -14,6 +14,7 @@ import SwiftUI
 /// | Filled | 본문 텍스트가 ``DVColor/gray900`` 으로 표시 |
 /// | Empty | `text == ""` — 박스만 보이고 콘텐츠 없음 |
 /// | hasAccessories | 우측에 **인터랙티브** 액세서리(복사·표시 토글 등) 배치 |
+/// | hasLeadingIcon | 좌측에 **비인터랙티브** 아이콘 배치. 값의 성격을 알리는 표지 |
 ///
 /// 외곽선은 없고 ``DVColor/gray300`` 배경 채움으로 박스 형태를 표현합니다.
 ///
@@ -37,6 +38,15 @@ import SwiftUI
 /// 액세서리는 항상 **인터랙티브**(`Button` 기반)로 사용한다는 전제로 설계되었습니다.
 /// 단순 장식용 아이콘은 ``DVTextContainer``의 디자인 의도가 아니므로 사용하지 않습니다.
 /// 액세서리 액션은 외부 `@State`나 콜백을 통해 컨테이너에 표시되는 `text`에 영향을 주는 식으로 연결됩니다.
+///
+/// ## Leading 아이콘
+///
+/// 값 자체의 성격을 알리는 비인터랙티브 아이콘은 `leadingIcon`으로 본문 **왼쪽**에 놓습니다
+/// (예: 만료가 임박한 날짜 앞의 경고 표지). 색은 `textColor`를 그대로 따라가므로
+/// 아이콘과 본문이 항상 같은 색으로 그려집니다 — 둘의 색이 갈리는 조합을 만들 수 없습니다.
+///
+/// 탭 가능한 아이콘은 leading이 아니라 액세서리 슬롯의 것입니다. 두 슬롯을 혼동하면
+/// 인터랙션 가능 여부가 위치로 드러나지 않게 됩니다.
 ///
 /// ## Interactive 액세서리
 ///
@@ -77,6 +87,14 @@ import SwiftUI
 ///         .foregroundStyle(Color.dv(.gray900))
 /// }
 ///
+/// // 값 왼쪽에 표지 아이콘 (아이콘 색은 textColor를 따라감)
+/// DVTextContainer(
+///     "26.04.07",
+///     size: .md,
+///     textColor: .danger,
+///     leadingIcon: Image(systemName: "exclamationmark.triangle")
+/// )
+///
 /// // 두 개 이상의 인터랙티브 액세서리는 기본 init으로 직접 합치기
 /// DVTextContainer("token", size: .md) {
 ///     HStack(spacing: 10) {
@@ -94,6 +112,8 @@ public struct DVTextContainer<Accessories: View>: View {
     private let text: String
     private let size: DVComponentSize
     private let textColor: DVColor
+    /// 본문 왼쪽에 고정되는 비인터랙티브 표지 아이콘. 본문이 가로 스크롤되어도 함께 밀리지 않는다.
+    private let leadingIcon: Image?
     private let accessories: () -> Accessories
     /// 우측 padding (포인트). 액세서리가 있을 땐 4pt(아이콘이 약간 안쪽으로 들어오는 디자인), 액세서리 없는 단순 텍스트 컨테이너는 좌우 대칭의 8pt를 적용한다.
     private let trailingPadding: CGFloat
@@ -104,18 +124,21 @@ public struct DVTextContainer<Accessories: View>: View {
     ///   - text: 박스 좌측에 표시될 본문 텍스트. 빈 문자열을 전달하면 Empty 상태가 됩니다.
     ///   - size: 너비 변형. 기본값은 ``DVComponentSize/md``.
     ///   - textColor: 본문 텍스트 색상 토큰. 비활성 상태 등에서 다른 색을 쓰고 싶을 때 지정.
-    ///     기본값 ``DVColor/gray900``.
+    ///     기본값 ``DVColor/gray900``. `leadingIcon`에도 같은 색이 적용됩니다.
+    ///   - leadingIcon: 본문 왼쪽에 놓을 비인터랙티브 표지 아이콘. 기본값 `nil`.
     ///   - accessories: 박스 우측에 배치될 임의의 뷰를 만드는 빌더.
     ///   아이콘 모음, 토글 버튼 등. 버튼이 외부 `@State`를 갱신하면 자연스럽게 `text` 인자가 다음 렌더에서 바뀌어 텍스트 표시도 함께 갱신됩니다.
     public init(
         _ text: String,
         size: DVComponentSize = .md,
         textColor: DVColor = .gray900,
+        leadingIcon: Image? = nil,
         @ViewBuilder accessories: @escaping () -> Accessories
     ) {
         self.text = text
         self.size = size
         self.textColor = textColor
+        self.leadingIcon = leadingIcon
         self.accessories = accessories
         self.trailingPadding = 4
     }
@@ -124,13 +147,17 @@ public struct DVTextContainer<Accessories: View>: View {
         // spacing 8 — 텍스트(또는 가로 스크롤된 콘텐츠)와 액세서리 사이 최소 간격.
         // 텍스트가 오버플로우되어 ScrollView 우측 끝까지 스크롤되더라도 이 8pt가 보장됨.
         HStack(spacing: 8) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                Text(text)
-                    .font(DVFont.bodyLG.font)
-                    .foregroundStyle(Color.dv(textColor))
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .textSelection(.enabled)
+            // leading 아이콘은 본문과 한 덩어리로 읽히도록 액세서리보다 좁은 6pt로 붙인다.
+            HStack(spacing: 6) {
+                leadingIconView
+                ScrollView(.horizontal, showsIndicators: false) {
+                    Text(text)
+                        .font(DVFont.bodyLG.font)
+                        .foregroundStyle(Color.dv(textColor))
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .textSelection(.enabled)
+                }
             }
             accessories()
         }
@@ -140,6 +167,18 @@ public struct DVTextContainer<Accessories: View>: View {
         .background {
             RoundedRectangle(cornerRadius: 6)
                 .fill(Color.dv(.gray300))
+        }
+    }
+
+    /// 본문과 같은 폰트를 써서 아이콘이 글자 크기에 맞춰 따라가고, `fixedSize()`로
+    /// 본문이 오버플로우될 때 눌려 찌그러지지 않게 한다.
+    @ViewBuilder
+    private var leadingIconView: some View {
+        if let leadingIcon {
+            leadingIcon
+                .font(DVFont.bodyLG.font)
+                .foregroundStyle(Color.dv(textColor))
+                .fixedSize()
         }
     }
 }
@@ -154,14 +193,17 @@ extension DVTextContainer where Accessories == EmptyView {
     ///   - text: 박스에 표시될 본문 텍스트.
     ///   - size: 너비 변형. 기본값은 ``DVComponentSize/md``.
     ///   - textColor: 본문 텍스트 색상 토큰. 기본값 ``DVColor/gray900``.
+    ///   - leadingIcon: 본문 왼쪽에 놓을 비인터랙티브 표지 아이콘. `textColor`와 같은 색으로 그려집니다. 기본값 `nil`.
     public init(
         _ text: String,
         size: DVComponentSize = .md,
-        textColor: DVColor = .gray900
+        textColor: DVColor = .gray900,
+        leadingIcon: Image? = nil
     ) {
         self.text = text
         self.size = size
         self.textColor = textColor
+        self.leadingIcon = leadingIcon
         self.accessories = { EmptyView() }
         self.trailingPadding = 8
     }
@@ -300,6 +342,24 @@ extension DVTextContainer where Accessories == AnyView {
 #Preview("Empty") {
     DVTextContainer("", size: .md)
         .padding()
+}
+
+#Preview("Leading icon") {
+    VStack(alignment: .leading, spacing: 12) {
+        DVTextContainer(
+            "26.04.07",
+            size: .md,
+            textColor: .danger,
+            leadingIcon: DVExpiryEmphasis.danger.icon
+        )
+        DVTextContainer(
+            "26.04.11",
+            size: .md,
+            textColor: .warning,
+            leadingIcon: DVExpiryEmphasis.warning.icon
+        )
+    }
+    .padding()
 }
 
 #Preview("Secured (convenience init)") {
