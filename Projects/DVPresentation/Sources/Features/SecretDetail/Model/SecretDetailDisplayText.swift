@@ -27,8 +27,17 @@ extension Secret {
     /// 조회 화면도 locale 기준 숫자 날짜로 맞춘다.
     var expireDateDisplayText: String {
         guard let expiresAt else { return "" }
-        return expiresAt.formatted(date: .numeric, time: .omitted)
+        return Self.expireDateFormatter.string(from: expiresAt)
     }
+
+    /// `yy.MM.dd` 고정. 디자인이 이 형식을 명시하므로 locale·timezone에 흔들려선 안 된다.
+    /// 매 렌더 생성되지 않도록 static으로 재사용한다.
+    private static let expireDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yy.MM.dd"
+        return formatter
+    }()
 
     var serviceDisplayText: String { service ?? "" }
 

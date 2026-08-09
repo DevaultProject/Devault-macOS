@@ -37,11 +37,7 @@ struct DetailServiceAccountSectionView: View {
             }
 
             AdaptiveFieldRow(left: {
-                DetailReadOnlyFieldView(
-                    label: .module("Expire Date"),
-                    value: secret.expireDateDisplayText,
-                    sizeMode: .paired
-                )
+                DetailExpireDateFieldView(secret: secret)
             })
 
             DetailReadOnlyFieldView(

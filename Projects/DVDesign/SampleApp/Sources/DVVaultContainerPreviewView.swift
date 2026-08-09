@@ -10,7 +10,7 @@ struct DVVaultContainerPreviewView: View {
     /// `typeIcon`은 DVDesign이 알 필요 없는 실제 secretType과 무관한 값이라, 폴백 렌더링 확인용으로 하나만 재사용한다.
     private let placeholderTypeIcon = Image(systemName: "key.fill")
 
-    private let vaults: [(String, String, DVVaultContainer.TrailingIcon?, String?, Bool)] = [
+    private let vaults: [(String, String, DVExpiryEmphasis?, String?, Bool)] = [
         ("내가 설정한 이름",         "2026.04.01", nil, nil, true),
         ("이름이름이름",            "2026.04.01", nil, nil, true),
         ("Example",                "2026.03.27", nil, nil, true),
@@ -19,10 +19,10 @@ struct DVVaultContainerPreviewView: View {
         ("GitHub 계정",             "2026.04.01", nil, "github", false),
         ("네이버 계정",              "2026.04.01", nil, "naver", false),
         ("카카오톡 계정",             "2026.04.01", nil, "kakaotalk", false),
-        ("만료 임박 항목",            "2026.04.01", .expiringSoon, "google", false),
-        ("이름이름이름",            "2026.04.01", .expiringSoon, nil, true),
-        ("만료된 항목",              "2026.03.27", .expired, "github", false),
-        ("LongLongNameExampleVault","2025.04.01", .expired, nil, true),
+        ("만료 임박 항목",            "2026.04.01", .warning, "google", false),
+        ("이름이름이름",            "2026.04.01", .warning, nil, true),
+        ("만료된 항목",              "2026.03.27", .danger, "github", false),
+        ("LongLongNameExampleVault","2025.04.01", .danger, nil, true),
     ]
 
     var body: some View {
