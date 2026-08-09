@@ -190,6 +190,11 @@ extension MainFeature {
     case .addButtonTapped:
       state.createSecret = nil
       state.selectSecretType = .init()
+      // 생성 플로우로 들어가면 조회 중이던 시크릿을 놓는다. 생성 중에는 2컬럼이라 상세가
+      // 화면에서 사라지지만 State는 살아남으므로, 정리하지 않으면 생성을 마치고 3컬럼으로
+      // 돌아올 때 이전 시크릿 상세가 다시 나타나고 `.task(id:)`가 Touch ID까지 다시 요구한다.
+      state.secretDetail = nil
+      state.secretList.selectedSecretID = nil
       return .send(.sidebar(.setCreatingSecret(true)))
 
     case .addProjectTapped:
