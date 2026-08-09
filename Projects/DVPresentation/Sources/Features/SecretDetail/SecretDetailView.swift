@@ -30,7 +30,7 @@ public struct SecretDetailView: View {
             VStack(spacing: 0) {
                 Group {
                     if store.mode == .viewing {
-                        viewingBody(layout: layout)
+                        viewingBody
                     } else {
                         editingBody
                     }
@@ -73,14 +73,12 @@ extension SecretDetailView {
 
     /// 복호화된 payload가 도착한 뒤에만 타입별 섹션을 렌더한다 — 어떤 섹션을 그릴지는
     /// `DetailPayloadSectionView`가 payload case로 결정한다.
-    /// `layout`을 파라미터로 받는다 — `@Environment`로 읽으면 이 뷰가 `formLayout(_:)`으로
-    /// 주입한 값이 아니라 상위 환경 값을 보게 된다.
     ///
     /// 복호화 전에는 필드 스캐폴드를 **뷰 트리에서 제외**한다. 반투명 오버레이로 덮으면
     /// 뒤의 필드가 비쳐 보여 어수선하다. 헤더는 두 경우 모두 남는다 —
     /// 즐겨찾기·삭제는 복호화 없이 수행되므로 로딩 중에도 열려 있어야 한다.
     @ViewBuilder
-    private func viewingBody(layout: FormLayout) -> some View {
+    private var viewingBody: some View {
         if case .loaded(let payload) = store.payloadState {
             ScrollView {
                 bodyStack {
