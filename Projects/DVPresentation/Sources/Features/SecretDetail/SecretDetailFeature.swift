@@ -114,8 +114,8 @@ public struct SecretDetailFeature {
             switch action {
             case .task:
                 state.isLoadingProjects = true
-                state.payloadState = .loading
-                return .merge(
+
+                var effects: [Effect<Action>] = [
                     .run { send in
                         do {
                             let projects = try await projectClient.fetchProjects()
@@ -125,7 +125,6 @@ public struct SecretDetailFeature {
                             await send(.projectsResponse(.failure(.unexpected)))
                         }
                     },
-                    revealEffect(secret: state.secret),
                     .run { [id = state.secret.id] send in
                         do {
                             let projects = try await secretClient.fetchLinkedProjects(id)
@@ -134,8 +133,19 @@ public struct SecretDetailFeature {
                         } catch {
                             await send(.linkedProjectsResponse(.failure(SecretUseCaseError.map(error))))
                         }
-                    }
-                )
+                    },
+                ]
+
+                // 이미 복호화된 payload가 있으면 인증을 다시 요구하지 않는다. 평문이 State에 남아
+                // 있으므로 재인증이 보안을 더해주지 않고, 뷰가 다시 나타날 때마다 Touch ID가
+                // 뜨는 것만 성가시다. `.failed`는 가드하지 않는다 — 재진입은 재시도 기회다.
+                if case .loaded = state.payloadState {
+                    return .merge(effects)
+                }
+
+                state.payloadState = .loading
+                effects.append(revealEffect(secret: state.secret))
+                return .merge(effects)
 
             // 프로젝트 목록은 이미 확보돼 있고 실패한 것은 복호화뿐이므로 reveal만 다시 태운다.
             case .didTapRetryReveal:
