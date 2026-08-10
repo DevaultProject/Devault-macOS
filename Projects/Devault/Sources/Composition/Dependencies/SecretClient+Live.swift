@@ -11,12 +11,24 @@ extension SecretClient: @retroactive DependencyKey {
         let secretRepo = LiveRepositories.secret
         let projectRepo = LiveRepositories.project
         let cryptoService: any SecretCryptoService = SecretCryptoServiceImpl()
-        let authService: any UserAuthenticationService = LocalUserAuthenticationServiceImpl()
+        let authenticationService: any UserAuthenticationService = LocalUserAuthenticationServiceImpl()
+        let notificationService: any SecurityNotificationService = SecurityNotificationServiceImpl()
+        let authenticateUseCase: any AuthenticateUseCase = AuthenticateUseCaseImpl(
+            authenticationService: authenticationService,
+            notificationService: notificationService
+        )
+        let expiryUseCase: any ScheduleSecretExpiryNotificationsUseCase = ScheduleSecretExpiryNotificationsUseCaseImpl(
+            repository: secretRepo,
+            notificationService: notificationService
+        )
 
         let fetchSecretUseCase: any FetchSecretUseCase = FetchSecretUseCaseImpl(
+            repository: secretRepo
+        )
+        let revealSecretPayloadUseCase: any RevealSecretPayloadUseCase = RevealSecretPayloadUseCaseImpl(
             repository: secretRepo,
             cryptoService: cryptoService,
-            authenticationService: authService
+            authenticateUseCase: authenticateUseCase
         )
         let deleteSecretUseCase: any DeleteSecretUseCase = DeleteSecretUseCaseImpl(
             repository: secretRepo
@@ -40,16 +52,21 @@ extension SecretClient: @retroactive DependencyKey {
                 try await fetchSecretUseCase.fetch(query: query)
             },
             softDelete: { id in
-                try await deleteSecretUseCase.softDelete(id: id)
+                let secret = try await deleteSecretUseCase.softDelete(id: id)
+                await expiryUseCase.cancel(secretID: secret.id)
+                return secret
             },
             restore: { id in
-                try await deleteSecretUseCase.restore(id: id)
+                let secret = try await deleteSecretUseCase.restore(id: id)
+                await expiryUseCase.schedule(secret: secret)
+                return secret
             },
             permanentlyDelete: { id in
                 try await deleteSecretUseCase.permanentlyDelete(id: id)
+                await expiryUseCase.cancel(secretID: id)
             },
             revealPayload: { secret in
-                try await dispatchRevealPayload(secret: secret, useCase: fetchSecretUseCase)
+                try await dispatchRevealPayload(secret: secret, useCase: revealSecretPayloadUseCase)
             },
             setLiked: { id, liked in
                 try await patchSecretUseCase.updateSimple(
@@ -77,7 +94,7 @@ extension SecretClient: @retroactive DependencyKey {
 
 private func dispatchRevealPayload(
     secret: Secret,
-    useCase: any FetchSecretUseCase
+    useCase: any RevealSecretPayloadUseCase
 ) async throws -> CreateSecretPayload {
     func decodeMeta<M: SecretMetadataContent>(_ type: M.Type) -> M? {
         secret.metadata.flatMap { try? JSONDecoder().decode(M.self, from: $0.metadataJSON) }

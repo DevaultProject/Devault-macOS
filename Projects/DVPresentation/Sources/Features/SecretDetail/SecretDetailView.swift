@@ -129,6 +129,7 @@ extension SecretDetailView {
     // MARK: Payload state
 
     /// 스크림이 없다 — 필드 스캐폴드가 뷰 트리에서 빠져 있어 덮을 대상이 없다.
+    // TODO: - 값 필드에 복사 버튼을 붙일 때는 DVDomain의 `CopySensitiveValueUseCase`를 감싸는 TCA Client를 새로 만들어 쓴다(이 화면이 필요로 하는 모양대로) — 30초 자동 정리·반복 복사 감지 로직 자체는 이미 구현·테스트돼 있으니 그대로 wiring만 하면 된다.
     @ViewBuilder
     private var payloadStateView: some View {
         switch store.payloadState {

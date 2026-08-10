@@ -22,14 +22,4 @@ public protocol FetchSecretUseCase: Sendable {
     /// - Parameter secretID: 조회할 Secret의 ID
     /// - Returns: 해당 Secret에 연결된 Project 배열
     func fetchProjects(secretID: UUID) async throws -> [Project]
-
-    /// 생체인증 후 Secret의 암호화된 payload를 복호화해 반환한다.
-    /// - Parameters:
-    ///   - id: 복호화할 Secret의 ID
-    ///   - type: 복호화 결과로 변환할 payload 타입
-    /// - Returns: 복호화된 payload
-    func revealPayload<Payload: SecretPayloadData>(
-        id: UUID,
-        as type: Payload.Type
-    ) async throws -> Payload
 }
