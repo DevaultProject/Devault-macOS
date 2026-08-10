@@ -50,6 +50,7 @@ struct AuthenticateUseCaseImplTests {
         let sut = AuthenticateUseCaseImpl(
             authenticationService: authenticationService,
             notificationService: notificationService,
+            postNotificationDelay: .milliseconds(0),
             now: { self.fixedDate }
         )
 
