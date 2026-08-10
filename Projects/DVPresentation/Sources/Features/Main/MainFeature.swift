@@ -106,13 +106,24 @@ public struct MainFeature {
 
       // 즐겨찾기·저장으로 Secret이 바뀌면 목록을 재조회한다. 단순 항목 교체로는
       // liked / expired / project 같은 필터 컬렉션에서 조건을 벗어난 항목이 남는다.
+      //
+      // 사이드바 개수도 함께 지시한다. `.refresh`는 목록만 다시 읽고 `.secretsChanged`를
+      // 발신하지 않으므로(그 delegate는 `.mutationResponse` 성공 경로에서만 나온다) 개수가
+      // 그대로 남는다 — 즐겨찾기는 Starred, 삭제는 All·Deleted 개수를 바꾼다.
+      // `.merge`는 도착 순서를 보장하지 않아 테스트가 깨지기 쉬우므로 순차 실행한다.
       case .secretDetail(.delegate(.secretUpdated)):
-        return .send(.secretList(.refresh))
+        return .concatenate(
+          .send(.secretList(.refresh)),
+          .send(.sidebar(.countsRefreshRequested))
+        )
 
       case .secretDetail(.delegate(.deleted)):
         state.secretDetail = nil
         state.secretList.selectedSecretID = nil
-        return .send(.secretList(.refresh))
+        return .concatenate(
+          .send(.secretList(.refresh)),
+          .send(.sidebar(.countsRefreshRequested))
+        )
 
       case .secretDetail:
         return .none
