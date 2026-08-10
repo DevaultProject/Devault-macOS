@@ -187,6 +187,62 @@ struct CreateSecretFeatureTests {
         await store.receive(.delegate(.secretCreated(createdId)))
     }
 
+    @Test("didTapSave: expireDate는 고른 날짜(연/월/일)를 유지한 채 시:분:초가 23:59:59로 고정된다")
+    func didTapSave_expireDateAnchoredToEndOfPickedDay() async throws {
+        // DatePicker는 날짜만 받으므로, 여기 시:분:초(9시)는 필드 활성화 시점의 부산물일 뿐
+        // 사용자가 고른 값이 아니다 — 저장 시 23:59:59로 덮어써야 한다.
+        let pickedDate = DateComponents(
+            calendar: .current, year: 2026, month: 8, day: 14, hour: 9, minute: 0, second: 0
+        ).date!
+
+        var initialState = CreateSecretFeature.State(secretType: .apiKeyToken)
+        initialState.meta.name = "MyKey"
+        initialState.meta.content = .apiKeyToken(APIKeyTokenFields(value: "sk_test"))
+        initialState.meta.expireDate = pickedDate
+
+        let createdSecret = Secret(
+            id: UUID(),
+            name: "MyKey",
+            secretType: .apiKeyToken,
+            subType: .apiKey,
+            createdAt: Date(),
+            updatedAt: Date(),
+            payload: SecretPayload(encryptedData: Data(), keyTag: "test", schemaVersion: 1)
+        )
+
+        let capturedDraft = LockIsolated<SecretDraft?>(nil)
+
+        let store = TestStore(initialState: initialState) {
+            CreateSecretFeature()
+        } withDependencies: {
+            $0.secretManagementClient.createSecret = { draft, _, _ in
+                capturedDraft.setValue(draft)
+                return createdSecret
+            }
+        }
+
+        await store.send(.didTapSave) {
+            $0.isSaving = true
+        }
+        await store.receive(.saveResponse(.success(createdSecret))) {
+            $0.isSaving = false
+        }
+        await store.receive(.delegate(.secretCreated(createdSecret.id)))
+
+        let expiresAt = try #require(capturedDraft.value?.expiresAt)
+        let components = Calendar.current.dateComponents(
+            [.year, .month, .day, .hour, .minute, .second], from: expiresAt
+        )
+        // 날짜(연/월/일)는 사용자가 고른 그대로 유지되고
+        #expect(components.year == 2026)
+        #expect(components.month == 8)
+        #expect(components.day == 14)
+        // 시:분:초는 그 날의 끝(23:59:59)으로 고정된다
+        #expect(components.hour == 23)
+        #expect(components.minute == 59)
+        #expect(components.second == 59)
+    }
+
     @Test("didTapSave 매핑 실패: name + value 모두 빈값 → 둘 다 warning, Effect 미발행")
     func didTapSave_missingBoth() async {
         let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {

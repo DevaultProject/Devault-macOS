@@ -124,9 +124,14 @@ extension SecretMetaFields {
             subType: subType?.domainSubType,
             service: service.nilIfEmpty,
             environment: environment.rawValue,
-            expiresAt: expireDate,
+            expiresAt: expireDate.map(Self.resolvedExpiryDate(pickedDate:)),
             memo: memo.nilIfEmpty
         )
+    }
+
+    /// 사용자가 고른 "날짜"(년/월/일)는 그대로 유지하고, 시:분:초는 그 날의 23:59:59로 고정한다.
+    private static func resolvedExpiryDate(pickedDate: Date) -> Date {
+        Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: pickedDate) ?? pickedDate
     }
 }
 
