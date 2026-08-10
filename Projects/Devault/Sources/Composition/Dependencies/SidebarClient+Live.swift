@@ -16,9 +16,7 @@ extension SidebarClient: @retroactive DependencyKey {
     let renameUseCase: any RenameProjectUseCase = RenameProjectUseCaseImpl(repository: repo)
     let deleteUseCase: any DeleteProjectUseCase = DeleteProjectUseCaseImpl(repository: repo)
     let fetchSecretUseCase: any FetchSecretUseCase = FetchSecretUseCaseImpl(
-      repository: LiveRepositories.secret,
-      cryptoService: SecretCryptoServiceImpl(),
-      authenticationService: LocalUserAuthenticationServiceImpl()
+      repository: LiveRepositories.secret
     )
 
     return SidebarClient(
