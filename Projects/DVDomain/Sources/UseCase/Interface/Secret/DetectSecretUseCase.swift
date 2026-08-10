@@ -7,5 +7,8 @@ import Foundation
 /// - Presentation layer는 반드시 `SensitiveString`으로 감싼 값을 전달. Raw String은 결과에 담기지 않는다.
 /// - 매칭 없으면 `DetectionResult.none`.
 public protocol DetectSecretUseCase: Sendable {
+    /// 시크릿 원문에서 서비스 후보와 부가 메타데이터를 감지한다.
+    /// - Parameter value: 감지 대상 원문
+    /// - Returns: 매칭된 서비스 후보와 메타데이터. 매칭 없으면 `.none`
     func execute(value: SensitiveString) -> DetectionResult
 }
