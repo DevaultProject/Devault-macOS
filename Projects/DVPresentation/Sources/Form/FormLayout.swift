@@ -22,6 +22,10 @@ enum FormLayoutMetrics {
     /// 폼 콘텐츠 좌우 padding.
     static let horizontalPadding: CGFloat = 20
 
+    /// 폼 콘텐츠 상하 padding. 현재 좌우와 같은 값이지만 임계값 계산에는 쓰이지 않으므로
+    /// 별도 상수로 둔다 — 좌우 padding을 조정할 때 세로 여백이 끌려가면 안 된다.
+    static let verticalPadding: CGFloat = 20
+
     /// 필드 행 사이 세로 간격.
     static let rowSpacing: CGFloat = 16
 

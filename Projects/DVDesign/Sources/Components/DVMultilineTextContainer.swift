@@ -194,6 +194,8 @@ extension DVMultilineTextContainer where Accessories == EmptyView {
 
 // MARK: - Previews
 
+#if DEBUG
+
 #Preview("한 줄 값") {
     DVMultilineTextContainer("DeVault", size: .md)
         .padding()
@@ -211,7 +213,7 @@ extension DVMultilineTextContainer where Accessories == EmptyView {
 }
 
 #Preview("높이 초과 · 세로 스크롤") {
-    DVMultilineTextContainer(DVMultilineTextContainerPreviewData.pem, size: .md)
+    DVMultilineTextContainer(DVMultilineTextContainerPreviewData.overflowing, size: .md)
         .padding()
 }
 
@@ -236,13 +238,18 @@ extension DVMultilineTextContainer where Accessories == EmptyView {
 }
 
 private enum DVMultilineTextContainerPreviewData {
-    static let pem = """
-    -----BEGIN PRIVATE KEY-----
-    MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj
-    MzEfYyjiWA4R4/M2bS1GB4t7NXp98C3SC6dVMvDuictGeurT8jNbvJZHtCSuYEvu
-    NMoSfm76oqFvAp8Gy0iz5sxjZmSnXyCdPEovGhLa0VzMaQ8s+CLOyS56YyCFGeJZ
-    qgtzJ6GR3eqoYSW9b9UMvkBpZODSctWSNGj3P7jRFDO5VoTwCQAWbFnOjDfH5Ulg
-    -----END PRIVATE KEY-----
+    /// 고정 높이(100pt)를 넘겨 세로 스크롤을 유도하는 값.
+    ///
+    /// 개인키 형태의 문자열은 쓰지 않는다 — 값이 가짜여도 시크릿 스캐너가 탐지 결과를 올려서,
+    /// 이 파일을 건드리는 모든 PR에 같은 지적이 반복된다.
+    static let overflowing = """
+    DATABASE_URL=postgres://user:pass@localhost:5432/mydb
+    REDIS_URL=redis://localhost:6379/0
+    SMTP_HOST=smtp.example.com
+    SMTP_PORT=587
+    LOG_LEVEL=debug
+    FEATURE_SYNC_ENABLED=true
+    RETRY_BACKOFF_SECONDS=30
     """
 }
 
@@ -280,3 +287,5 @@ private struct DVMultilineTextContainerAccessoriesPreview: View {
         }
     }
 }
+
+#endif
