@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 import ComposableArchitecture
 import DVPresentation
@@ -10,6 +11,10 @@ struct DevaultApp: App {
   /// Debug 메뉴도 같은 Store를 참조해야 하므로 프로퍼티로 올린다.
   private let store = Store(initialState: AppFeature.State()) {
     AppFeature()
+  }
+
+  init() {
+    UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
   }
 
   var body: some Scene {
