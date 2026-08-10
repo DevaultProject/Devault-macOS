@@ -38,6 +38,7 @@ extension DevaultApp {
           minHeight: 600,
           maxHeight: .infinity
         )
+        .background(WindowCaptureBlocker())
     }
     .windowStyle(.hiddenTitleBar)
     .defaultSize(width: 960, height: 700)
@@ -47,6 +48,7 @@ extension DevaultApp {
     WindowGroup("Settings", id: "settings") {
       Text("Settings")
         .frame(width: 500, height: 400)
+        .background(WindowCaptureBlocker())
     }
     .defaultSize(width: 500, height: 400)
   }
