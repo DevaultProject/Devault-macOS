@@ -39,8 +39,12 @@ enum SecretDetailError: Equatable {
         switch self {
         case .authRequired:
             return .module("Authentication is required to reveal this secret.")
-        case .decryptionFailed, .unexpected:
+        case .decryptionFailed:
             return .module("This secret could not be decrypted.")
+        // `map(_:)`이 조회·저장소 실패까지 `.unexpected`로 모으므로 복호화 문구를 쓰면 안 된다.
+        // alert(`payloadRevealFailed`)가 이 케이스에 주는 문구와 같은 값을 쓴다.
+        case .unexpected:
+            return .module("An unexpected error occurred. Please try again.")
         }
     }
 }

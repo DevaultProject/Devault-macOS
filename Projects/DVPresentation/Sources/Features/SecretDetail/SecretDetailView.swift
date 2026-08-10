@@ -108,7 +108,7 @@ extension SecretDetailView {
             content()
         }
         .padding(.horizontal, FormLayoutMetrics.horizontalPadding)
-        .padding(.vertical, FormLayoutMetrics.horizontalPadding)
+        .padding(.vertical, FormLayoutMetrics.verticalPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 

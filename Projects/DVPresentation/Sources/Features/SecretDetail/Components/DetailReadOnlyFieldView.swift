@@ -293,12 +293,14 @@ extension DetailReadOnlyFieldView {
 #Preview("Multiline · Copyable") {
     DetailReadOnlyFieldView(
         label: .module("Private Key"),
+        // 개인키 형태의 문자열은 쓰지 않는다 — 가짜여도 시크릿 스캐너가 매번 탐지 결과를 올린다.
+        // 이 프리뷰가 확인하려는 건 값의 진위가 아니라 높이 초과 시의 스크롤·복사 동작이다.
         value: """
-        -----BEGIN PRIVATE KEY-----
-        MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj
-        MzEfYyjiWA4R4/M2bS1GB4t7NXp98C3SC6dVMvDuictGeurT8jNbvJZHtCSuYEvu
-        NMoSfm76oqFvAp8Gy0iz5sxjZmSnXyCdPEovGhLa0VzMaQ8s+CLOyS56YyCFGeJZ
-        -----END PRIVATE KEY-----
+        PREVIEW PLACEHOLDER — 실제 키가 아니다
+        여러 줄 값이 고정 높이를 넘겼을 때의 세로 스크롤을 확인하기 위한 자리 채움 텍스트
+        세 번째 줄
+        네 번째 줄
+        다섯 번째 줄 — 여기서 100pt를 넘겨 스크롤 인디케이터가 보인다
         """,
         isCopyable: true
     )
