@@ -19,6 +19,7 @@ public actor AuthenticateUseCaseImpl: AuthenticateUseCase {
 
     private let authenticationService: any UserAuthenticationService
     private let notificationService: any SecurityNotificationService
+    private let postNotificationDelay: Duration
     private let now: @Sendable () -> Date
     private let abnormalAccessMonitor = AbnormalAccessMonitor(
         window: abnormalAccessWindow,
@@ -28,10 +29,12 @@ public actor AuthenticateUseCaseImpl: AuthenticateUseCase {
     public init(
         authenticationService: any UserAuthenticationService,
         notificationService: any SecurityNotificationService,
+        postNotificationDelay: Duration = .milliseconds(300),
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.authenticationService = authenticationService
         self.notificationService = notificationService
+        self.postNotificationDelay = postNotificationDelay
         self.now = now
     }
 
@@ -45,6 +48,9 @@ public actor AuthenticateUseCaseImpl: AuthenticateUseCase {
                     try await notificationService.notify(
                         .abnormalAccess(reason: "짧은 시간 안에 인증 실패가 \(Self.abnormalAccessThreshold)회 이상 반복됨")
                     )
+                    
+                    // alert에 상관없이 알림 스킵을 막기 위해 약간의 지연 추가
+                    try? await Task.sleep(for: postNotificationDelay)
                 } catch {
                     Log.warn("비정상 접근 알림 발송 실패: \(error)", category: .notification)
                 }
