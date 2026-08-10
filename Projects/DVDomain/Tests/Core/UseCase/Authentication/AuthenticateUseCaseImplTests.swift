@@ -35,7 +35,7 @@ struct AuthenticateUseCaseImplTests {
             now: { self.fixedDate }
         )
 
-        for _ in 0..<4 {
+        for _ in 0..<2 {
             _ = try? await sut.authenticate(reason: "test")
         }
 
@@ -53,13 +53,13 @@ struct AuthenticateUseCaseImplTests {
             now: { self.fixedDate }
         )
 
-        for _ in 0..<5 {
+        for _ in 0..<3 {
             _ = try? await sut.authenticate(reason: "test")
         }
 
         #expect(notificationService.notified.count == 1)
         #expect(notificationService.notified.first == .abnormalAccess(
-            reason: "짧은 시간 안에 인증 실패가 5회 이상 반복됨"
+            reason: "짧은 시간 안에 인증 실패가 3회 이상 반복됨"
         ))
     }
 

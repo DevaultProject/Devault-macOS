@@ -12,8 +12,10 @@ import DVCore
 /// 화면을 넘나드는 실패도 하나의 카운터로 잡힌다(예: 여러 Secret의 reveal 인증을 연달아 실패).
 /// 성공은 카운트를 되돌리지 않는다 — 슬라이딩 윈도가 시간이 지나면 자연히 오래된 실패를 밀어내므로 별도 리셋이 필요 없다.
 public actor AuthenticateUseCaseImpl: AuthenticateUseCase {
-    private static let abnormalAccessWindow: TimeInterval = 60
-    private static let abnormalAccessThreshold = 5
+    // 시스템 인증 시트(Touch ID/암호) 안의 개별 재시도는 잡히지 않고 시트 하나가 완결된 실패로 끝나야 1회로 잡힌다
+    // 따라서 낮은 threshold·긴 window가 실제 완결 시도 빈도에 더 맞는다.
+    private static let abnormalAccessWindow: TimeInterval = 90
+    private static let abnormalAccessThreshold = 3
 
     private let authenticationService: any UserAuthenticationService
     private let notificationService: any SecurityNotificationService
