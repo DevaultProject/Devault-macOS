@@ -37,11 +37,15 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
         let now = dateProvider()
 
         for daysBefore in Self.daysBeforeExpiry {
-            guard
-                let fireDate = Calendar.current.date(byAdding: .day, value: -daysBefore, to: expiresAt),
-                // 이미 지난 마크는 스킵하고 앱을 다시 열었을 때 아직 안 지난 마크만 정상적으로 예약됨
-                fireDate > now
-            else { continue }
+            guard let dayMark = Calendar.current.date(byAdding: .day, value: -daysBefore, to: expiresAt) else {
+                continue
+            }
+            // 이미 지난 마크는 스킵하고 앱을 다시 열었을 때 아직 안 지난 마크만 정상적으로 예약됨
+            guard dayMark > now else { continue }
+
+            let notification = SecurityNotification.secretExpiresSoon(
+                secretID: secret.id, name: secret.name, daysBefore: daysBefore
+            )
 
             do {
                 // identifier가 secretID+daysBefore로 고정돼 있어,
@@ -49,8 +53,8 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
                 try await notificationService.schedule(
                     ScheduledSecurityNotification(
                         identifier: Self.notificationID(secretID: secret.id, daysBefore: daysBefore),
-                        notification: .secretExpiresSoon(secretID: secret.id, name: secret.name, daysBefore: daysBefore),
-                        fireDate: fireDate
+                        notification: notification,
+                        fireDate: dayMark
                     )
                 )
             } catch {

@@ -24,12 +24,14 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
 
         await sut.schedule(secret: secret)
 
-        #expect(notificationService.scheduled.count == 1)
-        #expect(notificationService.scheduled.first?.identifier == "secret-expiry-\(secret.id.uuidString)-3d")
+        let identifiers = Set(notificationService.scheduled.map(\.identifier))
+        #expect(identifiers == [
+            "secret-expiry-\(secret.id.uuidString)-3d",
+        ])
     }
 
     @Test("만료가 10일 남았으면 7일/3일 전 알림을 모두 예약한다")
-    func scheduleSchedulesBothWhenFarEnough() async {
+    func scheduleSchedulesAllWhenFarEnough() async {
         let notificationService = FakeSecurityNotificationService()
         let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
             repository: InMemorySecretRepository(),
@@ -45,6 +47,24 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             "secret-expiry-\(secret.id.uuidString)-7d",
             "secret-expiry-\(secret.id.uuidString)-3d",
         ])
+    }
+
+    @Test("마크가 정확히 지금과 같으면(만료 기간이 daysBefore와 우연히 일치) 스킵한다")
+    func scheduleSkipsWhenMarkExactlyMatchesNow() async {
+        let notificationService = FakeSecurityNotificationService()
+        let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
+            repository: InMemorySecretRepository(),
+            notificationService: notificationService,
+            dateProvider: { self.now }
+        )
+        
+        // 3일 전 마크가 정확히 "지금"과 같은 경우 — 이미 지난 것으로 보고 스킵한다.
+        let expiresAt = Calendar.current.date(byAdding: .day, value: 3, to: now)!
+        let secret = SecretFixture.make(expiresAt: expiresAt)
+
+        await sut.schedule(secret: secret)
+
+        #expect(notificationService.scheduled.isEmpty)
     }
 
     @Test("만료일이 없으면 아무 알림도 예약하지 않는다")
@@ -65,7 +85,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
     // MARK: - cancel(secretID:)
 
     @Test("cancel은 7일/3일 알림 ID를 모두 취소 요청한다")
-    func cancelCancelsBothIdentifiers() async {
+    func cancelCancelsAllIdentifiers() async {
         let notificationService = FakeSecurityNotificationService()
         let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
             repository: InMemorySecretRepository(),
