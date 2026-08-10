@@ -49,8 +49,8 @@ extension AppView {
     store: Store(initialState: AppFeature.State()) {
       AppFeature()
     } withDependencies: {
-      $0.onboardingStatus.hasCompleted = { false }
-      $0.onboardingStatus.setCompleted = { }
+      $0.appLaunchClient.hasCompletedOnboarding = { false }
+      $0.appLaunchClient.setOnboardingCompleted = { }
     }
   )
 }
