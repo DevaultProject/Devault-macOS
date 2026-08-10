@@ -7,7 +7,6 @@ import DVDomain
 
 /// Lock Feature 전용 Client. 잠금 해제(Touch ID/시스템 암호 인증)에서 사용.
 /// Main → Lock으로 다시 돌아오는 흐름(재잠금 등)에서도 동일하게 재사용.
-/// Live 조립은 Devault(App 타겟)에서 `UserAuthenticationService`를 wrap.
 @DependencyClient
 public struct LockClient: Sendable {
 
