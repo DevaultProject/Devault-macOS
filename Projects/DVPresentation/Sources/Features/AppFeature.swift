@@ -49,7 +49,7 @@ public struct AppFeature {
 
   // MARK: - Dependencies
 
-  @Dependency(\.onboardingStatus) var onboardingStatus
+  @Dependency(\.appLaunchClient) var appLaunchClient
 
   // MARK: - Init
 
@@ -65,12 +65,19 @@ public struct AppFeature {
         state.locked = nil
         state.main = nil
 
-        if onboardingStatus.hasCompleted() {
+        if appLaunchClient.hasCompletedOnboarding() {
           state.locked = .init()
         } else {
           state.onboarding = .init()
         }
-        return .none
+        return .merge(
+          .run { _ in
+            _ = await appLaunchClient.requestNotificationAuthorization()
+          },
+          .run { _ in
+            await appLaunchClient.syncExpiryNotifications()
+          }
+        )
 
       #if DEBUG
       // 온보딩 완료 플래그를 세우지 않는다 — 다음 실행에서 온보딩이 다시 나와야
@@ -85,7 +92,7 @@ public struct AppFeature {
       case .onboarding(.delegate(.completed)):
         state.onboarding = nil
         state.main = .init()
-        return .run { _ in onboardingStatus.setCompleted() }
+        return .run { _ in appLaunchClient.setOnboardingCompleted() }
 
       case .onboarding:
         return .none
