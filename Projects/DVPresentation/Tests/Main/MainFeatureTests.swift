@@ -383,13 +383,22 @@ struct MainFeatureTests {
       MainFeature()
     } withDependencies: {
       $0.secretClient.fetchByQuery = { _ in [secret] }
+      $0.sidebarClient.fetchCounts = { _, _ in SecretCounts() }
+      $0.date = .constant(Self.referenceDate)
     }
 
     await store.send(.secretDetail(.delegate(.secretUpdated(secret))))
     // refresh는 .loading으로 바꾸지 않는다 — 목록이 깜빡이지 않아야 한다.
     await store.receive(.secretList(.refresh))
+    // 즐겨찾기는 Starred 개수를 바꾸므로 사이드바 개수도 갱신되어야 한다.
+    await store.receive(.sidebar(.countsRefreshRequested)) {
+      $0.sidebar.countsState = .loading
+    }
     await store.receive(.secretList(.secretsResponse(.success([secret])))) {
       $0.secretList.secretsState = .loaded(IdentifiedArray(uniqueElements: [secret]))
+    }
+    await store.receive(.sidebar(.countsResponse(.success(SecretCounts())))) {
+      $0.sidebar.countsState = .loaded(SecretCounts())
     }
     // detail은 유지된다 — 즐겨찾기 토글로 화면이 닫히면 안 된다.
     #expect(store.state.secretDetail != nil)
@@ -414,6 +423,8 @@ struct MainFeatureTests {
       MainFeature()
     } withDependencies: {
       $0.secretClient.fetchByQuery = { _ in [] }
+      $0.sidebarClient.fetchCounts = { _, _ in SecretCounts() }
+      $0.date = .constant(Self.referenceDate)
     }
 
     await store.send(.secretDetail(.delegate(.deleted(secret.id)))) {
@@ -421,8 +432,15 @@ struct MainFeatureTests {
       $0.secretList.selectedSecretID = nil
     }
     await store.receive(.secretList(.refresh))
+    // 삭제는 All·Deleted 개수를 바꾸므로 사이드바 개수도 갱신되어야 한다.
+    await store.receive(.sidebar(.countsRefreshRequested)) {
+      $0.sidebar.countsState = .loading
+    }
     await store.receive(.secretList(.secretsResponse(.success([])))) {
       $0.secretList.secretsState = .loaded([])
+    }
+    await store.receive(.sidebar(.countsResponse(.success(SecretCounts())))) {
+      $0.sidebar.countsState = .loaded(SecretCounts())
     }
   }
 
