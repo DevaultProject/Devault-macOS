@@ -5,7 +5,7 @@ import OSLog
 
 /// OSLog `category` 값. Console.app 필터링 축으로 쓰인다.
 public enum LogCategory: String, Sendable {
-    case general, ui, data, storage, network, security, crypto, domain
+    case general, ui, data, storage, network, security, crypto, domain, notification
 }
 
 /// 앱 전역 로거의 네임스페이스 프로토콜.
