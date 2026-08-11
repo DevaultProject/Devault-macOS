@@ -8,8 +8,8 @@ public enum SecurityNotification: Equatable, Sendable {
     case abnormalAccess(reason: String)
     /// 클립보드에 민감 값이 30초 이상 남아 있어 정리함
     case clipboardExceeded(seconds: Int)
-    /// Secret이 곧 만료됨
-    case secretExpiresSoon(secretID: UUID, name: String, daysBefore: Int)
+    /// Secret이 곧 만료됨. 인증 없이 노출될 수 있어 name은 포함하지 않음.
+    case secretExpiresSoon(secretID: UUID, daysBefore: Int)
 }
 
 /// 특정 시각에 발송되도록 예약하는 알림 요청입니다.
