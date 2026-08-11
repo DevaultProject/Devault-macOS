@@ -32,6 +32,35 @@ struct SecretUseCaseHelperTests {
         #expect(normalized.liked == true)
     }
 
+    @Test("normalizedDraft는 expiresAt의 날짜(연/월/일)는 유지한 채 시:분:초를 23:59:59로 고정한다")
+    func normalizedDraftAnchorsExpiresAtToEndOfDay() throws {
+        let pickedDate = DateComponents(
+            calendar: .current, year: 2026, month: 8, day: 14, hour: 9, minute: 0, second: 0
+        ).date!
+        let draft = SecretDraft(name: "Hello", secretType: .apiKeyToken, expiresAt: pickedDate)
+
+        let normalized = try SecretUseCaseHelper.normalizedDraft(draft)
+
+        let components = Calendar.current.dateComponents(
+            [.year, .month, .day, .hour, .minute, .second], from: try #require(normalized.expiresAt)
+        )
+        #expect(components.year == 2026)
+        #expect(components.month == 8)
+        #expect(components.day == 14)
+        #expect(components.hour == 23)
+        #expect(components.minute == 59)
+        #expect(components.second == 59)
+    }
+
+    @Test("normalizedDraft는 expiresAt이 nil이면 nil을 유지한다")
+    func normalizedDraftKeepsNilExpiresAt() throws {
+        let draft = SecretDraft(name: "Hello", secretType: .apiKeyToken, expiresAt: nil)
+
+        let normalized = try SecretUseCaseHelper.normalizedDraft(draft)
+
+        #expect(normalized.expiresAt == nil)
+    }
+
     @Test("빈 이름은 invalidName 에러를 던진다")
     func normalizedDraftRejectsEmptyName() {
         let draft = SecretDraft(name: "", secretType: .apiKeyToken)

@@ -114,6 +114,7 @@ extension SecretMetaFields {
     }
     
     /// `SecretDraft`(공통 정보)로 매핑. `service`는 빈 문자열이면 `nil`로 대체, `environment`는 `rawValue`(String)로 저장.
+    /// `expireDate`의 시:분:초를 그 날의 23:59:59로 고정하는 정규화는 `SecretUseCaseHelper.normalizedDraft`가 담당한다
     func toSecretDraft(
         secretType: CreatableSecretType,
         subType: CreatableSecretSubType?
@@ -124,14 +125,9 @@ extension SecretMetaFields {
             subType: subType?.domainSubType,
             service: service.nilIfEmpty,
             environment: environment.rawValue,
-            expiresAt: expireDate.map(Self.resolvedExpiryDate(pickedDate:)),
+            expiresAt: expireDate,
             memo: memo.nilIfEmpty
         )
-    }
-
-    /// 사용자가 고른 "날짜"(년/월/일)는 그대로 유지하고, 시:분:초는 그 날의 23:59:59로 고정한다.
-    private static func resolvedExpiryDate(pickedDate: Date) -> Date {
-        Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: pickedDate) ?? pickedDate
     }
 }
 
