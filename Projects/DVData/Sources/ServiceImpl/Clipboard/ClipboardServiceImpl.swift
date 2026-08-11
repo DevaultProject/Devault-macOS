@@ -18,6 +18,7 @@ public struct ClipboardServiceImpl: ClipboardService {
         return pasteboard.changeCount
     }
 
+    /// NSPasteboard엔 compare-and-swap API가 없어 changeCount 비교와 clearContents()를 원자적으로 묶을 수 없다 — 이론적 TOCTOU는 감수한다.
     public func clearIfUnchanged(from changeCount: Int) -> Bool {
         // changeCount가 그대로면 그 사이 아무도 pasteboard를 건드리지 않았다는 뜻 — 안전하게 정리 가능
         // 바뀌었다면 사용자가 이미 다른 값을 복사한 것이므로 건드리지 않음
