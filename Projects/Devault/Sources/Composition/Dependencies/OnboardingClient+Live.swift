@@ -8,7 +8,6 @@ import DVData
 
 extension OnboardingClient: @retroactive DependencyKey {
   public static let liveValue: OnboardingClient = {
-    let authenticationService: any UserAuthenticationService = LocalUserAuthenticationServiceImpl()
     let accountService: any ICloudAccountService = CloudKitAccountServiceImpl(
       containerIdentifier: ICloudContainer.identifier
     )
@@ -17,7 +16,7 @@ extension OnboardingClient: @retroactive DependencyKey {
 
     return OnboardingClient(
       enableTouchID: {
-        try await authenticationService.authenticate(reason: "Touch ID를 사용하려면 인증이 필요합니다")
+        try await LiveUseCases.authenticate.authenticate(reason: "Touch ID를 사용하려면 인증이 필요합니다")
       },
       enableICloudSync: {
         let status = await accountService.fetchAccountStatus()
