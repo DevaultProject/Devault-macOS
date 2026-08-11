@@ -7,7 +7,7 @@ import Testing
 
 @Suite("AuthenticateUseCaseImpl")
 struct AuthenticateUseCaseImplTests {
-    private let fixedDate = Date(timeIntervalSince1970: 1_700_000_000)
+    private let fixedInstant = ContinuousClock.now
 
     @Test("인증 실패는 그대로 던진다")
     func authenticateRethrowsFailure() async {
@@ -16,7 +16,7 @@ struct AuthenticateUseCaseImplTests {
         let sut = AuthenticateUseCaseImpl(
             authenticationService: authenticationService,
             notificationService: FakeSecurityNotificationService(),
-            now: { self.fixedDate }
+            now: { self.fixedInstant }
         )
 
         await #expect(throws: UserAuthenticationError.failed) {
@@ -32,7 +32,7 @@ struct AuthenticateUseCaseImplTests {
         let sut = AuthenticateUseCaseImpl(
             authenticationService: authenticationService,
             notificationService: notificationService,
-            now: { self.fixedDate }
+            now: { self.fixedInstant }
         )
 
         for _ in 0..<2 {
@@ -51,7 +51,7 @@ struct AuthenticateUseCaseImplTests {
             authenticationService: authenticationService,
             notificationService: notificationService,
             postNotificationDelay: .milliseconds(0),
-            now: { self.fixedDate }
+            now: { self.fixedInstant }
         )
 
         for _ in 0..<3 {
@@ -71,7 +71,7 @@ struct AuthenticateUseCaseImplTests {
         let sut = AuthenticateUseCaseImpl(
             authenticationService: authenticationService,
             notificationService: notificationService,
-            now: { self.fixedDate }
+            now: { self.fixedInstant }
         )
 
         for _ in 0..<10 {
