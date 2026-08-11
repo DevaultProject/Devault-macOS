@@ -14,13 +14,13 @@ import DVCore
 public actor AuthenticateUseCaseImpl: AuthenticateUseCase {
     // 시스템 인증 시트(Touch ID/암호) 안의 개별 재시도는 잡히지 않고 시트 하나가 완결된 실패로 끝나야 1회로 잡힌다
     // 따라서 낮은 threshold·긴 window가 실제 완결 시도 빈도에 더 맞는다.
-    private static let abnormalAccessWindow: TimeInterval = 90
+    private static let abnormalAccessWindow: Duration = .seconds(90)
     private static let abnormalAccessThreshold = 3
 
     private let authenticationService: any UserAuthenticationService
     private let notificationService: any SecurityNotificationService
     private let postNotificationDelay: Duration
-    private let now: @Sendable () -> Date
+    private let now: @Sendable () -> ContinuousClock.Instant
     private let abnormalAccessMonitor = AbnormalAccessMonitor(
         window: abnormalAccessWindow,
         threshold: abnormalAccessThreshold
@@ -30,7 +30,7 @@ public actor AuthenticateUseCaseImpl: AuthenticateUseCase {
         authenticationService: any UserAuthenticationService,
         notificationService: any SecurityNotificationService,
         postNotificationDelay: Duration = .milliseconds(300),
-        now: @escaping @Sendable () -> Date = { Date() }
+        now: @escaping @Sendable () -> ContinuousClock.Instant = { ContinuousClock.now }
     ) {
         self.authenticationService = authenticationService
         self.notificationService = notificationService

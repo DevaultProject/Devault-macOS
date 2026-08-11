@@ -7,7 +7,7 @@ import Testing
 
 @Suite("CopySensitiveValueUseCaseImpl")
 struct CopySensitiveValueUseCaseImplTests {
-    private let fixedDate = Date(timeIntervalSince1970: 1_700_000_000)
+    private let fixedInstant = ContinuousClock.now
 
     @Test("값을 ClipboardService에 그대로 쓴다")
     func executeWritesValue() async throws {
@@ -15,7 +15,7 @@ struct CopySensitiveValueUseCaseImplTests {
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: FakeSecurityNotificationService(),
-            now: { self.fixedDate }
+            now: { self.fixedInstant }
         )
 
         try await sut.execute("secret-value")
@@ -30,7 +30,7 @@ struct CopySensitiveValueUseCaseImplTests {
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: FakeSecurityNotificationService(),
-            now: { self.fixedDate }
+            now: { self.fixedInstant }
         )
 
         await #expect(throws: ClipboardError.writeFailed) {
@@ -45,7 +45,7 @@ struct CopySensitiveValueUseCaseImplTests {
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: notificationService,
-            now: { self.fixedDate }
+            now: { self.fixedInstant }
         )
 
         for _ in 0..<5 {
@@ -67,7 +67,7 @@ struct CopySensitiveValueUseCaseImplTests {
             clipboardService: clipboardService,
             notificationService: notificationService,
             clipboardClearDelay: .milliseconds(10),
-            now: { self.fixedDate }
+            now: { self.fixedInstant }
         )
 
         try await sut.execute("secret-value")
@@ -88,7 +88,7 @@ struct CopySensitiveValueUseCaseImplTests {
             clipboardService: clipboardService,
             notificationService: notificationService,
             clipboardClearDelay: .milliseconds(10),
-            now: { self.fixedDate }
+            now: { self.fixedInstant }
         )
 
         try await sut.execute("secret-value")
