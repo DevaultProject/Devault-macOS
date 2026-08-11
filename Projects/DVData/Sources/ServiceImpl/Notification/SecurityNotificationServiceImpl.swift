@@ -74,9 +74,9 @@ private extension SecurityNotificationServiceImpl {
             content.title = "클립보드를 정리했어요"
             content.body = "복사된 값이 \(seconds)초 넘게 남아 있어 자동으로 지웠어요."
 
-        case .secretExpiresSoon(_, let name, let daysBefore):
+        case .secretExpiresSoon(_, let daysBefore):
             content.title = "Secret 만료가 다가와요"
-            content.body = "\"\(name)\"이(가) \(daysBefore)일 후 만료돼요."
+            content.body = "저장된 Secret이 \(daysBefore)일 후 만료돼요."
         }
         content.sound = .default
         return content

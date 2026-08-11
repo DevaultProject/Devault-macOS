@@ -67,6 +67,31 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
         #expect(notificationService.scheduled.isEmpty)
     }
 
+    @Test("expiresAt이 바뀌면 재예약 전에 이전 마크를 먼저 취소한다")
+    func scheduleCancelsPreviousMarksBeforeReschedulingWhenExpiryChanges() async {
+        let notificationService = FakeSecurityNotificationService()
+        let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
+            repository: InMemorySecretRepository(),
+            notificationService: notificationService,
+            dateProvider: { self.now }
+        )
+        let secretID = UUID(uuidString: "00000000-0000-0000-0000-0000000000DD")!
+        let farSecret = SecretFixture.make(id: secretID, expiresAt: now.addingTimeInterval(10 * day))
+        let nearSecret = SecretFixture.make(id: secretID, expiresAt: now.addingTimeInterval(2 * day))
+
+        await sut.schedule(secret: farSecret)
+        await sut.schedule(secret: nearSecret)
+
+        // schedule()이 매번 먼저 cancel하므로, 두 번 호출하면 cancel도 두 번 일어나야 stale한 -7d가 안 남는다.
+        #expect(notificationService.cancelledIdentifiers.count == 2)
+        #expect(notificationService.cancelledIdentifiers.allSatisfy {
+            $0 == [
+                "secret-expiry-\(secretID.uuidString)-7d",
+                "secret-expiry-\(secretID.uuidString)-3d",
+            ]
+        })
+    }
+
     @Test("만료일이 없으면 아무 알림도 예약하지 않는다")
     func scheduleDoesNothingWithoutExpiresAt() async {
         let notificationService = FakeSecurityNotificationService()
@@ -129,6 +154,28 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
 
         #expect(notificationService.scheduled.allSatisfy { $0.identifier.contains(withExpiry.id.uuidString) })
         #expect(notificationService.scheduled.count == 2)
+    }
+
+    @Test("syncAll은 expiresAt이 없는(나중에 제거됐을 수 있는) Secret의 예약도 취소한다")
+    func syncAllCancelsSecretsWhoseExpiryWasRemoved() async throws {
+        let repository = InMemorySecretRepository()
+        let secretID = UUID(uuidString: "00000000-0000-0000-0000-0000000000EE")!
+        let secret = SecretFixture.make(id: secretID, expiresAt: nil)
+        repository.seed(secret)
+
+        let notificationService = FakeSecurityNotificationService()
+        let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
+            repository: repository,
+            notificationService: notificationService,
+            dateProvider: { self.now }
+        )
+
+        try await sut.syncAll()
+
+        #expect(notificationService.cancelledIdentifiers == [[
+            "secret-expiry-\(secretID.uuidString)-7d",
+            "secret-expiry-\(secretID.uuidString)-3d",
+        ]])
     }
 
     @Test("syncAll은 repository 에러를 SecretUseCaseError로 매핑해 던진다")
