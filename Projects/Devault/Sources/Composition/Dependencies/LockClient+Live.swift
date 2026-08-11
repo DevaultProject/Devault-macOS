@@ -7,16 +7,9 @@ import DVPresentation
 
 extension LockClient: @retroactive DependencyKey {
   public static let liveValue: LockClient = {
-    let authenticationService: any UserAuthenticationService = LocalUserAuthenticationServiceImpl()
-    let notificationService: any SecurityNotificationService = SecurityNotificationServiceImpl()
-    let authenticateUseCase: any AuthenticateUseCase = AuthenticateUseCaseImpl(
-      authenticationService: authenticationService,
-      notificationService: notificationService
-    )
-
-    return LockClient(
+    LockClient(
       unlock: {
-        try await authenticateUseCase.authenticate(reason: "잠금을 해제하려면 인증이 필요합니다")
+        try await LiveUseCases.authenticate.authenticate(reason: "잠금을 해제하려면 인증이 필요합니다")
       }
     )
   }()
