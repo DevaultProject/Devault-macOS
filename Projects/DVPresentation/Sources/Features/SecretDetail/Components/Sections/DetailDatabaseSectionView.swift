@@ -42,17 +42,14 @@ struct DetailDatabaseSectionView: View {
                 )
             }
 
-            DetailReadOnlyFieldView(
-                label: .module("SSL Required"),
-                value: sslRequiredDisplayText
-            )
+            DetailSSLRequiredFieldView(isRequired: isSSLRequired)
         }
     }
 
-    /// 생성 화면은 체크박스라 값이 항상 Bool이지만, `sslRequired`는 도메인에서 Optional이고
-    /// metadata 자체가 없는 기존 데이터도 있다. 어느 쪽이 nil이든 미설정 = 요구하지 않음으로 읽는다.
-    private var sslRequiredDisplayText: String {
-        (metadata?.sslRequired ?? false) ? .module("Required") : .module("Not Required")
+    /// `sslRequired`는 도메인에서 Optional이고 metadata 자체가 없는 기존 데이터도 있다.
+    /// 어느 쪽이 nil이든 미설정 = 요구하지 않음으로 읽는다.
+    private var isSSLRequired: Bool {
+        metadata?.sslRequired ?? false
     }
 }
 
@@ -74,7 +71,7 @@ struct DetailDatabaseSectionView: View {
     .previewWidth(420)
 }
 
-/// metadata가 nil인 케이스 — SSL Required가 "Not Required"로 떨어지는지 확인.
+/// metadata가 nil인 케이스 — SSL Required 체크박스가 해제 상태로 떨어지는지 확인.
 #Preview("database · 값 비어있음 · matrix[5]") {
     ScrollView {
         DetailDatabaseSectionView(
