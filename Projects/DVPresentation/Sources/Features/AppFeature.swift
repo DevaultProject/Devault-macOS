@@ -29,11 +29,6 @@ public struct AppFeature {
 
     case task
 
-    #if DEBUG
-    /// 온보딩과 잠금을 모두 건너뛰고 곧바로 메인으로 진입한다. Debug 메뉴 전용.
-    case debugSkipToMain
-    #endif
-
     // MARK: - Child
 
     case onboarding(OnboardingContainerFeature.Action)
@@ -78,16 +73,6 @@ public struct AppFeature {
             await appLaunchClient.syncExpiryNotifications()
           }
         )
-
-      #if DEBUG
-      // 온보딩 완료 플래그를 세우지 않는다 — 다음 실행에서 온보딩이 다시 나와야
-      // 실제 흐름을 계속 검증할 수 있고, 디버그 통로가 영구 상태로 굳지 않는다.
-      case .debugSkipToMain:
-        state.onboarding = nil
-        state.locked = nil
-        state.main = .init()
-        return .none
-      #endif
 
       case .onboarding(.delegate(.completed)):
         state.onboarding = nil

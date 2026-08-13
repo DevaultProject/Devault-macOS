@@ -8,7 +8,6 @@ import DVPresentation
 struct DevaultApp: App {
 
   /// ViewBuilder 안에서 만들면 body가 재평가될 때마다 Store가 새로 생성되어 상태가 날아간다.
-  /// Debug 메뉴도 같은 Store를 참조해야 하므로 프로퍼티로 올린다.
   private let store = Store(initialState: AppFeature.State()) {
     AppFeature()
   }
@@ -18,12 +17,7 @@ struct DevaultApp: App {
   }
 
   var body: some Scene {
-    #if DEBUG
-    mainWindow.commands { DevaultDebugCommands(store: store) }
-    #else
     mainWindow
-    #endif
-
     settingsWindow
   }
 }
