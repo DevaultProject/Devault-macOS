@@ -11,6 +11,13 @@ struct DVMultilineTextFieldPreviewView: View {
     SECRET_KEY=abc123
     """
     @State private var jsonValue = ""
+    @State private var securePrefilled = """
+    -----BEGIN OPENSSH PRIVATE KEY-----
+    b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtz
+    c2gtZWQyNTUxOQAAACDQ
+    -----END OPENSSH PRIVATE KEY-----
+    """
+    @State private var secureEmpty = ""
     @State private var xsValue = ""
     @State private var smValue = ""
     @State private var mdValue = ""
@@ -51,6 +58,25 @@ struct DVMultilineTextFieldPreviewView: View {
                             "e.g Service Account JSON",
                             text: $lgValue,
                             size: .lg
+                        )
+                    }
+                }
+
+                section(title: "Secure") {
+                    labeled("포커스 없으면 마스킹 — 클릭하면 평문 편집, 벗어나면 다시 마스킹") {
+                        DVMultilineTextField(
+                            "private key",
+                            text: $securePrefilled,
+                            size: .lg,
+                            isSecure: true
+                        )
+                    }
+                    labeled("빈 값은 가리지 않음 — placeholder 그대로") {
+                        DVMultilineTextField(
+                            "e.g DATABASE_URL=...",
+                            text: $secureEmpty,
+                            size: .lg,
+                            isSecure: true
                         )
                     }
                 }
