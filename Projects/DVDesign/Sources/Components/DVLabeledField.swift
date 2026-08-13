@@ -13,18 +13,25 @@ import SwiftUI
 /// > TODO(size-env): 현재는 caller가 wrapper와 내부 input에 동일한 `size`를
 /// > 각각 전달해야 함. 향후 `EnvironmentValues.dvComponentSize`를 도입해
 /// > wrapper가 자식에게 자동 전파하는 방식으로 개선 여지 있음.
+/// 라벨 로우 우측에 표시되는 힌트.
+///
+/// `Content`와 무관한 값이라 ``DVLabeledField`` 밖에 둔다. 제네릭 안에 중첩하면
+/// `DVLabeledField<A>.TrailingHint`와 `DVLabeledField<B>.TrailingHint`가 다른 타입이 되어,
+/// 같은 힌트를 서로 다른 content(단일 줄 ↔ 여러 줄)에 넘길 수 없다.
+public enum DVFieldTrailingHint: Equatable {
+    /// 자동 감지 결과 표시 (초록). 예: `"Auto-detected: GitHub"`
+    case detected(String)
+
+    /// Validation 실패 등 경고 (빨강). 예: `"필수 항목입니다"`
+    case warning(String)
+}
+
 public struct DVLabeledField<Content: View>: View {
 
     // MARK: - Types
 
-    /// 라벨 로우 우측에 표시되는 힌트.
-    public enum TrailingHint: Equatable {
-        /// 자동 감지 결과 표시 (초록). 예: `"Auto-detected: GitHub"`
-        case detected(String)
-
-        /// Validation 실패 등 경고 (빨강). 예: `"필수 항목입니다"`
-        case warning(String)
-    }
+    /// ``DVFieldTrailingHint``의 별칭. 기존 `DVLabeledField<_>.TrailingHint` 표기를 유지한다.
+    public typealias TrailingHint = DVFieldTrailingHint
 
     // MARK: - Properties
 
