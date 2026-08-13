@@ -21,6 +21,7 @@ struct DetailSSLTLSCertSectionView: View {
             DetailReadOnlyFieldView(
                 label: .module("Certificate"),
                 value: payload.certificate,
+                isSensitive: true,
                 isCopyable: true
             )
 
@@ -44,6 +45,7 @@ struct DetailSSLTLSCertSectionView: View {
             DetailReadOnlyFieldView(
                 label: .module("Certificate Chain"),
                 value: payload.certificateChain ?? "",
+                isSensitive: true,
                 isCopyable: true
             )
 

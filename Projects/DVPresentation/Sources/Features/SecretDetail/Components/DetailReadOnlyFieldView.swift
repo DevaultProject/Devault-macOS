@@ -28,14 +28,23 @@ import DVDesign
 ///
 /// 판정은 호출부 플래그가 아니라 **값 자체**로 한다 — 같은 필드라도 데이터에 따라 한 줄일 수도
 /// 여러 줄일 수도 있다(한 줄로 저장된 `certificateChain`, 항목이 하나인 envSet 등).
+///
+/// ## 빈 값
+///
+/// 값이 비어 있으면 `isSensitive`·`isCopyable`을 **무시하고** 액세서리 없는 일반 컨테이너로 그린다.
+/// 가릴 것도 복사할 것도 없어 두 버튼 모두 눌러도 아무 일이 일어나지 않기 때문이다.
+///
+/// Optional 필드가 미입력이면 흔히 발생한다 — 생성 화면은 `passphrase`·`renewCommand` 같은 값이
+/// 비면 metadata 자체를 저장하지 않으므로 조회에서 빈 문자열로 들어온다.
 struct DetailReadOnlyFieldView: View {
 
     let label: String
     let value: String
     /// 기본 마스킹 + 눈 토글. 값 변경이 아니라 표시 전환만 한다.
+    /// 값이 비어 있으면 무시된다 (아래 "빈 값" 규칙).
     var isSensitive: Bool = false
     /// 복사 버튼 노출. 클립보드 쓰기는 이 컴포넌트가 수행한다.
-    /// 값이 비어 있으면 무시된다 — 빈 문자열을 클립보드에 쓰는 버튼은 의미가 없다.
+    /// 값이 비어 있으면 무시된다 (아래 "빈 값" 규칙).
     var isCopyable: Bool = false
     var sizeMode: FormSlotSize = .fullWidth
 
@@ -63,8 +72,13 @@ struct DetailReadOnlyFieldView: View {
             .joined(separator: "\n")
     }
 
-    /// 빈 값에는 복사 버튼을 달지 않는다.
+    /// 빈 값에는 복사 버튼을 달지 않는다 — 빈 문자열을 클립보드에 쓰는 버튼은 의미가 없다.
     private var showsCopyButton: Bool { isCopyable && !value.isEmpty }
+
+    /// 빈 값에는 눈 토글도 달지 않는다 — 가릴 것이 없어 눌러도 아무 일이 일어나지 않는다.
+    /// `isSensitive`를 그대로 쓰면 빈 필드에 동작하지 않는 버튼만 남고, 액세서리가 있다고
+    /// 판정돼 컨테이너 우측 padding이 4pt로 줄어 텍스트 정렬까지 틀어진다.
+    private var showsRevealToggle: Bool { isSensitive && !value.isEmpty }
 
     var body: some View {
         DVLabeledField(label, size: size) {
@@ -82,11 +96,11 @@ extension DetailReadOnlyFieldView {
 
     /// 액세서리가 하나라도 붙는지. 하나도 없으면 좌우 대칭 padding을 주는 편의 init을 써야 한다 —
     /// 빈 액세서리 뷰를 넘기면 컨테이너가 우측 padding을 4pt로 줄여 텍스트가 한쪽으로 치우친다.
-    private var hasAccessories: Bool { isSensitive || showsCopyButton }
+    private var hasAccessories: Bool { showsRevealToggle || showsCopyButton }
 
     /// 화면에 그릴 문자열. 마스킹 중이면 `•`, 아니면 원문. 클립보드에는 이 값을 쓰지 않는다.
     private var displayedValue: String {
-        isSensitive && !isRevealed ? maskedValue : value
+        showsRevealToggle && !isRevealed ? maskedValue : value
     }
 
     @ViewBuilder
@@ -129,7 +143,7 @@ extension DetailReadOnlyFieldView {
                     Image(systemName: "doc.on.doc")
                 }
             }
-            if isSensitive {
+            if showsRevealToggle {
                 Button {
                     isRevealed.toggle()
                 } label: {
@@ -199,6 +213,20 @@ extension DetailReadOnlyFieldView {
     DetailReadOnlyFieldView(
         label: .module("Client Secret"),
         value: "GOCSPX-1a2b3c4d5e6f7g8h9i0j",
+        isSensitive: true,
+        isCopyable: true
+    )
+    .padding()
+    .formLayout(.detailFluid)
+    .previewWidth(.narrow)
+}
+
+/// 빈 값이면 두 플래그가 모두 무시되어 액세서리 없는 일반 컨테이너가 된다.
+/// 눈·복사 버튼이 하나도 보이지 않아야 하고, 텍스트 좌우 padding이 대칭이어야 한다.
+#Preview("Sensitive + Copyable · 빈 값") {
+    DetailReadOnlyFieldView(
+        label: .module("PassPhrase"),
+        value: "",
         isSensitive: true,
         isCopyable: true
     )

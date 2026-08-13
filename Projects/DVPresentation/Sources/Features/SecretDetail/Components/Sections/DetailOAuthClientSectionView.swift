@@ -18,6 +18,7 @@ struct DetailOAuthClientSectionView: View {
             DetailReadOnlyFieldView(
                 label: .module("Client ID"),
                 value: payload.clientId,
+                isSensitive: true,
                 isCopyable: true
             )
 
