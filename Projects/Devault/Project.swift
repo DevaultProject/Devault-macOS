@@ -28,6 +28,32 @@ let localSigningSettings: SettingsDictionary = [
     "CODE_SIGN_IDENTITY": "-",
 ]
 
+/// 남의 계정에서 받은 인증서·프로파일로 서명할 때 쓰는 값. `generate-signed`가 채워준다.
+///
+/// 개인(Individual) Apple Developer Program은 **팀원 초대가 불가능**하므로, 그 계정의 팀으로
+/// Automatic 서명을 할 수 없다. 인증서와 프로비저닝 프로파일을 받아 Manual로 서명하는 게
+/// 유일한 경로다. 팀 ID·프로파일 이름은 개인 자산이라 리포에 두지 않고 환경변수로 받는다.
+let manualSigningTeam = Environment.manualSigningTeam.getString(default: "")
+let manualSigningProfile = Environment.manualSigningProfile.getString(default: "")
+let isManualSigning = !manualSigningTeam.isEmpty && !manualSigningProfile.isEmpty
+
+/// 로컬 서명과 달리 entitlements를 그대로 유지한다 — 프로파일이 그 entitlement를 담고 있어야
+/// 서명이 통과하며, 이 모드의 목적 자체가 iCloud·키체인 그룹을 실제로 얻는 것이다.
+let manualSigningSettings: SettingsDictionary = [
+    "ASSETCATALOG_COMPILER_APPICON_NAME": "Devault_IC",
+    "DEVELOPMENT_TEAM": .string(manualSigningTeam),
+    "CODE_SIGN_STYLE": "Manual",
+    "CODE_SIGN_IDENTITY": "Apple Development",
+    "PROVISIONING_PROFILE_SPECIFIER": .string(manualSigningProfile),
+]
+
+/// 로컬 서명이 가장 우선한다 — 자산을 받아둔 뒤에도 `generate-local`로 되돌릴 수 있어야 한다.
+let signingSettings: SettingsDictionary = {
+    if isLocalSigning { return localSigningSettings }
+    if isManualSigning { return manualSigningSettings }
+    return teamSigningSettings
+}()
+
 // MARK: - Project
 
 let project = Project.project(
@@ -54,7 +80,7 @@ let project = Project.project(
                 // 3rd-party dependency
                 .tca(),
             ],
-            settings: .settings(base: isLocalSigning ? localSigningSettings : teamSigningSettings)
+            settings: .settings(base: signingSettings)
         ),
     ],
     schemes: [

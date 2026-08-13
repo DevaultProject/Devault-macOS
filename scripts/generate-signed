@@ -1,0 +1,33 @@
+#!/bin/bash
+# 받은 인증서·프로파일로 수동 서명하는 워크스페이스를 생성한다.
+# 개인 자산이므로 팀 ID와 프로파일 이름은 git-ignored 파일에서 읽는다.
+set -e
+
+cd "$(dirname "$0")/.."
+
+CONFIG=".signing.local"
+
+if [ ! -f "$CONFIG" ]; then
+    cat <<'EOF'
+.signing.local 이 없습니다. 아래 두 줄로 만들어주세요.
+
+    TEAM=<팀 ID>
+    PROFILE=<프로파일 이름>
+
+  TEAM    : security find-identity -v -p codesigning        (괄호 안 값)
+  PROFILE : security cms -D -i <프로파일> | plutil -extract Name raw -
+EOF
+    exit 1
+fi
+
+# shellcheck disable=SC1090
+source "$CONFIG"
+
+: "${TEAM:?.signing.local 에 TEAM 이 없습니다}"
+: "${PROFILE:?.signing.local 에 PROFILE 이 없습니다}"
+
+echo "수동 서명으로 생성합니다 — TEAM=$TEAM / PROFILE=$PROFILE"
+
+TUIST_MANUAL_SIGNING_TEAM="$TEAM" \
+TUIST_MANUAL_SIGNING_PROFILE="$PROFILE" \
+    tuist generate "$@"

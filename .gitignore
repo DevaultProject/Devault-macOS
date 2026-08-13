@@ -158,3 +158,6 @@ Tuist/Package.resolved
 ### AI Tools ###
 .claude/
 .omc/
+
+# 개인 서명 자산 (팀 ID / 프로파일 이름)
+.signing.local
