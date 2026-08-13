@@ -68,7 +68,7 @@ extension DVDropdown {
         }
         .padding(.leading, 8)
         .padding(.trailing, 4)
-        .dvComponentWidth(size, height: 28)
+        .dvComponentWidth(size, height: DVComponentSize.fieldHeight)
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(Color.dv(.gray300))

@@ -42,4 +42,13 @@ public enum DVComponentSize: CaseIterable {
         case .lg: return 700
         }
     }
+
+    /// 한 줄 입력·표시 컴포넌트의 공통 높이.
+    ///
+    /// 너비와 달리 사이즈 변형과 무관하게 고정이다. ``DVTextField``·``DVTextContainer``·
+    /// ``DVDropdown``·``DVMultiSelectDropdown`` 트리거·``DVChipsContainer``가 같은 값을 써야
+    /// 한 행에 섞였을 때 높이가 어긋나지 않는다.
+    ///
+    /// 여러 줄 컴포넌트의 높이는 이 값의 배수로 잡아 폼의 세로 리듬을 유지한다.
+    public static let fieldHeight: CGFloat = 32
 }
