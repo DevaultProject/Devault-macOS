@@ -43,6 +43,8 @@ struct EnvSetSectionView: View, CreateSecretSectionHintProviding {
                 placeholder: .module("e.g FOO=bar"),
                 text: $envSet.envContent,
                 isRequired: true,
+                isSecure: true,
+                isMultiline: true,
                 sizeMode: .fullWidth,
                 trailingHint: hintFor(.envContent)
             )

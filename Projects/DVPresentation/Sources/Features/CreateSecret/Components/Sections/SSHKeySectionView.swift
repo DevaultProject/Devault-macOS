@@ -43,6 +43,8 @@ struct SSHKeySectionView: View, CreateSecretSectionHintProviding {
                 placeholder: .module("e.g -----BEGIN OPENSSH PRIVATE KEY-----"),
                 text: $sshKey.privateKey,
                 isRequired: true,
+                isSecure: true,
+                isMultiline: true,
                 sizeMode: .fullWidth,
                 trailingHint: hintFor(.privateKey)
             )
@@ -69,6 +71,7 @@ struct SSHKeySectionView: View, CreateSecretSectionHintProviding {
                 label: .module("PassPhrase"),
                 placeholder: .module("optional"),
                 text: $sshKey.passphrase,
+                isSecure: true,
                 sizeMode: .fullWidth
             )
 

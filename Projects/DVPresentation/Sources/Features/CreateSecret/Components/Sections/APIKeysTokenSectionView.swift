@@ -46,6 +46,7 @@ struct APIKeysTokenSectionView: View, CreateSecretSectionHintProviding {
                 placeholder: .module("e.g ghp_1234567890"),
                 text: $apiKeyToken.value,
                 isRequired: true,
+                isSecure: true,
                 sizeMode: .fullWidth,
                 trailingHint: valueHint
             )
@@ -80,7 +81,7 @@ struct APIKeysTokenSectionView: View, CreateSecretSectionHintProviding {
     }
 
     /// Value 필드 우측 hint: warning(validation) > detected(감지) 순.
-    private var valueHint: DVLabeledField<DVTextField>.TrailingHint? {
+    private var valueHint: DVFieldTrailingHint? {
         if let warning = validationErrors[.value] {
             return .warning(warning)
         }

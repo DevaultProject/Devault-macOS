@@ -45,6 +45,8 @@ struct ServiceAccountSectionView: View, CreateSecretSectionHintProviding {
                 placeholder: .module(#"e.g {"type": "service_account", ...}"#),
                 text: $serviceAccount.credentialJSON,
                 isRequired: true,
+                isSecure: true,
+                isMultiline: true,
                 sizeMode: .fullWidth,
                 trailingHint: hintFor(.credentialJSON)
             )

@@ -45,6 +45,8 @@ struct CustomSectionView: View, CreateSecretSectionHintProviding {
                 placeholder: .module("e.g custom-secret-value"),
                 text: $custom.value,
                 isRequired: true,
+                isSecure: true,
+                isMultiline: true,
                 sizeMode: .fullWidth,
                 trailingHint: hintFor(.value)
             )
