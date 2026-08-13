@@ -54,6 +54,7 @@ struct OAuthClientSectionView: View, CreateSecretSectionHintProviding {
                 placeholder: .module("e.g abc123secret"),
                 text: $oauthClient.clientSecret,
                 isRequired: true,
+                isSecure: true,
                 sizeMode: .fullWidth,
                 trailingHint: hintFor(.clientSecret)
             )

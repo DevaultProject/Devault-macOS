@@ -43,6 +43,8 @@ struct SSLTLSCertSectionView: View, CreateSecretSectionHintProviding {
                 placeholder: .module("e.g -----BEGIN CERTIFICATE-----"),
                 text: $sslCert.certificate,
                 isRequired: true,
+                isSecure: true,
+                isMultiline: true,
                 sizeMode: .fullWidth,
                 trailingHint: hintFor(.certificate)
             )
@@ -52,6 +54,8 @@ struct SSLTLSCertSectionView: View, CreateSecretSectionHintProviding {
                 placeholder: .module("e.g -----BEGIN PRIVATE KEY-----"),
                 text: $sslCert.sslPrivateKey,
                 isRequired: true,
+                isSecure: true,
+                isMultiline: true,
                 sizeMode: .fullWidth,
                 trailingHint: hintFor(.sslPrivateKey)
             )
@@ -71,6 +75,8 @@ struct SSLTLSCertSectionView: View, CreateSecretSectionHintProviding {
                 label: .module("Certificate Chain"),
                 placeholder: .module("optional"),
                 text: $sslCert.certificateChain,
+                isSecure: true,
+                isMultiline: true,
                 sizeMode: .fullWidth
             )
 

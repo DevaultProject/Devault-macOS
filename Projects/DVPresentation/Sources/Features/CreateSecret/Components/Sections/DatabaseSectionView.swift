@@ -45,6 +45,7 @@ struct DatabaseSectionView: View, CreateSecretSectionHintProviding {
                 placeholder: .module("e.g postgres://user:pass@host:5432/db"),
                 text: $database.linkString,
                 isRequired: true,
+                isSecure: true,
                 sizeMode: .fullWidth,
                 trailingHint: hintFor(.linkString)
             )

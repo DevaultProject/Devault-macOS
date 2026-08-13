@@ -46,6 +46,7 @@ struct LicenseKeySectionView: View, CreateSecretSectionHintProviding {
                 placeholder: .module("e.g XXXXX-XXXXX-XXXXX-XXXXX"),
                 text: $licenseKey.licenseKey,
                 isRequired: true,
+                isSecure: true,
                 sizeMode: .fullWidth,
                 trailingHint: hintFor(.licenseKey)
             )
