@@ -163,7 +163,7 @@ public struct DVTextContainer<Accessories: View>: View {
         }
         .padding(.leading, 8)
         .padding(.trailing, trailingPadding)
-        .dvComponentWidth(size, height: 28, alignment: .leading)
+        .dvComponentWidth(size, height: DVComponentSize.fieldHeight, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: 6)
                 .fill(Color.dv(.gray300))

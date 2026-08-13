@@ -54,7 +54,7 @@ private extension ExpireDateFieldView {
                 .truncationMode(.tail)
                 .padding(.horizontal, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(height: 28)
+                .frame(height: DVComponentSize.fieldHeight)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
                         .fill(Color.dv(.gray300))
@@ -79,7 +79,7 @@ private extension ExpireDateFieldView {
             Image(systemName: "trash")
                 .font(DVFont.bodyLG.font)
                 .foregroundStyle(isSet ? Color.dv(.gray700) : Color.dv(.gray400))
-                .frame(width: 28, height: 28)
+                .frame(width: DVComponentSize.fieldHeight, height: DVComponentSize.fieldHeight)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

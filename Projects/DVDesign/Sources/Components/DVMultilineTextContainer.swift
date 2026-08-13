@@ -81,9 +81,10 @@ fileprivate enum MultilineContainerMetrics {
     /// 본문과 액세서리 사이 최소 간격. ``DVTextContainer``와 같은 값.
     static let contentSpacing: CGFloat = 8
 
-    /// 상하 padding. ``DVTextContainer``의 28pt 박스에서 ``DVFont/bodyLG`` 한 줄이 갖는 여백
-    /// `(28 - bodyLG.lineHeight) / 2`와 같아, 첫 줄이 한 줄 컨테이너와 같은 높이에서 시작한다.
-    static let verticalPadding: CGFloat = 6
+    /// 상하 padding. 한 줄 컨테이너 박스에서 ``DVFont/bodyLG`` 한 줄이 갖는 여백과 같아,
+    /// 첫 줄이 ``DVTextContainer``와 같은 높이에서 시작한다. 박스 높이가 바뀌면 함께 따라가도록
+    /// 리터럴 대신 토큰에서 파생시킨다.
+    static let verticalPadding: CGFloat = (DVComponentSize.fieldHeight - DVFont.bodyLG.lineHeight) / 2
 }
 
 public struct DVMultilineTextContainer<Accessories: View>: View {

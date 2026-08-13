@@ -16,7 +16,7 @@ fileprivate enum DropdownMetrics {
 
     // MARK: Trigger
 
-    static let triggerHeight: CGFloat = 28
+    static let triggerHeight: CGFloat = DVComponentSize.fieldHeight
     static let triggerCornerRadius: CGFloat = 6
     static let triggerLeadingPadding: CGFloat = 8
     static let triggerTrailingPadding: CGFloat = 4

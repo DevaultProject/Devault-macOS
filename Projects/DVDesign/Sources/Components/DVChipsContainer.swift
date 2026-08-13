@@ -34,7 +34,7 @@ public struct DVChipsContainer: View {
         static let chipsSpacing: CGFloat = 6
         static let cornerRadius: CGFloat = 6
         /// 값이 없을 때도 다른 읽기 전용 필드(``DVTextContainer`` 28pt)와 높이를 맞춘다.
-        static let minHeight: CGFloat = 28
+        static let minHeight: CGFloat = DVComponentSize.fieldHeight
     }
 
     // MARK: - Properties
