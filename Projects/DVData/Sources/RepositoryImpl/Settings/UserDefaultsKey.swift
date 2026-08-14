@@ -5,6 +5,24 @@ import Foundation
 enum UserDefaultsKey: String {
   case hasCompletedOnboarding
   case isICloudSyncEnabled
+
+  // General
+  case isLaunchAtLoginEnabled
+  case defaultEnvironment
+
+  // Security
+  case isRequireAuthOnLaunchEnabled
+  case isRequireAuthToCopyEnabled
+  case autoLockMinutes
+  case isAutoClearClipboardEnabled
+  case autoClearClipboardDelaySeconds
+  case isHideDuringScreenRecordingEnabled
+
+  // Notifications
+  case isExpiryAlertsEnabled
+  case expiryAlertDaysBefore
+  case isAuthFailureAlertEnabled
+  case isClipboardAbnormalAccessAlertEnabled
 }
 
 extension UserDefaults {
@@ -13,6 +31,30 @@ extension UserDefaults {
   }
 
   func set(_ value: Bool, forKey key: UserDefaultsKey) {
+    set(value, forKey: key.rawValue)
+  }
+
+  func integer(forKey key: UserDefaultsKey) -> Int {
+    integer(forKey: key.rawValue)
+  }
+
+  func set(_ value: Int, forKey key: UserDefaultsKey) {
+    set(value, forKey: key.rawValue)
+  }
+
+  func string(forKey key: UserDefaultsKey) -> String? {
+    string(forKey: key.rawValue)
+  }
+
+  func set(_ value: String?, forKey key: UserDefaultsKey) {
+    set(value, forKey: key.rawValue)
+  }
+
+  func integerArray(forKey key: UserDefaultsKey) -> [Int]? {
+    array(forKey: key.rawValue) as? [Int]
+  }
+
+  func set(_ value: [Int], forKey key: UserDefaultsKey) {
     set(value, forKey: key.rawValue)
   }
 }
