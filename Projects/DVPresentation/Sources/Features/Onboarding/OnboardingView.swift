@@ -85,7 +85,7 @@ extension OnboardingView {
         .foregroundStyle(Color.dv(.gray900))
         .multilineTextAlignment(.center)
         .padding(.bottom, 12)
-      VStack(spacing: 10) {
+      VStack(spacing: 15) {
         HStack(spacing: 16) {
           DVButton(titleText: String.module("Not Now"), style: .primarySmall) {
             store.send(.didTapNotNow)
@@ -115,6 +115,10 @@ extension OnboardingView {
       Text(.module("iCloud Sync Enabled!"))
         .dvFont(.headingXL)
         .foregroundStyle(Color.dv(.gray900))
+      Text(.module("Your secrets will sync automatically when a connection is available."))
+        .dvFont(.captionMDRegular)
+        .foregroundStyle(Color.dv(.gray600))
+        .multilineTextAlignment(.center)
     }
   }
 
