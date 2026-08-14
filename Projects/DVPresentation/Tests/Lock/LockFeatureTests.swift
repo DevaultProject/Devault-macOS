@@ -35,7 +35,7 @@ struct LockFeatureTests {
         await store.send(.didTapUnlock)
         await store.receive(.unlockAuthFailed(.failed)) {
             $0.alert = AlertState {
-                TextState("잠금을 해제하지 못했어요")
+                TextState("Unlock failed")
             } actions: {
                 ButtonState(role: .cancel) { TextState("OK") }
             } message: {
