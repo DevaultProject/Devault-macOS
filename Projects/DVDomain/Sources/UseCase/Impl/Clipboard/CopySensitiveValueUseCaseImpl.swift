@@ -56,7 +56,7 @@ public actor CopySensitiveValueUseCaseImpl: CopySensitiveValueUseCase {
         if abnormalAccessMonitor.recordAccess(at: now()) {
             do {
                 try await notificationService.notify(
-                    .abnormalAccess(reason: "짧은 시간 안에 값 복사가 \(Self.abnormalAccessThreshold)회 이상 반복됨")
+                    .abnormalAccess(kind: .repeatedCopy, threshold: Self.abnormalAccessThreshold)
                 )
             } catch {
                 // 알림 실패는 복사 자체를 실패시키면 안 되므로 로깅만

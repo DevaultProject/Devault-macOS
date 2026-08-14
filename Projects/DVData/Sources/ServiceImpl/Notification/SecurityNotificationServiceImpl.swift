@@ -7,9 +7,16 @@ import DVDomain
 
 public struct SecurityNotificationServiceImpl: SecurityNotificationService {
     private let center: UNUserNotificationCenter
+    private let makeContent: @Sendable (SecurityNotification) -> (title: String, body: String)
 
-    public init(center: UNUserNotificationCenter = .current()) {
+    /// `makeContent`는 Data 모듈에서 Presentation의 로컬라이제이션 카탈로그에 접근할 수 없어 외부에서 주입받는다.
+    /// 이 타입이 직접 가질 수 없는 관심사를 순수 함수로 밖에서 받는다.
+    public init(
+        center: UNUserNotificationCenter = .current(),
+        makeContent: @escaping @Sendable (SecurityNotification) -> (title: String, body: String)
+    ) {
         self.center = center
+        self.makeContent = makeContent
     }
 
     public func requestAuthorization() async throws -> Bool {
@@ -23,7 +30,7 @@ public struct SecurityNotificationServiceImpl: SecurityNotificationService {
     public func notify(_ notification: SecurityNotification) async throws {
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
-            content: Self.makeContent(for: notification),
+            content: makeUNContent(for: notification),
             trigger: nil // trigger가 nil이면 즉시 발송
         )
         do {
@@ -45,7 +52,7 @@ public struct SecurityNotificationServiceImpl: SecurityNotificationService {
         )
         let notificationRequest = UNNotificationRequest(
             identifier: request.identifier,
-            content: Self.makeContent(for: request.notification),
+            content: makeUNContent(for: request.notification),
             trigger: trigger
         )
         do {
@@ -63,21 +70,11 @@ public struct SecurityNotificationServiceImpl: SecurityNotificationService {
 // MARK: - Private
 
 private extension SecurityNotificationServiceImpl {
-    static func makeContent(for notification: SecurityNotification) -> UNMutableNotificationContent {
+    func makeUNContent(for notification: SecurityNotification) -> UNMutableNotificationContent {
+        let (title, body) = makeContent(notification)
         let content = UNMutableNotificationContent()
-        switch notification {
-        case .abnormalAccess(let reason):
-            content.title = "비정상 접근이 감지됐어요"
-            content.body = reason
-
-        case .clipboardExceeded(let seconds):
-            content.title = "클립보드를 정리했어요"
-            content.body = "복사된 값이 \(seconds)초 넘게 남아 있어 자동으로 지웠어요."
-
-        case .secretExpiresSoon(_, let daysBefore):
-            content.title = "Secret 만료가 다가와요"
-            content.body = "저장된 Secret이 \(daysBefore)일 후 만료돼요."
-        }
+        content.title = title
+        content.body = body
         content.sound = .default
         return content
     }

@@ -13,4 +13,5 @@ enum LiveRepositories {
     static let project: any ProjectRepository = ProjectRepositoryImpl(
         modelContainer: LiveStorage.shared.modelContainer
     )
+    static let settings: any SettingsRepository = SettingsRepositoryImpl()
 }

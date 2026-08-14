@@ -8,15 +8,13 @@ import DVPresentation
 
 extension AppLaunchClient: @retroactive DependencyKey {
   public static let liveValue: AppLaunchClient = {
-    let settingsRepository: any SettingsRepository = SettingsRepositoryImpl()
     let onboardingStatusUseCase: any OnboardingStatusUseCase = OnboardingStatusUseCaseImpl(
-      repository: settingsRepository
+      repository: LiveRepositories.settings
     )
 
-    let notificationService: any SecurityNotificationService = SecurityNotificationServiceImpl()
     let expiryUseCase: any ScheduleSecretExpiryNotificationsUseCase = ScheduleSecretExpiryNotificationsUseCaseImpl(
       repository: LiveRepositories.secret,
-      notificationService: notificationService
+      notificationService: LiveServices.securityNotification
     )
 
     return AppLaunchClient(
@@ -28,7 +26,7 @@ extension AppLaunchClient: @retroactive DependencyKey {
       },
       requestNotificationAuthorization: {
         do {
-          return try await notificationService.requestAuthorization()
+          return try await LiveServices.securityNotification.requestAuthorization()
         } catch {
           Log.warn("알림 권한 요청 실패: \(error)", category: .notification)
           return false

@@ -46,7 +46,7 @@ public actor AuthenticateUseCaseImpl: AuthenticateUseCase {
             if abnormalAccessMonitor.recordAccess(at: now()) {
                 do {
                     try await notificationService.notify(
-                        .abnormalAccess(reason: "짧은 시간 안에 인증 실패가 \(Self.abnormalAccessThreshold)회 이상 반복됨")
+                        .abnormalAccess(kind: .authenticationFailure, threshold: Self.abnormalAccessThreshold)
                     )
                     
                     // alert에 상관없이 알림 스킵을 막기 위해 약간의 지연 추가

@@ -10,6 +10,6 @@ import DVDomain
 enum LiveUseCases {
     static let authenticate: any AuthenticateUseCase = AuthenticateUseCaseImpl(
         authenticationService: LocalUserAuthenticationServiceImpl(),
-        notificationService: SecurityNotificationServiceImpl()
+        notificationService: LiveServices.securityNotification
     )
 }

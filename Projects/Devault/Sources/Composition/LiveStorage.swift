@@ -12,7 +12,7 @@ enum LiveStorage {
   // TODO: Settings 화면에서 토글을 지원하려면 재시작 안내를 띄우거나, ModelContainer를 런타임에 재생성하는 hot-swap이 필요하다.
   static let shared: LocalStorage = {
     do {
-      return try LocalStorage.makeDefault(iCloudSyncEnabled: LiveSettingsRepository.shared.isICloudSyncEnabled())
+      return try LocalStorage.makeDefault(iCloudSyncEnabled: LiveRepositories.settings.isICloudSyncEnabled())
     } catch {
       logger.critical("LocalStorage 초기화 실패: \(error, privacy: .public)")
       fatalError("LocalStorage 초기화 실패 — 앱을 재시작하거나 데이터를 복원하세요.\n\(error)")
