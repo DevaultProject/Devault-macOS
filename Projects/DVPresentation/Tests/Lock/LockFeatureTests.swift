@@ -37,9 +37,9 @@ struct LockFeatureTests {
             $0.alert = AlertState {
                 TextState("잠금을 해제하지 못했어요")
             } actions: {
-                ButtonState(role: .cancel) { TextState("확인") }
+                ButtonState(role: .cancel) { TextState("OK") }
             } message: {
-                TextState("다시 시도해주세요.")
+                TextState("Please try again.")
             }
         }
     }
