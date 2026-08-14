@@ -18,7 +18,12 @@ let project = Project.project(
                 // 3rd-party dependency
                 .tca(),
                 .lottie(),
-            ]
+            ],
+            // 기본값(NO)이면 String.module(_:) 콜사이트가 Localizable.xcstrings로 추출되지 않는다.
+            settings: .settings(base: [
+                "SWIFT_EMIT_LOC_STRINGS": "YES",
+                "LOCALIZATION_PREFERS_STRING_CATALOGS": "YES",
+            ])
         ),
         .tests(
             name: "DVPresentationTests",
