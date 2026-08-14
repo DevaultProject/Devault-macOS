@@ -16,7 +16,7 @@ public struct OnboardingFeature {
     case welcome
     case security
     case icloudSync
-    case syncing
+    case syncEnabled
   }
 
   // MARK: - State
@@ -24,6 +24,7 @@ public struct OnboardingFeature {
   @ObservableState
   public struct State: Equatable {
     public var step: Step = .welcome
+    public var isEnablingSync = false
     @Presents var alert: AlertState<Action.Alert>?
 
     public init(step: Step = .welcome) {
@@ -32,10 +33,10 @@ public struct OnboardingFeature {
 
     var currentStepIndex: Int {
       switch step {
-      case .welcome:    return 0
-      case .security:   return 1
-      case .icloudSync: return 2
-      case .syncing:    return 2
+      case .welcome:     return 0
+      case .security:    return 1
+      case .icloudSync:  return 2
+      case .syncEnabled: return 2
       }
     }
   }
@@ -56,7 +57,7 @@ public struct OnboardingFeature {
     case touchIDAuthSucceeded
     case touchIDAuthFailed(UserAuthenticationError)
     case iCloudSyncStatusResponse(ICloudAccountStatus)
-    case syncingCompleted
+    case enableSyncCompleted
 
     // MARK: - Child
 
@@ -70,12 +71,17 @@ public struct OnboardingFeature {
       case completed
     }
 
-    public enum Alert: Equatable {}
+    public enum Alert: Equatable {
+      case retry
+      case continueWithoutSync
+      case openSystemSettings
+    }
   }
 
   // MARK: - Dependencies
 
   @Dependency(\.onboardingClient) var onboardingClient
+  @Dependency(\.continuousClock) var clock
 
   // MARK: - Init
 
@@ -114,7 +120,7 @@ public struct OnboardingFeature {
         return .send(.delegate(.completed))
 
       case .didTapEnableSync:
-        state.step = .syncing
+        state.isEnablingSync = true
         return .run { send in
           let status = await onboardingClient.enableICloudSync()
           await send(.iCloudSyncStatusResponse(status))
@@ -122,14 +128,30 @@ public struct OnboardingFeature {
 
       case .iCloudSyncStatusResponse(let status):
         guard status == .available else {
-          state.step = .icloudSync
+          state.isEnablingSync = false
           state.alert = makeICloudSyncUnavailableAlert(status)
           return .none
         }
-        return .send(.syncingCompleted)
+        return .run { send in
+          try? await clock.sleep(for: .seconds(0.5))
+          await send(.enableSyncCompleted)
+        }
 
-      case .syncingCompleted:
+      case .enableSyncCompleted:
+        state.step = .syncEnabled
+        return .run { send in
+          try? await clock.sleep(for: .seconds(2))
+          await send(.delegate(.completed))
+        }
+
+      case .alert(.presented(.retry)):
+        return .send(.didTapEnableSync)
+
+      case .alert(.presented(.continueWithoutSync)):
         return .send(.delegate(.completed))
+
+      case .alert(.presented(.openSystemSettings)):
+        return .run { _ in await onboardingClient.openICloudSystemSettings() }
 
       case .alert:
         return .none
@@ -147,35 +169,44 @@ public struct OnboardingFeature {
 private extension OnboardingFeature {
 
   func makeTouchIDFailedAlert(_ error: UserAuthenticationError) -> AlertState<Action.Alert> {
-    makeUserAuthenticationFailedAlert(title: "인증하지 못했어요", error: error)
+    makeUserAuthenticationFailedAlert(title: String.module("Authentication failed"), error: error)
   }
 
-  // 지금은 상태별로 알럿 문구만 구분한다. 동기화 진행 상태 표시, 재시도 유도 등 온보딩 iCloud UX 전반은
-  // 별도 이슈에서 다룰 예정이다.
+  /// 상태별로 문구를 구분하고, 재시도 가능한 상태에는 재시도 버튼을, 계정 문제로 인한 상태에는
+  /// 시스템 설정 앱을 바로 여는 버튼을 추가한다. 어떤 상태든 iCloud 없이 계속 진행할 수 있다.
   func makeICloudSyncUnavailableAlert(_ status: ICloudAccountStatus) -> AlertState<Action.Alert> {
     let message: String
     switch status {
     case .available:
       assertionFailure("iCloudSyncStatusResponse가 이미 .available을 걸러내므로 도달 불가")
-      message = "다시 시도해주세요."
+      message = String.module("Please try again.")
     case .noAccount:
-      message = "설정 앱에서 iCloud 로그인 후 다시 시도해주세요."
+      message = String.module("Sign in to iCloud in System Settings, then try again.")
     case .restricted:
-      message = "기기의 iCloud 사용 제한 설정을 확인해주세요."
+      message = String.module("Check your device's iCloud usage restrictions.")
     case .temporarilyUnavailable:
-      message = "잠시 후 다시 시도해주세요."
+      message = String.module("Please try again in a moment.")
     case .networkUnavailable:
-      message = "네트워크 연결을 확인하고 다시 시도해주세요."
+      message = String.module("Check your network connection and try again.")
     case .configurationUnavailable:
       // 앱 배포 설정(컨테이너 식별자, entitlement) 문제라 사용자가 재시도해도 해결되지 않음.
-      message = "iCloud 동기화를 지금 사용할 수 없어요. 나중에 다시 시도해주세요."
+      message = String.module("iCloud sync isn't available right now. Please try again later.")
     case .couldNotDetermine:
-      message = "iCloud 상태를 확인하지 못했어요. 잠시 후 다시 시도해주세요."
+      message = String.module("Couldn't determine iCloud status. Please try again in a moment.")
     }
+    let canRetry = status != .configurationUnavailable
+    let canOpenSettings = status == .noAccount || status == .restricted
     return AlertState {
-      TextState("iCloud 동기화를 사용할 수 없어요")
+      TextState(String.module("iCloud sync isn't available"))
     } actions: {
-      ButtonState(role: .cancel) { TextState("확인") }
+      if canRetry {
+        ButtonState(action: .retry) { TextState(String.module("Try Again")) }
+      }
+      if canOpenSettings {
+        ButtonState(action: .openSystemSettings) { TextState(String.module("Open System Settings")) }
+      }
+      ButtonState(action: .continueWithoutSync) { TextState(String.module("Continue Without iCloud")) }
+      ButtonState(role: .cancel) { TextState(String.module("OK")) }
     } message: {
       TextState(message)
     }
