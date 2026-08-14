@@ -15,6 +15,8 @@ struct SecuritySettingsFeature {
     var isRequireAuthToCopyEnabled = true
     /// 0이면 "사용 안 함".
     var autoLockMinutes = 5
+    var isAutoClearClipboardEnabled = true
+    var autoClearClipboardDelaySeconds = 30
   }
 
   // MARK: - Action
@@ -24,6 +26,8 @@ struct SecuritySettingsFeature {
     case didToggleRequireAuthOnLaunch(Bool)
     case didToggleRequireAuthToCopy(Bool)
     case didSelectAutoLockMinutes(Int)
+    case didToggleAutoClearClipboard(Bool)
+    case didSelectAutoClearClipboardDelay(Int)
   }
 
   // MARK: - Dependencies
@@ -39,6 +43,8 @@ struct SecuritySettingsFeature {
         state.isRequireAuthOnLaunchEnabled = settingsClient.isRequireAuthOnLaunchEnabled()
         state.isRequireAuthToCopyEnabled = settingsClient.isRequireAuthToCopyEnabled()
         state.autoLockMinutes = settingsClient.autoLockMinutes()
+        state.isAutoClearClipboardEnabled = settingsClient.isAutoClearClipboardEnabled()
+        state.autoClearClipboardDelaySeconds = settingsClient.autoClearClipboardDelaySeconds()
         return .none
 
       case .didToggleRequireAuthOnLaunch(let enabled):
@@ -52,6 +58,14 @@ struct SecuritySettingsFeature {
       case .didSelectAutoLockMinutes(let minutes):
         state.autoLockMinutes = minutes
         return .run { _ in settingsClient.setAutoLockMinutes(minutes) }
+
+      case .didToggleAutoClearClipboard(let enabled):
+        state.isAutoClearClipboardEnabled = enabled
+        return .run { _ in settingsClient.setAutoClearClipboardEnabled(enabled) }
+
+      case .didSelectAutoClearClipboardDelay(let seconds):
+        state.autoClearClipboardDelaySeconds = seconds
+        return .run { _ in settingsClient.setAutoClearClipboardDelaySeconds(seconds) }
       }
     }
   }

@@ -71,4 +71,34 @@ struct SecuritySettingsFeatureTests {
         }
         #expect(saved.value == false)
     }
+
+    @Test("클립보드 자동 비우기 토글을 저장한다")
+    func autoClearClipboardTogglePersists() async {
+        let saved = LockIsolated<Bool?>(nil)
+        let store = TestStore(initialState: SecuritySettingsFeature.State()) {
+            SecuritySettingsFeature()
+        } withDependencies: {
+            $0.settingsClient.setAutoClearClipboardEnabled = { saved.setValue($0) }
+        }
+
+        await store.send(.didToggleAutoClearClipboard(false)) {
+            $0.isAutoClearClipboardEnabled = false
+        }
+        #expect(saved.value == false)
+    }
+
+    @Test("클립보드 자동 비우기 시간을 선택하면 저장한다")
+    func autoClearClipboardDelaySelectionPersists() async {
+        let saved = LockIsolated<Int?>(nil)
+        let store = TestStore(initialState: SecuritySettingsFeature.State()) {
+            SecuritySettingsFeature()
+        } withDependencies: {
+            $0.settingsClient.setAutoClearClipboardDelaySeconds = { saved.setValue($0) }
+        }
+
+        await store.send(.didSelectAutoClearClipboardDelay(60)) {
+            $0.autoClearClipboardDelaySeconds = 60
+        }
+        #expect(saved.value == 60)
+    }
 }

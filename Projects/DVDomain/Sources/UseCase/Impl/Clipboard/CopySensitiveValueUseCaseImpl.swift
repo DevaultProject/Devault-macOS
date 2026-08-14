@@ -15,7 +15,9 @@ public actor CopySensitiveValueUseCaseImpl: CopySensitiveValueUseCase {
 
     private let clipboardService: any ClipboardService
     private let notificationService: any SecurityNotificationService
-    private let clipboardClearDelay: Duration
+    /// 호출마다 새로 읽는다 — 설정 화면에서 값을 바꾸면 다음 복사부터 바로 반영되어야 한다.
+    /// nil이면 자동 정리를 사용하지 않는다.
+    private let clipboardClearDelay: @Sendable () -> Duration?
     private let now: @Sendable () -> ContinuousClock.Instant
     private let abnormalAccessMonitor = AbnormalAccessMonitor(
         window: abnormalAccessWindow,
@@ -25,7 +27,7 @@ public actor CopySensitiveValueUseCaseImpl: CopySensitiveValueUseCase {
     public init(
         clipboardService: any ClipboardService,
         notificationService: any SecurityNotificationService,
-        clipboardClearDelay: Duration = .seconds(30),
+        clipboardClearDelay: @escaping @Sendable () -> Duration? = { .seconds(30) },
         now: @escaping @Sendable () -> ContinuousClock.Instant = { ContinuousClock.now }
     ) {
         self.clipboardService = clipboardService
@@ -40,15 +42,17 @@ public actor CopySensitiveValueUseCaseImpl: CopySensitiveValueUseCase {
 
         // 알림 발송이 오래 걸려도 정리 시작 시점이 밀리지 않도록, 값을 쓰자마자 먼저 스케줄링한다.
         // execute()를 30초씩 붙잡아둘 수 없으므로 별도 Task로 분리, 필요한 값만 캡처해서 넘김
-        Task { [clipboardService, notificationService, clipboardClearDelay] in
-            try? await Task.sleep(for: clipboardClearDelay)
-            // changeCount가 그대로면 방치된 것으로 보고 정리, 바뀌었으면 아무것도 하지 않음
-            guard clipboardService.clearIfUnchanged(from: changeCount) else { return }
-            do {
-                let seconds = Int(clipboardClearDelay.components.seconds)
-                try await notificationService.notify(.clipboardExceeded(seconds: seconds))
-            } catch {
-                Log.warn("클립보드 정리 알림 발송 실패: \(error)", category: .notification)
+        if let delay = clipboardClearDelay() {
+            Task { [clipboardService, notificationService] in
+                try? await Task.sleep(for: delay)
+                // changeCount가 그대로면 방치된 것으로 보고 정리, 바뀌었으면 아무것도 하지 않음
+                guard clipboardService.clearIfUnchanged(from: changeCount) else { return }
+                do {
+                    let seconds = Int(delay.components.seconds)
+                    try await notificationService.notify(.clipboardExceeded(seconds: seconds))
+                } catch {
+                    Log.warn("클립보드 정리 알림 발송 실패: \(error)", category: .notification)
+                }
             }
         }
 

@@ -13,11 +13,17 @@ enum LiveUseCases {
         notificationService: LiveServices.securityNotification
     )
 
-    /// 클립보드 자동 정리 타이머와 반복 복사 카운터를 들고 있는 actor다.
-    /// 개별 인스턴스를 만들면 화면을 넘나드는 반복 복사가 서로 다른 카운터로 흩어지고,
-    /// 이전 화면이 예약한 30초 정리도 추적되지 않는다. `authenticate`와 같은 이유로 공유한다.
+    /// `CopySensitiveValueUseCase`도 위와 같은 이유로 공유해야 한다 — 반복 복사 감지의
+    /// `AbnormalAccessMonitor`가 화면마다 따로 생기면 카운터가 갈라진다.
     static let copySensitiveValue: any CopySensitiveValueUseCase = CopySensitiveValueUseCaseImpl(
         clipboardService: ClipboardServiceImpl(),
-        notificationService: SecurityNotificationServiceImpl()
+        notificationService: LiveServices.securityNotification,
+        clipboardClearDelay: {
+            let securityUseCase: any SecuritySettingsUseCase = SecuritySettingsUseCaseImpl(
+                repository: LiveRepositories.settings
+            )
+            guard securityUseCase.isAutoClearClipboardEnabled() else { return nil }
+            return .seconds(securityUseCase.autoClearClipboardDelaySeconds())
+        }
     )
 }

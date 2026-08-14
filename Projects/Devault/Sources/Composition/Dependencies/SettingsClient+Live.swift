@@ -51,6 +51,18 @@ extension SettingsClient: @retroactive DependencyKey {
       },
       setAutoLockMinutes: { minutes in
         securityUseCase.setAutoLockMinutes(minutes)
+      },
+      isAutoClearClipboardEnabled: {
+        securityUseCase.isAutoClearClipboardEnabled()
+      },
+      setAutoClearClipboardEnabled: { enabled in
+        securityUseCase.setAutoClearClipboardEnabled(enabled)
+      },
+      autoClearClipboardDelaySeconds: {
+        securityUseCase.autoClearClipboardDelaySeconds()
+      },
+      setAutoClearClipboardDelaySeconds: { seconds in
+        securityUseCase.setAutoClearClipboardDelaySeconds(seconds)
       }
     )
   }()
