@@ -11,16 +11,16 @@ func makeUserAuthenticationFailedAlert<Alert>(
   let message: String
   switch error {
   case .unavailable:
-    message = "시스템 설정에서 로그인 암호가 설정되어 있는지 확인해주세요."
+    message = String.module("Check that a login password is set in System Settings.")
   case .cancelled:
-    message = "다시 시도해주세요."
+    message = String.module("Please try again.")
   case .failed:
-    message = "다시 시도해주세요."
+    message = String.module("Please try again.")
   }
   return AlertState {
     TextState(title)
   } actions: {
-    ButtonState(role: .cancel) { TextState("확인") }
+    ButtonState(role: .cancel) { TextState(String.module("OK")) }
   } message: {
     TextState(message)
   }
