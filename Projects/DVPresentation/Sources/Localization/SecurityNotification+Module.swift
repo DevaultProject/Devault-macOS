@@ -2,10 +2,10 @@
 
 import DVDomain
 
-public extension SecurityNotification {
+extension SecurityNotification {
   /// `SecurityNotificationServiceImpl`(DVData)에 주입하는 알림 문구 팩토리. DVData가 접근 못 하는 로컬라이제이션 카탈로그를 이 모듈에서 대신 룩업한다.
   @Sendable
-  static func moduleContent(for notification: SecurityNotification) -> (title: String, body: String) {
+  public static func moduleContent(for notification: SecurityNotification) -> (title: String, body: String) {
     switch notification {
     case .abnormalAccess(let kind, let threshold):
       let body: String
