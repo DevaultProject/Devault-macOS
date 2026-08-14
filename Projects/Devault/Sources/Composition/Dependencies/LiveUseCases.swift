@@ -10,7 +10,13 @@ import DVDomain
 enum LiveUseCases {
     static let authenticate: any AuthenticateUseCase = AuthenticateUseCaseImpl(
         authenticationService: LocalUserAuthenticationServiceImpl(),
-        notificationService: LiveServices.securityNotification
+        notificationService: LiveServices.securityNotification,
+        isAlertEnabled: {
+            let notificationUseCase: any NotificationSettingsUseCase = NotificationSettingsUseCaseImpl(
+                repository: LiveRepositories.settings
+            )
+            return notificationUseCase.isAuthFailureAlertEnabled()
+        }
     )
 
     /// `CopySensitiveValueUseCase`도 위와 같은 이유로 공유해야 한다 — 반복 복사 감지의
@@ -24,6 +30,31 @@ enum LiveUseCases {
             )
             guard securityUseCase.isAutoClearClipboardEnabled() else { return nil }
             return .seconds(securityUseCase.autoClearClipboardDelaySeconds())
+        },
+        isAbnormalAccessAlertEnabled: {
+            let notificationUseCase: any NotificationSettingsUseCase = NotificationSettingsUseCaseImpl(
+                repository: LiveRepositories.settings
+            )
+            return notificationUseCase.isClipboardAbnormalAccessAlertEnabled()
+        }
+    )
+
+    /// `ScheduleSecretExpiryNotificationsUseCase`는 상태가 없어 공유가 필수는 아니지만, 여러
+    /// Client가 각자 설정 읽기 클로저를 중복 작성하지 않도록 여기서 한 번만 만든다.
+    static let expirySchedule: any ScheduleSecretExpiryNotificationsUseCase = ScheduleSecretExpiryNotificationsUseCaseImpl(
+        repository: LiveRepositories.secret,
+        notificationService: LiveServices.securityNotification,
+        isEnabled: {
+            let notificationUseCase: any NotificationSettingsUseCase = NotificationSettingsUseCaseImpl(
+                repository: LiveRepositories.settings
+            )
+            return notificationUseCase.isExpiryAlertsEnabled()
+        },
+        daysBeforeExpiry: {
+            let notificationUseCase: any NotificationSettingsUseCase = NotificationSettingsUseCaseImpl(
+                repository: LiveRepositories.settings
+            )
+            return notificationUseCase.expiryAlertDaysBefore()
         }
     )
 }

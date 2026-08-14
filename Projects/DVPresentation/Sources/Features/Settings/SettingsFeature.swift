@@ -15,6 +15,7 @@ public struct SettingsFeature {
     var general = GeneralSettingsFeature.State()
     var security = SecuritySettingsFeature.State()
     var icloud = ICloudSettingsFeature.State()
+    var notifications = NotificationSettingsFeature.State()
 
     public init() {}
   }
@@ -33,6 +34,7 @@ public struct SettingsFeature {
     case general(GeneralSettingsFeature.Action)
     case security(SecuritySettingsFeature.Action)
     case icloud(ICloudSettingsFeature.Action)
+    case notifications(NotificationSettingsFeature.Action)
 
     // MARK: - Delegate
 
@@ -59,6 +61,9 @@ public struct SettingsFeature {
     Scope(state: \.icloud, action: \.icloud) {
       ICloudSettingsFeature()
     }
+    Scope(state: \.notifications, action: \.notifications) {
+      NotificationSettingsFeature()
+    }
     Reduce { state, action in
       switch action {
       case .didSelectCategory(let category):
@@ -75,6 +80,9 @@ public struct SettingsFeature {
         return .none
 
       case .icloud:
+        return .none
+
+      case .notifications:
         return .none
 
       case .delegate:

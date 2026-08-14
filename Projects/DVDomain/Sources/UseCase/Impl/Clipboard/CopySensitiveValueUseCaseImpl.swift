@@ -19,6 +19,8 @@ public actor CopySensitiveValueUseCaseImpl: CopySensitiveValueUseCase {
     /// nil이면 자동 정리를 사용하지 않는다.
     private let clipboardClearDelay: @Sendable () -> Duration?
     private let now: @Sendable () -> ContinuousClock.Instant
+    /// 호출마다 새로 읽는다. 꺼져 있어도 카운팅 자체는 계속한다.
+    private let isAbnormalAccessAlertEnabled: @Sendable () -> Bool
     private let abnormalAccessMonitor = AbnormalAccessMonitor(
         window: abnormalAccessWindow,
         threshold: abnormalAccessThreshold
@@ -28,12 +30,14 @@ public actor CopySensitiveValueUseCaseImpl: CopySensitiveValueUseCase {
         clipboardService: any ClipboardService,
         notificationService: any SecurityNotificationService,
         clipboardClearDelay: @escaping @Sendable () -> Duration? = { .seconds(30) },
-        now: @escaping @Sendable () -> ContinuousClock.Instant = { ContinuousClock.now }
+        now: @escaping @Sendable () -> ContinuousClock.Instant = { ContinuousClock.now },
+        isAbnormalAccessAlertEnabled: @escaping @Sendable () -> Bool = { true }
     ) {
         self.clipboardService = clipboardService
         self.notificationService = notificationService
         self.clipboardClearDelay = clipboardClearDelay
         self.now = now
+        self.isAbnormalAccessAlertEnabled = isAbnormalAccessAlertEnabled
     }
 
     public func execute(_ value: String) async throws {
@@ -57,7 +61,7 @@ public actor CopySensitiveValueUseCaseImpl: CopySensitiveValueUseCase {
         }
 
         // 반복 복사 알림 발송
-        if abnormalAccessMonitor.recordAccess(at: now()) {
+        if abnormalAccessMonitor.recordAccess(at: now()), isAbnormalAccessAlertEnabled() {
             do {
                 try await notificationService.notify(
                     .abnormalAccess(kind: .repeatedCopy, threshold: Self.abnormalAccessThreshold)

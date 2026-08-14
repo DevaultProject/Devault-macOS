@@ -59,6 +59,28 @@ struct CopySensitiveValueUseCaseImplTests {
         #expect(abnormalAccessCount == 1)
     }
 
+    @Test("비정상 접근 알림이 꺼져 있으면 threshold에 도달해도 알림을 보내지 않는다")
+    func disabledAbnormalAccessAlertDoesNotNotify() async throws {
+        let clipboardService = FakeClipboardService()
+        let notificationService = FakeSecurityNotificationService()
+        let sut = CopySensitiveValueUseCaseImpl(
+            clipboardService: clipboardService,
+            notificationService: notificationService,
+            now: { self.fixedInstant },
+            isAbnormalAccessAlertEnabled: { false }
+        )
+
+        for _ in 0..<5 {
+            try await sut.execute("secret-value")
+        }
+
+        let abnormalAccessCount = notificationService.notified.filter {
+            if case .abnormalAccess = $0 { return true }
+            return false
+        }.count
+        #expect(abnormalAccessCount == 0)
+    }
+
     @Test("정해진 시간 뒤 pasteboard가 그대로면 정리하고 clipboardExceeded 알림을 보낸다")
     func executeClearsAndNotifiesWhenUnchanged() async throws {
         let clipboardService = FakeClipboardService()
