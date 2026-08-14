@@ -121,6 +121,14 @@ extension SettingsClient: @retroactive DependencyKey {
         // legacyBundleIdentifier(NotificationsSettings.appex) 확인 완료 — 실기 QA로 검증됨.
         guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") else { return }
         NSWorkspace.shared.open(url)
+      },
+      deleteAllData: {
+        let useCase: any DeleteAllDataUseCase = DeleteAllDataUseCaseImpl(
+          secretRepository: LiveRepositories.secret,
+          projectRepository: LiveRepositories.project,
+          authenticateUseCase: LiveUseCases.authenticate
+        )
+        try await useCase.execute()
       }
     )
   }()

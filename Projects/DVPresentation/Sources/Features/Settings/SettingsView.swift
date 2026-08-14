@@ -63,7 +63,8 @@ extension SettingsView {
     case .notifications:
       NotificationsSettingsView(store: store.scope(state: \.notifications, action: \.notifications))
     case .shortcuts:     ShortcutsSettingsView()
-    case .data:          DataSettingsView()
+    case .data:
+      DataSettingsView(store: store.scope(state: \.data, action: \.data))
     case .about:         AboutSettingsView()
     }
   }

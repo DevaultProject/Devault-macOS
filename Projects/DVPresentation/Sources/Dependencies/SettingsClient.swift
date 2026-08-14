@@ -62,6 +62,11 @@ public struct SettingsClient: Sendable {
   /// macOS 알림 권한이 허용돼 있는지. 꺼져 있으면 위 설정을 켜도 실제로는 알림이 안 온다.
   public var isNotificationPermissionGranted: @Sendable () async -> Bool = { true }
   public var openNotificationSystemSettings: @Sendable () -> Void
+
+  // MARK: - Data
+
+  /// 재인증 후 모든 Secret·Project를 영구 삭제한다. 되돌릴 수 없다.
+  public var deleteAllData: @Sendable () async throws -> Void
 }
 
 extension SettingsClient: TestDependencyKey {
@@ -96,7 +101,8 @@ extension SettingsClient: TestDependencyKey {
     isClipboardAbnormalAccessAlertEnabled: { true },
     setClipboardAbnormalAccessAlertEnabled: { _ in },
     isNotificationPermissionGranted: { true },
-    openNotificationSystemSettings: { }
+    openNotificationSystemSettings: { },
+    deleteAllData: { }
   )
 }
 
