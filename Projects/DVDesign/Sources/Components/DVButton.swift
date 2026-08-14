@@ -110,6 +110,16 @@ private struct DVButtonStyle: ButtonStyle {
             .foregroundStyle(foregroundColor)
             .background(backgroundColor(isPressed: configuration.isPressed))
             .clipShape(RoundedRectangle(cornerRadius: style.cornerRadius))
+            .opacity(!isEnabled && dimsWhenDisabled ? 0.5 : 1)
+    }
+
+    /// primary/primarySmall은 배경이 항상 vaultGreen이라 비활성 시 opacity로 톤을 낮춘다.
+    /// secondary/secondaryProminent는 이미 자체 비활성 색상(gray400 등)이 있어 중복 적용하지 않는다.
+    private var dimsWhenDisabled: Bool {
+        switch style {
+        case .primary, .primarySmall:            return true
+        case .secondary, .secondaryProminent:    return false
+        }
     }
 
     private var foregroundColor: Color {
@@ -126,7 +136,7 @@ private struct DVButtonStyle: ButtonStyle {
     private func backgroundColor(isPressed: Bool) -> Color {
         switch style {
         case .primary, .primarySmall:
-            if !isEnabled { return Color.dv(.vaultGreenTint) }
+            if !isEnabled { return Color.dv(.vaultGreen) }
             if isPressed || isHovered { return Color.dv(.vaultGreenDark) }
             return Color.dv(.vaultGreen)
         case .secondary:

@@ -54,7 +54,6 @@ extension DVButtonPreviewView {
             DVButton(titleText: "Cancel", style: .secondary) {}
                 .disabled(true)
         }
-        .frame(width: 74)
     }
 
     private var buttonPair: some View {
