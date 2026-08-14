@@ -45,6 +45,12 @@ extension SettingsClient: @retroactive DependencyKey {
       },
       setRequireAuthToCopyEnabled: { enabled in
         securityUseCase.setRequireAuthToCopyEnabled(enabled)
+      },
+      autoLockMinutes: {
+        securityUseCase.autoLockMinutes()
+      },
+      setAutoLockMinutes: { minutes in
+        securityUseCase.setAutoLockMinutes(minutes)
       }
     )
   }()

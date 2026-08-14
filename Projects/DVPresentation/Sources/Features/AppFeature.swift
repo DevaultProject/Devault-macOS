@@ -28,6 +28,7 @@ public struct AppFeature {
     // MARK: - View
 
     case task
+    case idleTimeoutReached
 
     // MARK: - Child
 
@@ -46,6 +47,7 @@ public struct AppFeature {
 
   @Dependency(\.appLaunchClient) var appLaunchClient
   @Dependency(\.settingsClient) var settingsClient
+  @Dependency(\.idleMonitorClient) var idleMonitorClient
 
   // MARK: - Init
 
@@ -78,7 +80,15 @@ public struct AppFeature {
           },
           hasCompletedOnboarding
             ? .run { _ in await appLaunchClient.syncExpiryNotifications() }
-            : .none
+            : .none,
+          .run { send in
+            for await idleSeconds in idleMonitorClient.idleSecondsStream() {
+              let autoLockMinutes = settingsClient.autoLockMinutes()
+              // 0분은 "사용 안 함"이므로 감시하지 않는다.
+              guard autoLockMinutes > 0, idleSeconds >= Double(autoLockMinutes * 60) else { continue }
+              await send(.idleTimeoutReached)
+            }
+          }
         )
 
       case .onboarding(.delegate(.completed)):
@@ -98,6 +108,12 @@ public struct AppFeature {
         return .none
 
       case .main(.delegate(.lockRequested)):
+        state.main = nil
+        state.locked = .init()
+        return .none
+
+      case .idleTimeoutReached:
+        guard state.main != nil else { return .none }
         state.main = nil
         state.locked = .init()
         return .none

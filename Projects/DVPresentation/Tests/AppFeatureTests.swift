@@ -76,6 +76,58 @@ struct AppFeatureTests {
         }
     }
 
+    @Test("유휴 시간이 자동 잠금 설정을 넘으면 main에서 locked로 전환한다")
+    func idleTimeoutLocksApp() async {
+        var initial = AppFeature.State()
+        initial.main = .init()
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        } withDependencies: {
+            $0.settingsClient.autoLockMinutes = { 5 }
+        }
+
+        await store.send(.idleTimeoutReached) {
+            $0.main = nil
+            $0.locked = .init()
+        }
+    }
+
+    @Test("main이 아닐 때는 유휴 시간이 넘어도 아무 전환도 하지 않는다")
+    func idleTimeoutIgnoredWhenNotInMain() async {
+        var initial = AppFeature.State()
+        initial.locked = .init()
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        }
+
+        await store.send(.idleTimeoutReached)
+    }
+
+    @Test("task 중 유휴 시간이 자동 잠금 설정을 넘으면 idleTimeoutReached를 보낸다")
+    func taskWatchesIdleTimeAndSendsTimeout() async {
+        let store = TestStore(initialState: AppFeature.State()) {
+            AppFeature()
+        } withDependencies: {
+            $0.appLaunchClient.hasCompletedOnboarding = { true }
+            $0.appLaunchClient.requestNotificationAuthorization = { true }
+            $0.appLaunchClient.syncExpiryNotifications = { }
+            $0.settingsClient.autoLockMinutes = { 5 }
+            $0.idleMonitorClient.idleSecondsStream = {
+                AsyncStream { continuation in
+                    continuation.yield(400)
+                    continuation.finish()
+                }
+            }
+        }
+
+        await store.send(.task) {
+            $0.locked = .init()
+        }
+        await store.receive(.idleTimeoutReached)
+    }
+
     @Test("main의 lockRequested delegate는 main을 지우고 locked를 새로 연다")
     func lockRequestedLocksApp() async {
         var initial = AppFeature.State()

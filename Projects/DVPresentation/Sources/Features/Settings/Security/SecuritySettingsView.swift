@@ -27,7 +27,34 @@ struct SecuritySettingsView: View {
           )
         )
       }
+
+      SettingsSection(title: String.module("Auto-Lock")) {
+        HStack {
+          Text(.module("Lock after inactivity"))
+            .dvFont(.bodyLG)
+            .foregroundStyle(Color.dv(.gray900))
+          Spacer()
+          autoLockDropdown
+        }
+        .padding(.vertical, 8)
+      }
     }
     .task { store.send(.task) }
+  }
+
+  private var autoLockDropdown: some View {
+    DVDropdown(Self.autoLockLabel(for: store.autoLockMinutes)) {
+      ForEach(Self.autoLockOptions, id: \.self) { minutes in
+        Button(Self.autoLockLabel(for: minutes)) {
+          store.send(.didSelectAutoLockMinutes(minutes))
+        }
+      }
+    }
+  }
+
+  private static let autoLockOptions = [1, 3, 5, 15, 30, 0]
+
+  private static func autoLockLabel(for minutes: Int) -> String {
+    minutes == 0 ? String.module("Never") : String.module("\(minutes) min")
   }
 }

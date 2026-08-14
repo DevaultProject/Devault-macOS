@@ -24,6 +24,10 @@ public struct SettingsClient: Sendable {
 
   public var isRequireAuthToCopyEnabled: @Sendable () -> Bool = { true }
   public var setRequireAuthToCopyEnabled: @Sendable (Bool) -> Void
+
+  /// 비활성 후 자동 잠금까지의 시간(분). 0이면 "사용 안 함".
+  public var autoLockMinutes: @Sendable () -> Int = { 5 }
+  public var setAutoLockMinutes: @Sendable (Int) -> Void
 }
 
 extension SettingsClient: TestDependencyKey {
@@ -37,7 +41,9 @@ extension SettingsClient: TestDependencyKey {
     isRequireAuthOnLaunchEnabled: { true },
     setRequireAuthOnLaunchEnabled: { _ in },
     isRequireAuthToCopyEnabled: { true },
-    setRequireAuthToCopyEnabled: { _ in }
+    setRequireAuthToCopyEnabled: { _ in },
+    autoLockMinutes: { 5 },
+    setAutoLockMinutes: { _ in }
   )
 }
 
