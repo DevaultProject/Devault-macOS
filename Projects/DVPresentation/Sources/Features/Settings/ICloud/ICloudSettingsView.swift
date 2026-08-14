@@ -45,6 +45,7 @@ struct ICloudSettingsView: View {
       HStack(spacing: 6) {
         Image(systemName: store.isSyncEnabled ? "checkmark.icloud.fill" : "icloud.slash")
           .foregroundStyle(store.isSyncEnabled ? Color.dv(.vaultGreen) : Color.dv(.gray500))
+          .accessibilityHidden(true)
         Text(store.isSyncEnabled ? String.module("Connected") : String.module("Not Connected"))
           .dvFont(.bodyLG)
           .foregroundStyle(Color.dv(.gray900))
