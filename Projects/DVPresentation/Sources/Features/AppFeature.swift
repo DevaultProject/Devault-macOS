@@ -65,18 +65,21 @@ public struct AppFeature {
         state.locked = nil
         state.main = nil
 
-        if appLaunchClient.hasCompletedOnboarding() {
+        let hasCompletedOnboarding = appLaunchClient.hasCompletedOnboarding()
+        if hasCompletedOnboarding {
           state.locked = .init()
         } else {
           state.onboarding = .init()
         }
+
+        // syncExpiryNotifications가 LiveRepositories.secret을 처음 건드려 ModelContainer를 그 순간의 iCloud 설정으로 고정시키므로, 아직 Secret이 없는 온보딩 전에는 건너뛴다.
         return .merge(
           .run { _ in
             _ = await appLaunchClient.requestNotificationAuthorization()
           },
-          .run { _ in
-            await appLaunchClient.syncExpiryNotifications()
-          }
+          hasCompletedOnboarding
+            ? .run { _ in await appLaunchClient.syncExpiryNotifications() }
+            : .none
         )
 
       #if DEBUG
