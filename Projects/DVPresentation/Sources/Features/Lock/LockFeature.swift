@@ -95,6 +95,6 @@ public struct LockFeature {
 private extension LockFeature {
 
   func makeUnlockFailedAlert(_ error: UserAuthenticationError) -> AlertState<Action.Alert> {
-    makeUserAuthenticationFailedAlert(title: "잠금을 해제하지 못했어요", error: error)
+    makeUserAuthenticationFailedAlert(title: String.module("Unlock failed"), error: error)
   }
 }
