@@ -16,6 +16,14 @@ public struct SettingsClient: Sendable {
 
   public var defaultEnvironment: @Sendable () -> String? = { nil }
   public var setDefaultEnvironment: @Sendable (String?) -> Void
+
+  // MARK: - Security
+
+  public var isRequireAuthOnLaunchEnabled: @Sendable () -> Bool = { true }
+  public var setRequireAuthOnLaunchEnabled: @Sendable (Bool) -> Void
+
+  public var isRequireAuthToCopyEnabled: @Sendable () -> Bool = { true }
+  public var setRequireAuthToCopyEnabled: @Sendable (Bool) -> Void
 }
 
 extension SettingsClient: TestDependencyKey {
@@ -25,7 +33,11 @@ extension SettingsClient: TestDependencyKey {
     isLaunchAtLoginEnabled: { false },
     setLaunchAtLoginEnabled: { _ in },
     defaultEnvironment: { nil },
-    setDefaultEnvironment: { _ in }
+    setDefaultEnvironment: { _ in },
+    isRequireAuthOnLaunchEnabled: { true },
+    setRequireAuthOnLaunchEnabled: { _ in },
+    isRequireAuthToCopyEnabled: { true },
+    setRequireAuthToCopyEnabled: { _ in }
   )
 }
 

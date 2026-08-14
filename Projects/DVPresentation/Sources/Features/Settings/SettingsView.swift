@@ -56,7 +56,8 @@ extension SettingsView {
     switch store.selectedCategory {
     case .general:
       GeneralSettingsView(store: store.scope(state: \.general, action: \.general))
-    case .security:      SecuritySettingsView()
+    case .security:
+      SecuritySettingsView(store: store.scope(state: \.security, action: \.security))
     case .icloud:         ICloudSettingsView()
     case .notifications: NotificationsSettingsView()
     case .shortcuts:     ShortcutsSettingsView()

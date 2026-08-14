@@ -12,6 +12,9 @@ extension SettingsClient: @retroactive DependencyKey {
     let generalUseCase: any GeneralSettingsUseCase = GeneralSettingsUseCaseImpl(
       repository: LiveRepositories.settings
     )
+    let securityUseCase: any SecuritySettingsUseCase = SecuritySettingsUseCaseImpl(
+      repository: LiveRepositories.settings
+    )
 
     return SettingsClient(
       isLaunchAtLoginEnabled: {
@@ -30,6 +33,18 @@ extension SettingsClient: @retroactive DependencyKey {
       },
       setDefaultEnvironment: { rawValue in
         generalUseCase.setDefaultEnvironment(rawValue)
+      },
+      isRequireAuthOnLaunchEnabled: {
+        securityUseCase.isRequireAuthOnLaunchEnabled()
+      },
+      setRequireAuthOnLaunchEnabled: { enabled in
+        securityUseCase.setRequireAuthOnLaunchEnabled(enabled)
+      },
+      isRequireAuthToCopyEnabled: {
+        securityUseCase.isRequireAuthToCopyEnabled()
+      },
+      setRequireAuthToCopyEnabled: { enabled in
+        securityUseCase.setRequireAuthToCopyEnabled(enabled)
       }
     )
   }()
