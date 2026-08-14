@@ -64,6 +64,26 @@ struct AuthenticateUseCaseImplTests {
         ))
     }
 
+    @Test("비정상 접근 알림이 꺼져 있으면 threshold에 도달해도 알림을 보내지 않는다")
+    func disabledAlertDoesNotNotifyEvenAtThreshold() async {
+        let authenticationService = StubUserAuthenticationService()
+        authenticationService.errorOnAuthenticate = .failed
+        let notificationService = FakeSecurityNotificationService()
+        let sut = AuthenticateUseCaseImpl(
+            authenticationService: authenticationService,
+            notificationService: notificationService,
+            postNotificationDelay: .milliseconds(0),
+            now: { self.fixedInstant },
+            isAlertEnabled: { false }
+        )
+
+        for _ in 0..<3 {
+            _ = try? await sut.authenticate(reason: "test")
+        }
+
+        #expect(notificationService.notified.isEmpty)
+    }
+
     @Test("인증 성공은 반복 실패 카운트에 반영되지 않는다")
     func successDoesNotCountTowardThreshold() async {
         let authenticationService = StubUserAuthenticationService()

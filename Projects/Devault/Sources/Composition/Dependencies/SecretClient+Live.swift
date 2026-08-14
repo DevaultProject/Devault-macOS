@@ -15,11 +15,6 @@ extension SecretClient: @retroactive DependencyKey {
         let securitySettingsUseCase: any SecuritySettingsUseCase = SecuritySettingsUseCaseImpl(
             repository: LiveRepositories.settings
         )
-        let expiryUseCase: any ScheduleSecretExpiryNotificationsUseCase = ScheduleSecretExpiryNotificationsUseCaseImpl(
-            repository: secretRepo,
-            notificationService: LiveServices.securityNotification
-        )
-
         let fetchSecretUseCase: any FetchSecretUseCase = FetchSecretUseCaseImpl(
             repository: secretRepo
         )
@@ -52,17 +47,17 @@ extension SecretClient: @retroactive DependencyKey {
             },
             softDelete: { id in
                 let secret = try await deleteSecretUseCase.softDelete(id: id)
-                await expiryUseCase.cancel(secretID: secret.id)
+                await LiveUseCases.expirySchedule.cancel(secretID: secret.id)
                 return secret
             },
             restore: { id in
                 let secret = try await deleteSecretUseCase.restore(id: id)
-                await expiryUseCase.schedule(secret: secret)
+                await LiveUseCases.expirySchedule.schedule(secret: secret)
                 return secret
             },
             permanentlyDelete: { id in
                 try await deleteSecretUseCase.permanentlyDelete(id: id)
-                await expiryUseCase.cancel(secretID: id)
+                await LiveUseCases.expirySchedule.cancel(secretID: id)
             },
             revealPayload: { secret in
                 try await dispatchRevealPayload(secret: secret, useCase: revealSecretPayloadUseCase)

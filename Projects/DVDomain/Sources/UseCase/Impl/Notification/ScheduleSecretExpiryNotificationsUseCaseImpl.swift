@@ -5,22 +5,31 @@ import Foundation
 import DVCore
 
 public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiryNotificationsUseCase {
-    /// `SecretExpiryPolicy`와 값이 같지만 우연일 뿐 의도적 결합 아님 — `cancel`이 이 값으로
-    /// identifier를 재구성해서, 참조하면 값 변경 시 이전 예약을 못 지운다.
-    private static let notificationLeadDays = [7, 3]
+
+    /// 지금까지 설정 화면이 제공한 모든 가능한 옵션 — 설정이 바뀌어도 예전에 예약된 마크를
+    /// 확실히 취소하기 위해 schedule()이 아니라 cancel()에서만 이 고정 목록을 쓴다.
+    private static let allPossibleDaysBeforeExpiry = [30, 7, 1, 0]
 
     private let repository: any SecretRepository
     private let notificationService: any SecurityNotificationService
     private let dateProvider: @Sendable () -> Date
+    /// 만료 알림 사용 여부. 꺼져 있으면 기존 예약을 취소만 하고 새로 만들지 않는다.
+    private let isEnabled: @Sendable () -> Bool
+    /// 호출마다 새로 읽는다 — 설정 화면에서 값을 바꾸면 다음 동기화부터 바로 반영되어야 한다.
+    private let daysBeforeExpiry: @Sendable () -> [Int]
 
     public init(
         repository: any SecretRepository,
         notificationService: any SecurityNotificationService,
-        dateProvider: @escaping @Sendable () -> Date = { Date() }
+        dateProvider: @escaping @Sendable () -> Date = { Date() },
+        isEnabled: @escaping @Sendable () -> Bool = { true },
+        daysBeforeExpiry: @escaping @Sendable () -> [Int] = { ScheduleSecretExpiryNotificationsUseCaseImpl.allPossibleDaysBeforeExpiry }
     ) {
         self.repository = repository
         self.notificationService = notificationService
         self.dateProvider = dateProvider
+        self.isEnabled = isEnabled
+        self.daysBeforeExpiry = daysBeforeExpiry
     }
 
     public func syncAll() async throws {
@@ -41,12 +50,13 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
 
     public func schedule(secret: Secret) async {
         guard let expiresAt = secret.expiresAt else { return }
-        let now = dateProvider()
 
         // expiresAt이 바뀌었을 수 있어 이전 마크가 stale하게 남지 않도록 먼저 전부 취소한다.
         await cancel(secretID: secret.id)
+        guard isEnabled() else { return }
 
-        for daysBefore in Self.notificationLeadDays {
+        let now = dateProvider()
+        for daysBefore in daysBeforeExpiry() {
             guard let dayMark = Calendar.current.date(byAdding: .day, value: -daysBefore, to: expiresAt) else {
                 continue
             }
@@ -73,8 +83,8 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
     }
 
     public func cancel(secretID: UUID) async {
-        // notificationLeadDays에 대응하는 identifier를 전부 취소 — 이미 소비된 것도 무시되니 존재 확인 안함
-        let identifiers = Self.notificationLeadDays.map { Self.notificationID(secretID: secretID, daysBefore: $0) }
+        // 현재 설정이 아니라 "가능했던 모든" daysBefore를 취소 — 이미 소비된 것도 무시되니 존재 확인 안함
+        let identifiers = Self.allPossibleDaysBeforeExpiry.map { Self.notificationID(secretID: secretID, daysBefore: $0) }
         await notificationService.cancel(identifiers: identifiers)
     }
 

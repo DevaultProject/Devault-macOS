@@ -12,8 +12,29 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
 
     // MARK: - schedule(secret:)
 
-    @Test("만료가 5일 남았으면 7일 전 알림은 건너뛰고 3일 전 알림만 예약한다")
-    func scheduleSkipsPastFireDates() async {
+    @Test("만료가 40일 남았으면 30/7/1일 전·당일 알림을 모두 예약한다")
+    func scheduleSchedulesAllMarksWhenFarEnough() async {
+        let notificationService = FakeSecurityNotificationService()
+        let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
+            repository: InMemorySecretRepository(),
+            notificationService: notificationService,
+            dateProvider: { self.now }
+        )
+        let secret = SecretFixture.make(expiresAt: now.addingTimeInterval(40 * day))
+
+        await sut.schedule(secret: secret)
+
+        let identifiers = Set(notificationService.scheduled.map(\.identifier))
+        #expect(identifiers == [
+            "secret-expiry-\(secret.id.uuidString)-30d",
+            "secret-expiry-\(secret.id.uuidString)-7d",
+            "secret-expiry-\(secret.id.uuidString)-1d",
+            "secret-expiry-\(secret.id.uuidString)-0d",
+        ])
+    }
+
+    @Test("만료가 5일 남았으면 지난 마크(30/7일 전)는 건너뛰고 1일 전·당일만 예약한다")
+    func scheduleSkipsPastMarks() async {
         let notificationService = FakeSecurityNotificationService()
         let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
             repository: InMemorySecretRepository(),
@@ -26,41 +47,20 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
 
         let identifiers = Set(notificationService.scheduled.map(\.identifier))
         #expect(identifiers == [
-            "secret-expiry-\(secret.id.uuidString)-3d",
+            "secret-expiry-\(secret.id.uuidString)-1d",
+            "secret-expiry-\(secret.id.uuidString)-0d",
         ])
     }
 
-    @Test("만료가 10일 남았으면 7일/3일 전 알림을 모두 예약한다")
-    func scheduleSchedulesAllWhenFarEnough() async {
+    @Test("이미 만료됐으면(마크가 전부 지금과 같거나 지남) 아무 알림도 예약하지 않는다")
+    func scheduleSkipsWhenAlreadyExpired() async {
         let notificationService = FakeSecurityNotificationService()
         let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
             repository: InMemorySecretRepository(),
             notificationService: notificationService,
             dateProvider: { self.now }
         )
-        let secret = SecretFixture.make(expiresAt: now.addingTimeInterval(10 * day))
-
-        await sut.schedule(secret: secret)
-
-        let identifiers = Set(notificationService.scheduled.map(\.identifier))
-        #expect(identifiers == [
-            "secret-expiry-\(secret.id.uuidString)-7d",
-            "secret-expiry-\(secret.id.uuidString)-3d",
-        ])
-    }
-
-    @Test("마크가 정확히 지금과 같으면(만료 기간이 daysBefore와 우연히 일치) 스킵한다")
-    func scheduleSkipsWhenMarkExactlyMatchesNow() async {
-        let notificationService = FakeSecurityNotificationService()
-        let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
-            repository: InMemorySecretRepository(),
-            notificationService: notificationService,
-            dateProvider: { self.now }
-        )
-        
-        // 3일 전 마크가 정확히 "지금"과 같은 경우 — 이미 지난 것으로 보고 스킵한다.
-        let expiresAt = Calendar.current.date(byAdding: .day, value: 3, to: now)!
-        let secret = SecretFixture.make(expiresAt: expiresAt)
+        let secret = SecretFixture.make(expiresAt: now)
 
         await sut.schedule(secret: secret)
 
@@ -76,18 +76,20 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             dateProvider: { self.now }
         )
         let secretID = UUID(uuidString: "00000000-0000-0000-0000-0000000000DD")!
-        let farSecret = SecretFixture.make(id: secretID, expiresAt: now.addingTimeInterval(10 * day))
+        let farSecret = SecretFixture.make(id: secretID, expiresAt: now.addingTimeInterval(40 * day))
         let nearSecret = SecretFixture.make(id: secretID, expiresAt: now.addingTimeInterval(2 * day))
 
         await sut.schedule(secret: farSecret)
         await sut.schedule(secret: nearSecret)
 
-        // schedule()이 매번 먼저 cancel하므로, 두 번 호출하면 cancel도 두 번 일어나야 stale한 -7d가 안 남는다.
+        // schedule()이 매번 먼저 cancel하므로, 두 번 호출하면 cancel도 두 번 일어나야 stale한 마크가 안 남는다.
         #expect(notificationService.cancelledIdentifiers.count == 2)
         #expect(notificationService.cancelledIdentifiers.allSatisfy {
             $0 == [
+                "secret-expiry-\(secretID.uuidString)-30d",
                 "secret-expiry-\(secretID.uuidString)-7d",
-                "secret-expiry-\(secretID.uuidString)-3d",
+                "secret-expiry-\(secretID.uuidString)-1d",
+                "secret-expiry-\(secretID.uuidString)-0d",
             ]
         })
     }
@@ -107,10 +109,44 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
         #expect(notificationService.scheduled.isEmpty)
     }
 
+    @Test("만료 알림 사용이 꺼져 있으면 기존 예약만 취소하고 새로 만들지 않는다")
+    func scheduleSkipsCreatingWhenDisabled() async {
+        let notificationService = FakeSecurityNotificationService()
+        let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
+            repository: InMemorySecretRepository(),
+            notificationService: notificationService,
+            dateProvider: { self.now },
+            isEnabled: { false }
+        )
+        let secret = SecretFixture.make(expiresAt: now.addingTimeInterval(40 * day))
+
+        await sut.schedule(secret: secret)
+
+        #expect(notificationService.scheduled.isEmpty)
+        #expect(notificationService.cancelledIdentifiers.count == 1)
+    }
+
+    @Test("daysBeforeExpiry 설정이 지정한 값만 예약한다")
+    func scheduleUsesConfiguredDaysBeforeExpiry() async {
+        let notificationService = FakeSecurityNotificationService()
+        let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
+            repository: InMemorySecretRepository(),
+            notificationService: notificationService,
+            dateProvider: { self.now },
+            daysBeforeExpiry: { [7] }
+        )
+        let secret = SecretFixture.make(expiresAt: now.addingTimeInterval(40 * day))
+
+        await sut.schedule(secret: secret)
+
+        let identifiers = Set(notificationService.scheduled.map(\.identifier))
+        #expect(identifiers == ["secret-expiry-\(secret.id.uuidString)-7d"])
+    }
+
     // MARK: - cancel(secretID:)
 
-    @Test("cancel은 7일/3일 알림 ID를 모두 취소 요청한다")
-    func cancelCancelsAllIdentifiers() async {
+    @Test("cancel은 가능한 모든(30/7/1일 전·당일) 알림 ID를 취소 요청한다")
+    func cancelCancelsAllPossibleIdentifiers() async {
         let notificationService = FakeSecurityNotificationService()
         let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
             repository: InMemorySecretRepository(),
@@ -122,8 +158,10 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
         await sut.cancel(secretID: secretID)
 
         #expect(notificationService.cancelledIdentifiers == [[
+            "secret-expiry-\(secretID.uuidString)-30d",
             "secret-expiry-\(secretID.uuidString)-7d",
-            "secret-expiry-\(secretID.uuidString)-3d",
+            "secret-expiry-\(secretID.uuidString)-1d",
+            "secret-expiry-\(secretID.uuidString)-0d",
         ]])
     }
 
@@ -153,7 +191,8 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
         try await sut.syncAll()
 
         #expect(notificationService.scheduled.allSatisfy { $0.identifier.contains(withExpiry.id.uuidString) })
-        #expect(notificationService.scheduled.count == 2)
+        // 10일 후 만료 → 7일 전/1일 전/당일 3개 마크가 미래에 해당
+        #expect(notificationService.scheduled.count == 3)
     }
 
     @Test("syncAll은 expiresAt이 없는(나중에 제거됐을 수 있는) Secret의 예약도 취소한다")
@@ -173,8 +212,10 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
         try await sut.syncAll()
 
         #expect(notificationService.cancelledIdentifiers == [[
+            "secret-expiry-\(secretID.uuidString)-30d",
             "secret-expiry-\(secretID.uuidString)-7d",
-            "secret-expiry-\(secretID.uuidString)-3d",
+            "secret-expiry-\(secretID.uuidString)-1d",
+            "secret-expiry-\(secretID.uuidString)-0d",
         ]])
     }
 
@@ -202,7 +243,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             notificationService: notificationService,
             dateProvider: { self.now }
         )
-        let secret = SecretFixture.make(expiresAt: now.addingTimeInterval(10 * day))
+        let secret = SecretFixture.make(expiresAt: now.addingTimeInterval(40 * day))
 
         await sut.schedule(secret: secret)
 

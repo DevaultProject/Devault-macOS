@@ -12,11 +12,6 @@ extension AppLaunchClient: @retroactive DependencyKey {
       repository: LiveRepositories.settings
     )
 
-    let expiryUseCase: any ScheduleSecretExpiryNotificationsUseCase = ScheduleSecretExpiryNotificationsUseCaseImpl(
-      repository: LiveRepositories.secret,
-      notificationService: LiveServices.securityNotification
-    )
-
     return AppLaunchClient(
       hasCompletedOnboarding: {
         onboardingStatusUseCase.hasCompleted()
@@ -34,7 +29,7 @@ extension AppLaunchClient: @retroactive DependencyKey {
       },
       syncExpiryNotifications: {
         do {
-          try await expiryUseCase.syncAll()
+          try await LiveUseCases.expirySchedule.syncAll()
         } catch {
           Log.warn("만료 알림 동기화 실패: \(error)", category: .notification)
         }

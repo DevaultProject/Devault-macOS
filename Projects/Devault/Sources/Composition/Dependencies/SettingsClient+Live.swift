@@ -2,6 +2,7 @@
 
 import AppKit
 import ServiceManagement
+import UserNotifications
 
 import ComposableArchitecture
 import DVData
@@ -17,6 +18,9 @@ extension SettingsClient: @retroactive DependencyKey {
       repository: LiveRepositories.settings
     )
     let iCloudSyncSettings: any ICloudSyncSettingsUseCase = ICloudSyncSettingsUseCaseImpl(
+      repository: LiveRepositories.settings
+    )
+    let notificationUseCase: any NotificationSettingsUseCase = NotificationSettingsUseCaseImpl(
       repository: LiveRepositories.settings
     )
 
@@ -83,6 +87,39 @@ extension SettingsClient: @retroactive DependencyKey {
       openICloudSystemSettings: {
         // OnboardingClient+Live.swift와 동일한 딥링크. AppleIDPrefPane이 현재의 legacy bundle identifier.
         guard let url = URL(string: "x-apple.systempreferences:com.apple.preferences.AppleIDPrefPane?icloud") else { return }
+        NSWorkspace.shared.open(url)
+      },
+      isExpiryAlertsEnabled: {
+        notificationUseCase.isExpiryAlertsEnabled()
+      },
+      setExpiryAlertsEnabled: { enabled in
+        notificationUseCase.setExpiryAlertsEnabled(enabled)
+      },
+      expiryAlertDaysBefore: {
+        notificationUseCase.expiryAlertDaysBefore()
+      },
+      setExpiryAlertDaysBefore: { days in
+        notificationUseCase.setExpiryAlertDaysBefore(days)
+      },
+      isAuthFailureAlertEnabled: {
+        notificationUseCase.isAuthFailureAlertEnabled()
+      },
+      setAuthFailureAlertEnabled: { enabled in
+        notificationUseCase.setAuthFailureAlertEnabled(enabled)
+      },
+      isClipboardAbnormalAccessAlertEnabled: {
+        notificationUseCase.isClipboardAbnormalAccessAlertEnabled()
+      },
+      setClipboardAbnormalAccessAlertEnabled: { enabled in
+        notificationUseCase.setClipboardAbnormalAccessAlertEnabled(enabled)
+      },
+      isNotificationPermissionGranted: {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        return settings.authorizationStatus == .authorized
+      },
+      openNotificationSystemSettings: {
+        // legacyBundleIdentifier(NotificationsSettings.appex) 확인 완료 — 실기 QA로 검증됨.
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") else { return }
         NSWorkspace.shared.open(url)
       }
     )

@@ -43,6 +43,25 @@ public struct SettingsClient: Sendable {
   public var isICloudSyncEnabled: @Sendable () -> Bool = { false }
   public var setICloudSyncEnabled: @Sendable (Bool) -> Void
   public var openICloudSystemSettings: @Sendable () -> Void
+
+  // MARK: - Notifications
+
+  public var isExpiryAlertsEnabled: @Sendable () -> Bool = { true }
+  public var setExpiryAlertsEnabled: @Sendable (Bool) -> Void
+
+  /// 만료 며칠 전에 알림을 보낼지(예: [30, 7, 1, 0], 0은 당일).
+  public var expiryAlertDaysBefore: @Sendable () -> [Int] = { [30, 7, 1, 0] }
+  public var setExpiryAlertDaysBefore: @Sendable ([Int]) -> Void
+
+  public var isAuthFailureAlertEnabled: @Sendable () -> Bool = { true }
+  public var setAuthFailureAlertEnabled: @Sendable (Bool) -> Void
+
+  public var isClipboardAbnormalAccessAlertEnabled: @Sendable () -> Bool = { true }
+  public var setClipboardAbnormalAccessAlertEnabled: @Sendable (Bool) -> Void
+
+  /// macOS 알림 권한이 허용돼 있는지. 꺼져 있으면 위 설정을 켜도 실제로는 알림이 안 온다.
+  public var isNotificationPermissionGranted: @Sendable () async -> Bool = { true }
+  public var openNotificationSystemSettings: @Sendable () -> Void
 }
 
 extension SettingsClient: TestDependencyKey {
@@ -67,7 +86,17 @@ extension SettingsClient: TestDependencyKey {
     setHideDuringScreenRecordingEnabled: { _ in },
     isICloudSyncEnabled: { false },
     setICloudSyncEnabled: { _ in },
-    openICloudSystemSettings: { }
+    openICloudSystemSettings: { },
+    isExpiryAlertsEnabled: { true },
+    setExpiryAlertsEnabled: { _ in },
+    expiryAlertDaysBefore: { [30, 7, 1, 0] },
+    setExpiryAlertDaysBefore: { _ in },
+    isAuthFailureAlertEnabled: { true },
+    setAuthFailureAlertEnabled: { _ in },
+    isClipboardAbnormalAccessAlertEnabled: { true },
+    setClipboardAbnormalAccessAlertEnabled: { _ in },
+    isNotificationPermissionGranted: { true },
+    openNotificationSystemSettings: { }
   )
 }
 
