@@ -47,6 +47,14 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
     defaults.set(enabled, forKey: .isICloudSyncEnabled)
   }
 
+  public func iCloudLastSyncedAt() -> Date? {
+    defaults.date(forKey: .iCloudLastSyncedAt)
+  }
+
+  public func setICloudLastSyncedAt(_ date: Date) {
+    defaults.set(date, forKey: .iCloudLastSyncedAt)
+  }
+
   // MARK: - General
 
   public func isLaunchAtLoginEnabled() -> Bool {

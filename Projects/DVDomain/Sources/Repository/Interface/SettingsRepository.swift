@@ -14,6 +14,10 @@ public protocol SettingsRepository: Sendable {
   /// - Parameter enabled: 사용 여부
   func setICloudSyncEnabled(_ enabled: Bool)
 
+  /// 마지막으로 CloudKit 원격 변경이 감지된 시각. 한 번도 없었으면 nil.
+  func iCloudLastSyncedAt() -> Date?
+  func setICloudLastSyncedAt(_ date: Date)
+
   // MARK: - General
 
   /// 로그인 시 자동 실행 여부를 확인한다.

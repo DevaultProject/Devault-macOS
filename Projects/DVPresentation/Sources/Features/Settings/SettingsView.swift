@@ -58,7 +58,8 @@ extension SettingsView {
       GeneralSettingsView(store: store.scope(state: \.general, action: \.general))
     case .security:
       SecuritySettingsView(store: store.scope(state: \.security, action: \.security))
-    case .icloud:         ICloudSettingsView()
+    case .icloud:
+      ICloudSettingsView(store: store.scope(state: \.icloud, action: \.icloud))
     case .notifications: NotificationsSettingsView()
     case .shortcuts:     ShortcutsSettingsView()
     case .data:          DataSettingsView()
