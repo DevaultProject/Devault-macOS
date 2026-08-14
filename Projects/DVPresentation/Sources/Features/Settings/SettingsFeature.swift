@@ -12,6 +12,7 @@ public struct SettingsFeature {
   @ObservableState
   public struct State: Equatable {
     var selectedCategory: SettingsCategory = .general
+    var general = GeneralSettingsFeature.State()
 
     public init() {}
   }
@@ -24,6 +25,10 @@ public struct SettingsFeature {
 
     case didSelectCategory(SettingsCategory)
     case didTapClose
+
+    // MARK: - Child
+
+    case general(GeneralSettingsFeature.Action)
 
     // MARK: - Delegate
 
@@ -41,6 +46,9 @@ public struct SettingsFeature {
   // MARK: - Body
 
   public var body: some ReducerOf<Self> {
+    Scope(state: \.general, action: \.general) {
+      GeneralSettingsFeature()
+    }
     Reduce { state, action in
       switch action {
       case .didSelectCategory(let category):
@@ -49,6 +57,9 @@ public struct SettingsFeature {
 
       case .didTapClose:
         return .send(.delegate(.closeRequested))
+
+      case .general:
+        return .none
 
       case .delegate:
         return .none

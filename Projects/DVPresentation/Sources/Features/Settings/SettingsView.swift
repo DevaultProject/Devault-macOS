@@ -54,7 +54,8 @@ extension SettingsView {
   @ViewBuilder
   private var detailColumn: some View {
     switch store.selectedCategory {
-    case .general:       GeneralSettingsView()
+    case .general:
+      GeneralSettingsView(store: store.scope(state: \.general, action: \.general))
     case .security:      SecuritySettingsView()
     case .icloud:         ICloudSettingsView()
     case .notifications: NotificationsSettingsView()
