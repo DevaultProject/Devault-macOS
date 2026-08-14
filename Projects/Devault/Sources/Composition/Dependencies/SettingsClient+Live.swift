@@ -63,6 +63,12 @@ extension SettingsClient: @retroactive DependencyKey {
       },
       setAutoClearClipboardDelaySeconds: { seconds in
         securityUseCase.setAutoClearClipboardDelaySeconds(seconds)
+      },
+      isHideDuringScreenRecordingEnabled: {
+        securityUseCase.isHideDuringScreenRecordingEnabled()
+      },
+      setHideDuringScreenRecordingEnabled: { enabled in
+        securityUseCase.setHideDuringScreenRecordingEnabled(enabled)
       }
     )
   }()

@@ -34,6 +34,9 @@ public struct SettingsClient: Sendable {
 
   public var autoClearClipboardDelaySeconds: @Sendable () -> Int = { 30 }
   public var setAutoClearClipboardDelaySeconds: @Sendable (Int) -> Void
+
+  public var isHideDuringScreenRecordingEnabled: @Sendable () -> Bool = { true }
+  public var setHideDuringScreenRecordingEnabled: @Sendable (Bool) -> Void
 }
 
 extension SettingsClient: TestDependencyKey {
@@ -53,7 +56,9 @@ extension SettingsClient: TestDependencyKey {
     isAutoClearClipboardEnabled: { true },
     setAutoClearClipboardEnabled: { _ in },
     autoClearClipboardDelaySeconds: { 30 },
-    setAutoClearClipboardDelaySeconds: { _ in }
+    setAutoClearClipboardDelaySeconds: { _ in },
+    isHideDuringScreenRecordingEnabled: { true },
+    setHideDuringScreenRecordingEnabled: { _ in }
   )
 }
 

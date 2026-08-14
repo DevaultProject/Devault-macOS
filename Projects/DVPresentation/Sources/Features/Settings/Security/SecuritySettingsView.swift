@@ -58,6 +58,16 @@ struct SecuritySettingsView: View {
           .padding(.vertical, 8)
         }
       }
+
+      SettingsSection(title: String.module("Screen Protection")) {
+        SettingsToggleRow(
+          title: String.module("Hide values during screen recording"),
+          isOn: Binding(
+            get: { store.isHideDuringScreenRecordingEnabled },
+            set: { store.send(.didToggleHideDuringScreenRecording($0)) }
+          )
+        )
+      }
     }
     .task { store.send(.task) }
   }
