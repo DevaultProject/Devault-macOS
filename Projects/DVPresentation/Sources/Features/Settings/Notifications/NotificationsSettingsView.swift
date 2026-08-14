@@ -81,6 +81,7 @@ struct NotificationsSettingsView: View {
     HStack(spacing: 12) {
       Image(systemName: "bell.slash.fill")
         .foregroundStyle(Color.dv(.warning))
+        .accessibilityHidden(true)
       VStack(alignment: .leading, spacing: 2) {
         Text(.module("Notifications are turned off"))
           .dvFont(.bodyLG)
