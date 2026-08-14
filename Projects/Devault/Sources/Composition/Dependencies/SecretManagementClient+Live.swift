@@ -13,10 +13,9 @@ extension SecretManagementClient: @retroactive DependencyKey {
             repository: LiveRepositories.secret,
             cryptoService: cryptoService
         )
-        let notificationService: any SecurityNotificationService = SecurityNotificationServiceImpl()
         let expiryUseCase: any ScheduleSecretExpiryNotificationsUseCase = ScheduleSecretExpiryNotificationsUseCaseImpl(
             repository: LiveRepositories.secret,
-            notificationService: notificationService
+            notificationService: LiveServices.securityNotification
         )
         return SecretManagementClient(
             createSecret: { draft, payload, projectIds in
