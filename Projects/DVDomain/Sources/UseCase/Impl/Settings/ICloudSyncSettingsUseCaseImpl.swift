@@ -17,4 +17,12 @@ public struct ICloudSyncSettingsUseCaseImpl: ICloudSyncSettingsUseCase {
   public func setEnabled(_ enabled: Bool) {
     repository.setICloudSyncEnabled(enabled)
   }
+
+  public func lastSyncedAt() -> Date? {
+    repository.iCloudLastSyncedAt()
+  }
+
+  public func setLastSyncedAt(_ date: Date) {
+    repository.setICloudLastSyncedAt(date)
+  }
 }

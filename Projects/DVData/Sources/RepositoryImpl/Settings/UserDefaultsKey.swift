@@ -5,6 +5,7 @@ import Foundation
 enum UserDefaultsKey: String {
   case hasCompletedOnboarding
   case isICloudSyncEnabled
+  case iCloudLastSyncedAt
 
   // General
   case isLaunchAtLoginEnabled
@@ -55,6 +56,14 @@ extension UserDefaults {
   }
 
   func set(_ value: [Int], forKey key: UserDefaultsKey) {
+    set(value, forKey: key.rawValue)
+  }
+
+  func date(forKey key: UserDefaultsKey) -> Date? {
+    object(forKey: key.rawValue) as? Date
+  }
+
+  func set(_ value: Date, forKey key: UserDefaultsKey) {
     set(value, forKey: key.rawValue)
   }
 }

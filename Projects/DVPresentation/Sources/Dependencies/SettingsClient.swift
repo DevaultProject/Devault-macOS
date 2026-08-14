@@ -37,6 +37,12 @@ public struct SettingsClient: Sendable {
 
   public var isHideDuringScreenRecordingEnabled: @Sendable () -> Bool = { true }
   public var setHideDuringScreenRecordingEnabled: @Sendable (Bool) -> Void
+
+  // MARK: - iCloud
+
+  public var isICloudSyncEnabled: @Sendable () -> Bool = { false }
+  public var setICloudSyncEnabled: @Sendable (Bool) -> Void
+  public var openICloudSystemSettings: @Sendable () -> Void
 }
 
 extension SettingsClient: TestDependencyKey {
@@ -58,7 +64,10 @@ extension SettingsClient: TestDependencyKey {
     autoClearClipboardDelaySeconds: { 30 },
     setAutoClearClipboardDelaySeconds: { _ in },
     isHideDuringScreenRecordingEnabled: { true },
-    setHideDuringScreenRecordingEnabled: { _ in }
+    setHideDuringScreenRecordingEnabled: { _ in },
+    isICloudSyncEnabled: { false },
+    setICloudSyncEnabled: { _ in },
+    openICloudSystemSettings: { }
   )
 }
 

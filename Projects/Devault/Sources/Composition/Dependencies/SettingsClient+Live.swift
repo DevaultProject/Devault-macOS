@@ -1,5 +1,6 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import AppKit
 import ServiceManagement
 
 import ComposableArchitecture
@@ -13,6 +14,9 @@ extension SettingsClient: @retroactive DependencyKey {
       repository: LiveRepositories.settings
     )
     let securityUseCase: any SecuritySettingsUseCase = SecuritySettingsUseCaseImpl(
+      repository: LiveRepositories.settings
+    )
+    let iCloudSyncSettings: any ICloudSyncSettingsUseCase = ICloudSyncSettingsUseCaseImpl(
       repository: LiveRepositories.settings
     )
 
@@ -69,6 +73,17 @@ extension SettingsClient: @retroactive DependencyKey {
       },
       setHideDuringScreenRecordingEnabled: { enabled in
         securityUseCase.setHideDuringScreenRecordingEnabled(enabled)
+      },
+      isICloudSyncEnabled: {
+        iCloudSyncSettings.isEnabled()
+      },
+      setICloudSyncEnabled: { enabled in
+        iCloudSyncSettings.setEnabled(enabled)
+      },
+      openICloudSystemSettings: {
+        // OnboardingClient+Live.swift와 동일한 딥링크. AppleIDPrefPane이 현재의 legacy bundle identifier.
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preferences.AppleIDPrefPane?icloud") else { return }
+        NSWorkspace.shared.open(url)
       }
     )
   }()
