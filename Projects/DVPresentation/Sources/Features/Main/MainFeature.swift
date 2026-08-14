@@ -1,7 +1,5 @@
 // Copyright © 2026 Devault. All rights reserved
 
-import SwiftUI
-
 import ComposableArchitecture
 
 // MARK: - MainFeature
@@ -13,7 +11,6 @@ public struct MainFeature {
 
   @ObservableState
   public struct State: Equatable {
-    public var columnVisibility: NavigationSplitViewVisibility = .all
     var sidebar: SidebarFeature.State = .init()
     var secretList: SecretListFeature.State = .init(collection: .all)
     /// sheet가 아닌 2-column NavigationSplitView 전환 용도이므로 @Presents 미사용
@@ -35,6 +32,7 @@ public struct MainFeature {
 
     case binding(BindingAction<State>)
     case task
+    case didTapLock
 
     // MARK: - Child
 
@@ -49,7 +47,9 @@ public struct MainFeature {
 
     case delegate(Delegate)
 
-    public enum Delegate: Equatable {}
+    public enum Delegate: Equatable {
+      case lockRequested
+    }
   }
 
   // MARK: - Dependencies
@@ -77,6 +77,9 @@ public struct MainFeature {
 
       case .task:
         return .none
+
+      case .didTapLock:
+        return .send(.delegate(.lockRequested))
 
       case .sidebar(.delegate(let delegate)):
         return handleSidebarDelegate(&state, delegate: delegate)

@@ -487,4 +487,16 @@ struct MainFeatureTests {
       $0.sidebar.countsState = .loaded(SecretCounts())
     }
   }
+
+  // MARK: - Lock
+
+  @Test("didTapLock은 lockRequested를 delegate로 알린다")
+  func didTapLockSendsDelegate() async {
+    let store = TestStore(initialState: MainFeature.State()) {
+      MainFeature()
+    }
+
+    await store.send(.didTapLock)
+    await store.receive(.delegate(.lockRequested))
+  }
 }
