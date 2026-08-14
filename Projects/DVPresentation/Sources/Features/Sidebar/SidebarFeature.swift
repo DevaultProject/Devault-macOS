@@ -86,6 +86,7 @@ public struct SidebarFeature {
     case didSelect(SidebarSelection)
     case didTapAddButton
     case didTapAddProject
+    case didTapSettings
     case didToggleProjectSection
     case didTapRename(id: ProjectItem.ID)
     case didChangeRenameText(String)
@@ -121,6 +122,7 @@ public struct SidebarFeature {
       case addButtonTapped
       case addProjectTapped
       case projectRenamed(ProjectItem)
+      case settingsTapped
     }
   }
 
@@ -198,6 +200,9 @@ public struct SidebarFeature {
 
       case .didTapAddProject:
         return .send(.delegate(.addProjectTapped))
+
+      case .didTapSettings:
+        return .send(.delegate(.settingsTapped))
 
       case .didToggleProjectSection:
         state.isProjectSectionExpanded.toggle()

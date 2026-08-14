@@ -12,7 +12,6 @@ struct SidebarView: View {
   // MARK: - Properties
 
   @Bindable var store: StoreOf<SidebarFeature>
-  @Environment(\.openWindow) private var openWindow
 
   // MARK: - Body
 
@@ -201,7 +200,7 @@ extension SidebarView {
   private var bottomBar: some View {
     HStack {
       circleIconButton(icon: "gearshape") {
-        openWindow(id: "settings")
+        store.send(.didTapSettings)
       }
       .accessibilityLabel(String.module("Settings"))
       Spacer()
