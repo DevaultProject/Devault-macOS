@@ -69,6 +69,7 @@ extension SidebarView {
         store.send(.didSelect(.filter(.all)))
       }
       .frame(height: 72)
+      .accessibilityElement(children: .combine)
 
       LazyVGrid(
         columns: [GridItem(.flexible()), GridItem(.flexible())],
@@ -85,6 +86,7 @@ extension SidebarView {
             store.send(.didSelect(.filter(filter)))
           }
           .frame(height: 72)
+          .accessibilityElement(children: .combine)
         }
       }
     }
@@ -113,7 +115,7 @@ extension SidebarView {
     case .loaded:
       projectList
     case .failed:
-      Text("Failed to load")
+      Text(.module("Failed to load"))
         .dvFont(.bodyMD)
         .foregroundStyle(Color.dv(.danger))
         .frame(maxWidth: .infinity)
@@ -124,18 +126,18 @@ extension SidebarView {
 
   private var projectSectionHeader: some View {
     HStack(spacing: 11) {
-      Text("Project")
+      Text(.module("Project"))
         .dvFont(.captionMDSemibold)
         .foregroundStyle(Color.dv(.vaultGreen))
       Spacer()
       projectHeaderButton(icon: "plus.circle") { store.send(.didTapAddProject) }
-        .accessibilityLabel("Add Project")
+        .accessibilityLabel(String.module("Add Project"))
       projectHeaderButton(
         icon: store.isProjectSectionExpanded ? "chevron.down" : "chevron.up"
       ) {
         store.send(.didToggleProjectSection)
       }
-      .accessibilityLabel(store.isProjectSectionExpanded ? "Collapse Projects" : "Expand Projects")
+      .accessibilityLabel(store.isProjectSectionExpanded ? String.module("Collapse Projects") : String.module("Expand Projects"))
     }
   }
 
@@ -155,12 +157,13 @@ extension SidebarView {
     ) {
       ForEach(store.projects) { project in
         projectRow(project)
+          .accessibilityElement(children: .combine)
           .tag(project.id)
           .contextMenu {
-            Button("Rename") { store.send(.didTapRename(id: project.id)) }
-            Button("New Secret") { store.send(.didTapAddButton) }
+            Button(String.module("Rename")) { store.send(.didTapRename(id: project.id)) }
+            Button(String.module("New Secret")) { store.send(.didTapAddButton) }
             Divider()
-            Button("Delete Project", role: .destructive) {
+            Button(String.module("Delete Project"), role: .destructive) {
               store.send(.didTapDelete(id: project.id))
             }
           }
@@ -200,10 +203,10 @@ extension SidebarView {
       circleIconButton(icon: "gearshape") {
         openWindow(id: "settings")
       }
-      .accessibilityLabel("Settings")
+      .accessibilityLabel(String.module("Settings"))
       Spacer()
       circleIconButton(icon: "plus") { store.send(.didTapAddButton) }
-        .accessibilityLabel("Add Secret")
+        .accessibilityLabel(String.module("Add Secret"))
     }
   }
 
