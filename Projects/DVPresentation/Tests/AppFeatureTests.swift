@@ -60,6 +60,22 @@ struct AppFeatureTests {
         }
     }
 
+    @Test("task는 앱 실행 시 인증 요구가 꺼져 있으면 잠금 없이 바로 main으로 시작한다")
+    func taskStartsMainWhenRequireAuthOnLaunchDisabled() async {
+        let store = TestStore(initialState: AppFeature.State()) {
+            AppFeature()
+        } withDependencies: {
+            $0.appLaunchClient.hasCompletedOnboarding = { true }
+            $0.appLaunchClient.requestNotificationAuthorization = { true }
+            $0.appLaunchClient.syncExpiryNotifications = { }
+            $0.settingsClient.isRequireAuthOnLaunchEnabled = { false }
+        }
+
+        await store.send(.task) {
+            $0.main = .init()
+        }
+    }
+
     @Test("main의 lockRequested delegate는 main을 지우고 locked를 새로 연다")
     func lockRequestedLocksApp() async {
         var initial = AppFeature.State()

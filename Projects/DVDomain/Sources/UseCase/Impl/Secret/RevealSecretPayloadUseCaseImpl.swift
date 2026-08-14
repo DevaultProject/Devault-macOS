@@ -6,15 +6,18 @@ public struct RevealSecretPayloadUseCaseImpl: RevealSecretPayloadUseCase {
     private let repository: any SecretRepository
     private let cryptoService: any SecretCryptoService
     private let authenticateUseCase: any AuthenticateUseCase
+    private let securitySettingsUseCase: any SecuritySettingsUseCase
 
     public init(
         repository: any SecretRepository,
         cryptoService: any SecretCryptoService,
-        authenticateUseCase: any AuthenticateUseCase
+        authenticateUseCase: any AuthenticateUseCase,
+        securitySettingsUseCase: any SecuritySettingsUseCase
     ) {
         self.repository = repository
         self.cryptoService = cryptoService
         self.authenticateUseCase = authenticateUseCase
+        self.securitySettingsUseCase = securitySettingsUseCase
     }
 
     public func revealPayload<Payload: SecretPayloadData>(

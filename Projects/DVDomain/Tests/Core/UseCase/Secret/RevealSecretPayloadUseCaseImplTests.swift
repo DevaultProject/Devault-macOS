@@ -73,12 +73,34 @@ struct RevealSecretPayloadUseCaseImplTests {
         }
     }
 
+    @Test("복사 시 인증 요구가 꺼져 있으면 인증 없이 fetch·decrypt를 호출한다")
+    func revealPayloadSkipsAuthWhenDisabled() async throws {
+        let repo = InMemorySecretRepository()
+        let crypto = FakeSecretCryptoService()
+        let auth = StubUserAuthenticationService()
+        let secret = SecretFixture.make()
+        repo.seed(secret)
+        let settingsRepository = FakeSettingsRepository()
+        settingsRepository.isRequireAuthToCopyEnabledValue = false
+        let sut = makeSUT(
+            repository: repo,
+            cryptoService: crypto,
+            authenticationService: auth,
+            settingsRepository: settingsRepository
+        )
+
+        _ = try await sut.revealPayload(id: secret.id, as: APIKeyPayload.self)
+
+        #expect(auth.authenticateCount == 0)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(
         repository: InMemorySecretRepository,
         cryptoService: FakeSecretCryptoService,
-        authenticationService: StubUserAuthenticationService
+        authenticationService: StubUserAuthenticationService,
+        settingsRepository: FakeSettingsRepository = FakeSettingsRepository()
     ) -> RevealSecretPayloadUseCaseImpl {
         RevealSecretPayloadUseCaseImpl(
             repository: repository,
@@ -86,7 +108,8 @@ struct RevealSecretPayloadUseCaseImplTests {
             authenticateUseCase: AuthenticateUseCaseImpl(
                 authenticationService: authenticationService,
                 notificationService: FakeSecurityNotificationService()
-            )
+            ),
+            securitySettingsUseCase: SecuritySettingsUseCaseImpl(repository: settingsRepository)
         )
     }
 }

@@ -13,6 +13,7 @@ public struct SettingsFeature {
   public struct State: Equatable {
     var selectedCategory: SettingsCategory = .general
     var general = GeneralSettingsFeature.State()
+    var security = SecuritySettingsFeature.State()
 
     public init() {}
   }
@@ -29,6 +30,7 @@ public struct SettingsFeature {
     // MARK: - Child
 
     case general(GeneralSettingsFeature.Action)
+    case security(SecuritySettingsFeature.Action)
 
     // MARK: - Delegate
 
@@ -49,6 +51,9 @@ public struct SettingsFeature {
     Scope(state: \.general, action: \.general) {
       GeneralSettingsFeature()
     }
+    Scope(state: \.security, action: \.security) {
+      SecuritySettingsFeature()
+    }
     Reduce { state, action in
       switch action {
       case .didSelectCategory(let category):
@@ -59,6 +64,9 @@ public struct SettingsFeature {
         return .send(.delegate(.closeRequested))
 
       case .general:
+        return .none
+
+      case .security:
         return .none
 
       case .delegate:

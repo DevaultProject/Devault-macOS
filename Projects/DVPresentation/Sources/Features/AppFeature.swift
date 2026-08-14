@@ -45,6 +45,7 @@ public struct AppFeature {
   // MARK: - Dependencies
 
   @Dependency(\.appLaunchClient) var appLaunchClient
+  @Dependency(\.settingsClient) var settingsClient
 
   // MARK: - Init
 
@@ -62,7 +63,10 @@ public struct AppFeature {
 
         let hasCompletedOnboarding = appLaunchClient.hasCompletedOnboarding()
         if hasCompletedOnboarding {
-          state.locked = .init()
+          state.locked = settingsClient.isRequireAuthOnLaunchEnabled() ? .init() : nil
+          if state.locked == nil {
+            state.main = .init()
+          }
         } else {
           state.onboarding = .init()
         }
