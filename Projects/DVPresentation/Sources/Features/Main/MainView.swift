@@ -24,43 +24,32 @@ struct MainView: View {
       ) { createProjectStore in
         CreateProjectView(store: createProjectStore)
       }
+      .overlay(alignment: .topTrailing) {
+        lockButton
+          .padding(16)
+          .ignoresSafeArea(edges: .top)
+      }
   }
 }
 
 // MARK: - Subviews
 
 extension MainView {
-
+    
   @ViewBuilder
   private var content: some View {
-    if let createSecretStore = store.scope(state: \.createSecret, action: \.createSecret) {
-      // 사이드바 + 시크릿 생성 폼 (2컬럼)
+    if store.createSecret != nil || store.selectSecretType != nil {
+      // 사이드바 + 시크릿 생성 폼/타입 선택 그리드 (2컬럼)
       NavigationSplitView {
         sidebarColumn
       } detail: {
-        CreateSecretView(store: createSecretStore)
-          // max는 주지 않는다 — 컬럼이 창을 채우지 못하면 윈도우 배경이 드러난다.
-          // 폼 폭 상한은 컬럼이 아니라 `CreateSecretView` 안의 `formMaxWidth()`가 담당한다.
-          // min 520은 CreateSecretView 자체 제약과 동일 — apiKeyToken 3-radio 헤더 폭이 지배한다.
-          .navigationSplitViewColumnWidth(
-            min: 520,
-            ideal: FormLayoutMetrics.maxFormWidth
-          )
-      }
-      .navigationSplitViewStyle(.balanced)
-      .toolbarBackground(.hidden, for: .windowToolbar)
-    } else if let selectStore = store.scope(state: \.selectSecretType, action: \.selectSecretType) {
-      // 사이드바 + 타입 선택 그리드 (2컬럼)
-      NavigationSplitView {
-        sidebarColumn
-      } detail: {
-        SelectSecretTypeView(store: selectStore)
+        twoColumnDetail
       }
       .navigationSplitViewStyle(.balanced)
       .toolbarBackground(.hidden, for: .windowToolbar)
     } else {
       // 사이드바 + 시크릿 목록 + 상세 (3컬럼)
-      NavigationSplitView(columnVisibility: $store.columnVisibility) {
+      NavigationSplitView {
         sidebarColumn
       } content: {
         contentColumn
@@ -69,6 +58,15 @@ extension MainView {
       }
       .navigationSplitViewStyle(.balanced)
       .toolbarBackground(.hidden, for: .windowToolbar)
+    }
+  }
+
+  @ViewBuilder
+  private var twoColumnDetail: some View {
+    if let createSecretStore = store.scope(state: \.createSecret, action: \.createSecret) {
+      CreateSecretView(store: createSecretStore)
+    } else if let selectStore = store.scope(state: \.selectSecretType, action: \.selectSecretType) {
+      SelectSecretTypeView(store: selectStore)
     }
   }
 
@@ -98,6 +96,18 @@ extension MainView {
     // max는 주지 않는다 — 컬럼이 창을 채우지 못하면 윈도우 배경이 양옆에 드러난다.
     // 폼 폭 상한은 컬럼이 아니라 `SecretDetailView` 안의 `formMaxWidth()`가 담당한다.
     .navigationSplitViewColumnWidth(min: 420, ideal: 480)
+  }
+
+  private var lockButton: some View {
+    Button {
+      store.send(.didTapLock)
+    } label: {
+      Image(systemName: "lock")
+        .foregroundStyle(Color.dv(.vaultGreen))
+        .dvFont(.headingLG)
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(String.module("Lock App"))
   }
 }
 

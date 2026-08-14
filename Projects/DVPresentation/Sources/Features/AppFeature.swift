@@ -105,6 +105,11 @@ public struct AppFeature {
       case .locked:
         return .none
 
+      case .main(.delegate(.lockRequested)):
+        state.main = nil
+        state.locked = .init()
+        return .none
+
       case .main:
         return .none
 
