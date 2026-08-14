@@ -13,6 +13,8 @@ struct SecuritySettingsFeature {
   struct State: Equatable {
     var isRequireAuthOnLaunchEnabled = true
     var isRequireAuthToCopyEnabled = true
+    /// 0이면 "사용 안 함".
+    var autoLockMinutes = 5
   }
 
   // MARK: - Action
@@ -21,6 +23,7 @@ struct SecuritySettingsFeature {
     case task
     case didToggleRequireAuthOnLaunch(Bool)
     case didToggleRequireAuthToCopy(Bool)
+    case didSelectAutoLockMinutes(Int)
   }
 
   // MARK: - Dependencies
@@ -35,6 +38,7 @@ struct SecuritySettingsFeature {
       case .task:
         state.isRequireAuthOnLaunchEnabled = settingsClient.isRequireAuthOnLaunchEnabled()
         state.isRequireAuthToCopyEnabled = settingsClient.isRequireAuthToCopyEnabled()
+        state.autoLockMinutes = settingsClient.autoLockMinutes()
         return .none
 
       case .didToggleRequireAuthOnLaunch(let enabled):
@@ -44,6 +48,10 @@ struct SecuritySettingsFeature {
       case .didToggleRequireAuthToCopy(let enabled):
         state.isRequireAuthToCopyEnabled = enabled
         return .run { _ in settingsClient.setRequireAuthToCopyEnabled(enabled) }
+
+      case .didSelectAutoLockMinutes(let minutes):
+        state.autoLockMinutes = minutes
+        return .run { _ in settingsClient.setAutoLockMinutes(minutes) }
       }
     }
   }
