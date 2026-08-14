@@ -101,4 +101,19 @@ struct SecuritySettingsFeatureTests {
         }
         #expect(saved.value == 60)
     }
+
+    @Test("화면 녹화 중 값 숨김 토글을 저장한다")
+    func hideDuringScreenRecordingTogglePersists() async {
+        let saved = LockIsolated<Bool?>(nil)
+        let store = TestStore(initialState: SecuritySettingsFeature.State()) {
+            SecuritySettingsFeature()
+        } withDependencies: {
+            $0.settingsClient.setHideDuringScreenRecordingEnabled = { saved.setValue($0) }
+        }
+
+        await store.send(.didToggleHideDuringScreenRecording(false)) {
+            $0.isHideDuringScreenRecordingEnabled = false
+        }
+        #expect(saved.value == false)
+    }
 }

@@ -17,6 +17,7 @@ struct SecuritySettingsFeature {
     var autoLockMinutes = 5
     var isAutoClearClipboardEnabled = true
     var autoClearClipboardDelaySeconds = 30
+    var isHideDuringScreenRecordingEnabled = true
   }
 
   // MARK: - Action
@@ -28,6 +29,7 @@ struct SecuritySettingsFeature {
     case didSelectAutoLockMinutes(Int)
     case didToggleAutoClearClipboard(Bool)
     case didSelectAutoClearClipboardDelay(Int)
+    case didToggleHideDuringScreenRecording(Bool)
   }
 
   // MARK: - Dependencies
@@ -45,6 +47,7 @@ struct SecuritySettingsFeature {
         state.autoLockMinutes = settingsClient.autoLockMinutes()
         state.isAutoClearClipboardEnabled = settingsClient.isAutoClearClipboardEnabled()
         state.autoClearClipboardDelaySeconds = settingsClient.autoClearClipboardDelaySeconds()
+        state.isHideDuringScreenRecordingEnabled = settingsClient.isHideDuringScreenRecordingEnabled()
         return .none
 
       case .didToggleRequireAuthOnLaunch(let enabled):
@@ -66,6 +69,10 @@ struct SecuritySettingsFeature {
       case .didSelectAutoClearClipboardDelay(let seconds):
         state.autoClearClipboardDelaySeconds = seconds
         return .run { _ in settingsClient.setAutoClearClipboardDelaySeconds(seconds) }
+
+      case .didToggleHideDuringScreenRecording(let enabled):
+        state.isHideDuringScreenRecordingEnabled = enabled
+        return .run { _ in settingsClient.setHideDuringScreenRecordingEnabled(enabled) }
       }
     }
   }
