@@ -20,6 +20,8 @@ public struct MainFeature {
     var createSecret: CreateSecretFeature.State?
     /// sheet가 아닌 3-column NavigationSplitView detail 컬럼 용도이므로 @Presents 미사용
     var secretDetail: SecretDetailFeature.State?
+    /// 별도 Window가 아니라 콘텐츠 스위칭으로 처리하므로 @Presents 미사용
+    var settings: SettingsFeature.State?
 
     public init() {}
   }
@@ -42,6 +44,7 @@ public struct MainFeature {
     case createProject(PresentationAction<CreateProjectFeature.Action>)
     case createSecret(CreateSecretFeature.Action)
     case secretDetail(SecretDetailFeature.Action)
+    case settings(SettingsFeature.Action)
 
     // MARK: - Delegate
 
@@ -85,6 +88,13 @@ public struct MainFeature {
         return handleSidebarDelegate(&state, delegate: delegate)
 
       case .sidebar:
+        return .none
+
+      case .settings(.delegate(.closeRequested)):
+        state.settings = nil
+        return .none
+
+      case .settings:
         return .none
 
       case .secretList(.delegate(.secretSelected(let id))):
@@ -182,6 +192,9 @@ public struct MainFeature {
     .ifLet(\.secretDetail, action: \.secretDetail) {
       SecretDetailFeature()
     }
+    .ifLet(\.settings, action: \.settings) {
+      SettingsFeature()
+    }
   }
 }
 
@@ -213,6 +226,10 @@ extension MainFeature {
 
     case .addProjectTapped:
       state.createProject = .init()
+      return .none
+
+    case .settingsTapped:
+      state.settings = .init()
       return .none
 
     case .projectRenamed(let item):

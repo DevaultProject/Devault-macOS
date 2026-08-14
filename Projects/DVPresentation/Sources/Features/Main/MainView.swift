@@ -38,7 +38,9 @@ extension MainView {
     
   @ViewBuilder
   private var content: some View {
-    if store.createSecret != nil || store.selectSecretType != nil {
+    if let settingsStore = store.scope(state: \.settings, action: \.settings) {
+      SettingsView(store: settingsStore)
+    } else if store.createSecret != nil || store.selectSecretType != nil {
       // 사이드바 + 시크릿 생성 폼/타입 선택 그리드 (2컬럼)
       NavigationSplitView {
         sidebarColumn

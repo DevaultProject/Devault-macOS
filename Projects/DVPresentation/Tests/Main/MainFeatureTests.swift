@@ -563,4 +563,33 @@ struct MainFeatureTests {
     await store.send(.didTapLock)
     await store.receive(.delegate(.lockRequested))
   }
+
+  // MARK: - Settings
+
+  @Test("사이드바의 settingsTapped 델리게이트는 settings를 연다")
+  func settingsTappedOpensSettings() async {
+    let store = TestStore(initialState: MainFeature.State()) {
+      MainFeature()
+    }
+
+    await store.send(.sidebar(.didTapSettings))
+    await store.receive(.sidebar(.delegate(.settingsTapped))) {
+      $0.settings = .init()
+    }
+  }
+
+  @Test("settings의 closeRequested 델리게이트는 settings를 닫는다")
+  func settingsCloseRequestedClosesSettings() async {
+    var initial = MainFeature.State()
+    initial.settings = .init()
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    }
+
+    await store.send(.settings(.didTapClose))
+    await store.receive(.settings(.delegate(.closeRequested))) {
+      $0.settings = nil
+    }
+  }
 }

@@ -18,7 +18,6 @@ struct DevaultApp: App {
 
   var body: some Scene {
     mainWindow
-    settingsWindow
   }
 }
 
@@ -41,14 +40,5 @@ extension DevaultApp {
     }
     .windowStyle(.hiddenTitleBar)
     .defaultSize(width: 960, height: 700)
-  }
-
-  private var settingsWindow: some Scene {
-    WindowGroup("Settings", id: "settings") {
-      Text("Settings")
-        .frame(width: 500, height: 400)
-        .background(WindowCaptureBlocker())
-    }
-    .defaultSize(width: 500, height: 400)
   }
 }
