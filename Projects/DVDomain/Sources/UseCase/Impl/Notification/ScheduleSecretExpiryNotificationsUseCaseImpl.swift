@@ -8,7 +8,7 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
 
     /// 지금까지 설정 화면이 제공한 모든 가능한 옵션 — 설정이 바뀌어도 예전에 예약된 마크를
     /// 확실히 취소하기 위해 schedule()이 아니라 cancel()에서만 이 고정 목록을 쓴다.
-    private static let allPossibleDaysBeforeExpiry = [30, 7, 1, 0]
+    fileprivate static let allPossibleDaysBeforeExpiry = [30, 7, 1, 0]
 
     private let repository: any SecretRepository
     private let notificationService: any SecurityNotificationService
