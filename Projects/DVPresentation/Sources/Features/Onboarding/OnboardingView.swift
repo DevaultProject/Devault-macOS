@@ -4,7 +4,6 @@ import SwiftUI
 
 import ComposableArchitecture
 import DVDesign
-import Lottie
 
 // MARK: - OnboardingView
 
@@ -43,8 +42,8 @@ extension OnboardingView {
     switch store.step {
     case .welcome:    welcomeView
     case .security:   securityView
-    case .icloudSync: icloudSyncView
-    case .syncing:    syncingView
+    case .icloudSync:  icloudSyncView
+    case .syncEnabled: syncEnabledView
     }
   }
 
@@ -53,7 +52,7 @@ extension OnboardingView {
   private var welcomeView: some View {
     VStack(spacing: 40) {
       appIconWithLogoView
-      DVButton(titleText: "Start", style: .primary) {
+      DVButton(titleText: String.module("Start"), style: .primary) {
         store.send(.didTapStart)
       }
     }
@@ -63,12 +62,12 @@ extension OnboardingView {
 
   private var securityView: some View {
     VStack(spacing: 56) {
-      appIconWithTextView("Your secrets are protected with Touch ID")
+      appIconWithTextView(String.module("Your secrets are protected with Touch ID"))
       VStack(spacing: 12) {
-        DVButton(titleText: "Enable Touch ID", style: .primary) {
+        DVButton(titleText: String.module("Enable Touch ID"), style: .primary) {
           store.send(.didTapEnableTouchID)
         }
-        Text("If Touch ID is unavailable,\nsystem password will be used")
+        Text(.module("If Touch ID is unavailable,\nsystem password will be used"))
           .dvFont(.captionMDRegular)
           .foregroundStyle(Color.dv(.gray900))
           .multilineTextAlignment(.center)
@@ -80,35 +79,41 @@ extension OnboardingView {
 
   private var icloudSyncView: some View {
     VStack(spacing: 20) {
-      appIconWithTextView("Sync your secrets with iCloud?")
-      Text("Access your secrets on all your\nApple devices, securely encrypted.")
+      appIconWithTextView(String.module("Sync your secrets with iCloud?"))
+      Text(.module("Access your secrets on all your\nApple devices, securely encrypted."))
         .dvFont(.bodyMD)
         .foregroundStyle(Color.dv(.gray900))
         .multilineTextAlignment(.center)
         .padding(.bottom, 12)
-      HStack(spacing: 16) {
-        DVButton(titleText: "Not Now", style: .primarySmall) {
-          store.send(.didTapNotNow)
+      VStack(spacing: 10) {
+        HStack(spacing: 16) {
+          DVButton(titleText: String.module("Not Now"), style: .primarySmall) {
+            store.send(.didTapNotNow)
+          }
+          DVButton(titleText: String.module("Enable Sync"), style: .primarySmall) {
+            store.send(.didTapEnableSync)
+          }
         }
-        DVButton(titleText: "Enable Sync", style: .primarySmall) {
-          store.send(.didTapEnableSync)
-        }
+        .disabled(store.isEnablingSync)
+        Text(.module("You can change this anytime in Settings"))
+          .dvFont(.captionMDRegular)
+          .foregroundStyle(Color.dv(.gray600))
       }
     }
   }
 
-  // MARK: 1.3 Syncing
+  // MARK: 1.3 Sync Enabled
 
-  private var syncingView: some View {
-    VStack(spacing: 24) {
-      appIconWithTextView("Syncing...")
-      LottieView {
-        try await DotLottieFile.named("progress", bundle: DVDesignResources.bundle)
-      }
-      .playing(loopMode: .loop)
-      .frame(width: 124, height: 62)
-      Text("This may take a moment...")
-        .dvFont(.bodyMD)
+  private var syncEnabledView: some View {
+    VStack(spacing: 20) {
+      Image(systemName: "checkmark.circle.fill")
+        .resizable()
+        .scaledToFit()
+        .frame(width: 64)
+        .foregroundStyle(Color.dv(.vaultGreen))
+        .accessibilityHidden(true)
+      Text(.module("iCloud Sync Enabled!"))
+        .dvFont(.headingXL)
         .foregroundStyle(Color.dv(.gray900))
     }
   }
@@ -120,6 +125,7 @@ extension OnboardingView {
       .resizable()
       .scaledToFit()
       .frame(width: 80)
+      .accessibilityHidden(true)
   }
 
   private var appIconWithLogoView: some View {
@@ -177,10 +183,10 @@ extension OnboardingView {
   .frame(width: 540, height: 400)
 }
 
-#Preview("Syncing") {
+#Preview("Sync Enabled") {
   OnboardingView(
     store: Store(
-      initialState: OnboardingFeature.State(step: .syncing)
+      initialState: OnboardingFeature.State(step: .syncEnabled)
     ) {
       OnboardingFeature()
     }

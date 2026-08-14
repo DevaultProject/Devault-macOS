@@ -15,6 +15,9 @@ public struct OnboardingClient: Sendable {
 
     /// iCloud 계정 상태를 확인하고, 사용 가능하면 동기화 사용 설정을 저장한다.
     public var enableICloudSync: @Sendable () async -> ICloudAccountStatus = { .couldNotDetermine }
+
+    /// 시스템 설정 앱의 iCloud 패널을 연다. iCloud 계정 미로그인/제한 상태 알럿에서 사용.
+    public var openICloudSystemSettings: @Sendable () async -> Void
 }
 
 extension OnboardingClient: TestDependencyKey {
@@ -22,7 +25,8 @@ extension OnboardingClient: TestDependencyKey {
 
     public static let previewValue = OnboardingClient(
         enableTouchID: { },
-        enableICloudSync: { .available }
+        enableICloudSync: { .available },
+        openICloudSystemSettings: { }
     )
 }
 

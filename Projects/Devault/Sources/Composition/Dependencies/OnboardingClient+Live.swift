@@ -1,5 +1,7 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import AppKit
+
 import ComposableArchitecture
 import DVCore
 import DVPresentation
@@ -11,8 +13,9 @@ extension OnboardingClient: @retroactive DependencyKey {
     let accountService: any ICloudAccountService = CloudKitAccountServiceImpl(
       containerIdentifier: ICloudContainer.identifier
     )
-    let repository: any SettingsRepository = SettingsRepositoryImpl()
-    let iCloudSyncSettings: any ICloudSyncSettingsUseCase = ICloudSyncSettingsUseCaseImpl(repository: repository)
+    let iCloudSyncSettings: any ICloudSyncSettingsUseCase = ICloudSyncSettingsUseCaseImpl(
+      repository: LiveRepositories.settings
+    )
 
     return OnboardingClient(
       enableTouchID: {
@@ -24,6 +27,10 @@ extension OnboardingClient: @retroactive DependencyKey {
           iCloudSyncSettings.setEnabled(true)
         }
         return status
+      },
+      openICloudSystemSettings: {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preferences.AppleIDPrefPane?icloud") else { return }
+        NSWorkspace.shared.open(url)
       }
     )
   }()
