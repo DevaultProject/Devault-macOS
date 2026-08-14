@@ -38,6 +38,26 @@ struct SecuritySettingsView: View {
         }
         .padding(.vertical, 8)
       }
+
+      SettingsSection(title: String.module("Clipboard")) {
+        SettingsToggleRow(
+          title: String.module("Auto-clear clipboard"),
+          isOn: Binding(
+            get: { store.isAutoClearClipboardEnabled },
+            set: { store.send(.didToggleAutoClearClipboard($0)) }
+          )
+        )
+        if store.isAutoClearClipboardEnabled {
+          HStack {
+            Text(.module("Clear after"))
+              .dvFont(.bodyLG)
+              .foregroundStyle(Color.dv(.gray900))
+            Spacer()
+            autoClearClipboardDropdown
+          }
+          .padding(.vertical, 8)
+        }
+      }
     }
     .task { store.send(.task) }
   }
@@ -52,9 +72,24 @@ struct SecuritySettingsView: View {
     }
   }
 
+  private var autoClearClipboardDropdown: some View {
+    DVDropdown(Self.autoClearClipboardLabel(for: store.autoClearClipboardDelaySeconds)) {
+      ForEach(Self.autoClearClipboardOptions, id: \.self) { seconds in
+        Button(Self.autoClearClipboardLabel(for: seconds)) {
+          store.send(.didSelectAutoClearClipboardDelay(seconds))
+        }
+      }
+    }
+  }
+
   private static let autoLockOptions = [1, 3, 5, 15, 30, 0]
+  private static let autoClearClipboardOptions = [15, 30, 60, 300]
 
   private static func autoLockLabel(for minutes: Int) -> String {
     minutes == 0 ? String.module("Never") : String.module("\(minutes) min")
+  }
+
+  private static func autoClearClipboardLabel(for seconds: Int) -> String {
+    seconds < 60 ? String.module("\(seconds) sec") : String.module("\(seconds / 60) min")
   }
 }

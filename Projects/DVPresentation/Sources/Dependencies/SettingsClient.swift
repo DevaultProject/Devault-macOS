@@ -28,6 +28,12 @@ public struct SettingsClient: Sendable {
   /// 비활성 후 자동 잠금까지의 시간(분). 0이면 "사용 안 함".
   public var autoLockMinutes: @Sendable () -> Int = { 5 }
   public var setAutoLockMinutes: @Sendable (Int) -> Void
+
+  public var isAutoClearClipboardEnabled: @Sendable () -> Bool = { true }
+  public var setAutoClearClipboardEnabled: @Sendable (Bool) -> Void
+
+  public var autoClearClipboardDelaySeconds: @Sendable () -> Int = { 30 }
+  public var setAutoClearClipboardDelaySeconds: @Sendable (Int) -> Void
 }
 
 extension SettingsClient: TestDependencyKey {
@@ -43,7 +49,11 @@ extension SettingsClient: TestDependencyKey {
     isRequireAuthToCopyEnabled: { true },
     setRequireAuthToCopyEnabled: { _ in },
     autoLockMinutes: { 5 },
-    setAutoLockMinutes: { _ in }
+    setAutoLockMinutes: { _ in },
+    isAutoClearClipboardEnabled: { true },
+    setAutoClearClipboardEnabled: { _ in },
+    autoClearClipboardDelaySeconds: { 30 },
+    setAutoClearClipboardDelaySeconds: { _ in }
   )
 }
 

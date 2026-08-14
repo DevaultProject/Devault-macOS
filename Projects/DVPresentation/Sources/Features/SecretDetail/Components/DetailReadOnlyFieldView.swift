@@ -2,6 +2,7 @@
 
 import SwiftUI
 
+import ComposableArchitecture
 import DVDesign
 
 /// 조회 모드 전용 읽기 전용 필드 (`DVLabeledField` + 값 컨테이너).
@@ -145,8 +146,6 @@ extension DetailReadOnlyFieldView {
         .foregroundStyle(Color.dv(.gray900))
         .buttonStyle(.plain)
     }
-
-}
 
 // MARK: - Preview
 
