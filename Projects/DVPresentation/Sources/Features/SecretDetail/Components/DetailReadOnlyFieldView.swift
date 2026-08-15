@@ -1,6 +1,5 @@
 // Copyright © 2026 Devault. All rights reserved
 
-import AppKit
 import SwiftUI
 
 import DVDesign
@@ -20,65 +19,67 @@ import DVDesign
 /// 생성 화면의 `LabeledTextFieldView`(`DVLabeledField` + `DVTextField`)에 1:1 대응하는
 /// read-only 컴포넌트다.
 ///
-/// ## 한 줄 / 여러 줄 전환
+/// ## 여러 줄 표시
 ///
-/// 값에 개행이 있으면 `DVMultilineTextContainer`, 없으면 `DVTextContainer`로 렌더한다.
-/// 조회 화면은 값을 확인할 유일한 수단이라 개행이 있는 값(PEM, JSON, `KEY=value` 목록)을
-/// 한 줄 컨테이너에 넣으면 첫 줄 말고는 볼 방법이 없다.
+/// 컨테이너를 갈아끼우지 않는다. `DVTextContainer` 하나가 줄바꿈하며 내용만큼 자라므로,
+/// 개행이 있는 값(PEM, JSON, `KEY=value` 목록)도 긴 한 줄 값(연결 문자열, public key)도
+/// 잘리거나 가로 스크롤 없이 전부 보인다.
 ///
-/// 판정은 호출부 플래그가 아니라 **값 자체**로 한다 — 같은 필드라도 데이터에 따라 한 줄일 수도
-/// 여러 줄일 수도 있다(한 줄로 저장된 `certificateChain`, 항목이 하나인 envSet 등).
+/// 값으로 컨테이너를 판정하던 방식을 버린 이유는 두 가지다. 조회 화면은 값을 확인할 유일한
+/// 수단이라 어느 쪽이든 다 보여야 하고, 민감 필드는 복호화 전에 값이 없어 판정 자체가 불가능하다
+/// (마스킹 상태에서 한 줄로 그렸다가 reveal 후 여러 줄로 바뀌면 높이가 튄다).
 ///
-/// ## 빈 값
+/// ## 빈 값 — 출처에 따라 갈린다
 ///
-/// 값이 비어 있으면 `isSensitive`·`isCopyable`을 **무시하고** 액세서리 없는 일반 컨테이너로 그린다.
-/// 가릴 것도 복사할 것도 없어 두 버튼 모두 눌러도 아무 일이 일어나지 않기 때문이다.
+/// **민감 필드(`isSensitive`)는 빈 값 예외가 없다.** 값이 payload에 암호화돼 있어 복호화 전에는
+/// 값도 길이도 알 수 없고, 따라서 비었는지 판단할 수 없다. 항상 마스킹하고 두 버튼을 모두 노출한다.
+/// 마스킹이 값의 **존재 여부까지** 가리는 셈이라 보장이 더 강하다.
 ///
-/// Optional 필드가 미입력이면 흔히 발생한다 — 생성 화면은 `passphrase`·`renewCommand` 같은 값이
+/// **평문 필드는 빈 값이면** `isCopyable`을 무시하고 액세서리 없는 일반 컨테이너로 그린다.
+/// metadata·secret에서 오는 값이라 그릴 때 이미 알고 있고, 빈 문자열을 클립보드에 쓰는 버튼은
+/// 의미가 없다. Optional 필드가 미입력이면 흔히 발생한다 — 생성 화면은 `renewCommand` 같은 값이
 /// 비면 metadata 자체를 저장하지 않으므로 조회에서 빈 문자열로 들어온다.
+///
+/// ## 인증·복호화는 이 컴포넌트가 하지 않는다
+///
+/// 눈·복사 버튼은 **액션을 주입받는다**. 마스킹 해제에는 인증이 필요하고, 값 자체가 복호화되어야
+/// 하며, 복사는 30초 자동 정리·반복 감지 정책을 타야 한다 — 전부 Feature가 UseCase로 수행할 일이다.
+/// `isRevealed`도 로컬 State가 아니라 주입받는다. 복호화가 payload 단위라 필드 하나의 사정으로
+/// 결정할 수 없기 때문이다.
 struct DetailReadOnlyFieldView: View {
 
     let label: String
+    /// 복호화 전에는 빈 문자열이 들어온다. 마스킹 중에는 화면에 쓰이지 않는다.
     let value: String
-    /// 기본 마스킹 + 눈 토글. 값 변경이 아니라 표시 전환만 한다.
-    /// 값이 비어 있으면 무시된다 (아래 "빈 값" 규칙).
+    /// 마스킹 + 눈 토글 노출. 빈 값이어도 유지된다 (위 "빈 값" 규칙).
     var isSensitive: Bool = false
-    /// 복사 버튼 노출. 클립보드 쓰기는 이 컴포넌트가 수행한다.
-    /// 값이 비어 있으면 무시된다 (아래 "빈 값" 규칙).
+    /// 복사 버튼 노출. 평문 필드에서만 빈 값일 때 무시된다.
     var isCopyable: Bool = false
+    /// 마스킹 해제 여부. 인증·복호화를 Feature가 관장하므로 주입받는다.
+    var isRevealed: Bool = false
     var sizeMode: FormSlotSize = .fullWidth
+    /// 눈 버튼 탭. 인증과 복호화는 호출부가 수행한다.
+    var onToggleReveal: (() -> Void)?
+    /// 복사 버튼 탭. 클립보드 쓰기와 자동 정리는 호출부가 UseCase로 수행한다.
+    var onCopy: (() -> Void)?
 
     @Environment(\.formLayout) private var layout
-
-    /// 마스킹 해제 여부. 로컬 표시 상태이므로 Feature State로 끌어올리지 않는다.
-    @State private var isRevealed = false
 
     private var size: DVComponentSize {
         layout.size(for: sizeMode)
     }
 
-    /// `DVTextContainer(secured:isRevealed:size:)`의 `•` 반복 규칙을 **줄 단위로** 적용한 마스킹 값.
-    ///
-    /// 한 줄 값이면 결과가 그 규칙과 완전히 같다. 여러 줄 값은 전체를 하나의 `•` 덩어리로 만들지 않고
-    /// 줄 구조를 유지한다 — 사용자가 마스킹 상태에서도 "3줄짜리 envSet"과 "30줄짜리 PEM"을 구분해
-    /// 필드가 제대로 채워졌는지 확인할 수 있어야 하기 때문이다. 원문 길이는 한 줄 규칙에서도
-    /// `•` 개수로 이미 드러나므로 줄 수 노출이 새로 만드는 유출은 아니다.
-    ///
-    /// 마스킹 전후로 줄 수가 같아 눈 토글 시 스크롤 위치와 박스 안 내용량이 튀지 않는 이점도 있다.
-    private var maskedValue: String {
-        value
-            .split(separator: "\n", omittingEmptySubsequences: false)
-            .map { String(repeating: "•", count: $0.count) }
-            .joined(separator: "\n")
+    /// 마스킹 표시. **길이를 원문에서 끌어오지 않는다** — 복호화 전에는 알 수 없고, reveal 뒤에
+    /// 실제 길이로 바뀌면 마스킹이 값의 크기를 흘린다. 항상 같은 개수라 유출 경로가 없다.
+    private static let maskedPlaceholder = String(repeating: "•", count: 12)
+
+    /// 복사 버튼 노출. 민감 필드는 복호화 전이라 비었는지 알 수 없어 빈 값 예외를 적용할 수 없다.
+    private var showsCopyButton: Bool {
+        isCopyable && (isSensitive || !value.isEmpty)
     }
 
-    /// 빈 값에는 복사 버튼을 달지 않는다 — 빈 문자열을 클립보드에 쓰는 버튼은 의미가 없다.
-    private var showsCopyButton: Bool { isCopyable && !value.isEmpty }
-
-    /// 빈 값에는 눈 토글도 달지 않는다 — 가릴 것이 없어 눌러도 아무 일이 일어나지 않는다.
-    /// `isSensitive`를 그대로 쓰면 빈 필드에 동작하지 않는 버튼만 남고, 액세서리가 있다고
-    /// 판정돼 컨테이너 우측 padding이 4pt로 줄어 텍스트 정렬까지 틀어진다.
-    private var showsRevealToggle: Bool { isSensitive && !value.isEmpty }
+    /// 눈 토글 노출. 민감 필드면 항상 — 가려진 값이 비어 있는지도 알려주지 않는다.
+    private var showsRevealToggle: Bool { isSensitive }
 
     var body: some View {
         DVLabeledField(label, size: size) {
@@ -91,45 +92,22 @@ struct DetailReadOnlyFieldView: View {
 
 extension DetailReadOnlyFieldView {
 
-    /// 값에 개행이 있는지. 여러 줄 컨테이너로 전환하는 유일한 판정 지점이다.
-    private var isMultiline: Bool { value.contains("\n") }
-
     /// 액세서리가 하나라도 붙는지. 하나도 없으면 좌우 대칭 padding을 주는 편의 init을 써야 한다 —
     /// 빈 액세서리 뷰를 넘기면 컨테이너가 우측 padding을 4pt로 줄여 텍스트가 한쪽으로 치우친다.
     private var hasAccessories: Bool { showsRevealToggle || showsCopyButton }
 
-    /// 화면에 그릴 문자열. 마스킹 중이면 `•`, 아니면 원문. 클립보드에는 이 값을 쓰지 않는다.
+    /// 화면에 그릴 문자열. 마스킹 중이면 고정 placeholder, 아니면 원문.
+    /// 복사는 이 값을 쓰지 않는다 — 호출부가 원문을 클립보드에 넣는다.
     private var displayedValue: String {
-        showsRevealToggle && !isRevealed ? maskedValue : value
+        isSensitive && !isRevealed ? Self.maskedPlaceholder : value
     }
 
     @ViewBuilder
     private var valueContainer: some View {
         if hasAccessories {
-            container(displayedValue) { accessoryButtons }
+            DVTextContainer(displayedValue, size: size) { accessoryButtons }
         } else {
-            container(displayedValue)
-        }
-    }
-
-    @ViewBuilder
-    private func container<Accessories: View>(
-        _ text: String,
-        @ViewBuilder accessories: @escaping () -> Accessories
-    ) -> some View {
-        if isMultiline {
-            DVMultilineTextContainer(text, size: size, accessories: accessories)
-        } else {
-            DVTextContainer(text, size: size, accessories: accessories)
-        }
-    }
-
-    @ViewBuilder
-    private func container(_ text: String) -> some View {
-        if isMultiline {
-            DVMultilineTextContainer(text, size: size)
-        } else {
-            DVTextContainer(text, size: size)
+            DVTextContainer(displayedValue, size: size)
         }
     }
 
@@ -139,13 +117,15 @@ extension DetailReadOnlyFieldView {
     private var accessoryButtons: some View {
         HStack(spacing: 10) {
             if showsCopyButton {
-                Button(action: copyValue) {
+                Button {
+                    onCopy?()
+                } label: {
                     Image(systemName: "doc.on.doc")
                 }
             }
             if showsRevealToggle {
                 Button {
-                    isRevealed.toggle()
+                    onToggleReveal?()
                 } label: {
                     Image(systemName: isRevealed ? "eye.slash" : "eye")
                 }
@@ -156,11 +136,6 @@ extension DetailReadOnlyFieldView {
         .buttonStyle(.plain)
     }
 
-    /// 마스킹 상태와 무관하게 항상 원문 전체를 넣는다.
-    private func copyValue() {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(value, forType: .string)
-    }
 }
 
 // MARK: - Preview
@@ -221,13 +196,26 @@ extension DetailReadOnlyFieldView {
     .previewWidth(.narrow)
 }
 
-/// 빈 값이면 두 플래그가 모두 무시되어 액세서리 없는 일반 컨테이너가 된다.
-/// 눈·복사 버튼이 하나도 보이지 않아야 하고, 텍스트 좌우 padding이 대칭이어야 한다.
-#Preview("Sensitive + Copyable · 빈 값") {
+/// 민감 필드는 빈 값이어도 마스킹과 두 버튼을 유지한다 — 복호화 전이라 비었는지 알 수 없다.
+/// 복호화 전 상태(`value: ""`, `isRevealed: false`)가 조회 화면 진입 직후의 모습이다.
+#Preview("Sensitive · 복호화 전") {
     DetailReadOnlyFieldView(
         label: .module("PassPhrase"),
         value: "",
         isSensitive: true,
+        isCopyable: true
+    )
+    .padding()
+    .formLayout(.detailFluid)
+    .previewWidth(.narrow)
+}
+
+/// 평문 필드는 빈 값이면 액세서리 없이 일반 컨테이너가 된다.
+/// 버튼이 하나도 보이지 않아야 하고 텍스트 좌우 padding이 대칭이어야 한다.
+#Preview("Plain · 빈 값") {
+    DetailReadOnlyFieldView(
+        label: .module("Renew Command"),
+        value: "",
         isCopyable: true
     )
     .padding()
