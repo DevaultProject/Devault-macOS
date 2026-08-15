@@ -2,17 +2,6 @@
 
 import SwiftUI
 
-/// 폼 필드 래퍼 — Label + `(*)` 필수 표시 + 입력 슬롯 + 우측 hint.
-///
-/// 입력 컨트롤은 caller가 `@ViewBuilder`로 자유롭게 지정. 우측 hint는
-/// 감지 결과(초록, ``TrailingHint/detected(_:)``) 또는 validation 경고(빨강,
-/// ``TrailingHint/warning(_:)``)를 표시합니다.
-///
-/// 내부 입력 뷰와 ``DVComponentSize``를 일치시켜야 라벨 로우가 정렬됩니다.
-///
-/// > TODO(size-env): 현재는 caller가 wrapper와 내부 input에 동일한 `size`를
-/// > 각각 전달해야 함. 향후 `EnvironmentValues.dvComponentSize`를 도입해
-/// > wrapper가 자식에게 자동 전파하는 방식으로 개선 여지 있음.
 /// 라벨 로우 우측에 표시되는 힌트.
 ///
 /// `Content`와 무관한 값이라 ``DVLabeledField`` 밖에 둔다. 제네릭 안에 중첩하면
@@ -26,6 +15,17 @@ public enum DVFieldTrailingHint: Equatable {
     case warning(String)
 }
 
+/// 폼 필드 래퍼 — Label + `(*)` 필수 표시 + 입력 슬롯 + 우측 hint.
+///
+/// 입력 컨트롤은 caller가 `@ViewBuilder`로 자유롭게 지정. 우측 hint는
+/// 감지 결과(초록, ``TrailingHint/detected(_:)``) 또는 validation 경고(빨강,
+/// ``TrailingHint/warning(_:)``)를 표시합니다.
+///
+/// 내부 입력 뷰와 ``DVComponentSize``를 일치시켜야 라벨 로우가 정렬됩니다.
+///
+/// > TODO(size-env): 현재는 caller가 wrapper와 내부 input에 동일한 `size`를
+/// > 각각 전달해야 함. 향후 `EnvironmentValues.dvComponentSize`를 도입해
+/// > wrapper가 자식에게 자동 전파하는 방식으로 개선 여지 있음.
 public struct DVLabeledField<Content: View>: View {
 
     // MARK: - Types

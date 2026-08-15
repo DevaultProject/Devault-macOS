@@ -3,7 +3,7 @@
 import SwiftUI
 
 /// CreateSecret 폼의 Memo 필드 (모든 secretType 공통, optional).
-/// `SecretMetaFields.memo`에 바인딩. Figma 실측상 단일 라인 텍스트 필드 (28pt).
+/// `SecretMetaFields.memo`에 바인딩. Figma 실측상 단일 라인 텍스트 필드 (32pt).
 struct MemoFieldView: View {
 
     @Binding var memo: String
