@@ -58,19 +58,8 @@ struct SecretMetaFields: Equatable {
     // MARK: - Field identity
 
     /// 도메인 매핑 실패 시 어느 필드를 지목할지 식별하는 식별자. 검증 대상 필드만 포함.
-    enum FieldID: Hashable {
-        case name
-        case value
-        case clientId
-        case clientSecret
-        case credentialJSON
-        case linkString
-        case privateKey
-        case certificate
-        case sslPrivateKey
-        case envContent
-        case licenseKey
-    }
+    /// ``SecretFieldID``의 별칭. 기존 `SecretMetaFields.FieldID` 표기를 유지한다.
+    typealias FieldID = SecretFieldID
 
     // MARK: - Detection helpers
 
