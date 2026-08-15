@@ -45,13 +45,23 @@ extension View {
     /// - Parameters:
     ///   - size: 폭 토큰. `.fixed`에서는 고정 폭, `.fill`에서는 최소 폭으로 쓰입니다.
     ///   - height: 고정 높이. `nil`이면 높이를 제약하지 않습니다.
+    ///   - minHeight: 최소 높이. 내용이 많으면 그만큼 **자랍니다**. `height`와 함께 쓰지 않습니다 —
+    ///     한쪽은 높이를 묶고 다른 쪽은 풀어주므로 의도가 상충합니다.
     ///   - alignment: 프레임 내 콘텐츠 정렬.
     public func dvComponentWidth(
         _ size: DVComponentSize,
         height: CGFloat? = nil,
+        minHeight: CGFloat? = nil,
         alignment: Alignment = .center
     ) -> some View {
-        modifier(DVComponentWidthModifier(size: size, height: height, alignment: alignment))
+        modifier(
+            DVComponentWidthModifier(
+                size: size,
+                height: height,
+                minHeight: minHeight,
+                alignment: alignment
+            )
+        )
     }
 }
 
@@ -63,13 +73,20 @@ private struct DVComponentWidthModifier: ViewModifier {
 
     let size: DVComponentSize
     let height: CGFloat?
+    let minHeight: CGFloat?
     let alignment: Alignment
 
     func body(content: Content) -> some View {
         switch policy {
         case .fixed:
+            // minHeight만 준 경우 maxHeight를 열어둬야 내용만큼 자란다.
             content
-                .frame(width: size.width, height: height, alignment: alignment)
+                .frame(
+                    width: size.width,
+                    height: height,
+                    alignment: alignment
+                )
+                .frame(minHeight: minHeight, alignment: alignment)
         case .fill:
             // minWidth == 토큰 폭으로 하한을 지키고, maxWidth로 컨테이너를 채운다.
             // 고정 높이는 min/max를 같은 값으로 줘서 표현한다 —
@@ -78,7 +95,7 @@ private struct DVComponentWidthModifier: ViewModifier {
                 .frame(
                     minWidth: size.width,
                     maxWidth: .infinity,
-                    minHeight: height,
+                    minHeight: minHeight ?? height,
                     maxHeight: height,
                     alignment: alignment
                 )
