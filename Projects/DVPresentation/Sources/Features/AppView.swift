@@ -44,6 +44,8 @@ extension AppView {
 
 // MARK: - Preview
 
+#if DEBUG
+
 #Preview {
   AppView(
     store: Store(initialState: AppFeature.State()) {
@@ -54,3 +56,5 @@ extension AppView {
     }
   )
 }
+
+#endif

@@ -146,6 +146,8 @@ extension OnboardingView {
 
 // MARK: - Preview
 
+#if DEBUG
+
 #Preview("Welcome") {
   OnboardingView(
     store: Store(initialState: OnboardingFeature.State()) {
@@ -187,3 +189,5 @@ extension OnboardingView {
   )
   .frame(width: 540, height: 400)
 }
+
+#endif

@@ -103,6 +103,8 @@ extension MainView {
 
 // MARK: - Preview
 
+#if DEBUG
+
 #Preview {
   MainView(
     store: Store(initialState: MainFeature.State()) {
@@ -110,3 +112,5 @@ extension MainView {
     }
   )
 }
+
+#endif

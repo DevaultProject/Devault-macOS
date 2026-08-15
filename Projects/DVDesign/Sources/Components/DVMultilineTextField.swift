@@ -165,6 +165,8 @@ extension DVMultilineTextField {
 
 // MARK: - Previews
 
+#if DEBUG
+
 #Preview("Empty (Placeholder)") {
     DVMultilineTextFieldEmptyPreview()
         .padding()
@@ -250,3 +252,5 @@ private struct DVMultilineTextFieldSizesPreview: View {
         }
     }
 }
+
+#endif

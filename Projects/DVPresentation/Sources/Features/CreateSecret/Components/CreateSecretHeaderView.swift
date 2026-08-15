@@ -48,6 +48,8 @@ struct CreateSecretHeaderView: View {
 
 // MARK: - Preview
 
+#if DEBUG
+
 #Preview("API Keys/Token · 3 subs") {
     CreateSecretHeaderView(
         secretType: .apiKeyToken,
@@ -98,3 +100,5 @@ private struct InteractiveCreateSecretHeaderPreview: View {
         )
     }
 }
+
+#endif

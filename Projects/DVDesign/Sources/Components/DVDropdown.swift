@@ -85,6 +85,8 @@ extension DVDropdown {
 
 // MARK: - Previews
 
+#if DEBUG
+
 #Preview("Placeholder") {
     DVDropdownPlaceholderPreview()
         .padding()
@@ -136,3 +138,5 @@ private struct DVDropdownSizesPreview: View {
         }
     }
 }
+
+#endif

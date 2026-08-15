@@ -55,6 +55,8 @@ extension OnboardingContainerView {
 
 // MARK: - Preview
 
+#if DEBUG
+
 #Preview("Onboarding Flow") {
   OnboardingContainerView(
     store: Store(initialState: OnboardingContainerFeature.State()) {
@@ -64,3 +66,4 @@ extension OnboardingContainerView {
   .frame(width: 540, height: 400)
 }
 
+#endif

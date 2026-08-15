@@ -48,6 +48,8 @@ public struct DVChip: View {
 
 // MARK: - Previews
 
+#if DEBUG
+
 #Preview("Chip") {
     HStack(spacing: 10) {
         DVChip("GitHub")
@@ -56,3 +58,5 @@ public struct DVChip: View {
     }
     .padding()
 }
+
+#endif

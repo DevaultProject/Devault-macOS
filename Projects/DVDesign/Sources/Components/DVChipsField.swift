@@ -90,6 +90,8 @@ extension DVChipsField {
 
 // MARK: - Previews
 
+#if DEBUG
+
 #Preview("Empty") {
     DVChipsFieldEmptyPreview()
         .padding()
@@ -142,3 +144,5 @@ private struct DVChipsFieldSizesPreview: View {
         }
     }
 }
+
+#endif
