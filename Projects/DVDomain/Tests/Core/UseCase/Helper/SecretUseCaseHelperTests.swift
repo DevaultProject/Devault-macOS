@@ -79,6 +79,87 @@ struct SecretUseCaseHelperTests {
         }
     }
 
+    // MARK: - normalizedPatch
+
+    @Test("normalizedPatch는 set된 이름의 앞뒤 공백을 제거하고 나머지 필드는 그대로 둔다")
+    func normalizedPatchTrimsName() throws {
+        let patch = SecretPatch(
+            name: .set("  Hello  "),
+            service: .set("GitHub"),
+            memo: .set("note"),
+            liked: .set(true)
+        )
+
+        let normalized = try SecretUseCaseHelper.normalizedPatch(patch)
+
+        #expect(normalized.name == .set("Hello"))
+        #expect(normalized.service == .set("GitHub"))
+        #expect(normalized.memo == .set("note"))
+        #expect(normalized.liked == .set(true))
+    }
+
+    @Test("normalizedPatch는 이름이 unchanged면 건드리지 않는다")
+    func normalizedPatchKeepsUnchangedName() throws {
+        let normalized = try SecretUseCaseHelper.normalizedPatch(SecretPatch(liked: .set(true)))
+
+        #expect(normalized.name == .unchanged)
+    }
+
+    @Test("normalizedPatch는 expiresAt의 날짜는 유지한 채 시:분:초를 23:59:59로 고정한다")
+    func normalizedPatchAnchorsExpiresAtToEndOfDay() throws {
+        let pickedDate = DateComponents(
+            calendar: .current, year: 2026, month: 8, day: 14, hour: 9, minute: 0, second: 0
+        ).date!
+
+        let normalized = try SecretUseCaseHelper.normalizedPatch(
+            SecretPatch(expiresAt: .set(pickedDate))
+        )
+
+        guard case .set(let anchored?) = normalized.expiresAt else {
+            Issue.record("expiresAt이 set이어야 한다")
+            return
+        }
+        let components = Calendar.current.dateComponents(
+            [.year, .month, .day, .hour, .minute, .second], from: anchored
+        )
+        #expect(components.year == 2026)
+        #expect(components.month == 8)
+        #expect(components.day == 14)
+        #expect(components.hour == 23)
+        #expect(components.minute == 59)
+        #expect(components.second == 59)
+    }
+
+    @Test("normalizedPatch는 만료일 삭제 요청(.set(nil))을 그대로 전달한다")
+    func normalizedPatchKeepsExpiresAtClearRequest() throws {
+        let normalized = try SecretUseCaseHelper.normalizedPatch(
+            SecretPatch(expiresAt: .set(nil))
+        )
+
+        #expect(normalized.expiresAt == .set(nil))
+    }
+
+    @Test("normalizedPatch는 expiresAt이 unchanged면 건드리지 않는다")
+    func normalizedPatchKeepsUnchangedExpiresAt() throws {
+        let normalized = try SecretUseCaseHelper.normalizedPatch(SecretPatch(liked: .set(true)))
+
+        #expect(normalized.expiresAt == .unchanged)
+    }
+
+    @Test("normalizedPatch는 빈 이름을 invalidName으로 거부한다")
+    func normalizedPatchRejectsEmptyName() {
+        #expect(throws: SecretUseCaseError.invalidName) {
+            _ = try SecretUseCaseHelper.normalizedPatch(SecretPatch(name: .set("")))
+        }
+    }
+
+    @Test("normalizedPatch는 공백만 있는 이름을 invalidName으로 거부한다")
+    func normalizedPatchRejectsWhitespaceName() {
+        #expect(throws: SecretUseCaseError.invalidName) {
+            _ = try SecretUseCaseHelper.normalizedPatch(SecretPatch(name: .set("  \n\t ")))
+        }
+    }
+
     // MARK: - settingUpdatedAtIfNeeded
 
     @Test("updatedAt이 unchanged면 주입 시각으로 채운다")

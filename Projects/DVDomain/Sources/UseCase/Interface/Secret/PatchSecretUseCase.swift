@@ -2,6 +2,12 @@
 
 import Foundation
 
+/// 이미 저장된 Secret의 일부를 변경합니다.
+///
+/// 네 overload 모두 `patch`를 저장 전에 정규화합니다 — `name`은 앞뒤 공백이 제거되고(공백만 남으면
+/// ``SecretUseCaseError/invalidName``), `expiresAt`은 그 날의 23:59:59로 고정됩니다. 생성 경로가
+/// 적용하는 규칙과 같습니다. `.unchanged`인 필드는 건드리지 않고, `expiresAt`의 `.set(nil)`은
+/// 만료일을 지우는 요청이므로 그대로 전달됩니다.
 public protocol PatchSecretUseCase: Sendable {
     /// payload·metadata 변경 없이 일반 필드와 Project 연결만 수정한다.
     /// payload 복호화가 발생하지 않으므로 생체인증 없이 호출 가능하다.
