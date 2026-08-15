@@ -72,10 +72,11 @@ struct DetailSSLTLSCertSectionView: View {
         DetailSSLTLSCertSectionView(
             secret: [Secret].previewSubTypeMatrix[7],
             linkedProjects: [Project].preview,
+            // 인증서·개인키 형태의 문자열은 쓰지 않는다 — 가짜여도 시크릿 스캐너가 매번 탐지 결과를 올린다.
             payload: SSLCertPayload(
-                certificate: "-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIE\n-----END CERTIFICATE-----",
-                privateKey: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG\n-----END PRIVATE KEY-----",
-                certificateChain: "-----BEGIN CERTIFICATE-----\nintermediate\n-----END CERTIFICATE-----"
+                certificate: "PREVIEW PLACEHOLDER — 실제 인증서가 아니다\n두 번째 줄",
+                privateKey: "PREVIEW PLACEHOLDER — 실제 키가 아니다\n두 번째 줄",
+                certificateChain: "PREVIEW PLACEHOLDER — 실제 체인이 아니다"
             ),
             metadata: SSLCertMetadata(renewCommand: "certbot renew --cert-name devault.app")
         )
