@@ -185,6 +185,8 @@ extension DVRadioButtonGroup {
     }
 }
 
+#if DEBUG
+
 #Preview("XS (spacing 8)") {
     DVRadioButtonGroupPreview(size: .xs)
         .padding(24)
@@ -216,3 +218,5 @@ private struct DVRadioButtonGroupPreview: View {
         )
     }
 }
+
+#endif

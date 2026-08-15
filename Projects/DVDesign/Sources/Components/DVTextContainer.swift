@@ -343,6 +343,8 @@ extension DVTextContainer where Accessories == AnyView {
 
 // MARK: - Previews
 
+#if DEBUG
+
 #Preview("Filled") {
     DVTextContainer("DeVault", size: .md)
         .padding()
@@ -443,3 +445,5 @@ private struct DVTextContainerCopyablePreview: View {
         }
     }
 }
+
+#endif

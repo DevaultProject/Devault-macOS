@@ -315,6 +315,8 @@ private enum ExpiryBucket: CaseIterable, Identifiable {
 
 // MARK: - Preview
 
+#if DEBUG
+
 #Preview("All - 정렬 있음") {
   SecretListView(
     store: Store(initialState: SecretListFeature.State(collection: .all)) {
@@ -363,3 +365,5 @@ private enum ExpiryBucket: CaseIterable, Identifiable {
   )
   .frame(width: 300, height: 500)
 }
+
+#endif

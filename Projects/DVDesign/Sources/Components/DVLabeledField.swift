@@ -119,6 +119,8 @@ extension DVLabeledField {
 
 // MARK: - Previews
 
+#if DEBUG
+
 #Preview("Basic (no hint)") {
     DVLabeledFieldBasicPreview()
         .padding()
@@ -199,3 +201,5 @@ private struct DVLabeledFieldSizesPreview: View {
         }
     }
 }
+
+#endif

@@ -77,6 +77,8 @@ public struct DVChipsContainer: View {
 
 // MARK: - Previews
 
+#if DEBUG
+
 #Preview("단일") {
     DVChipsContainer(["Backend"], size: .md)
         .padding()
@@ -104,3 +106,5 @@ public struct DVChipsContainer: View {
     }
     .padding()
 }
+
+#endif

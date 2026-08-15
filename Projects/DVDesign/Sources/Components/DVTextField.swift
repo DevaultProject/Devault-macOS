@@ -114,6 +114,8 @@ extension DVTextField {
 
 // MARK: - Previews
 
+#if DEBUG
+
 #Preview("Placeholder (Empty)") {
     DVTextFieldPlaceholderPreview()
         .padding()
@@ -175,3 +177,5 @@ private struct DVTextFieldSecurePreview: View {
         }
     }
 }
+
+#endif

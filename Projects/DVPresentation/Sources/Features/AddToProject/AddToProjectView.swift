@@ -139,6 +139,8 @@ extension AddToProjectView {
 
 // MARK: - Preview
 
+#if DEBUG
+
 #Preview {
   AddToProjectView(
     store: Store(initialState: AddToProjectFeature.State(secretID: UUID())) {
@@ -148,3 +150,5 @@ extension AddToProjectView {
     }
   )
 }
+
+#endif

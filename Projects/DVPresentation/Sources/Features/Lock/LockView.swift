@@ -63,6 +63,8 @@ extension LockView {
 
 // MARK: - Preview
 
+#if DEBUG
+
 #Preview {
   LockView(
     store: Store(initialState: LockFeature.State()) {
@@ -71,3 +73,5 @@ extension LockView {
   )
   .frame(width: 540, height: 400)
 }
+
+#endif

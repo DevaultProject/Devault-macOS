@@ -51,6 +51,8 @@ extension SelectSecretTypeView {
 
 // MARK: - Preview
 
+#if DEBUG
+
 #Preview("Grid") {
     SelectSecretTypeView(
         store: Store(initialState: SelectSecretTypeFeature.State()) {
@@ -113,3 +115,5 @@ private struct InteractiveSelectSecretTypePreview: View {
         }
     }
 }
+
+#endif

@@ -202,6 +202,8 @@ extension DVRadioButton where Label == Text {
     }
 }
 
+#if DEBUG
+
 #Preview("Default") {
     DVRadioButton("Dev", isSelected: false, action: {})
         .padding()
@@ -235,3 +237,5 @@ private struct DVRadioButtonInteractivePreview: View {
         }
     }
 }
+
+#endif

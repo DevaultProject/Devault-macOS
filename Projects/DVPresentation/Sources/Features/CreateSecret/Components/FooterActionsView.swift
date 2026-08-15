@@ -35,6 +35,8 @@ extension FooterActionsView {
 
 // MARK: - Preview
 
+#if DEBUG
+
 #Preview("Disabled · Medium") {
     FooterActionsView(isSaveEnabled: false, onCancel: {}, onSave: {})
         .previewWidth(.medium)
@@ -54,3 +56,5 @@ extension FooterActionsView {
     FooterActionsView(isSaveEnabled: true, onCancel: {}, onSave: {})
         .previewWidth(.wide)
 }
+
+#endif

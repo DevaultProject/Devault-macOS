@@ -251,6 +251,8 @@ private extension SidebarFilter {
 
 // MARK: - Preview
 
+#if DEBUG
+
 #Preview {
   Group {
     SidebarView(
@@ -275,3 +277,5 @@ private extension SidebarFilter {
     .frame(width: 270)
   }
 }
+
+#endif

@@ -68,6 +68,8 @@ extension CreateProjectView {
 
 // MARK: - Preview
 
+#if DEBUG
+
 #Preview {
   CreateProjectView(
     store: Store(initialState: CreateProjectFeature.State()) {
@@ -77,3 +79,5 @@ extension CreateProjectView {
     }
   )
 }
+
+#endif
