@@ -23,7 +23,7 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
         projectIDs: PatchField<[UUID]>
     ) async throws -> Secret {
         do {
-            var fullPatch = patch
+            var fullPatch = try SecretUseCaseHelper.normalizedPatch(patch)
             fullPatch = SecretUseCaseHelper.settingUpdatedAtIfNeeded(fullPatch, now: dateProvider())
             return try await applyPatch(id: id, patch: fullPatch, projectIDs: projectIDs)
         } catch {
@@ -38,8 +38,9 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
         projectIDs: PatchField<[UUID]>
     ) async throws -> Secret {
         do {
+            // 정규화를 인코딩·암호화보다 먼저 한다 — 거부될 patch에 크립토 작업을 들일 이유가 없다.
+            var fullPatch = try SecretUseCaseHelper.normalizedPatch(patch)
             let encodedMetadata = try cryptoService.encodeMetadata(metadata)
-            var fullPatch = patch
             fullPatch.metadata = .set(encodedMetadata)
             fullPatch = SecretUseCaseHelper.settingUpdatedAtIfNeeded(fullPatch, now: dateProvider())
             return try await applyPatch(id: id, patch: fullPatch, projectIDs: projectIDs)
@@ -55,8 +56,8 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
         projectIDs: PatchField<[UUID]>
     ) async throws -> Secret {
         do {
+            var fullPatch = try SecretUseCaseHelper.normalizedPatch(patch)
             let encryptedPayload = try await cryptoService.encryptPayload(payload)
-            var fullPatch = patch
             fullPatch.payload = .set(encryptedPayload)
             fullPatch = SecretUseCaseHelper.settingUpdatedAtIfNeeded(fullPatch, now: dateProvider())
             return try await applyPatch(id: id, patch: fullPatch, projectIDs: projectIDs)
@@ -73,9 +74,9 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
         projectIDs: PatchField<[UUID]>
     ) async throws -> Secret {
         do {
+            var fullPatch = try SecretUseCaseHelper.normalizedPatch(patch)
             let encryptedPayload = try await cryptoService.encryptPayload(payload)
             let encodedMetadata = try cryptoService.encodeMetadata(metadata)
-            var fullPatch = patch
             fullPatch.payload = .set(encryptedPayload)
             fullPatch.metadata = .set(encodedMetadata)
             fullPatch = SecretUseCaseHelper.settingUpdatedAtIfNeeded(fullPatch, now: dateProvider())
