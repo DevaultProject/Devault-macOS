@@ -79,6 +79,11 @@ extension SecretClient: @retroactive DependencyKey {
             copySensitiveValue: { value in
                 try await LiveUseCases.copySensitiveValue.execute(value)
             },
+            // UseCase를 거치지 않는 유일한 자리다. 평문에 민감 값 정책을 씌우지 않으려는 임시 조치로,
+            // 도메인 계약 정리 후 걷어낸다 (`SecretClient.copyPlainValue` 참조).
+            copyPlainValue: { value in
+                _ = try ClipboardServiceImpl().write(value)
+            },
             fetchProjects: {
                 try await fetchProjectUseCase.fetchAll()
             },
@@ -99,7 +104,7 @@ private func dispatchRevealPayload(
     useCase: any RevealSecretPayloadUseCase
 ) async throws -> CreateSecretPayload {
     func decodeMeta<M: SecretMetadataContent>(_ type: M.Type) -> M? {
-        secret.metadata.flatMap { try? JSONDecoder().decode(M.self, from: $0.metadataJSON) }
+        secret.decodedMetadata(type)
     }
 
     switch (secret.secretType, secret.subType) {

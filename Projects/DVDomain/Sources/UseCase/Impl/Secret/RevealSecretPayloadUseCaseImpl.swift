@@ -22,7 +22,7 @@ public struct RevealSecretPayloadUseCaseImpl: RevealSecretPayloadUseCase {
         as type: Payload.Type
     ) async throws -> Payload {
         do {
-            try await authenticateUseCase.authenticate(reason: "Reveal secret payload")
+            try await authenticateUseCase.authenticate(reason: AuthenticationReason.revealSecret)
             guard let secret = try await repository.fetch(id: id) else {
                 throw SecretUseCaseError.secretNotFound(id: id)
             }

@@ -48,35 +48,8 @@ struct SecretDetailFeatureTests {
         }
     }
 
-    // `task`는 세 effect를 `.merge`한다. TCA는 merge된 effect의 수신 순서를 보장하지 않으므로
-    // 관심 없는 쪽 dependency를 `CancellationError`로 스텁한다 — reducer가 `catch is CancellationError`로
-    // 아무 액션도 발행하지 않기 때문에 그 effect는 응답을 내지 않고, 수신 순서 의존이 사라진다.
-    // 부수적으로 CancellationError 경로 자체도 검증된다.
-
-    @Test("task: projects 로드 성공")
-    func task_projectsSuccess() async {
-        let secret = Self.makeSecret()
-        let projects = [
-            Project(id: UUID(), name: "Backend", createdAt: Date(), updatedAt: Date()),
-        ]
-
-        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
-            SecretDetailFeature()
-        } withDependencies: {
-            $0.projectClient.fetchProjects = { projects }
-            $0.secretClient.revealPayload = { _ in throw CancellationError() }
-            $0.secretClient.fetchLinkedProjects = { _ in throw CancellationError() }
-        }
-
-        // 진입은 복호화를 시작하지 않는다 — payloadState는 .idle로 남는다.
-        await store.send(.task) {
-            $0.isLoadingProjects = true
-        }
-        await store.receive(.projectsResponse(.success(projects))) {
-            $0.isLoadingProjects = false
-            $0.availableProjects = projects
-        }
-    }
+    // `task`가 거는 것은 연결 프로젝트 조회와 lifecycle 구독 둘뿐이다. 후자는 테스트 환경에서
+    // 곧바로 끝나는 스트림이라 액션을 내지 않으므로, 수신 순서를 맞출 필요가 없다.
 
     /// 진입이 아니라 눈 버튼이 복호화를 유발한다. 복호화는 인증을 통과해야 성공하므로
     /// 도착 자체가 인증 성공이고, 그 시각으로 재인증 창이 열린다.
@@ -95,7 +68,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapToggleReveal(.value)) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.success(payload), revealing: .value)) {
+        await store.receive(.payloadResponse(.success(payload), revealing: .value, thenCopy: nil)) {
             $0.payloadState = .loaded(payload)
             $0.revealAuthorizedAt = Self.referenceDate
             $0.revealedFields = [.value]
@@ -115,7 +88,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapToggleReveal(.value)) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.failure(.cryptoFailure(.decryptionFailed)), revealing: .value)) {
+        await store.receive(.payloadResponse(.failure(.cryptoFailure(.decryptionFailed)), revealing: .value, thenCopy: nil)) {
             $0.payloadState = .failed(.cryptoFailure(.decryptionFailed))
             $0.alert = .payloadRevealFailed(.decryptionFailed)
         }
@@ -134,7 +107,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapToggleReveal(.value)) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.failure(.authenticationFailure(.cancelled)), revealing: .value)) {
+        await store.receive(.payloadResponse(.failure(.authenticationFailure(.cancelled)), revealing: .value, thenCopy: nil)) {
             $0.payloadState = .failed(.authenticationFailure(.cancelled))
             $0.alert = .payloadRevealFailed(.authRequired)
         }
@@ -150,15 +123,12 @@ struct SecretDetailFeatureTests {
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
-            $0.projectClient.fetchProjects = { throw CancellationError() }
-            $0.secretClient.revealPayload = { _ in throw CancellationError() }
             $0.secretClient.fetchLinkedProjects = { _ in linked }
         }
 
-        // 진입은 복호화를 시작하지 않는다 — payloadState는 .idle로 남는다.
-        await store.send(.task) {
-            $0.isLoadingProjects = true
-        }
+        // 진입은 복호화를 시작하지 않는다. `revealPayload`를 스텁하지 않았으므로
+        // 진입이 복호화를 걸면 미구현 dependency 호출로 이 테스트가 실패한다.
+        await store.send(.task)
         await store.receive(.linkedProjectsResponse(.success(linked))) {
             $0.linkedProjects = linked
         }
@@ -173,15 +143,12 @@ struct SecretDetailFeatureTests {
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
-            $0.projectClient.fetchProjects = { throw CancellationError() }
-            $0.secretClient.revealPayload = { _ in throw CancellationError() }
             $0.secretClient.fetchLinkedProjects = { _ in throw SecretUseCaseError.unexpected }
         }
 
-        // 진입은 복호화를 시작하지 않는다 — payloadState는 .idle로 남는다.
-        await store.send(.task) {
-            $0.isLoadingProjects = true
-        }
+        // 진입은 복호화를 시작하지 않는다. `revealPayload`를 스텁하지 않았으므로
+        // 진입이 복호화를 걸면 미구현 dependency 호출로 이 테스트가 실패한다.
+        await store.send(.task)
         await store.receive(.linkedProjectsResponse(.failure(.unexpected))) {
             $0.alert = .projectsLoadFailed
         }
@@ -191,9 +158,7 @@ struct SecretDetailFeatureTests {
 
     // MARK: - payload 재시도
 
-    // `didTapRetryReveal`은 effect가 reveal 하나뿐이라 `task`처럼 수신 순서를 맞출 필요가 없다.
-    // `projectClient`를 일부러 스텁하지 않는다 — 재시도가 프로젝트 재조회까지 끌고 오면
-    // 미구현 dependency 호출로 실패한다.
+    // `didTapRetryReveal`은 effect가 reveal 하나뿐이라 수신 순서를 맞출 필요가 없다.
 
     @Test("didTapRetryReveal 성공: payloadState .loading → .loaded")
     func retryReveal_success() async {
@@ -210,7 +175,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapRetryReveal) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.success(payload), revealing: nil)) {
+        await store.receive(.payloadResponse(.success(payload), revealing: nil, thenCopy: nil)) {
             $0.payloadState = .loaded(payload)
             $0.revealAuthorizedAt = Self.referenceDate
         }
@@ -229,7 +194,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapRetryReveal) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.failure(.cryptoFailure(.decryptionFailed)), revealing: nil)) {
+        await store.receive(.payloadResponse(.failure(.cryptoFailure(.decryptionFailed)), revealing: nil, thenCopy: nil)) {
             $0.payloadState = .failed(.cryptoFailure(.decryptionFailed))
             $0.alert = .payloadRevealFailed(.decryptionFailed)
         }
@@ -261,7 +226,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapToggleReveal(.value)) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.failure(.authenticationFailure(.cancelled)), revealing: .value)) {
+        await store.receive(.payloadResponse(.failure(.authenticationFailure(.cancelled)), revealing: .value, thenCopy: nil)) {
             $0.payloadState = .failed(.authenticationFailure(.cancelled))
             $0.alert = .payloadRevealFailed(.authRequired)
         }
@@ -273,7 +238,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapRetryReveal) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.success(payload), revealing: nil)) {
+        await store.receive(.payloadResponse(.success(payload), revealing: nil, thenCopy: nil)) {
             $0.payloadState = .loaded(payload)
             $0.revealAuthorizedAt = Self.referenceDate
         }
@@ -455,13 +420,11 @@ struct SecretDetailFeatureTests {
         }
 
         await store.send(.didTapCopy(.value)) {
-            $0.pendingCopyField = .value
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.success(payload), revealing: nil)) {
+        await store.receive(.payloadResponse(.success(payload), revealing: nil, thenCopy: .value)) {
             $0.payloadState = .loaded(payload)
             $0.revealAuthorizedAt = Self.referenceDate
-            $0.pendingCopyField = nil
         }
         await store.receive(.copyResponse(.success(true)))
         #expect(copied.value == "ghp_secret")
@@ -484,6 +447,92 @@ struct SecretDetailFeatureTests {
         }
 
         await store.send(.didTapCopy(.value))
+        await store.receive(.copyResponse(.success(false))) {
+            $0.alert = .copyFailed
+        }
+    }
+
+    /// 복사 대기는 그 복사를 유발한 복호화에만 딸린 것이다. 다른 필드를 여느라 복호화가
+    /// 새로 걸리면 대기도 함께 사라져야 한다 — 눈 버튼을 눌렀는데 다른 필드가 클립보드에
+    /// 들어가면 사용자가 알 방법이 없다.
+    @Test("복사 대기 중 다른 필드를 열면 대기 중이던 복사는 사라진다")
+    func pendingCopy_supersededByReveal_doesNotCopy() async {
+        let secret = Self.makeSecret()
+        let payload = CreateSecretPayload.oauthClient(
+            OAuthClientPayload(clientId: "client-id", clientSecret: "client-secret"),
+            nil
+        )
+        let copied = LockIsolated<String?>(nil)
+        let clock = TestClock()
+
+        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.revealPayload = { _ in
+                try await clock.sleep(for: .seconds(1))
+                return payload
+            }
+            $0.secretClient.copySensitiveValue = { value in
+                copied.withValue { $0 = value }
+            }
+            $0.date = .constant(Self.referenceDate)
+        }
+
+        // 값이 없는 상태에서 Client Secret 복사 → 복호화가 걸리고 복사는 대기한다.
+        await store.send(.didTapCopy(.clientSecret)) {
+            $0.payloadState = .loading
+        }
+
+        // 응답 전에 Client ID의 눈 버튼. 같은 CancelID라 앞 복호화가 취소되고 새로 시작한다.
+        await store.send(.didTapToggleReveal(.clientId))
+
+        await clock.advance(by: .seconds(1))
+        await store.receive(.payloadResponse(.success(payload), revealing: .clientId, thenCopy: nil)) {
+            $0.payloadState = .loaded(payload)
+            $0.revealAuthorizedAt = Self.referenceDate
+            $0.revealedFields = [.clientId]
+        }
+
+        #expect(copied.value == nil)
+    }
+
+    /// 평문 필드(Redirect URL·Public Key·Renew Command)는 payload에 없어 꺼낼 식별자가 없다.
+    /// 값을 그대로 받아 복사한다.
+    ///
+    /// `revealPayload`와 `copySensitiveValue`를 **일부러 스텁하지 않는다** — 둘 중 하나라도 불리면
+    /// 미구현 dependency 호출로 실패한다. 평문을 보는 데 인증을 요구하지 않는다는 것과,
+    /// 비밀이 아닌 값에 자동 정리·반복 감지를 씌우지 않는다는 것이 이렇게 고정된다.
+    @Test("평문 필드 복사: 복호화도 민감 값 정책도 타지 않는다")
+    func copyPlainValue_bypassesRevealAndSensitivePolicy() async {
+        let secret = Self.makeSecret()
+        let copied = LockIsolated<String?>(nil)
+        let redirectURL = "https://app.example/oauth/callback"
+
+        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.copyPlainValue = { value in
+                copied.withValue { $0 = value }
+            }
+        }
+
+        await store.send(.didTapCopyPlainValue(redirectURL))
+        await store.receive(.copyResponse(.success(true)))
+        #expect(copied.value == redirectURL)
+        #expect(store.state.payloadState == .idle)
+    }
+
+    @Test("평문 복사 실패도 alert를 띄운다")
+    func copyPlainValue_failure_showsAlert() async {
+        let secret = Self.makeSecret()
+
+        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.copyPlainValue = { _ in throw ClipboardError.writeFailed }
+        }
+
+        await store.send(.didTapCopyPlainValue("https://app.example/oauth/callback"))
         await store.receive(.copyResponse(.success(false))) {
             $0.alert = .copyFailed
         }

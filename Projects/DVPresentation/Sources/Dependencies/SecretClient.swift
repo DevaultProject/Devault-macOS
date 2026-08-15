@@ -37,6 +37,17 @@ public struct SecretClient: Sendable {
   /// **인증하지 않는다** — 복사 시 인증은 정책상 요구하지 않는다.
   public var copySensitiveValue: @Sendable (_ value: String) async throws -> Void
 
+  /// 평문 값을 클립보드에 복사한다. 자동 정리도 반복 복사 감지도 하지 않는다.
+  ///
+  /// metadata에서 오는 평문(Redirect URL·Public Key·Host 등)은 비밀이 아니라 `copySensitiveValue`의
+  /// 정책을 적용할 대상이 아니다. 30초 뒤 클립보드가 비면 붙여넣으려던 값이 사라지고, 반복 복사가
+  /// 비정상 접근 카운터에 쌓이면 하지도 않은 일로 보안 경고가 뜬다.
+  ///
+  /// **임시 경로다.** `CopySensitiveValueUseCase`는 두 정책이 한 덩어리라 평문만 떼어낼 수 없고,
+  /// 떼어내려면 도메인 계약을 바꿔야 한다. 합의 후 별도 이슈로 정리할 때까지 `ClipboardService`를
+  /// 직접 쓴다 — UseCase를 건너뛰는 유일한 자리이므로 그때 반드시 걷어낸다.
+  public var copyPlainValue: @Sendable (_ value: String) async throws -> Void
+
   // MARK: - Project
 
   public var fetchProjects: @Sendable () async throws -> [Project]
@@ -168,6 +179,7 @@ private extension SecretClient {
       // 프리뷰는 인증 시트를 띄울 수 없으므로 즉시 통과시킨다.
       authenticate: { _ in },
       copySensitiveValue: { _ in },
+      copyPlainValue: { _ in },
       fetchProjects: { .preview },
       createProject: { name in
           Project(id: UUID(), name: name, createdAt: .now, updatedAt: .now)

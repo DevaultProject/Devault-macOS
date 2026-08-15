@@ -338,6 +338,70 @@ struct MainFeatureTests {
     }
   }
 
+  /// detail State는 nil을 거치지 않고 다른 시크릿으로 교체된다. `ifLet`이 이 전환을 알아보지 못하면
+  /// A의 복호화 응답이 B의 State에 실려, 인증한 적 없는 B에 A의 평문과 인증 창이 열린다.
+  @Test("시크릿을 바꾸면 이전 시크릿의 복호화 effect가 취소된다")
+  func secretSelectedCancelsPreviousRevealEffect() async {
+    let secretA = Secret(
+      id: UUID(),
+      name: "Secret A",
+      secretType: .apiKeyToken,
+      createdAt: Date(),
+      updatedAt: Date(),
+      payload: SecretPayload(encryptedData: Data(), keyTag: "test", schemaVersion: 1)
+    )
+    let secretB = Secret(
+      id: UUID(),
+      name: "Secret B",
+      secretType: .apiKeyToken,
+      createdAt: Date(),
+      updatedAt: Date(),
+      payload: SecretPayload(encryptedData: Data(), keyTag: "test", schemaVersion: 1)
+    )
+
+    var initial = MainFeature.State()
+    initial.secretList.secretsState = .loaded([secretA, secretB])
+
+    // A의 복호화를 인증 프롬프트가 떠 있는 상태로 붙잡아 둔다.
+    let clock = TestClock()
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    } withDependencies: {
+      $0.secretClient.revealPayload = { _ in
+        try await clock.sleep(for: .seconds(1))
+        return .apiKey(APIKeyPayload(value: "A의 평문"), nil)
+      }
+    }
+
+    await store.send(.secretList(.didSelectSecret(id: secretA.id))) {
+      $0.secretList.selectedSecretID = secretA.id
+    }
+    await store.receive(.secretList(.delegate(.secretSelected(secretA.id)))) {
+      $0.secretDetail = SecretDetailFeature.State(secret: secretA)
+    }
+
+    await store.send(.secretDetail(.didTapToggleReveal(.value))) {
+      $0.secretDetail?.payloadState = .loading
+    }
+
+    await store.send(.secretList(.didSelectSecret(id: secretB.id))) {
+      $0.secretList.selectedSecretID = secretB.id
+    }
+    await store.receive(.secretList(.delegate(.secretSelected(secretB.id)))) {
+      $0.secretDetail = SecretDetailFeature.State(secret: secretB)
+    }
+
+    // A의 복호화가 끝나는 시점. 취소되었다면 아무 액션도 도착하지 않는다 —
+    // 도착하면 TestStore가 처리되지 않은 액션으로 실패시킨다.
+    await clock.advance(by: .seconds(1))
+
+    #expect(store.state.secretDetail?.secret.id == secretB.id)
+    #expect(store.state.secretDetail?.payloadState == .idle)
+    #expect(store.state.secretDetail?.revealAuthorizedAt == nil)
+    #expect(store.state.secretDetail?.revealedFields.isEmpty == true)
+  }
+
   @Test("secretDetail closed delegate는 secretDetail과 selectedSecretID를 초기화한다")
   func secretDetailClosedClearsDetail() async {
     let secret = Secret(
