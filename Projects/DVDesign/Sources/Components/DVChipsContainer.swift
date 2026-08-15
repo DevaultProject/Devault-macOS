@@ -16,7 +16,7 @@ import SwiftUI
 /// ```
 ///
 /// 값이 비면 chip 없이 박스만 남는다 — ``DVTextContainer``의 Empty 상태와 같은 취급이며,
-/// 이때도 높이는 다른 읽기 전용 필드와 맞도록 28pt를 유지한다.
+/// 이때도 높이는 다른 읽기 전용 필드와 맞도록 32pt를 유지한다.
 ///
 /// > Note: chip은 ``DVChip``(내부적으로 `Button`)이라 그대로 두면 포커스를 받는다.
 /// > 컨테이너 전체에 `allowsHitTesting(false)`를 걸어 인터랙션을 차단한다.
@@ -33,7 +33,7 @@ public struct DVChipsContainer: View {
         static let chipsPadding: CGFloat = 6
         static let chipsSpacing: CGFloat = 6
         static let cornerRadius: CGFloat = 6
-        /// 값이 없을 때도 다른 읽기 전용 필드(``DVTextContainer`` 28pt)와 높이를 맞춘다.
+        /// 값이 없을 때도 다른 읽기 전용 필드(``DVTextContainer`` 32pt)와 높이를 맞춘다.
         static let minHeight: CGFloat = DVComponentSize.fieldHeight
     }
 

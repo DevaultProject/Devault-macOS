@@ -4,7 +4,7 @@ import AppKit
 import SwiftUI
 
 /// 시스템 `TextField` 위에 디자인 토큰만 덧입힌 텍스트 입력 필드.
-/// 너비는 ``DVComponentSize``, 높이 28pt 고정.
+/// 너비는 ``DVComponentSize``, 높이 32pt 고정(``DVComponentSize/fieldHeight``).
 ///
 /// `isSecure: true`이면 `SecureField` + 우측 눈 아이콘 토글이 자동 표시되고,
 /// 토글 시 포커스와 커서 위치가 유지됩니다 (마스킹 상태는 내부 `@State`).
