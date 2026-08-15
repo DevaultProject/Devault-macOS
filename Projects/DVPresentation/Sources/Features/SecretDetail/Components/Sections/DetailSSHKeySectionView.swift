@@ -78,8 +78,9 @@ struct DetailSSHKeySectionView: View {
         DetailSSHKeySectionView(
             secret: [Secret].previewSubTypeMatrix[6],
             linkedProjects: [Project].preview,
+            // 개인키 형태의 문자열은 쓰지 않는다 — 가짜여도 시크릿 스캐너가 매번 탐지 결과를 올린다.
             payload: SSHKeyPayload(
-                privateKey: "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEA\n-----END OPENSSH PRIVATE KEY-----",
+                privateKey: "PREVIEW PLACEHOLDER — 실제 키가 아니다\n두 번째 줄\n세 번째 줄",
                 passphrase: nil
             ),
             metadata: SSHKeyMetadata(

@@ -12,10 +12,9 @@ struct DVMultilineTextFieldPreviewView: View {
     """
     @State private var jsonValue = ""
     @State private var securePrefilled = """
-    -----BEGIN OPENSSH PRIVATE KEY-----
-    b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtz
-    c2gtZWQyNTUxOQAAACDQ
-    -----END OPENSSH PRIVATE KEY-----
+    PREVIEW PLACEHOLDER — 실제 키가 아니다
+    포커스가 빠졌을 때 여러 줄이 통째로 마스킹되는지 보기 위한 자리 채움 텍스트
+    세 번째 줄
     """
     @State private var secureEmpty = ""
     @State private var xsValue = ""
