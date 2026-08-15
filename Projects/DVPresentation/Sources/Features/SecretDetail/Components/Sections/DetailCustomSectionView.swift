@@ -19,7 +19,8 @@ struct DetailCustomSectionView: View {
                 label: .module("Value"),
                 value: payload.value,
                 isSensitive: true,
-                isCopyable: true
+                isCopyable: true,
+                field: .value
             )
 
             AdaptiveFieldRow {

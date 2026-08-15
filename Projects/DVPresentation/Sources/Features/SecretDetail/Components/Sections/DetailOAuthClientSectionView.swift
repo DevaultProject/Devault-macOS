@@ -19,14 +19,16 @@ struct DetailOAuthClientSectionView: View {
                 label: .module("Client ID"),
                 value: payload.clientId,
                 isSensitive: true,
-                isCopyable: true
+                isCopyable: true,
+                field: .clientId
             )
 
             DetailReadOnlyFieldView(
                 label: .module("Client Secret"),
                 value: payload.clientSecret,
                 isSensitive: true,
-                isCopyable: true
+                isCopyable: true,
+                field: .clientSecret
             )
 
             AdaptiveFieldRow {

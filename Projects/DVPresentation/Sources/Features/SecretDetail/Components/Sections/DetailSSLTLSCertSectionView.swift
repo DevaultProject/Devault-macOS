@@ -22,14 +22,16 @@ struct DetailSSLTLSCertSectionView: View {
                 label: .module("Certificate"),
                 value: payload.certificate,
                 isSensitive: true,
-                isCopyable: true
+                isCopyable: true,
+                field: .certificate
             )
 
             DetailReadOnlyFieldView(
                 label: .module("Private Key"),
                 value: payload.privateKey,
                 isSensitive: true,
-                isCopyable: true
+                isCopyable: true,
+                field: .sslPrivateKey
             )
 
             AdaptiveFieldRow {
@@ -46,7 +48,8 @@ struct DetailSSLTLSCertSectionView: View {
                 label: .module("Certificate Chain"),
                 value: payload.certificateChain ?? "",
                 isSensitive: true,
-                isCopyable: true
+                isCopyable: true,
+                field: .certificateChain
             )
 
             DetailReadOnlyFieldView(

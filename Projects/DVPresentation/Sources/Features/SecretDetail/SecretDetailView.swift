@@ -71,32 +71,38 @@ extension SecretDetailView {
 
     // MARK: Viewing
 
-    /// 복호화된 payload가 도착한 뒤에만 타입별 섹션을 렌더한다 — 어떤 섹션을 그릴지는
-    /// `DetailPayloadSectionView`가 payload case로 결정한다.
+    /// 복호화 여부와 무관하게 항상 같은 섹션을 렌더한다. payload 필드는 값이 있든 없든 마스킹되므로
+    /// 복호화 전후로 화면 구성이 달라지지 않고, 로딩·실패 전용 화면도 필요 없다(실패는 alert로 알린다).
     ///
-    /// 복호화 전에는 필드 스캐폴드를 **뷰 트리에서 제외**한다. 반투명 오버레이로 덮으면
-    /// 뒤의 필드가 비쳐 보여 어수선하다. 헤더는 두 경우 모두 남는다 —
-    /// 즐겨찾기·삭제는 복호화 없이 수행되므로 로딩 중에도 열려 있어야 한다.
-    @ViewBuilder
+    /// 눈·복사 동작은 Environment로 내려보낸다 — 필드가 9개 섹션 안쪽에 흩어져 있어
+    /// 파라미터로 넘기면 중간 섹션들이 쓰지도 않는 값을 계속 실어 나른다.
     private var viewingBody: some View {
-        if case .loaded(let payload) = store.payloadState {
-            ScrollView {
-                bodyStack {
-                    DetailPayloadSectionView(
-                        secret: store.secret,
-                        linkedProjects: store.linkedProjects,
-                        payload: payload
-                    )
-                }
-            }
-        } else {
-            // ScrollView로 감싸지 않는다 — 감싸면 상태 뷰가 남은 높이를 채우지 못해
-            // 헤더 바로 아래에 작게 붙는다.
+        ScrollView {
             bodyStack {
-                payloadStateView
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                DetailPayloadSectionView(
+                    secret: store.secret,
+                    linkedProjects: store.linkedProjects,
+                    payload: displayedPayload
+                )
             }
         }
+        .environment(
+            \.detailFieldActions,
+            DetailFieldActions(
+                revealedFields: store.revealedFields,
+                onToggleReveal: { store.send(.didTapToggleReveal($0)) },
+                onCopy: { store.send(.didTapCopy($0)) }
+            )
+        )
+    }
+
+    /// 복호화 전에는 타입에 맞는 빈 껍데기를 넘긴다. 민감 필드는 어차피 마스킹되므로
+    /// 화면에 보이는 결과가 같고, 평문 필드는 `Secret`에서 오므로 값이 온전히 나온다.
+    private var displayedPayload: CreateSecretPayload {
+        if case .loaded(let payload) = store.payloadState {
+            return payload
+        }
+        return .empty(for: store.secret)
     }
 
     /// 헤더 + 본문 공통 컨테이너. 복호화 전후로 padding·정렬이 어긋나지 않게 한곳에 둔다.
@@ -124,51 +130,6 @@ extension SecretDetailView {
             onDelete: { store.send(.didTapDelete) }
         )
         .disabled(store.isDeleting)
-    }
-
-    // MARK: Payload state
-
-    /// 스크림이 없다 — 필드 스캐폴드가 뷰 트리에서 빠져 있어 덮을 대상이 없다.
-    // TODO: - 값 필드에 복사 버튼을 붙일 때는 DVDomain의 `CopySensitiveValueUseCase`를 감싸는 TCA Client를 새로 만들어 쓴다(이 화면이 필요로 하는 모양대로) — 30초 자동 정리·반복 복사 감지 로직 자체는 이미 구현·테스트돼 있으니 그대로 wiring만 하면 된다.
-    @ViewBuilder
-    private var payloadStateView: some View {
-        switch store.payloadState {
-        // `.idle`은 `.task`가 즉시 `.loading`으로 바꾸므로 실제로 노출되지 않는다.
-        case .idle, .loading:
-            payloadLoadingView
-
-        case .failed(let error):
-            payloadFailureView(SecretDetailError.map(error))
-
-        case .loaded:
-            EmptyView()
-        }
-    }
-
-    private var payloadLoadingView: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-                .controlSize(.regular)
-            Text(.module("Decrypting secret…"))
-                .dvFont(.bodyMD)
-                .foregroundStyle(Color.dv(.gray500))
-        }
-    }
-
-    private func payloadFailureView(_ error: SecretDetailError) -> some View {
-        VStack(spacing: 12) {
-            Image(systemName: "exclamationmark.triangle")
-                .dvFont(.bodyLG)
-                .foregroundStyle(Color.dv(.gray400))
-            Text(error.revealFailureMessage)
-                .dvFont(.bodyMD)
-                .foregroundStyle(Color.dv(.gray500))
-                .multilineTextAlignment(.center)
-            DVButton(titleText: .module("Retry"), style: .secondary) {
-                store.send(.didTapRetryReveal)
-            }
-        }
-        .padding(.horizontal, FormLayoutMetrics.horizontalPadding)
     }
 
     // MARK: Editing
@@ -210,30 +171,22 @@ private let _previewSecret = [Secret].previewSubTypeMatrix[0]
     .frame(width: 420, height: 700)
 }
 
-/// 인증 전 배치 확인용 — 헤더만 남고 필드 스캐폴드는 뷰 트리에서 빠져, 남은 영역을 로딩 뷰가 채운다.
-///
-/// `.task`가 진입 즉시 `payloadState`를 다시 쓰므로 초기 상태만으로는 상태가 유지되지 않는다.
-/// 응답하지 않는 스텁을 함께 넣어 로딩 표현을 화면에 남긴다.
-#Preview("SecretDetail · Payload Loading") {
+/// 진입 직후 모습 — 복호화하지 않으므로 payload 필드가 전부 마스킹된 채로 그려진다.
+/// 평문 필드(Services·Environment 등)는 `Secret`에서 오므로 값이 그대로 보여야 한다.
+#Preview("SecretDetail · 복호화 전") {
     SecretDetailView(
         store: Store(
-            initialState: {
-                var state = SecretDetailFeature.State(secret: _previewSecret)
-                state.payloadState = .loading
-                return state
-            }()
+            initialState: SecretDetailFeature.State(secret: _previewSecret)
         ) {
             SecretDetailFeature()
-        } withDependencies: {
-            $0.secretClient.revealPayload = { _ in try await Task.never() }
         }
     )
     .frame(width: 420, height: 700)
 }
 
-/// 인증 취소 시나리오. alert를 닫으면 필드 영역 자리에 실패 문구와 재시도 버튼이 남는다 —
-/// 이 프리뷰가 확인하려는 지점이다. 헤더는 그대로 남아 즐겨찾기·삭제를 누를 수 있다.
-#Preview("SecretDetail · Payload Failed") {
+/// 인증 취소 시나리오. 실패는 alert로만 알리고 필드는 마스킹된 채 남는다 —
+/// 화면 전체를 덮는 실패 뷰가 없다는 것이 이 프리뷰가 확인하려는 지점이다.
+#Preview("SecretDetail · 인증 취소") {
     SecretDetailView(
         store: Store(
             initialState: {
