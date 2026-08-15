@@ -111,6 +111,16 @@ extension DetailReadOnlyFieldView {
         }
     }
 
+    /// 클립보드에 넣을 원문을 Feature로 넘긴다. 민감 필드는 원문이 뷰에 없으므로 식별자로,
+    /// 평문 필드는 식별자가 없으므로 값으로 보낸다. 마스킹 placeholder는 어느 쪽에도 실리지 않는다.
+    private func copy() {
+        if let field {
+            actions.onCopy(field)
+        } else {
+            actions.onCopyPlainValue(value)
+        }
+    }
+
     /// 복사·마스킹 토글 버튼. 한 줄/여러 줄 컨테이너 어디에 붙어도 같은 모습이어야 하므로
     /// 컨테이너 선택과 분리해 한 곳에서 만든다.
     @ViewBuilder
@@ -118,7 +128,7 @@ extension DetailReadOnlyFieldView {
         HStack(spacing: 10) {
             if showsCopyButton {
                 Button {
-                    field.map(actions.onCopy)
+                    copy()
                 } label: {
                     Image(systemName: "doc.on.doc")
                 }
@@ -261,8 +271,8 @@ extension DetailReadOnlyFieldView {
     .previewWidth(.narrow)
 }
 
-/// 개행 없는 값이 컨테이너 폭을 넘으면 `DVTextContainer`가 가로 스크롤로 처리한다.
-#Preview("Overflow · 가로 스크롤") {
+/// 개행 없는 긴 값도 잘리거나 가로 스크롤되지 않고 다음 줄로 접힌다.
+#Preview("Overflow · 줄바꿈") {
     DetailReadOnlyFieldView(
         label: .module("Link String"),
         value: "postgresql://admin:verylongpassword@db.internal.example.com:5432/production_database?sslmode=require",
@@ -274,7 +284,7 @@ extension DetailReadOnlyFieldView {
     .previewWidth(.narrow)
 }
 
-/// 개행이 있으면 `DVMultilineTextContainer`로 전환되어 모든 줄이 보인다.
+/// 컨테이너를 갈아끼우지 않는다 — 같은 `DVTextContainer`가 내용만큼 자라 모든 줄이 보인다.
 #Preview("Multiline") {
     DetailReadOnlyFieldView(
         label: .module("envSet List"),
@@ -305,18 +315,18 @@ extension DetailReadOnlyFieldView {
     .previewWidth(.narrow)
 }
 
-/// 높이를 넘는 여러 줄 값 — 세로 스크롤로 확인하고, 복사 버튼은 원문 전체를 넣는다.
+/// 줄 수가 늘어난 만큼 컨테이너가 자라고, 복사 버튼은 원문 전체를 넣는다.
 #Preview("Multiline · Copyable") {
     DetailReadOnlyFieldView(
         label: .module("Private Key"),
         // 개인키 형태의 문자열은 쓰지 않는다 — 가짜여도 시크릿 스캐너가 매번 탐지 결과를 올린다.
-        // 이 프리뷰가 확인하려는 건 값의 진위가 아니라 높이 초과 시의 스크롤·복사 동작이다.
+        // 이 프리뷰가 확인하려는 건 값의 진위가 아니라 줄 수에 따른 높이·복사 동작이다.
         value: """
         PREVIEW PLACEHOLDER — 실제 키가 아니다
-        여러 줄 값이 고정 높이를 넘겼을 때의 세로 스크롤을 확인하기 위한 자리 채움 텍스트
+        여러 줄 값이 들어왔을 때 컨테이너가 자라는지 확인하기 위한 자리 채움 텍스트
         세 번째 줄
         네 번째 줄
-        다섯 번째 줄 — 여기서 100pt를 넘겨 스크롤 인디케이터가 보인다
+        다섯 번째 줄
         """,
         isCopyable: true
     )

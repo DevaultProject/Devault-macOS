@@ -56,8 +56,9 @@ public struct SecretDetailView: View {
         // 그러면 평범한 `.task`는 다시 실행되지 않아 `linkedProjects` / `payloadState`가 빈 채로 남는다
         // (`store.secret`을 직접 읽는 헤더·Name만 갱신되어 더 헷갈린다).
         //
-        // `finish()`를 await하는 것도 함께 필요하다 — secret이 바뀔 때 이전 secret의 조회 effect가
-        // 취소되어야 늦게 도착한 응답이 새 State를 덮어쓰지 않는다.
+        // `finish()`를 await해야 secret이 바뀔 때 이전 secret의 lifecycle 구독과 프로젝트 조회가
+        // 함께 끝난다. 눈·복사는 이 task의 자식이 아니므로 여기서 취소되지 않는다 —
+        // 그쪽은 `State.id`를 보고 `ifLet`이 취소한다.
         .task(id: store.secret.id) {
             await store.send(.task).finish()
         }
@@ -91,18 +92,19 @@ extension SecretDetailView {
             DetailFieldActions(
                 revealedFields: store.revealedFields,
                 onToggleReveal: { store.send(.didTapToggleReveal($0)) },
-                onCopy: { store.send(.didTapCopy($0)) }
+                onCopy: { store.send(.didTapCopy($0)) },
+                onCopyPlainValue: { store.send(.didTapCopyPlainValue($0)) }
             )
         )
     }
 
-    /// 복호화 전에는 타입에 맞는 빈 껍데기를 넘긴다. 민감 필드는 어차피 마스킹되므로
-    /// 화면에 보이는 결과가 같고, 평문 필드는 `Secret`에서 오므로 값이 온전히 나온다.
+    /// reveal 전에는 payload만 빈 껍데기를 넘긴다. 민감 필드는 어차피 마스킹되어 화면이 같고,
+    /// metadata는 평문이라 `Secret`에서 그대로 채워지므로 평문 필드가 처음부터 보인다.
     private var displayedPayload: CreateSecretPayload {
         if case .loaded(let payload) = store.payloadState {
             return payload
         }
-        return .empty(for: store.secret)
+        return .beforeReveal(for: store.secret)
     }
 
     /// 헤더 + 본문 공통 컨테이너. 복호화 전후로 padding·정렬이 어긋나지 않게 한곳에 둔다.
@@ -158,12 +160,19 @@ extension SecretDetailView {
 /// `DetailPayloadSectionView`의 sweep 프리뷰가 담당하므로 여기서 조합을 늘리지 않는다.
 private let _previewSecret = [Secret].previewSubTypeMatrix[0]
 
-/// `dummyClient().revealPayload`가 `matrix[0]`(apiKey)에 맞는 payload를 돌려주므로
-/// 별도 스텁 없이 `.loaded` 경로가 그려진다.
-#Preview("SecretDetail · Payload Loaded") {
+/// reveal까지 끝난 모습. 진입만으로는 이 상태에 도달하지 않으므로 State를 직접 세팅한다 —
+/// 마스킹이 풀린 필드와 그대로 가려진 필드가 한 화면에 같이 보이는 것이 확인 대상이다.
+#Preview("SecretDetail · reveal 후") {
     SecretDetailView(
         store: Store(
-            initialState: SecretDetailFeature.State(secret: _previewSecret)
+            initialState: {
+                var state = SecretDetailFeature.State(secret: _previewSecret)
+                state.payloadState = .loaded(
+                    .apiKey(APIKeyPayload(value: "ghp_preview_token"), APIKeyMetadata(scope: "repo:read"))
+                )
+                state.revealedFields = [.value]
+                return state
+            }()
         ) {
             SecretDetailFeature()
         }
