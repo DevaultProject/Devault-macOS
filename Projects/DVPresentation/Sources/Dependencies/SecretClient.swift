@@ -25,6 +25,18 @@ public struct SecretClient: Sendable {
   /// 해당 Secret에 연결된 Project 목록. `Secret` 엔티티에는 프로젝트 정보가 없어 별도 조회가 필요하다.
   public var fetchLinkedProjects: @Sendable (_ secretID: Secret.ID) async throws -> [Project]
 
+  // MARK: - Reveal / Copy
+
+  /// 로컬 인증만 수행한다. 복호화는 하지 않는다.
+  ///
+  /// `revealPayload`가 인증과 복호화를 함께 하므로 첫 reveal에는 그쪽을 쓴다. 이미 복호화된
+  /// payload를 들고 있는데 인증 창만 만료된 경우, 다시 복호화할 이유가 없어 이 액션이 필요하다.
+  public var authenticate: @Sendable (_ reason: String) async throws -> Void
+
+  /// 민감 값을 클립보드에 복사한다. 일정 시간 뒤 자동 정리와 짧은 간격 반복 복사 감지가 함께 수행된다.
+  /// **인증하지 않는다** — 복사 시 인증은 정책상 요구하지 않는다.
+  public var copySensitiveValue: @Sendable (_ value: String) async throws -> Void
+
   // MARK: - Project
 
   public var fetchProjects: @Sendable () async throws -> [Project]
@@ -153,6 +165,9 @@ private extension SecretClient {
           return secret
       },
       fetchLinkedProjects: { _ in Array([Project].preview.prefix(1)) },
+      // 프리뷰는 인증 시트를 띄울 수 없으므로 즉시 통과시킨다.
+      authenticate: { _ in },
+      copySensitiveValue: { _ in },
       fetchProjects: { .preview },
       createProject: { name in
           Project(id: UUID(), name: name, createdAt: .now, updatedAt: .now)

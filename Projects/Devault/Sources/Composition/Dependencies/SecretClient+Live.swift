@@ -72,6 +72,12 @@ extension SecretClient: @retroactive DependencyKey {
             fetchLinkedProjects: { secretID in
                 try await fetchSecretUseCase.fetchProjects(secretID: secretID)
             },
+            authenticate: { reason in
+                try await authenticateUseCase.authenticate(reason: reason)
+            },
+            copySensitiveValue: { value in
+                try await LiveUseCases.copySensitiveValue.execute(value)
+            },
             fetchProjects: {
                 try await fetchProjectUseCase.fetchAll()
             },
