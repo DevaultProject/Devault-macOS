@@ -183,6 +183,12 @@ public struct SidebarFeature {
         state.countsState = .failed(error)
         return .none
 
+      // 이미 선택된 항목을 다시 눌러도 macOS List는 선택 이벤트를 보낸다. 그대로 흘리면
+      // MainFeature가 목록 State를 새로 만들어 이미 불러온 항목이 버려지는데,
+      // `collection` 값은 그대로라 `.task(id:)`가 재조회를 걸지 않아 목록이 빈 채로 남는다.
+      case .didSelect(let selection) where selection == state.selection:
+        return .none
+
       case .didSelect(let selection):
         state.selection = selection
         return .send(.delegate(.selectionChanged(selection)))

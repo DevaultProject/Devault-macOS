@@ -142,6 +142,33 @@ struct SidebarFeatureTests {
     await store.receive(.delegate(.selectionChanged(.project(id: id))))
   }
 
+  /// delegate가 나가면 MainFeature가 목록 State를 새로 만드는데, collection 값은 그대로라
+  /// `.task(id:)`가 재조회를 걸지 않아 목록이 빈 채로 남았다. 발신 자체를 막아야 한다.
+  @Test("이미 선택된 항목을 다시 눌러도 delegate를 보내지 않는다")
+  func didSelectSameSelectionSendsNothing() async {
+    // 기본 selection이 .filter(.all)이므로 그대로 다시 누른다.
+    let store = TestStore(
+      initialState: SidebarFeature.State()
+    ) {
+      SidebarFeature()
+    }
+
+    await store.send(.didSelect(.filter(.all)))
+  }
+
+  @Test("같은 프로젝트를 다시 눌러도 delegate를 보내지 않는다")
+  func didSelectSameProjectSendsNothing() async {
+    let id = UUID()
+    var initial = SidebarFeature.State()
+    initial.selection = .project(id: id)
+
+    let store = TestStore(initialState: initial) {
+      SidebarFeature()
+    }
+
+    await store.send(.didSelect(.project(id: id)))
+  }
+
   // MARK: - Rename
 
   @Test("didTapRename은 renameText를 프로젝트 이름으로 세팅한다")
