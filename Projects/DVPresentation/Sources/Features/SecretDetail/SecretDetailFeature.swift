@@ -38,8 +38,18 @@ public struct SecretDetailFeature {
         public var isLoadingProjects = false
         /// 삭제 요청 진행 중. 진행 중에는 삭제 버튼을 비활성화한다.
         public var isDeleting = false
-        /// 복호화된 payload. .idle → .loading → .loaded / .failed 순서로 전이.
+        /// 복호화된 payload. 진입 시에는 복호화하지 않으므로 `.idle`로 시작한다 —
+        /// 사용자가 처음 reveal이나 복사를 요청할 때 비로소 `.loading`으로 넘어간다.
         public var payloadState: LoadingState<CreateSecretPayload, SecretUseCaseError> = .idle
+        /// 마스킹이 해제된 payload 필드. 필드마다 따로 열고 닫는다.
+        var revealedFields: Set<SecretFieldID> = []
+        /// 마지막 reveal 인증 성공 시각. `RevealAuthPolicy.ttl` 안에서는 재인증하지 않는다.
+        ///
+        /// State에 두는 것이 정책의 일부다 — 다른 시크릿을 선택하면 `MainFeature`가 이 State를
+        /// 새로 할당하므로 창이 자동으로 닫힌다("시크릿 변경 시 재인증").
+        var revealAuthorizedAt: Date?
+        /// 복호화가 끝나면 이어서 복사할 필드. 값이 없는 상태에서 복사를 누른 경우에만 채워진다.
+        var pendingCopyField: SecretFieldID?
         @Presents public var alert: AlertState<Action.Alert>?
 
         public init(secret: Secret) {
@@ -57,6 +67,11 @@ public struct SecretDetailFeature {
         case didTapClose
         /// payload 복호화 재시도. 인증 취소로 `.failed`가 된 뒤 다시 시도할 유일한 경로다.
         case didTapRetryReveal
+        /// 필드의 눈 버튼. 여는 경우에만 인증이 필요할 수 있고, 닫는 것은 언제나 즉시 처리된다.
+        case didTapToggleReveal(SecretFieldID)
+        /// 필드의 복사 버튼. 복사 자체는 인증하지 않지만, 값이 아직 복호화되지 않았다면
+        /// 복호화 때문에 인증이 필요할 수 있다.
+        case didTapCopy(SecretFieldID)
         case didTapToggleLike
         case didTapDelete
         case didTapEdit
@@ -66,8 +81,15 @@ public struct SecretDetailFeature {
         // MARK: Internal
         case projectsResponse(Result<[Project], ProjectUseCaseError>)
         case linkedProjectsResponse(Result<[Project], SecretUseCaseError>)
-        case payloadResponse(Result<CreateSecretPayload, SecretUseCaseError>)
+        /// 복호화 응답. `revealing`은 이 복호화를 유발한 필드로, 성공하면 그 필드를 함께 연다.
+        case payloadResponse(Result<CreateSecretPayload, SecretUseCaseError>, revealing: SecretFieldID?)
+        /// 인증만 수행한 결과. payload를 이미 들고 있는데 창만 만료된 경우에 쓴다.
+        case reauthenticateResponse(Result<Bool, Never>, revealing: SecretFieldID)
+        /// 클립보드 복사 결과. 실패도 사용자에게 알린다 — 값이 복사된 줄 알고 붙여넣으면 더 혼란스럽다.
+        case copyResponse(Result<Bool, Never>)
         case likeResponse(Result<Secret, SecretUseCaseError>)
+        /// 앱 수준 사건. 정책이 무효화 대상으로 보면 인증 창과 열린 필드를 모두 닫는다.
+        case lifecycleEvent(AppLifecycleEvent)
         case deleteResponse(Result<Secret, SecretUseCaseError>)
 
         // MARK: Child
@@ -101,6 +123,9 @@ public struct SecretDetailFeature {
 
     @Dependency(\.projectClient) var projectClient
     @Dependency(\.secretClient) var secretClient
+    @Dependency(\.appLifecycleClient) var appLifecycleClient
+    @Dependency(\.revealAuthPolicy) var revealAuthPolicy
+    @Dependency(\.date.now) var now
 
     // MARK: - Init
 
@@ -136,14 +161,21 @@ public struct SecretDetailFeature {
                     },
                 ]
 
-                state.payloadState = .loading
-                effects.append(revealEffect(secret: state.secret))
+                // 진입 시에는 복호화하지 않는다. payload 필드는 값과 무관하게 항상 마스킹되므로
+                // 미리 풀어둘 이유가 없고, 화면을 여는 것만으로 인증을 요구하지 않기 위해서다.
+                effects.append(
+                    .run { send in
+                        for await event in appLifecycleClient.events() {
+                            await send(.lifecycleEvent(event))
+                        }
+                    }
+                )
                 return .merge(effects)
 
-            // 프로젝트 목록은 이미 확보돼 있고 실패한 것은 복호화뿐이므로 reveal만 다시 태운다.
+            // 복호화 실패 후 재시도. 어떤 필드가 유발했는지는 이미 잃었으므로 값만 다시 받아온다.
             case .didTapRetryReveal:
                 state.payloadState = .loading
-                return revealEffect(secret: state.secret)
+                return revealEffect(secret: state.secret, revealing: nil)
 
             // 디자인에서 close(×) 버튼을 제거했으므로 현재 이 액션을 발생시키는 UI 경로가 없다.
             // detail은 사이드바 전환·리스트 선택 해제(`secretSelected(nil)`)로 닫힌다.
@@ -158,25 +190,82 @@ public struct SecretDetailFeature {
 
             case .projectsResponse(.failure):
                 state.isLoadingProjects = false
+                state.alert = .projectsLoadFailed
                 return .none
 
             case .linkedProjectsResponse(.success(let projects)):
                 state.linkedProjects = projects
                 return .none
 
-            // 연결 프로젝트 조회 실패는 alert를 띄우지 않는다 — 부가 정보이고,
-            // payload 복호화 실패 alert와 겹치면 사용자가 원인을 오해한다. 필드는 빈 값으로 남는다.
+            // 진입 시 복호화를 하지 않게 되면서 복호화 실패 alert와 겹칠 일이 없어졌다.
+            // 필드는 빈 값으로 남고, 나머지 정보는 영향받지 않는다는 것을 문구로 알린다.
             case .linkedProjectsResponse(.failure):
+                state.alert = .projectsLoadFailed
                 return .none
 
-            case .payloadResponse(.success(let payload)):
+            // 복호화는 인증을 통과해야만 성공하므로, 도착 자체가 인증 성공을 뜻한다.
+            case .payloadResponse(.success(let payload), let revealing):
                 state.payloadState = .loaded(payload)
-                return .none
+                state.revealAuthorizedAt = now
+                if let revealing {
+                    state.revealedFields.insert(revealing)
+                }
+                return copyPendingFieldEffect(&state)
 
-            case .payloadResponse(.failure(let error)):
+            case .payloadResponse(.failure(let error), _):
                 state.payloadState = .failed(error)
+                state.pendingCopyField = nil
                 state.alert = .payloadRevealFailed(SecretDetailError.map(error))
                 return .none
+
+            case .reauthenticateResponse(.success(let didAuthenticate), let field):
+                guard didAuthenticate else {
+                    state.alert = .payloadRevealFailed(.authRequired)
+                    return .none
+                }
+                state.revealAuthorizedAt = now
+                state.revealedFields.insert(field)
+                return .none
+
+            case .copyResponse(.success(let didCopy)):
+                guard !didCopy else { return .none }
+                state.alert = .copyFailed
+                return .none
+
+            case .lifecycleEvent(let event):
+                guard revealAuthPolicy.invalidates(on: event) else { return .none }
+                // 값 자체는 메모리에 남겨둔다 — 다시 열 때 인증만 받으면 되고,
+                // 복호화를 또 하는 것은 사용자에게 보이지 않는 비용이다.
+                state.revealAuthorizedAt = nil
+                state.revealedFields.removeAll()
+                return .none
+
+            // 닫는 것은 인증 대상이 아니다 — 노출을 줄이는 방향이라 언제나 즉시 처리한다.
+            case .didTapToggleReveal(let field) where state.revealedFields.contains(field):
+                state.revealedFields.remove(field)
+                return .none
+
+            case .didTapToggleReveal(let field):
+                // 값이 아직 없으면 복호화가 필요하고, 복호화 경로가 인증까지 함께 수행한다.
+                guard case .loaded = state.payloadState else {
+                    state.payloadState = .loading
+                    return revealEffect(secret: state.secret, revealing: field)
+                }
+                // 값은 있고 인증 창만 남았는지 확인한다. 열려 있으면 인증 없이 연다.
+                guard !revealAuthPolicy.isAuthorized(since: state.revealAuthorizedAt, now: now) else {
+                    state.revealedFields.insert(field)
+                    return .none
+                }
+                return reauthenticateEffect(revealing: field)
+
+            // 복사는 인증하지 않는다. 다만 값이 없으면 복호화가 필요하고, 그 경로가 인증을 탄다.
+            case .didTapCopy(let field):
+                guard case .loaded(let payload) = state.payloadState else {
+                    state.pendingCopyField = field
+                    state.payloadState = .loading
+                    return revealEffect(secret: state.secret, revealing: nil)
+                }
+                return copyEffect(value: payload.value(for: field))
 
             case .didTapToggleLike:
                 let liked = !state.secret.liked
@@ -239,18 +328,62 @@ public struct SecretDetailFeature {
 
     // MARK: - Effects
 
-    /// 진입(`task`)과 재시도(`didTapRetryReveal`)가 같은 조회를 쓴다.
-    /// `revealPayload`는 매번 생체인증을 타므로, 취소되면 재시도만으로 같은 지점부터 다시 진행돼야 한다.
-    private func revealEffect(secret: Secret) -> Effect<Action> {
+    /// 인증 + 복호화. `revealPayload`가 둘을 함께 하므로 값이 아직 없을 때만 쓴다.
+    /// - Parameter revealing: 이 복호화를 유발한 필드. 성공하면 함께 열린다. 재시도 경로에서는 `nil`.
+    private func revealEffect(
+        secret: Secret,
+        revealing: SecretFieldID?
+    ) -> Effect<Action> {
         .run { send in
             do {
                 let payload = try await secretClient.revealPayload(secret)
-                await send(.payloadResponse(.success(payload)))
+                await send(.payloadResponse(.success(payload), revealing: revealing))
             } catch is CancellationError {
             } catch {
-                await send(.payloadResponse(.failure(SecretUseCaseError.map(error))))
+                await send(.payloadResponse(.failure(SecretUseCaseError.map(error)), revealing: revealing))
             }
         }
         .cancellable(id: CancelID.reveal, cancelInFlight: true)
+    }
+
+    /// 값은 이미 있고 인증 창만 만료된 경우. 다시 복호화하지 않고 인증만 받는다.
+    /// 인증 실패·취소는 alert 없이 조용히 무시한다 — 사용자가 스스로 취소한 경우가 대부분이고,
+    /// 반복 실패는 `AuthenticateUseCase`가 비정상 접근으로 따로 알린다.
+    private func reauthenticateEffect(revealing field: SecretFieldID) -> Effect<Action> {
+        .run { send in
+            do {
+                try await secretClient.authenticate("Reveal secret value")
+                await send(.reauthenticateResponse(.success(true), revealing: field))
+            } catch is CancellationError {
+            } catch {
+                await send(.reauthenticateResponse(.success(false), revealing: field))
+            }
+        }
+        .cancellable(id: CancelID.reveal, cancelInFlight: true)
+    }
+
+    /// 복호화가 끝난 뒤 대기 중이던 복사를 이어서 수행한다.
+    private func copyPendingFieldEffect(_ state: inout State) -> Effect<Action> {
+        guard
+            let field = state.pendingCopyField,
+            case .loaded(let payload) = state.payloadState
+        else {
+            return .none
+        }
+        state.pendingCopyField = nil
+        return copyEffect(value: payload.value(for: field))
+    }
+
+    /// 클립보드 쓰기·30초 자동 정리·반복 복사 감지는 UseCase가 수행한다.
+    private func copyEffect(value: String) -> Effect<Action> {
+        .run { send in
+            do {
+                try await secretClient.copySensitiveValue(value)
+                await send(.copyResponse(.success(true)))
+            } catch is CancellationError {
+            } catch {
+                await send(.copyResponse(.success(false)))
+            }
+        }
     }
 }

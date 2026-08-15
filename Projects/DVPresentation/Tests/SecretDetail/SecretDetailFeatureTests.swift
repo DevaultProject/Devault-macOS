@@ -12,6 +12,9 @@ import DVDomain
 @MainActor
 struct SecretDetailFeatureTests {
 
+    /// reveal 인증 창 판정이 실행 시점에 흔들리지 않도록 고정한다.
+    private static let referenceDate = Date(timeIntervalSince1970: 1_800_000_000)
+
     // MARK: - Helpers
 
     private static func makeSecret(
@@ -65,9 +68,9 @@ struct SecretDetailFeatureTests {
             $0.secretClient.fetchLinkedProjects = { _ in throw CancellationError() }
         }
 
+        // 진입은 복호화를 시작하지 않는다 — payloadState는 .idle로 남는다.
         await store.send(.task) {
             $0.isLoadingProjects = true
-            $0.payloadState = .loading
         }
         await store.receive(.projectsResponse(.success(projects))) {
             $0.isLoadingProjects = false
@@ -75,67 +78,63 @@ struct SecretDetailFeatureTests {
         }
     }
 
-    @Test("task: payload 로드 성공")
-    func task_payloadSuccess() async {
+    /// 진입이 아니라 눈 버튼이 복호화를 유발한다. 복호화는 인증을 통과해야 성공하므로
+    /// 도착 자체가 인증 성공이고, 그 시각으로 재인증 창이 열린다.
+    @Test("눈 버튼: 값이 없으면 복호화하고 그 필드를 연다")
+    func toggleReveal_decryptsAndOpensField() async {
         let secret = Self.makeSecret()
         let payload = CreateSecretPayload.apiKey(APIKeyPayload(value: "test_token"), nil)
 
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
-            $0.projectClient.fetchProjects = { throw CancellationError() }
-            $0.secretClient.fetchLinkedProjects = { _ in throw CancellationError() }
             $0.secretClient.revealPayload = { _ in payload }
+            $0.date = .constant(Self.referenceDate)
         }
 
-        await store.send(.task) {
-            $0.isLoadingProjects = true
+        await store.send(.didTapToggleReveal(.value)) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.success(payload))) {
+        await store.receive(.payloadResponse(.success(payload), revealing: .value)) {
             $0.payloadState = .loaded(payload)
+            $0.revealAuthorizedAt = Self.referenceDate
+            $0.revealedFields = [.value]
         }
     }
 
-    @Test("task payload 실패: payloadState .failed + alert 노출")
-    func task_payloadFailure() async {
+    @Test("눈 버튼 복호화 실패: payloadState .failed + alert 노출")
+    func toggleReveal_decryptionFailure() async {
         let secret = Self.makeSecret()
 
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
-            $0.projectClient.fetchProjects = { throw CancellationError() }
-            $0.secretClient.fetchLinkedProjects = { _ in throw CancellationError() }
             $0.secretClient.revealPayload = { _ in throw SecretUseCaseError.cryptoFailure(.decryptionFailed) }
         }
 
-        await store.send(.task) {
-            $0.isLoadingProjects = true
+        await store.send(.didTapToggleReveal(.value)) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.failure(.cryptoFailure(.decryptionFailed)))) {
+        await store.receive(.payloadResponse(.failure(.cryptoFailure(.decryptionFailed)), revealing: .value)) {
             $0.payloadState = .failed(.cryptoFailure(.decryptionFailed))
             $0.alert = .payloadRevealFailed(.decryptionFailed)
         }
     }
 
-    @Test("task payload 인증 실패: authRequired alert 노출")
-    func task_payloadAuthFailure() async {
+    @Test("눈 버튼 인증 실패: authRequired alert 노출")
+    func toggleReveal_authenticationFailure() async {
         let secret = Self.makeSecret()
 
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
-            $0.projectClient.fetchProjects = { throw CancellationError() }
-            $0.secretClient.fetchLinkedProjects = { _ in throw CancellationError() }
             $0.secretClient.revealPayload = { _ in throw SecretUseCaseError.authenticationFailure(.cancelled) }
         }
 
-        await store.send(.task) {
-            $0.isLoadingProjects = true
+        await store.send(.didTapToggleReveal(.value)) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.failure(.authenticationFailure(.cancelled)))) {
+        await store.receive(.payloadResponse(.failure(.authenticationFailure(.cancelled)), revealing: .value)) {
             $0.payloadState = .failed(.authenticationFailure(.cancelled))
             $0.alert = .payloadRevealFailed(.authRequired)
         }
@@ -156,17 +155,19 @@ struct SecretDetailFeatureTests {
             $0.secretClient.fetchLinkedProjects = { _ in linked }
         }
 
+        // 진입은 복호화를 시작하지 않는다 — payloadState는 .idle로 남는다.
         await store.send(.task) {
             $0.isLoadingProjects = true
-            $0.payloadState = .loading
         }
         await store.receive(.linkedProjectsResponse(.success(linked))) {
             $0.linkedProjects = linked
         }
     }
 
-    @Test("연결된 프로젝트 조회 실패는 alert를 띄우지 않는다")
-    func task_linkedProjectsFailure_noAlert() async {
+    /// 모든 실패를 알린다는 정책에 따라 이 경로도 alert를 띄운다.
+    /// 진입 시 복호화를 하지 않게 되면서 복호화 실패 alert와 겹칠 일이 없어졌다.
+    @Test("연결된 프로젝트 조회 실패도 alert를 띄운다")
+    func task_linkedProjectsFailure_showsAlert() async {
         let secret = Self.makeSecret()
 
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
@@ -177,12 +178,14 @@ struct SecretDetailFeatureTests {
             $0.secretClient.fetchLinkedProjects = { _ in throw SecretUseCaseError.unexpected }
         }
 
+        // 진입은 복호화를 시작하지 않는다 — payloadState는 .idle로 남는다.
         await store.send(.task) {
             $0.isLoadingProjects = true
-            $0.payloadState = .loading
         }
-        await store.receive(.linkedProjectsResponse(.failure(.unexpected)))
-        #expect(store.state.alert == nil)
+        await store.receive(.linkedProjectsResponse(.failure(.unexpected))) {
+            $0.alert = .projectsLoadFailed
+        }
+        // 값은 비어 있을 뿐 다른 정보는 영향받지 않는다.
         #expect(store.state.linkedProjects.isEmpty)
     }
 
@@ -201,13 +204,15 @@ struct SecretDetailFeatureTests {
             SecretDetailFeature()
         } withDependencies: {
             $0.secretClient.revealPayload = { _ in payload }
+            $0.date = .constant(Self.referenceDate)
         }
 
         await store.send(.didTapRetryReveal) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.success(payload))) {
+        await store.receive(.payloadResponse(.success(payload), revealing: nil)) {
             $0.payloadState = .loaded(payload)
+            $0.revealAuthorizedAt = Self.referenceDate
         }
     }
 
@@ -224,7 +229,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapRetryReveal) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.failure(.cryptoFailure(.decryptionFailed)))) {
+        await store.receive(.payloadResponse(.failure(.cryptoFailure(.decryptionFailed)), revealing: nil)) {
             $0.payloadState = .failed(.cryptoFailure(.decryptionFailed))
             $0.alert = .payloadRevealFailed(.decryptionFailed)
         }
@@ -239,8 +244,7 @@ struct SecretDetailFeatureTests {
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
-            $0.projectClient.fetchProjects = { throw CancellationError() }
-            $0.secretClient.fetchLinkedProjects = { _ in throw CancellationError() }
+            $0.date = .constant(Self.referenceDate)
             $0.secretClient.revealPayload = { _ in
                 let attempt = attemptCount.withValue { count -> Int in
                     count += 1
@@ -254,11 +258,10 @@ struct SecretDetailFeatureTests {
             }
         }
 
-        await store.send(.task) {
-            $0.isLoadingProjects = true
+        await store.send(.didTapToggleReveal(.value)) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.failure(.authenticationFailure(.cancelled)))) {
+        await store.receive(.payloadResponse(.failure(.authenticationFailure(.cancelled)), revealing: .value)) {
             $0.payloadState = .failed(.authenticationFailure(.cancelled))
             $0.alert = .payloadRevealFailed(.authRequired)
         }
@@ -270,11 +273,220 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapRetryReveal) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.success(payload))) {
+        await store.receive(.payloadResponse(.success(payload), revealing: nil)) {
             $0.payloadState = .loaded(payload)
+            $0.revealAuthorizedAt = Self.referenceDate
         }
         // 매 시도가 생체인증을 새로 타므로 호출 횟수 자체가 재시도 성립의 근거다.
         #expect(attemptCount.value == 2)
+    }
+
+    // MARK: - reveal 인증 창
+
+    /// 창이 열려 있는 동안에는 다른 필드를 열어도 인증을 다시 요구하지 않는다.
+    @Test("인증 창이 열려 있으면 다른 필드는 인증 없이 열린다")
+    func toggleReveal_withinWindow_skipsAuthentication() async {
+        let secret = Self.makeSecret()
+        let payload = CreateSecretPayload.oauthClient(
+            OAuthClientPayload(clientId: "id", clientSecret: "secret"), nil
+        )
+
+        var state = SecretDetailFeature.State(secret: secret)
+        state.payloadState = .loaded(payload)
+        state.revealAuthorizedAt = Self.referenceDate
+        state.revealedFields = [.clientId]
+
+        let store = TestStore(initialState: state) {
+            SecretDetailFeature()
+        } withDependencies: {
+            // 인증을 부르면 미구현 dependency 호출로 실패하므로, 호출하지 않는다는 것 자체가 검증된다.
+            $0.date = .constant(Self.referenceDate.addingTimeInterval(60))
+        }
+
+        await store.send(.didTapToggleReveal(.clientSecret)) {
+            $0.revealedFields = [.clientId, .clientSecret]
+        }
+    }
+
+    /// 창이 닫힌 뒤에는 값이 이미 있어도 인증을 다시 받는다. 복호화는 하지 않는다.
+    @Test("창이 만료되면 인증만 다시 받고 복호화는 하지 않는다")
+    func toggleReveal_afterExpiry_reauthenticatesOnly() async {
+        let secret = Self.makeSecret()
+        let payload = CreateSecretPayload.apiKey(APIKeyPayload(value: "token"), nil)
+        let expired = Self.referenceDate.addingTimeInterval(-1_000)
+
+        var state = SecretDetailFeature.State(secret: secret)
+        state.payloadState = .loaded(payload)
+        state.revealAuthorizedAt = expired
+
+        let store = TestStore(initialState: state) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.authenticate = { _ in }
+            $0.date = .constant(Self.referenceDate)
+        }
+
+        await store.send(.didTapToggleReveal(.value))
+        await store.receive(.reauthenticateResponse(.success(true), revealing: .value)) {
+            $0.revealAuthorizedAt = Self.referenceDate
+            $0.revealedFields = [.value]
+        }
+    }
+
+    @Test("재인증 실패: 필드가 열리지 않고 alert가 뜬다")
+    func reauthenticate_failure_showsAlert() async {
+        let secret = Self.makeSecret()
+        let payload = CreateSecretPayload.apiKey(APIKeyPayload(value: "token"), nil)
+
+        var state = SecretDetailFeature.State(secret: secret)
+        state.payloadState = .loaded(payload)
+        state.revealAuthorizedAt = Self.referenceDate.addingTimeInterval(-1_000)
+
+        let store = TestStore(initialState: state) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.authenticate = { _ in throw SecretUseCaseError.unexpected }
+            $0.date = .constant(Self.referenceDate)
+        }
+
+        await store.send(.didTapToggleReveal(.value))
+        await store.receive(.reauthenticateResponse(.success(false), revealing: .value)) {
+            $0.alert = .payloadRevealFailed(.authRequired)
+        }
+        #expect(store.state.revealedFields.isEmpty)
+    }
+
+    /// 닫는 방향은 노출을 줄이므로 인증을 타지 않는다.
+    @Test("열린 필드를 닫을 때는 인증하지 않는다")
+    func toggleReveal_closing_needsNoAuthentication() async {
+        let secret = Self.makeSecret()
+        var state = SecretDetailFeature.State(secret: secret)
+        state.revealedFields = [.value]
+
+        let store = TestStore(initialState: state) { SecretDetailFeature() }
+
+        await store.send(.didTapToggleReveal(.value)) {
+            $0.revealedFields = []
+        }
+    }
+
+    // MARK: - 생명주기 무효화
+
+    @Test("무효화 대상 사건이 오면 인증 창과 열린 필드가 모두 닫힌다")
+    func lifecycleEvent_invalidatesRevealState() async {
+        let secret = Self.makeSecret()
+        let payload = CreateSecretPayload.apiKey(APIKeyPayload(value: "token"), nil)
+
+        var state = SecretDetailFeature.State(secret: secret)
+        state.payloadState = .loaded(payload)
+        state.revealAuthorizedAt = Self.referenceDate
+        state.revealedFields = [.value]
+
+        let store = TestStore(initialState: state) { SecretDetailFeature() }
+
+        await store.send(.lifecycleEvent(.didEnterBackground)) {
+            $0.revealAuthorizedAt = nil
+            $0.revealedFields = []
+        }
+        // 값 자체는 남는다 — 다시 열 때 인증만 받으면 되고 재복호화는 불필요한 비용이다.
+        #expect(store.state.payloadState == .loaded(payload))
+    }
+
+    @Test("정책이 무시하는 사건은 상태를 건드리지 않는다")
+    func lifecycleEvent_ignoredByPolicy_keepsState() async {
+        let secret = Self.makeSecret()
+        var state = SecretDetailFeature.State(secret: secret)
+        state.revealAuthorizedAt = Self.referenceDate
+        state.revealedFields = [.value]
+
+        let store = TestStore(initialState: state) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.revealAuthPolicy = RevealAuthPolicy(
+                ttl: 180,
+                invalidatesOnBackground: false,
+                invalidatesOnLock: true
+            )
+        }
+
+        await store.send(.lifecycleEvent(.didEnterBackground))
+    }
+
+    // MARK: - 복사
+
+    @Test("값이 있으면 복호화 없이 원문을 복사한다")
+    func copy_withLoadedPayload_copiesPlainValue() async {
+        let secret = Self.makeSecret()
+        let payload = CreateSecretPayload.apiKey(APIKeyPayload(value: "ghp_secret"), nil)
+        let copied = LockIsolated<String?>(nil)
+
+        var state = SecretDetailFeature.State(secret: secret)
+        state.payloadState = .loaded(payload)
+
+        let store = TestStore(initialState: state) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.copySensitiveValue = { value in
+                copied.withValue { $0 = value }
+            }
+        }
+
+        await store.send(.didTapCopy(.value))
+        await store.receive(.copyResponse(.success(true)))
+        // 마스킹 여부와 무관하게 원문이 들어가야 한다.
+        #expect(copied.value == "ghp_secret")
+    }
+
+    /// 복사가 인증을 유발하는 것이 아니라, 값이 없어 복호화가 필요한 것이 유발한다.
+    @Test("값이 없으면 복호화한 뒤 이어서 복사한다")
+    func copy_withoutPayload_decryptsThenCopies() async {
+        let secret = Self.makeSecret()
+        let payload = CreateSecretPayload.apiKey(APIKeyPayload(value: "ghp_secret"), nil)
+        let copied = LockIsolated<String?>(nil)
+
+        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.revealPayload = { _ in payload }
+            $0.secretClient.copySensitiveValue = { value in
+                copied.withValue { $0 = value }
+            }
+            $0.date = .constant(Self.referenceDate)
+        }
+
+        await store.send(.didTapCopy(.value)) {
+            $0.pendingCopyField = .value
+            $0.payloadState = .loading
+        }
+        await store.receive(.payloadResponse(.success(payload), revealing: nil)) {
+            $0.payloadState = .loaded(payload)
+            $0.revealAuthorizedAt = Self.referenceDate
+            $0.pendingCopyField = nil
+        }
+        await store.receive(.copyResponse(.success(true)))
+        #expect(copied.value == "ghp_secret")
+        // 복사는 마스킹을 풀지 않는다.
+        #expect(store.state.revealedFields.isEmpty)
+    }
+
+    @Test("복사 실패: alert가 뜬다")
+    func copy_failure_showsAlert() async {
+        let secret = Self.makeSecret()
+        let payload = CreateSecretPayload.apiKey(APIKeyPayload(value: "ghp_secret"), nil)
+
+        var state = SecretDetailFeature.State(secret: secret)
+        state.payloadState = .loaded(payload)
+
+        let store = TestStore(initialState: state) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.copySensitiveValue = { _ in throw ClipboardError.writeFailed }
+        }
+
+        await store.send(.didTapCopy(.value))
+        await store.receive(.copyResponse(.success(false))) {
+            $0.alert = .copyFailed
+        }
     }
 
     // MARK: - Close delegate

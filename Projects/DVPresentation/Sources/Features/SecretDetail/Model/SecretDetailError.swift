@@ -34,19 +34,6 @@ enum SecretDetailError: Equatable {
         }
     }
 
-    /// 조회 화면에 남는 안내 문구. alert는 닫히면 사라지므로 원인은 화면에서도 읽혀야 한다.
-    var revealFailureMessage: LocalizedStringResource {
-        switch self {
-        case .authRequired:
-            return .module("Authentication is required to reveal this secret.")
-        case .decryptionFailed:
-            return .module("This secret could not be decrypted.")
-        // `map(_:)`이 조회·저장소 실패까지 `.unexpected`로 모으므로 복호화 문구를 쓰면 안 된다.
-        // alert(`payloadRevealFailed`)가 이 케이스에 주는 문구와 같은 값을 쓴다.
-        case .unexpected:
-            return .module("An unexpected error occurred. Please try again.")
-        }
-    }
 }
 
 // MARK: - AlertState Presets
@@ -90,6 +77,34 @@ extension AlertState where Action == SecretDetailFeature.Action.Alert {
                     bundle: .module
                 )
             }
+        }
+    }
+
+    /// 프로젝트 목록 조회 실패. 연결 프로젝트와 선택 가능한 프로젝트 모두 이 alert를 쓴다.
+    static var projectsLoadFailed: Self {
+        Self {
+            TextState("Failed to load projects", bundle: .module)
+        } actions: {
+            ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
+        } message: {
+            TextState(
+                "Project information could not be loaded. Other details are unaffected.",
+                bundle: .module
+            )
+        }
+    }
+
+    /// 클립보드 복사 실패. 자동 정리·반복 감지까지 포함한 경로가 실패한 경우다.
+    static var copyFailed: Self {
+        Self {
+            TextState("Failed to copy", bundle: .module)
+        } actions: {
+            ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
+        } message: {
+            TextState(
+                "The value could not be copied to the clipboard. Please try again.",
+                bundle: .module
+            )
         }
     }
 
