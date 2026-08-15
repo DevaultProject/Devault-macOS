@@ -18,19 +18,22 @@ import SwiftUI
 ///
 /// 외곽선은 없고 ``DVColor/gray300`` 배경 채움으로 박스 형태를 표현합니다.
 ///
-/// ## 오버플로우 처리
+/// ## 높이와 줄바꿈
 ///
-/// 본문 텍스트가 컨테이너 너비(`size.width`)보다 길 경우, **잘리지 않고 가로 스크롤**됩니다.
-/// 사용자는 트랙패드 두 손가락 제스처 또는 마우스 휠(가로)로 가려진 부분까지 모두 확인할 수 있습니다.
-/// 스크롤 인디케이터는 표시되지 않아(`showsIndicators: false`) UI가 깔끔하게 유지됩니다.
+/// 높이는 ``DVComponentSize/fieldHeight``를 **최소값**으로 갖고, 내용이 많으면 그만큼 자랍니다.
+/// 본문이 폭을 넘으면 잘리거나 가로 스크롤되지 않고 **다음 줄로 접힙니다**. 개행이 있는 값
+/// (PEM, JSON, `KEY=value` 목록)도 줄 구조 그대로 전부 보입니다.
 ///
-/// 오버플로우 상태로 스크롤되어도 본문 텍스트와 액세서리 사이에는 **최소 8pt 간격**이 항상 보장되어 글자가 액세서리 버튼에 들러붙지 않습니다.
+/// 읽기 전용 표시라 값을 확인할 다른 수단이 없으므로, 스크롤 조작을 요구하는 대신 다 펼쳐 보여줍니다.
+/// 그래서 ``DVTextField``(입력)의 가로 시프트 동작과는 다릅니다 — 입력은 커서를 따라가야 하지만
+/// 표시는 전체를 한눈에 보여주는 쪽이 맞습니다.
 ///
-/// ``DVTextField``의 시스템 `TextField`도 입력 텍스트가 폭을 넘으면 동일하게 가로 시프트로 처리하므로, 두 컴포넌트의 오버플로우 동작은 일관됩니다.
+/// 본문과 액세서리 사이에는 **최소 8pt 간격**이 보장되어 글자가 액세서리 버튼에 들러붙지 않습니다.
+/// 여러 줄로 자라도 액세서리와 leading 아이콘은 **상단에 고정**되어 특정 줄에 걸친 것처럼 보이지 않습니다.
 ///
 /// ## 텍스트 선택·복사
 ///
-/// 본문에 `.textSelection(.enabled)`이 적용되어 있어, 사용자가 마우스 드래그 또는 ⌘+A로 텍스트를 선택하고 ⌘+C로 클립보드에 복사할 수 있습니다. 가로 스크롤로 가려진 부분도 드래그를 이어가며 선택 가능합니다.
+/// 본문에 `.textSelection(.enabled)`이 적용되어 있어, 사용자가 마우스 드래그 또는 ⌘+A로 텍스트를 선택하고 ⌘+C로 클립보드에 복사할 수 있습니다.
 /// ``init(copyable:size:onCopy:)`` 편의 init과 별도로 동작하므로 둘 다 함께 활용 가능합니다.
 ///
 /// ## 액세서리
@@ -112,7 +115,7 @@ public struct DVTextContainer<Accessories: View>: View {
     private let text: String
     private let size: DVComponentSize
     private let textColor: DVColor
-    /// 본문 왼쪽에 고정되는 비인터랙티브 표지 아이콘. 본문이 가로 스크롤되어도 함께 밀리지 않는다.
+    /// 본문 왼쪽에 놓이는 비인터랙티브 표지 아이콘. 본문이 여러 줄로 자라도 첫 줄에 붙어 있는다.
     private let leadingIcon: Image?
     private let accessories: () -> Accessories
     /// 우측 padding (포인트). 액세서리가 있을 땐 4pt(아이콘이 약간 안쪽으로 들어오는 디자인), 액세서리 없는 단순 텍스트 컨테이너는 좌우 대칭의 8pt를 적용한다.
@@ -144,30 +147,36 @@ public struct DVTextContainer<Accessories: View>: View {
     }
 
     public var body: some View {
-        // spacing 8 — 텍스트(또는 가로 스크롤된 콘텐츠)와 액세서리 사이 최소 간격.
-        // 텍스트가 오버플로우되어 ScrollView 우측 끝까지 스크롤되더라도 이 8pt가 보장됨.
-        HStack(spacing: 8) {
+        // 본문이 여러 줄로 자랄 수 있으므로 상단 정렬 — 액세서리와 leading 아이콘이
+        // 박스 세로 중앙으로 밀려 특정 줄에 걸친 것처럼 보이면 안 된다.
+        HStack(alignment: .top, spacing: 8) {
             // leading 아이콘은 본문과 한 덩어리로 읽히도록 액세서리보다 좁은 6pt로 붙인다.
-            HStack(spacing: 6) {
+            HStack(alignment: .top, spacing: 6) {
                 leadingIconView
-                ScrollView(.horizontal, showsIndicators: false) {
-                    Text(text)
-                        .font(DVFont.bodyLG.font)
-                        .foregroundStyle(Color.dv(textColor))
-                        .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
-                        .textSelection(.enabled)
-                }
+                Text(text)
+                    .font(DVFont.bodyLG.font)
+                    .foregroundStyle(Color.dv(textColor))
+                    .lineSpacing(DVFont.bodyLG.lineSpacing)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             accessories()
         }
         .padding(.leading, 8)
         .padding(.trailing, trailingPadding)
-        .dvComponentWidth(size, height: DVComponentSize.fieldHeight, alignment: .leading)
+        .padding(.vertical, Self.verticalPadding)
+        .dvComponentWidth(size, minHeight: DVComponentSize.fieldHeight, alignment: .topLeading)
         .background {
             RoundedRectangle(cornerRadius: 6)
                 .fill(Color.dv(.gray300))
         }
+    }
+
+    /// 상하 padding. 한 줄일 때 박스가 정확히 ``DVComponentSize/fieldHeight``가 되도록 잡는다.
+    /// 높이가 고정에서 최소로 바뀌었으므로 세로 중앙 정렬 대신 이 값이 첫 줄 위치를 결정한다.
+    private static var verticalPadding: CGFloat {
+        (DVComponentSize.fieldHeight - DVFont.bodyLG.lineHeight) / 2
     }
 
     /// 본문과 같은 폰트를 써서 아이콘이 글자 크기에 맞춰 따라가고, `fixedSize()`로
