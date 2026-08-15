@@ -55,15 +55,13 @@ struct DetailReadOnlyFieldView: View {
     var isSensitive: Bool = false
     /// 복사 버튼 노출. 평문 필드에서만 빈 값일 때 무시된다.
     var isCopyable: Bool = false
-    /// 마스킹 해제 여부. 인증·복호화를 Feature가 관장하므로 주입받는다.
-    var isRevealed: Bool = false
+    /// 이 필드의 식별자. 눈·복사 동작을 Feature에 전달할 때 쓴다.
+    /// payload에서 오는 민감 필드만 갖는다 — 평문 필드는 복사 외에 할 일이 없다.
+    var field: SecretFieldID?
     var sizeMode: FormSlotSize = .fullWidth
-    /// 눈 버튼 탭. 인증과 복호화는 호출부가 수행한다.
-    var onToggleReveal: (() -> Void)?
-    /// 복사 버튼 탭. 클립보드 쓰기와 자동 정리는 호출부가 UseCase로 수행한다.
-    var onCopy: (() -> Void)?
 
     @Environment(\.formLayout) private var layout
+    @Environment(\.detailFieldActions) private var actions
 
     private var size: DVComponentSize {
         layout.size(for: sizeMode)
@@ -99,7 +97,7 @@ extension DetailReadOnlyFieldView {
     /// 화면에 그릴 문자열. 마스킹 중이면 고정 placeholder, 아니면 원문.
     /// 복사는 이 값을 쓰지 않는다 — 호출부가 원문을 클립보드에 넣는다.
     private var displayedValue: String {
-        isSensitive && !isRevealed ? Self.maskedPlaceholder : value
+        isSensitive && !actions.isRevealed(field) ? Self.maskedPlaceholder : value
     }
 
     @ViewBuilder
@@ -118,16 +116,16 @@ extension DetailReadOnlyFieldView {
         HStack(spacing: 10) {
             if showsCopyButton {
                 Button {
-                    onCopy?()
+                    field.map(actions.onCopy)
                 } label: {
                     Image(systemName: "doc.on.doc")
                 }
             }
             if showsRevealToggle {
                 Button {
-                    onToggleReveal?()
+                    field.map(actions.onToggleReveal)
                 } label: {
-                    Image(systemName: isRevealed ? "eye.slash" : "eye")
+                    Image(systemName: actions.isRevealed(field) ? "eye.slash" : "eye")
                 }
             }
         }

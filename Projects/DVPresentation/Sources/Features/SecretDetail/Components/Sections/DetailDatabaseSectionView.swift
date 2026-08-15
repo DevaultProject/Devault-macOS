@@ -19,7 +19,8 @@ struct DetailDatabaseSectionView: View {
                 label: .module("Link String"),
                 value: payload.linkString,
                 isSensitive: true,
-                isCopyable: true
+                isCopyable: true,
+                field: .linkString
             )
 
             AdaptiveFieldRow {

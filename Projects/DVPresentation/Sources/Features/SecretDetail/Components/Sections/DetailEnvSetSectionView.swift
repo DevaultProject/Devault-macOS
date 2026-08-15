@@ -21,7 +21,8 @@ struct DetailEnvSetSectionView: View {
                 label: .module("envSet List"),
                 value: payload.content,
                 isSensitive: true,
-                isCopyable: true
+                isCopyable: true,
+                field: .envContent
             )
 
             AdaptiveFieldRow {

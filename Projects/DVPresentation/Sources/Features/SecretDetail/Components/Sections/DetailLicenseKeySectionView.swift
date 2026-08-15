@@ -21,7 +21,8 @@ struct DetailLicenseKeySectionView: View {
                 label: .module("License Key"),
                 value: payload.licenseKey,
                 isSensitive: true,
-                isCopyable: true
+                isCopyable: true,
+                field: .licenseKey
             )
 
             AdaptiveFieldRow {

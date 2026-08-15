@@ -23,7 +23,8 @@ struct DetailServiceAccountSectionView: View {
                 label: .module("Certification JSON"),
                 value: payload.credentialJSON,
                 isSensitive: true,
-                isCopyable: true
+                isCopyable: true,
+                field: .credentialJSON
             )
 
             AdaptiveFieldRow {

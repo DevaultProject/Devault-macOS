@@ -22,7 +22,8 @@ struct DetailSSHKeySectionView: View {
                 label: .module("Private Key"),
                 value: payload.privateKey,
                 isSensitive: true,
-                isCopyable: true
+                isCopyable: true,
+                field: .privateKey
             )
 
             AdaptiveFieldRow {
@@ -45,7 +46,8 @@ struct DetailSSHKeySectionView: View {
                 label: .module("PassPhrase"),
                 value: payload.passphrase ?? "",
                 isSensitive: true,
-                isCopyable: true
+                isCopyable: true,
+                field: .passphrase
             )
 
             AdaptiveFieldRow {
