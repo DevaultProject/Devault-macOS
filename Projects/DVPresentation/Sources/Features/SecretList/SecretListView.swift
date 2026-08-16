@@ -23,11 +23,6 @@ struct SecretListView: View {
   var body: some View {
     content
       .task(id: store.collection) { store.send(.task) }
-      .sheet(
-        item: $store.scope(state: \.destination?.addToProject, action: \.destination.addToProject)
-      ) { addToProjectStore in
-        AddToProjectView(store: addToProjectStore)
-      }
       .alert($store.scope(state: \.alert, action: \.alert))
   }
 }
@@ -145,9 +140,6 @@ extension SecretListView {
       }
 
     case .all, .liked, .notice, .expired, .project:
-      Button("Add to Project") {
-        store.send(.didTapAddToProject(id: secret.id))
-      }
       Button("Delete", role: .destructive) {
         store.send(.didTapDelete(id: secret.id))
       }
