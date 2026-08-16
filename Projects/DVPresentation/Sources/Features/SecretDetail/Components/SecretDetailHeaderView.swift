@@ -30,7 +30,19 @@ struct SecretDetailHeaderView: View {
     let subType: SecretSubType?
     let isLiked: Bool
     /// payload 복호화 전/실패 상태에서는 수정 진입을 막는다.
+    /// `isEditing`이 참이면 수정 버튼 자체가 렌더되지 않으므로 조회 모드에서만 의미가 있다.
     var isEditEnabled: Bool = true
+    /// 편집 폼 위에 얹힌 헤더인지.
+    ///
+    /// 편집 중에는 **공유·수정·삭제를 렌더하지 않는다.** 눌러도 반응하지 않는 컨트롤을 노출하지
+    /// 않는다는 기준을 따르고(`#74`에서 수정 버튼을 숨긴 것과 같다), 편집 중 유효한 동작은
+    /// footer의 Save / Cancel뿐이다.
+    ///
+    /// **즐겨찾기만 남긴다.** 별은 액션이면서 동시에 상태 표시라, 숨기면 이 시크릿이 즐겨찾기인지가
+    /// 화면에서 사라진다. 대신 회색으로 바꿔 지금은 바꿀 수 없다는 것을 알린다 — 즐겨찾기 변경은
+    /// 조회 모드에서만 가능하다는 것이 정책이다. 편집 중에 즐겨찾기가 성공하면 `state.secret`이
+    /// 교체되어 저장 diff의 기준인 baseline과 어긋난다.
+    var isEditing: Bool = false
     let onToggleLike: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
@@ -70,8 +82,11 @@ extension SecretDetailHeaderView {
                     .lineLimit(1)
             }
             Spacer(minLength: 8)
-            actionsContainer
+            if !isEditing {
+                actionsContainer
+            }
         }
+        // 액션이 빠져도 행 높이가 흔들리지 않도록 고정한다 — 모드 전환 시 타입명이 위아래로 움직이면 안 된다.
         .frame(height: 30)
     }
 
@@ -79,11 +94,14 @@ extension SecretDetailHeaderView {
         Button(action: onToggleLike) {
             Image(systemName: isLiked ? "star.fill" : "star")
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Color.dv(.vaultGreen))
+                // 색으로 비활성을 알린다. 별은 원래 유채색이라 opacity만 낮추면
+                // "연한 초록"이 되어 꺼진 것으로 읽히지 않는다.
+                .foregroundStyle(Color.dv(isEditing ? .gray400 : .vaultGreen))
                 .frame(width: 24, height: 30)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(isEditing)
         .accessibilityLabel(
             Text(isLiked ? .module("Remove from favorites") : .module("Add to favorites"))
         )
@@ -238,6 +256,23 @@ private let _headerWidth: CGFloat = 380
         secretType: .etc,
         subType: nil,
         isLiked: false,
+        onToggleLike: {},
+        onEdit: {},
+        onDelete: {}
+    )
+    .padding(20)
+    .previewWidth(_headerWidth + 40)
+}
+
+/// 편집 중 모습. 공유·수정·삭제는 사라지고 즐겨찾기만 회색으로 남는다 —
+/// 즐겨찾기 여부는 계속 보여야 하는 정보이고, 회색이 지금은 바꿀 수 없다는 표시다.
+/// 액션이 빠져도 타입명 행의 높이는 조회 모드와 같아야 한다.
+#Preview("편집 중 · 즐겨찾기만 회색으로 남음") {
+    SecretDetailHeaderView(
+        secretType: .apiKeyToken,
+        subType: .apiKey,
+        isLiked: true,
+        isEditing: true,
         onToggleLike: {},
         onEdit: {},
         onDelete: {}
