@@ -150,7 +150,7 @@ struct SecretListFeatureTests {
         #expect(query.sort == SecretQuery.Sort(key: .expiry, direction: .ascending))
     }
 
-    @Test("notice collection의 query는 collection을 그대로 쓰고 expiringSoon 정렬을 강제한다")
+    @Test("notice collection의 query는 collection을 그대로 쓰고 만료 오름차순 정렬을 강제한다")
     func noticeQueryForcesExpiringSoonSort() {
         let today = Date(timeIntervalSince1970: 0)
         let state = SecretListFeature.State(collection: .notice(referenceDate: today))
@@ -159,7 +159,7 @@ struct SecretListFeatureTests {
 
         // predicate가 이미 window 전체를 검사하므로 .expired와 달리 collection 변환이 필요 없다.
         #expect(query.collection == .notice(referenceDate: today))
-        #expect(query.sort == .expiringSoon)
+        #expect(query.sort == SecretQuery.Sort(key: .expiry, direction: .ascending))
     }
 
     @Test("didSelectSecret은 selectedSecretID를 갱신하고 delegate로 알린다")

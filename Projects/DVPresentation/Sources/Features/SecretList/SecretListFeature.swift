@@ -45,7 +45,11 @@ public struct SecretListFeature {
       case .notice:
         // predicate가 이미 "지나지 않음 + window 이내"를 전부 검사하므로 window 변환이 필요 없다.
         // 임박한 것부터 보여주는 게 자연스러워 정렬은 고정한다(사용자가 바꿀 이유가 없는 화면).
-        return SecretQuery(collection: collection, searchText: normalizedSearchText, sort: .expiringSoon)
+        return SecretQuery(
+          collection: collection,
+          searchText: normalizedSearchText,
+          sort: SecretQuery.Sort(key: .expiry, direction: .ascending)
+        )
       case .all, .liked, .deleted, .project:
         return SecretQuery(collection: collection, searchText: normalizedSearchText, sort: sort)
       }
