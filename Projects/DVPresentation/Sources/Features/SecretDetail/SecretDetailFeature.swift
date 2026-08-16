@@ -131,6 +131,10 @@ public struct SecretDetailFeature {
         public var payloadState: LoadingState<CreateSecretPayload, SecretUseCaseError> = .idle
         /// 마스킹이 해제된 payload 필드. 필드마다 따로 열고 닫는다.
         var revealedFields: Set<SecretFieldID> = []
+        /// 수정 진입 복호화가 진행 중. `payloadState == .loading`만으로는 부족하다 —
+        /// 눈·복사가 유발한 복호화와 구분해야 한다. 이 둘은 취소 그룹이 달라 서로를
+        /// 대체하지 않으므로, 진행 중에 다른 복호화가 시작되면 둘이 동시에 돈다.
+        var isEnteringEdit = false
         /// 마지막 reveal 인증 성공 시각. `RevealAuthPolicy.ttl` 안에서는 재인증하지 않는다.
         ///
         /// State에 두는 것이 정책의 일부다 — 다른 시크릿을 선택하면 `MainFeature`가 이 State를
@@ -304,6 +308,7 @@ public struct SecretDetailFeature {
                 if continuation.opensRevealWindow {
                     state.revealAuthorizedAt = now
                 }
+                if case .edit = continuation { state.isEnteringEdit = false }
                 switch continuation {
                 case .none:
                     return .none
@@ -317,8 +322,9 @@ public struct SecretDetailFeature {
                     return .none
                 }
 
-            case .payloadResponse(.failure(let error), _):
+            case .payloadResponse(.failure(let error), let continuation):
                 state.payloadState = .failed(error)
+                if case .edit = continuation { state.isEnteringEdit = false }
                 state.alert = .payloadRevealFailed(SecretDetailError.map(error))
                 return .none
 
@@ -352,6 +358,16 @@ public struct SecretDetailFeature {
             // 닫는 것은 인증 대상이 아니다 — 노출을 줄이는 방향이라 언제나 즉시 처리한다.
             case .didTapToggleReveal(let field) where state.revealedFields.contains(field):
                 state.revealedFields.remove(field)
+                return .none
+
+            // 수정 진입 복호화가 도는 동안에는 새 복호화를 시작하지 않는다. 취소 그룹을 나눈
+            // 뒤로 이 둘은 서로를 대체하지 않으므로, 막지 않으면 인증 시트가 둘 뜨고 늦게 온
+            // 응답이 먼저 온 응답 위에 자기 continuation을 덮어쓴다.
+            //
+            // 눈·복사끼리는 막지 않는다 — 나중 요청이 앞 요청을 대체하는 것이 의도된 규칙이다
+            // (``CancelID/reveal``). 여기서 함께 막으면 그 규칙까지 사라진다.
+            case .didTapToggleReveal where state.isEnteringEdit,
+                 .didTapCopy where state.isEnteringEdit:
                 return .none
 
             case .didTapToggleReveal(let field):
@@ -444,6 +460,7 @@ public struct SecretDetailFeature {
                     return projects
                 }
                 state.payloadState = .loading
+                state.isEnteringEdit = true
                 return .merge(revealEffect(secret: state.secret, then: .edit), projects)
 
             // 건드린 것이 없으면 확인 없이 나간다. 물어보는 것 자체가 성가신 확인이 된다.

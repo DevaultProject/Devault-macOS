@@ -55,6 +55,15 @@ public struct SecretDetailView: View {
             .formMaxWidth()
             .formLayout(layout)
         }
+        // 진행 중임을 알리는 지점은 화면당 하나로 모은다 — `windowBusy`는 서브트리마다 값을
+        // 세우는 preference라, 조상과 자손이 각각 부르면 어느 쪽이 남는지가 배치에 좌우된다.
+        //
+        // 수정 진입 복호화도 저장과 같이 다룬다. 화면이 통째로 바뀌는 것을 기다리는 동안이라
+        // 진행 표시가 필요하고, 창이 잠기면 그 사이 눈·복사가 끼어들 수 없다.
+        //
+        // 눈·복사가 유발한 복호화는 여기에 넣지 않는다 — 창을 잠그면 "나중 요청이 앞 요청을
+        // 대체한다"는 규칙(``SecretDetailFeature/CancelID/reveal``)이 눌러볼 수 없게 되어 사라진다.
+        .windowBusy(store.isSaving || store.isEnteringEdit)
         // `id:`가 필수다. 다른 리스트 셀을 선택하면 MainFeature가 `secretDetail`에 새 State를
         // 할당하지만, 뷰의 타입·위치가 그대로라 SwiftUI는 뷰를 재생성하지 않는다. 그러면 평범한
         // `.task`는 다시 실행되지 않아 `linkedProjects` / `payloadState`가 빈 채로 남는다
@@ -175,9 +184,9 @@ extension SecretDetailView {
                 detectedServices: [:],
                 onCreateProject: { store.send(.didTapCreateProject) }
             )
-            // 진행 표시는 창 루트가 그린다 (`.omc/GUIDELINES.md`).
+            // 진행 표시는 창 루트가 그린다 (`.omc/GUIDELINES.md`). 알리는 것은 `body`가
+            // 한곳에서 하고, 여기서는 입력만 잠근다 — 잠금은 진행 표시와 별개다.
             .disabled(store.isSaving)
-            .windowBusy(store.isSaving)
             .environment(\.isProjectLoading, store.isLoadingProjects)
         }
     }

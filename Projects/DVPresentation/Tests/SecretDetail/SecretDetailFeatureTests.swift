@@ -368,6 +368,38 @@ struct SecretDetailFeatureTests {
         #expect(store.state.revealedFields.isEmpty)
     }
 
+    /// 수정 진입 복호화와 눈·복사 복호화는 취소 그룹이 달라 서로를 대체하지 않는다. 막지 않으면
+    /// 인증 시트가 둘 뜨고 늦게 온 응답이 먼저 온 응답의 continuation을 덮어쓴다.
+    /// `revealPayload`를 스텁하지 않아, 두 번째 복호화가 시작되면 실패한다.
+    @Test("수정 진입 복호화 중에는 눈·복사가 두 번째 복호화를 시작하지 않는다")
+    func reveal_whileEnteringEdit_startsNoSecondDecrypt() async {
+        var state = SecretDetailFeature.State(secret: Self.makeSecret())
+        state.payloadState = .loading
+        state.isEnteringEdit = true
+
+        let store = TestStore(initialState: state) { SecretDetailFeature() }
+
+        await store.send(.didTapToggleReveal(.value))
+        await store.send(.didTapCopy(.value))
+        #expect(store.state.payloadState == .loading)
+        #expect(store.state.revealedFields.isEmpty)
+    }
+
+    /// 막는 것은 새 복호화를 시작하는 방향뿐이다. 닫기는 노출을 줄이므로 언제나 통해야 한다.
+    @Test("수정 진입 복호화 중에도 열린 필드는 닫을 수 있다")
+    func closeRevealed_whileEnteringEdit_stillCloses() async {
+        var state = SecretDetailFeature.State(secret: Self.makeSecret())
+        state.payloadState = .loading
+        state.isEnteringEdit = true
+        state.revealedFields = [.value]
+
+        let store = TestStore(initialState: state) { SecretDetailFeature() }
+
+        await store.send(.didTapToggleReveal(.value)) {
+            $0.revealedFields = []
+        }
+    }
+
     /// 닫는 방향은 노출을 줄이므로 인증을 타지 않는다.
     @Test("열린 필드를 닫을 때는 인증하지 않는다")
     func toggleReveal_closing_needsNoAuthentication() async {
@@ -775,10 +807,12 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapEdit) {
             $0.isLoadingProjects = true
             $0.payloadState = .loading
+            $0.isEnteringEdit = true
         }
         await store.receive(.payloadResponse(.success(payload), then: .edit)) {
             $0.payloadState = .loaded(payload)
             $0.revealAuthorizedAt = Self.referenceDate
+            $0.isEnteringEdit = false
             $0.mode = .editing
             $0.editFields = SecretMetaFields(secret: secret, payload: payload, projectIds: [])
             $0.editFieldsBaseline = $0.editFields
@@ -805,9 +839,11 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapEdit) {
             $0.isLoadingProjects = true
             $0.payloadState = .loading
+            $0.isEnteringEdit = true
         }
         await store.receive(.payloadResponse(.failure(.authenticationFailure(.cancelled)), then: .edit)) {
             $0.payloadState = .failed(.authenticationFailure(.cancelled))
+            $0.isEnteringEdit = false
             $0.alert = .payloadRevealFailed(.authRequired)
         }
     }
