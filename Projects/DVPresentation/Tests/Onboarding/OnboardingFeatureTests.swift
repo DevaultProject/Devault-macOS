@@ -73,6 +73,7 @@ struct OnboardingFeatureTests {
             OnboardingFeature()
         } withDependencies: {
             $0.onboardingClient.enableICloudSync = { .noAccount }
+            $0.onboardingClient.continueWithoutICloud = { }
         }
 
         await store.send(.didTapEnableSync) {
@@ -99,6 +100,7 @@ struct OnboardingFeatureTests {
             OnboardingFeature()
         } withDependencies: {
             $0.onboardingClient.enableICloudSync = { .noAccount }
+            $0.onboardingClient.continueWithoutICloud = { }
         }
 
         await store.send(.didTapEnableSync) { $0.isEnablingSync = true }
@@ -122,6 +124,7 @@ struct OnboardingFeatureTests {
             OnboardingFeature()
         } withDependencies: {
             $0.onboardingClient.enableICloudSync = { .noAccount }
+            $0.onboardingClient.continueWithoutICloud = { }
         }
 
         await store.send(.didTapEnableSync) { $0.isEnablingSync = true }
@@ -131,6 +134,7 @@ struct OnboardingFeatureTests {
         }
         await store.send(.alert(.presented(.continueWithoutSync))) {
             $0.alert = nil
+            $0.isEnablingSync = true
         }
         await store.receive(.delegate(.completed))
     }
@@ -160,9 +164,13 @@ struct OnboardingFeatureTests {
     func notNowCompletesOnboarding() async {
         let store = TestStore(initialState: OnboardingFeature.State(step: .icloudSync)) {
             OnboardingFeature()
+        } withDependencies: {
+            $0.onboardingClient.continueWithoutICloud = { }
         }
 
-        await store.send(.didTapNotNow)
+        await store.send(.didTapNotNow) {
+            $0.isEnablingSync = true
+        }
         await store.receive(.delegate(.completed))
     }
 }

@@ -10,80 +10,91 @@ struct ICloudSettingsView: View {
   @Bindable var store: StoreOf<ICloudSettingsFeature>
 
   var body: some View {
-    SettingsScrollContainer {
+    content
+      .task { await store.send(.task).finish() }
+      .alert($store.scope(state: \.alert, action: \.alert))
+  }
+}
+
+// MARK: - Subviews
+
+extension ICloudSettingsView {
+
+  private var content: some View {
+    SettingsDetailContainer(title: String.module("iCloud")) {
       SettingsSection(title: String.module("iCloud Sync")) {
         SettingsToggleRow(
           title: String.module("Use iCloud Sync"),
           description: String.module("Sync your secrets across your Apple devices, end-to-end encrypted."),
-          isOn: Binding(
-            get: { store.isSyncEnabled },
-            set: { store.send(.didToggleSync($0)) }
-          )
+          isOn: $store.isSyncEnabled
         )
         .disabled(store.isTogglingSync)
 
-        if store.showsRestartBanner {
-          restartBanner
-        }
+      }
 
-        statusCard
+      SettingsSection(title: String.module("Status")) {
+        statusRows
       }
     }
-    .task { store.send(.task) }
-    .alert($store.scope(state: \.alert, action: \.alert))
   }
 
-  private var restartBanner: some View {
-    Text(.module("Restart DeVault to apply this change."))
-      .dvFont(.captionMDRegular)
-      .foregroundStyle(Color.dv(.warning))
-      .padding(.vertical, 4)
-  }
-
-  private var statusCard: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      HStack(spacing: 6) {
-        Image(systemName: store.isSyncEnabled ? "checkmark.icloud.fill" : "icloud.slash")
-          .foregroundStyle(store.isSyncEnabled ? Color.dv(.vaultGreen) : Color.dv(.gray500))
-          .accessibilityHidden(true)
-        Text(store.isSyncEnabled ? String.module("Connected") : String.module("Not Connected"))
-          .dvFont(.bodyLG)
-          .foregroundStyle(Color.dv(.gray900))
-        Spacer()
-        if store.isSyncEnabled {
-          Button(String.module("Sync Now")) {
-            store.send(.didTapSyncNow)
-          }
-          .buttonStyle(.plain)
-          .dvFont(.captionMDSemibold)
-          .foregroundStyle(Color.dv(.vaultGreen))
-        }
+  @ViewBuilder
+  private var statusRows: some View {
+    if store.isSyncEnabled {
+      SettingsButtonRow(
+        title: String.module("Connected"),
+        buttonTitle: String.module("Sync Now"),
+        systemImage: "checkmark.icloud",
+        iconColor: Color.dv(.vaultGreen)
+      ) {
+        store.send(.didTapSyncNow)
       }
-
-      if store.isSyncEnabled {
-        if let lastSyncedAt = store.lastSyncedAt {
-          Text(String.module("Last synced: \(lastSyncedAt.formatted(date: .abbreviated, time: .shortened))"))
-            .dvFont(.captionMDRegular)
-            .foregroundStyle(Color.dv(.gray600))
-        }
-        if let secretCount = store.syncedSecretCount {
-          Text(String.module("Synced secrets: \(secretCount)"))
-            .dvFont(.captionMDRegular)
-            .foregroundStyle(Color.dv(.gray600))
-        }
-        if let projectCount = store.syncedProjectCount {
-          Text(String.module("Synced projects: \(projectCount)"))
-            .dvFont(.captionMDRegular)
-            .foregroundStyle(Color.dv(.gray600))
-        }
-      } else {
-        Text(.module("Turn on iCloud Sync to sync secrets across devices."))
-          .dvFont(.captionMDRegular)
-          .foregroundStyle(Color.dv(.gray600))
-      }
+    } else {
+      SettingsValueRow(
+        title: String.module("Not Connected"),
+        systemImage: "icloud.slash",
+        iconColor: Color.dv(.gray500)
+      )
     }
-    .padding(12)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background(RoundedRectangle(cornerRadius: 8).fill(Color.dv(.gray100)))
+
+    if store.isSyncEnabled {
+      SettingsValueRow(
+        title: String.module("Last synced"),
+        value: store.lastSyncedAt?.formatted(date: .abbreviated, time: .shortened) ?? "—"
+      )
+      SettingsValueRow(
+        title: String.module("Synced secrets"),
+        value: store.syncedSecretCount.map { String($0) } ?? "—"
+      )
+      SettingsValueRow(
+        title: String.module("Synced projects"),
+        value: store.syncedProjectCount.map { String($0) } ?? "—"
+      )
+    } else {
+      Text(.module("Turn on iCloud Sync to sync secrets across devices."))
+        .dvFont(.captionMDRegular)
+        .foregroundStyle(Color.dv(.gray600))
+        .settingsRowLayout()
+    }
+  }
+}
+
+// MARK: - Preview
+
+#Preview("iCloud") {
+  SettingsDetailPreview {
+    ICloudSettingsView(
+      store: Store(initialState: ICloudSettingsFeature.State()) {
+        ICloudSettingsFeature()
+      } withDependencies: {
+        $0.iCloudSettingsClient = .previewValue
+        $0.iCloudSettingsClient.isEnabled = { true }
+        $0.iCloudSettingsClient.lastSyncedAt = {
+          Date(timeIntervalSince1970: 1_723_745_800)
+        }
+        $0.iCloudSettingsClient.syncedSecretCount = { 24 }
+        $0.iCloudSettingsClient.syncedProjectCount = { 3 }
+      }
+    )
   }
 }

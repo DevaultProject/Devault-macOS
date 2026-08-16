@@ -4,14 +4,11 @@ import DVData
 import DVDomain
 
 /// Composition Root 전체에서 공유하는 Repository 인스턴스.
-/// SwiftData @ModelActor는 modelContainer를 공유하므로 동일 actor 인스턴스를 사용해야
-/// in-memory 트랜잭션 격리가 일관되게 유지된다.
+/// Secret/Project는 안정적인 Proxy이며, iCloud 설정이 바뀌면 내부 Repository만 교체된다.
 enum LiveRepositories {
-    static let secret: any SecretRepository = SecretRepositoryImpl(
-        modelContainer: LiveStorage.shared.modelContainer
-    )
-    static let project: any ProjectRepository = ProjectRepositoryImpl(
-        modelContainer: LiveStorage.shared.modelContainer
-    )
     static let settings: any SettingsRepository = SettingsRepositoryImpl()
+    static let storage = LiveStorage(settingsRepository: settings)
+    static let secret: any SecretRepository = LiveSecretRepository(storage: storage)
+    static let project: any ProjectRepository = LiveProjectRepository(storage: storage)
+    static let dataReset: any DataResetRepository = LiveDataResetRepository(storage: storage)
 }
