@@ -5,26 +5,22 @@ import SwiftUI
 import ComposableArchitecture
 import DVDesign
 
-// MARK: - ExpiryAlertDayOption
-
-private struct ExpiryAlertDayOption: Identifiable, Hashable {
-  let id: Int
-  let label: String
-
-  static let all: [ExpiryAlertDayOption] = [
-    ExpiryAlertDayOption(id: 30, label: String.module("30 days before expiration")),
-    ExpiryAlertDayOption(id: 7, label: String.module("7 days before expiration")),
-    ExpiryAlertDayOption(id: 1, label: String.module("1 day before expiration")),
-    ExpiryAlertDayOption(id: 0, label: String.module("On the day of expiration")),
-  ]
-}
-
 struct NotificationsSettingsView: View {
 
   @Bindable var store: StoreOf<NotificationSettingsFeature>
 
   var body: some View {
-    SettingsScrollContainer {
+    content
+      .task { await store.send(.task).finish() }
+  }
+}
+
+// MARK: - Subviews
+
+extension NotificationsSettingsView {
+
+  private var content: some View {
+    SettingsDetailContainer(title: String.module("Notifications")) {
       if !store.isNotificationPermissionGranted {
         permissionBanner
       }
@@ -32,73 +28,84 @@ struct NotificationsSettingsView: View {
       SettingsSection(title: String.module("Expiration Alerts")) {
         SettingsToggleRow(
           title: String.module("Enable expiration alerts"),
-          isOn: Binding(
-            get: { store.isExpiryAlertsEnabled },
-            set: { store.send(.didToggleExpiryAlerts($0)) }
-          )
+          isOn: $store.isExpiryAlertsEnabled
         )
         if store.isExpiryAlertsEnabled {
-          HStack {
-            Text(.module("Alert timing"))
-              .dvFont(.bodyLG)
-              .foregroundStyle(Color.dv(.gray900))
-            Spacer()
-            DVMultiSelectDropdown(
-              String.module("Select timing"),
-              items: ExpiryAlertDayOption.all,
-              selection: Binding(
-                get: { store.expiryAlertDaysBefore },
-                set: { store.send(.didChangeExpiryAlertDaysBefore($0)) }
-              ),
-              label: \.label
-            )
-          }
-          .padding(.vertical, 8)
+          alertTimingOptions
         }
       }
 
       SettingsSection(title: String.module("Security Alerts")) {
         SettingsToggleRow(
           title: String.module("Alert on repeated authentication failures"),
-          isOn: Binding(
-            get: { store.isAuthFailureAlertEnabled },
-            set: { store.send(.didToggleAuthFailureAlert($0)) }
-          )
+          isOn: $store.isAuthFailureAlertEnabled
         )
         SettingsToggleRow(
           title: String.module("Alert on repeated clipboard copies"),
-          isOn: Binding(
-            get: { store.isClipboardAbnormalAccessAlertEnabled },
-            set: { store.send(.didToggleClipboardAbnormalAccessAlert($0)) }
-          )
+          isOn: $store.isClipboardAbnormalAccessAlertEnabled
         )
       }
     }
-    .task { store.send(.task) }
+  }
+
+  private var alertTimingOptions: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      Text(.module("Alert timing"))
+        .dvFont(.bodyLG)
+        .foregroundStyle(Color.dv(.gray900))
+
+      ForEach(ExpiryAlertDay.allCases) { option in
+        Toggle(
+          isOn: Binding(
+            get: {
+              store.expiryAlertDaysBefore.contains(option)
+            },
+            set: { isSelected in
+              let wasSelected = store.expiryAlertDaysBefore.contains(option)
+              guard isSelected != wasSelected else { return }
+              store.send(.didTapExpiryAlertDay(option))
+            }
+          )
+        ) {
+          Text(option.displayName)
+            .dvFont(.bodyMD)
+            .foregroundStyle(Color.dv(.gray800))
+        }
+        .toggleStyle(.checkbox)
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .settingsRowLayout()
   }
 
   private var permissionBanner: some View {
-    HStack(spacing: 12) {
-      Image(systemName: "bell.slash.fill")
-        .foregroundStyle(Color.dv(.warning))
-        .accessibilityHidden(true)
-      VStack(alignment: .leading, spacing: 2) {
-        Text(.module("Notifications are turned off"))
-          .dvFont(.bodyLG)
-          .foregroundStyle(Color.dv(.gray900))
-        Text(.module("System notification permission is required for these alerts to appear."))
-          .dvFont(.captionMDRegular)
-          .foregroundStyle(Color.dv(.gray600))
-      }
-      Spacer()
-      Button(String.module("Open System Settings")) {
-        store.send(.didTapOpenNotificationSettings)
-      }
-      .buttonStyle(.plain)
-      .dvFont(.captionMDSemibold)
-      .foregroundStyle(Color.dv(.vaultGreen))
+    SettingsButtonRow(
+      title: String.module("Notifications are turned off"),
+      description: String.module(
+        "System notification permission is required for these alerts to appear."
+      ),
+      buttonTitle: String.module("Open System Settings"),
+      systemImage: "bell.slash.fill",
+      iconColor: Color.dv(.warning)
+    ) {
+      store.send(.didTapOpenNotificationSettings)
     }
     .padding(12)
-    .background(RoundedRectangle(cornerRadius: 8).fill(Color.dv(.gray100)))
+    .background(RoundedRectangle(cornerRadius: 10).fill(Color.dv(.gray200)))
+  }
+}
+
+// MARK: - Preview
+
+#Preview("Notifications") {
+  SettingsDetailPreview {
+    NotificationsSettingsView(
+      store: Store(initialState: NotificationSettingsFeature.State()) {
+        NotificationSettingsFeature()
+      } withDependencies: {
+        $0.notificationSettingsClient = .previewValue
+        $0.notificationSettingsClient.isPermissionGranted = { false }
+      }
+    )
   }
 }

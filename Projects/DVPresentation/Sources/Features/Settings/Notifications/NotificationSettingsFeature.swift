@@ -5,47 +5,56 @@ import ComposableArchitecture
 // MARK: - NotificationSettingsFeature
 
 @Reducer
-struct NotificationSettingsFeature {
+public struct NotificationSettingsFeature {
 
   // MARK: - State
 
   @ObservableState
-  struct State: Equatable {
+  public struct State: Equatable {
     var isExpiryAlertsEnabled = true
-    var expiryAlertDaysBefore: Set<Int> = [30, 7, 1, 0]
+    var expiryAlertDaysBefore = Set(ExpiryAlertDay.allCases)
     var isAuthFailureAlertEnabled = true
     var isClipboardAbnormalAccessAlertEnabled = true
     var isNotificationPermissionGranted = true
+
+    public init() {}
   }
 
   // MARK: - Action
 
-  enum Action: Equatable {
+  public enum Action: BindableAction, Equatable {
+
+    // MARK: - View
+
+    case binding(BindingAction<State>)
     case task
-    case permissionResponse(Bool)
-    case didToggleExpiryAlerts(Bool)
-    case didChangeExpiryAlertDaysBefore(Set<Int>)
-    case didToggleAuthFailureAlert(Bool)
-    case didToggleClipboardAbnormalAccessAlert(Bool)
+    case didTapExpiryAlertDay(ExpiryAlertDay)
     case didTapOpenNotificationSettings
+
+    // MARK: - Internal
+
+    case permissionResponse(Bool)
   }
 
   // MARK: - Dependencies
 
-  @Dependency(\.settingsClient) var settingsClient
+  @Dependency(\.notificationSettingsClient) var notificationSettingsClient
 
   // MARK: - Body
 
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
+    BindingReducer()
     Reduce { state, action in
       switch action {
       case .task:
-        state.isExpiryAlertsEnabled = settingsClient.isExpiryAlertsEnabled()
-        state.expiryAlertDaysBefore = Set(settingsClient.expiryAlertDaysBefore())
-        state.isAuthFailureAlertEnabled = settingsClient.isAuthFailureAlertEnabled()
-        state.isClipboardAbnormalAccessAlertEnabled = settingsClient.isClipboardAbnormalAccessAlertEnabled()
+        state.isExpiryAlertsEnabled = notificationSettingsClient.isExpiryAlertsEnabled()
+        state.expiryAlertDaysBefore = Set(
+          notificationSettingsClient.expiryAlertDaysBefore().compactMap(ExpiryAlertDay.init)
+        )
+        state.isAuthFailureAlertEnabled = notificationSettingsClient.isAuthFailureAlertEnabled()
+        state.isClipboardAbnormalAccessAlertEnabled = notificationSettingsClient.isClipboardAbnormalAccessAlertEnabled()
         return .run { send in
-          let granted = await settingsClient.isNotificationPermissionGranted()
+          let granted = await notificationSettingsClient.isPermissionGranted()
           await send(.permissionResponse(granted))
         }
 
@@ -53,24 +62,32 @@ struct NotificationSettingsFeature {
         state.isNotificationPermissionGranted = granted
         return .none
 
-      case .didToggleExpiryAlerts(let enabled):
-        state.isExpiryAlertsEnabled = enabled
-        return .run { _ in settingsClient.setExpiryAlertsEnabled(enabled) }
+      case .binding(\.isExpiryAlertsEnabled):
+        let enabled = state.isExpiryAlertsEnabled
+        return .run { _ in notificationSettingsClient.setExpiryAlertsEnabled(enabled) }
 
-      case .didChangeExpiryAlertDaysBefore(let days):
-        state.expiryAlertDaysBefore = days
-        return .run { _ in settingsClient.setExpiryAlertDaysBefore(Array(days)) }
+      case .binding(\.isAuthFailureAlertEnabled):
+        let enabled = state.isAuthFailureAlertEnabled
+        return .run { _ in notificationSettingsClient.setAuthFailureAlertEnabled(enabled) }
 
-      case .didToggleAuthFailureAlert(let enabled):
-        state.isAuthFailureAlertEnabled = enabled
-        return .run { _ in settingsClient.setAuthFailureAlertEnabled(enabled) }
+      case .binding(\.isClipboardAbnormalAccessAlertEnabled):
+        let enabled = state.isClipboardAbnormalAccessAlertEnabled
+        return .run { _ in notificationSettingsClient.setClipboardAbnormalAccessAlertEnabled(enabled) }
 
-      case .didToggleClipboardAbnormalAccessAlert(let enabled):
-        state.isClipboardAbnormalAccessAlertEnabled = enabled
-        return .run { _ in settingsClient.setClipboardAbnormalAccessAlertEnabled(enabled) }
+      case .binding:
+        return .none
+
+      case .didTapExpiryAlertDay(let day):
+        if state.expiryAlertDaysBefore.contains(day) {
+          state.expiryAlertDaysBefore.remove(day)
+        } else {
+          state.expiryAlertDaysBefore.insert(day)
+        }
+        let days = state.expiryAlertDaysBefore.map(\.rawValue).sorted(by: >)
+        return .run { _ in notificationSettingsClient.setExpiryAlertDaysBefore(days) }
 
       case .didTapOpenNotificationSettings:
-        return .run { _ in settingsClient.openNotificationSystemSettings() }
+        return .run { _ in notificationSettingsClient.openSystemSettings() }
       }
     }
   }

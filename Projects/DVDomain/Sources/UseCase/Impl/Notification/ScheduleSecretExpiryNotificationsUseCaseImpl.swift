@@ -8,28 +8,24 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
 
     /// 지금까지 설정 화면이 제공한 모든 가능한 옵션 — 설정이 바뀌어도 예전에 예약된 마크를
     /// 확실히 취소하기 위해 schedule()이 아니라 cancel()에서만 이 고정 목록을 쓴다.
-    static let allPossibleDaysBeforeExpiry = [30, 7, 1, 0]
+    private static let allPossibleDaysBeforeExpiry = [30, 7, 1, 0]
+    private static let expiryNotificationHour = 9
 
     private let repository: any SecretRepository
     private let notificationService: any SecurityNotificationService
+    private let settingsRepository: any SettingsRepository
     private let dateProvider: @Sendable () -> Date
-    /// 만료 알림 사용 여부. 꺼져 있으면 기존 예약을 취소만 하고 새로 만들지 않는다.
-    private let isEnabled: @Sendable () -> Bool
-    /// 호출마다 새로 읽는다 — 설정 화면에서 값을 바꾸면 다음 동기화부터 바로 반영되어야 한다.
-    private let daysBeforeExpiry: @Sendable () -> [Int]
 
     public init(
         repository: any SecretRepository,
         notificationService: any SecurityNotificationService,
-        dateProvider: @escaping @Sendable () -> Date = { Date() },
-        isEnabled: @escaping @Sendable () -> Bool = { true },
-        daysBeforeExpiry: @escaping @Sendable () -> [Int] = { ScheduleSecretExpiryNotificationsUseCaseImpl.allPossibleDaysBeforeExpiry }
+        settingsRepository: any SettingsRepository,
+        dateProvider: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.repository = repository
         self.notificationService = notificationService
+        self.settingsRepository = settingsRepository
         self.dateProvider = dateProvider
-        self.isEnabled = isEnabled
-        self.daysBeforeExpiry = daysBeforeExpiry
     }
 
     public func syncAll() async throws {
@@ -53,11 +49,15 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
 
         // expiresAt이 바뀌었을 수 있어 이전 마크가 stale하게 남지 않도록 먼저 전부 취소한다.
         await cancel(secretID: secret.id)
-        guard isEnabled() else { return }
+        guard settingsRepository.isExpiryAlertsEnabled() else { return }
 
         let now = dateProvider()
-        for daysBefore in daysBeforeExpiry() {
-            guard let dayMark = Calendar.current.date(byAdding: .day, value: -daysBefore, to: expiresAt) else {
+        guard expiresAt > now else { return }
+        for daysBefore in settingsRepository.expiryAlertDaysBefore() {
+            guard let dayMark = Self.notificationDate(
+                expiresAt: expiresAt,
+                daysBefore: daysBefore
+            ) else {
                 continue
             }
             // 이미 지난 마크는 스킵하고 앱을 다시 열었을 때 아직 안 지난 마크만 정상적으로 예약
@@ -90,5 +90,21 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
 
     private static func notificationID(secretID: UUID, daysBefore: Int) -> String {
         "secret-expiry-\(secretID.uuidString)-\(daysBefore)d"
+    }
+
+    private static func notificationDate(expiresAt: Date, daysBefore: Int) -> Date? {
+        let calendar = Calendar.current
+        guard let notificationDay = calendar.date(
+            byAdding: .day,
+            value: -daysBefore,
+            to: expiresAt
+        ) else { return nil }
+
+        return calendar.date(
+            bySettingHour: expiryNotificationHour,
+            minute: 0,
+            second: 0,
+            of: notificationDay
+        )
     }
 }

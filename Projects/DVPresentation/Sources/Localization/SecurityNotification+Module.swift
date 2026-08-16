@@ -24,6 +24,12 @@ extension SecurityNotification {
       )
 
     case .secretExpiresSoon(_, let daysBefore):
+      if daysBefore == 0 {
+        return (
+          String.module("A secret expires today"),
+          String.module("A saved secret expires today.")
+        )
+      }
       return (
         String.module("A secret is expiring soon"),
         String.module("A saved secret will expire in \(daysBefore) days.")
