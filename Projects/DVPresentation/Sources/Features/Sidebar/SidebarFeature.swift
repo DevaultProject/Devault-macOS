@@ -56,6 +56,8 @@ public struct SidebarFeature {
     var projectsState: LoadingState<IdentifiedArrayOf<ProjectItem>, SidebarError> = .idle
     /// "아직 안 불러옴"과 "0건"을 구분하기 위해 LoadingState로 감싼다 (TCA_GUIDELINES 2.4).
     var countsState: LoadingState<SecretCounts, SidebarError> = .idle
+    /// 이미 보여줄 값이 있는 채로 다시 받아오는 중. 화면은 이전 값을 두고 opacity만 낮춘다.
+    var isRefreshingProjects = false
     var renamingProjectID: ProjectItem.ID?
     var renameText: String = ""
     var deletingProjectID: ProjectItem.ID?
@@ -151,22 +153,33 @@ public struct SidebarFeature {
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
+      // `.task`는 최초 진입이 아니라 **화면이 다시 만들어질 때마다** 실행된다 — `MainView`가
+      // 2컬럼 ↔ 3컬럼을 오가면 `NavigationSplitView` 타입이 달라져 사이드바까지 새로 만들어진다.
+      // 그때 `.loading`으로 되돌리면 목록과 숫자가 사라졌다 나타난다.
       case .task:
-        // 최초 진입에만 스피너를 보인다 — 보여줄 이전 값이 정말로 없는 유일한 경우다.
-        state.projectsState = .loading
-        state.countsState = .loading
+        if case .loaded = state.projectsState {
+          state.isRefreshingProjects = true
+        } else {
+          state.projectsState = .loading
+        }
+        if case .loaded = state.countsState {} else {
+          state.countsState = .loading
+        }
         return fetchProjectsEffect()
 
       case .refresh:
+        state.isRefreshingProjects = true
         return fetchProjectsEffect()
 
       case .projectsResponse(.success(let projects)):
+        state.isRefreshingProjects = false
         let sorted = projects.sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
         state.projectsState = .loaded(IdentifiedArray(uniqueElements: sorted))
         // 프로젝트별 개수를 세려면 ID 목록이 필요하므로 목록 로드 성공 후에 이어서 집계한다.
         return countsEffect(projectIDs: sorted.map(\.id))
 
       case .projectsResponse(.failure(let error)):
+        state.isRefreshingProjects = false
         state.projectsState = .failed(error)
         // 프로젝트 목록이 실패해도 필터 카드 개수는 독립적으로 유효하므로 집계는 계속 시도한다.
         return countsEffect(projectIDs: [])

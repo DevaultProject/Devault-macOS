@@ -9,6 +9,14 @@ import DVDesign
 
 struct SidebarView: View {
 
+  // MARK: - Metrics
+
+  private enum Metrics {
+    /// 갱신 중 이전 값에 씌우는 흐림. 더 낮추면 목록이 비활성처럼 보인다.
+    static let refreshingOpacity: Double = 0.55
+    static let fade: Animation = .easeInOut(duration: 0.18)
+  }
+
   // MARK: - Properties
 
   @Bindable var store: StoreOf<SidebarFeature>
@@ -101,25 +109,28 @@ extension SidebarView {
         Spacer(minLength: 0)
       }
     }
+    // `value`를 좁히지 않으면 이름 변경 입력 한 글자마다 섹션 전체가 다시 애니메이션된다.
+    .animation(Metrics.fade, value: store.projectsState)
+    .animation(Metrics.fade, value: store.isRefreshingProjects)
   }
 
+  /// 스피너 대신 자리를 유지한 채 opacity만 움직인다. 갱신이 잦은 화면이라(시크릿 생성, 프로젝트
+  /// 추가·이름 변경·삭제) 스피너로 갈아끼우면 목록이 사라졌다 나타나는 것으로 보인다.
   @ViewBuilder
   private var projectSectionBody: some View {
-    switch store.projectsState {
-    case .idle, .loading:
-      ProgressView()
-        .frame(maxWidth: .infinity)
-        .padding(.top, 8)
-      Spacer(minLength: 0)
-    case .loaded:
-      projectList
-    case .failed:
+    if case .failed = store.projectsState {
       Text(.module("Failed to load"))
         .dvFont(.bodyMD)
         .foregroundStyle(Color.dv(.danger))
         .frame(maxWidth: .infinity)
         .padding(.top, 8)
       Spacer(minLength: 0)
+    } else if store.projects.isEmpty {
+      // 아직 못 받았거나 정말로 비어 있다. 둘 다 보여줄 것이 없으므로 자리만 잡아 둔다.
+      Spacer(minLength: 0)
+    } else {
+      projectList
+        .opacity(store.isRefreshingProjects ? Metrics.refreshingOpacity : 1)
     }
   }
 
