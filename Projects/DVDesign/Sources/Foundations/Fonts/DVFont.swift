@@ -1,5 +1,6 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import AppKit
 import SwiftUI
 
 public enum DVFont: CaseIterable {
@@ -70,5 +71,24 @@ public enum DVFont: CaseIterable {
 
     public var font: Font {
         .system(size: size, weight: weight)
+    }
+
+    /// `NSView`를 직접 쓰는 자리에 넘길 폰트. 굵기는 ``weight``에서 옮겨오므로 갈리지 않는다.
+    public var nsFont: NSFont {
+        .systemFont(ofSize: size, weight: Self.nsWeight(weight))
+    }
+
+    private static func nsWeight(_ weight: Font.Weight) -> NSFont.Weight {
+        switch weight {
+        case .ultraLight: return .ultraLight
+        case .thin:       return .thin
+        case .light:      return .light
+        case .medium:     return .medium
+        case .semibold:   return .semibold
+        case .bold:       return .bold
+        case .heavy:      return .heavy
+        case .black:      return .black
+        default:          return .regular
+        }
     }
 }
