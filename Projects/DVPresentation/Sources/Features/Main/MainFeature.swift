@@ -104,6 +104,14 @@ public struct MainFeature {
         state.settings = nil
         return .none
 
+      case .settings(.delegate(.storageDidSwitch)),
+           .settings(.delegate(.vaultDataReset)):
+        resetVaultContent(&state)
+        return .concatenate(
+          .send(.secretList(.refresh)),
+          .send(.sidebar(.task))
+        )
+
       case .settings:
         return .none
 
@@ -269,5 +277,16 @@ extension MainFeature {
       let projectName = projects[id: id]?.name
       return .init(collection: .project(id: id), projectName: projectName)
     }
+  }
+
+  /// 활성 저장소의 내용이 교체되거나 초기화됐을 때 이전 저장소에서 파생된 화면 상태를 버린다.
+  private func resetVaultContent(_ state: inout State) {
+    state.selectSecretType = nil
+    state.createProject = nil
+    state.createSecret = nil
+    state.secretDetail = nil
+    state.sidebar.isCreatingSecret = false
+    state.sidebar.selection = .filter(.all)
+    state.secretList = .init(collection: .all)
   }
 }

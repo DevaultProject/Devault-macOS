@@ -592,4 +592,36 @@ struct MainFeatureTests {
       $0.settings = nil
     }
   }
+
+  @Test("저장소 전환이나 전체 삭제 뒤에는 이전 vault 화면 상태를 버리고 목록을 갱신한다")
+  func vaultContentChangeResetsDerivedStateAndRefreshes() async {
+    let projectID = UUID()
+    var initial = MainFeature.State()
+    initial.settings = .init()
+    initial.selectSecretType = .init()
+    initial.createProject = .init()
+    initial.createSecret = .init(secretType: .apiKeyToken)
+    initial.sidebar.selection = .project(id: projectID)
+    initial.sidebar.isCreatingSecret = true
+    initial.secretList = .init(collection: .project(id: projectID), projectName: "Old")
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    } withDependencies: {
+      $0.secretClient.fetchByQuery = { _ in [] }
+      $0.sidebarClient.fetchProjects = { [] }
+      $0.sidebarClient.fetchCounts = { _, _ in SecretCounts() }
+      $0.date = .constant(Self.referenceDate)
+    }
+    store.exhaustivity = .off(showSkippedAssertions: false)
+
+    await store.send(.settings(.delegate(.vaultDataReset))) {
+      $0.selectSecretType = nil
+      $0.createProject = nil
+      $0.createSecret = nil
+      $0.sidebar.selection = .filter(.all)
+      $0.sidebar.isCreatingSecret = false
+      $0.secretList = .init(collection: .all)
+    }
+  }
 }

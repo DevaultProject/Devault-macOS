@@ -66,6 +66,7 @@ struct DataSettingsFeatureTests {
     await store.receive(.deleteSucceeded) {
       $0.isDeleting = false
     }
+    await store.receive(.delegate(.dataDeleted))
     #expect(called.value)
   }
 
