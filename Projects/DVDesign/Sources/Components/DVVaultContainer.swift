@@ -15,6 +15,8 @@ public struct DVVaultContainer: View {
     public let typeIcon: Image?
     /// 우측 만료 강조 아이콘. 어떤 단계로 볼지는 호출부의 만료 정책이 결정한다.
     public let trailingIcon: DVExpiryEmphasis?
+    /// `trailingIcon`에 hover 시 뜨는 설명 문구. `trailingIcon`이 `nil`이면 무시된다.
+    public let trailingIconTooltip: String?
     public let isSelected: Bool
 
     // MARK: - Init
@@ -25,6 +27,7 @@ public struct DVVaultContainer: View {
         service: String? = nil,
         typeIcon: Image? = nil,
         trailingIcon: DVExpiryEmphasis? = nil,
+        trailingIconTooltip: String? = nil,
         isSelected: Bool = false
     ) {
         self.name = name
@@ -32,6 +35,7 @@ public struct DVVaultContainer: View {
         self.service = service
         self.typeIcon = typeIcon
         self.trailingIcon = trailingIcon
+        self.trailingIconTooltip = trailingIconTooltip
         self.isSelected = isSelected
     }
 
@@ -139,9 +143,15 @@ extension DVVaultContainer {
     @ViewBuilder
     private var trailingIconView: some View {
         if let trailingIcon {
-            trailingIcon.icon
+            let icon = trailingIcon.icon
                 .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(trailingIcon.colorToken))
                 .fixedSize()
+
+            if let trailingIconTooltip {
+                icon.help(trailingIconTooltip)
+            } else {
+                icon
+            }
         }
     }
 }

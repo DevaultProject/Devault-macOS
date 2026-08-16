@@ -89,12 +89,15 @@ extension SecretListView {
   }
 
   private func row(for secret: Secret) -> some View {
-    DVVaultContainer(
+    let expiryStatus = expiryStatus(for: secret)
+
+    return DVVaultContainer(
       name: secret.name,
       date: SecretDateFormatter.string(from: secret.updatedAt),
       service: secret.service,
       typeIcon: secret.secretType.icon,
-      trailingIcon: trailingIcon(for: secret),
+      trailingIcon: expiryStatus?.emphasis,
+      trailingIconTooltip: expiryStatus?.tooltipText,
       isSelected: secret.id == store.selectedSecretID
     )
     .tag(secret.id)
@@ -108,8 +111,8 @@ extension SecretListView {
 
   /// All/Star/Expired/Deleted 어디서든 만료 상태를 알려준다.
   /// 임계값은 `SecretExpiryStatus`가 소유한다 — 조회 화면 Expire Date 필드와 같은 정책을 써야 한다.
-  private func trailingIcon(for secret: Secret) -> DVExpiryEmphasis? {
-    SecretExpiryStatus(expiresAt: secret.expiresAt)?.emphasis
+  private func expiryStatus(for secret: Secret) -> SecretExpiryStatus? {
+    SecretExpiryStatus(expiresAt: secret.expiresAt)
   }
 
   /// All/Star/Expired는 "프로젝트에 추가/삭제", Deleted는 "복구/영구 삭제"를 보여준다.
