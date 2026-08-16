@@ -74,7 +74,7 @@ extension DVVaultContainer {
                         .renderingMode(.template)
                         .resizable()
                         .scaledToFit()
-                        .foregroundStyle(Color.dv(.white))
+                        .foregroundStyle(logo.glyphColor)
                         .frame(width: 22, height: 22)
                 } else {
                     // 배경+글리프가 한 path로 합쳐진 에셋: template 틴트를 걸지 않고 원본 색상 그대로 그린다.
