@@ -26,6 +26,14 @@ public struct SecuritySettingsUseCaseImpl: SecuritySettingsUseCase {
     repository.setRequireAuthToCopyEnabled(enabled)
   }
 
+  public func isAutoLockEnabled() -> Bool {
+    repository.isAutoLockEnabled()
+  }
+
+  public func setAutoLockEnabled(_ enabled: Bool) {
+    repository.setAutoLockEnabled(enabled)
+  }
+
   public func autoLockMinutes() -> Int {
     repository.autoLockMinutes()
   }
@@ -56,5 +64,9 @@ public struct SecuritySettingsUseCaseImpl: SecuritySettingsUseCase {
 
   public func setHideDuringScreenRecordingEnabled(_ enabled: Bool) {
     repository.setHideDuringScreenRecordingEnabled(enabled)
+  }
+
+  public func hideDuringScreenRecordingEnabledStream() -> AsyncStream<Bool> {
+    repository.hideDuringScreenRecordingEnabledStream()
   }
 }

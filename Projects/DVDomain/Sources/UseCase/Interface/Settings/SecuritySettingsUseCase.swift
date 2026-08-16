@@ -9,7 +9,10 @@ public protocol SecuritySettingsUseCase: Sendable {
   func isRequireAuthToCopyEnabled() -> Bool
   func setRequireAuthToCopyEnabled(_ enabled: Bool)
 
-  /// 비활성 후 자동 잠금까지의 시간(분). 0이면 "사용 안 함".
+  func isAutoLockEnabled() -> Bool
+  func setAutoLockEnabled(_ enabled: Bool)
+
+  /// 비활성 후 자동 잠금까지의 시간(분).
   func autoLockMinutes() -> Int
   func setAutoLockMinutes(_ minutes: Int)
 
@@ -21,4 +24,7 @@ public protocol SecuritySettingsUseCase: Sendable {
 
   func isHideDuringScreenRecordingEnabled() -> Bool
   func setHideDuringScreenRecordingEnabled(_ enabled: Bool)
+
+  /// 구독을 시작하면 현재 설정값을 즉시 한 번 방출하고, 이후 설정이 변경될 때마다 최신값을 방출한다.
+  func hideDuringScreenRecordingEnabledStream() -> AsyncStream<Bool>
 }
