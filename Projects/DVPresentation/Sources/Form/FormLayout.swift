@@ -96,9 +96,13 @@ struct FormLayout: Equatable {
         case vertical(spacing: CGFloat)
     }
 
-    /// full-width 슬롯 사이즈. `widthPolicy == .fill`이면 **최소 폭**으로 동작한다.
+    /// full-width 슬롯 사이즈.
+    ///
+    /// `widthPolicy == .fill`이면 **프레임 계산에 쓰이지 않는다** — 하한은 `.fill(minimum:)`이 갖고
+    /// 폭은 컨테이너를 따른다. 그래도 남겨두는 것은 토큰 자체를 읽는 컴포넌트가 있어서다
+    /// (`DVMultiSelectDropdown`의 팝오버 폭).
     var fullWidthSize: DVComponentSize
-    /// 페어 슬롯 사이즈. `widthPolicy == .fill`이면 **최소 폭**으로 동작한다.
+    /// 페어 슬롯 사이즈. `.fill`에서의 해석은 ``fullWidthSize``와 같다.
     var pairedSize: DVComponentSize
     var pairAxis: PairAxis
     var rowSpacing: CGFloat
@@ -125,8 +129,9 @@ extension FormLayout {
     /// CreateSecret의 넓은 폭 배열이며, **Detail 컬럼도 충분히 넓어지면 같은 배열을 쓴다** —
     /// 두 화면이 같은 모습이 되는 것은 의도된 동작이다.
     ///
-    /// `widthPolicy`가 `.fill`이라 사이즈는 **최소 폭**으로만 쓰인다. 프레임 상한(`maxFormWidth` 816,
-    /// 콘텐츠 776)에서 full-width는 776, 페어는 `(776 - 16) / 2 = 380 = .md`가 되어 정확히 맞물린다.
+    /// `widthPolicy`가 `.fill`이라 폭은 컨테이너가 정하고 하한은 `slotFloor`가 갖는다. 프레임 상한
+    /// (`maxFormWidth` 816, 콘텐츠 776)에서 full-width는 776, 페어는 `(776 - 16) / 2 = 380`이 되어,
+    /// 아래 사이즈 토큰(`.lg` / `.md`)이 가리키던 폭과 결과적으로 맞물린다.
     ///
     /// `.fixed`로 두면 full-width가 `.lg`(700)에 머물러 페어 행(776)보다 좁아 **오른쪽 끝이 들쭉날쭉**해지고,
     /// `.detailFluid`에서 넘어올 때 필드가 775 → 700으로 줄어드는 역전이 생긴다.
@@ -152,8 +157,8 @@ extension FormLayout {
 
     /// 가변 폭 1열 폼 — 컨테이너를 채우고 페어는 절반씩 나눈다. Detail 컬럼의 기본 배열.
     ///
-    /// 사이즈는 최소 폭으로만 쓰인다. 콘텐츠 380(컬럼 최소 420)에서 페어는 `(380 - 20) / 2 = 180 = .xs`,
-    /// 콘텐츠 776(프레임 상한 816)에서 각각 378이 되고 거기서 멈춘다.
+    /// 폭은 컨테이너를 따르고 하한은 `slotFloor`가 갖는다. 콘텐츠 380(컬럼 최소 420)에서
+    /// 페어는 `(380 - 20) / 2 = 180`, 콘텐츠 776(프레임 상한 816)에서 각각 378이 되고 거기서 멈춘다.
     static let detailFluid = FormLayout(
         fullWidthSize: .md,
         pairedSize: .xs,

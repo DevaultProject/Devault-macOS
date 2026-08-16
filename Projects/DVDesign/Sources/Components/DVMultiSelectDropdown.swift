@@ -159,6 +159,8 @@ public struct DVMultiSelectDropdown<Item: Identifiable>: View {
                 initialSelection: selection,
                 onSelectionChange: { selection = $0 },
                 label: label,
+                // 트리거는 `.fill`에서 컨테이너를 따라 늘어나지만 팝오버는 토큰 폭 고정이다.
+                // 넓혀 봐야 라벨 오른쪽 여백만 늘고, 컬럼 폭에 따라 같은 목록이 달라 보인다.
                 width: size.width,
                 searchText: searchText,
                 searchPlaceholder: searchPlaceholder,

@@ -130,9 +130,11 @@ struct SecretDetailFeatureTests {
 
         // 진입은 복호화를 시작하지 않는다. `revealPayload`를 스텁하지 않았으므로
         // 진입이 복호화를 걸면 미구현 dependency 호출로 이 테스트가 실패한다.
-        await store.send(.task)
+        await store.send(.task) {
+            $0.linkedProjectsState = .loading
+        }
         await store.receive(.linkedProjectsResponse(.success(linked))) {
-            $0.linkedProjects = linked
+            $0.linkedProjectsState = .loaded(linked)
         }
     }
 
@@ -150,12 +152,55 @@ struct SecretDetailFeatureTests {
 
         // 진입은 복호화를 시작하지 않는다. `revealPayload`를 스텁하지 않았으므로
         // 진입이 복호화를 걸면 미구현 dependency 호출로 이 테스트가 실패한다.
-        await store.send(.task)
+        await store.send(.task) {
+            $0.linkedProjectsState = .loading
+        }
         await store.receive(.linkedProjectsResponse(.failure(.unexpected))) {
-            $0.alert = .projectsLoadFailed
+            $0.linkedProjectsState = .failed(.unexpected)
+            $0.alert = .linkedProjectsLoadFailed
         }
         // 값은 비어 있을 뿐 다른 정보는 영향받지 않는다.
         #expect(store.state.linkedProjects.isEmpty)
+    }
+
+    /// 못 읽은 것을 "연결 없음"으로 삼고 편집에 들어가면 저장할 때 **실제 연결이 조용히 끊긴다.**
+    @Test("연결된 프로젝트를 못 읽으면 수정 진입이 막힌다")
+    func didTapEdit_whenLinkedProjectsFailed_doesNothing() async {
+        let secret = Self.makeSecret()
+        var initial = SecretDetailFeature.State(secret: secret)
+        initial.payloadState = .loaded(Self.editablePayload)
+        initial.linkedProjectsState = .failed(.unexpected)
+
+        // `revealPayload`·`fetchProjects`를 스텁하지 않았으므로 진입이 뚫리면 미구현 호출로 실패한다.
+        let store = TestStore(initialState: initial) { SecretDetailFeature() }
+
+        await store.send(.didTapEdit)
+    }
+
+    /// 사용자가 스스로 복구할 수 있는 유일한 경로다. 재조회에 성공하면 수정이 다시 열린다.
+    @Test("연결된 프로젝트 조회 실패: Retry로 다시 읽는다")
+    func retryLinkedProjects_reloads() async {
+        let secret = Self.makeSecret()
+        let linked = [
+            Project(id: UUID(), name: "DrinkiG", createdAt: Self.referenceDate, updatedAt: Self.referenceDate)
+        ]
+        var initial = SecretDetailFeature.State(secret: secret)
+        initial.linkedProjectsState = .failed(.unexpected)
+        initial.alert = .linkedProjectsLoadFailed
+
+        let store = TestStore(initialState: initial) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.fetchLinkedProjects = { _ in linked }
+        }
+
+        await store.send(.alert(.presented(.retryLinkedProjects))) {
+            $0.alert = nil
+            $0.linkedProjectsState = .loading
+        }
+        await store.receive(.linkedProjectsResponse(.success(linked))) {
+            $0.linkedProjectsState = .loaded(linked)
+        }
     }
 
     // MARK: - payload 재시도
@@ -694,7 +739,7 @@ struct SecretDetailFeatureTests {
             initialState: {
                 var state = SecretDetailFeature.State(secret: secret)
                 state.payloadState = .loaded(payload)
-                state.linkedProjects = [project]
+                state.linkedProjectsState = .loaded([project])
                 return state
             }()
         ) {
@@ -719,7 +764,7 @@ struct SecretDetailFeatureTests {
         let secret = Self.makeSecret()
         let payload = Self.editablePayload
 
-        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
+        let store = TestStore(initialState: Self.readyToEditState(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
             $0.secretClient.revealPayload = { _, _ in payload }
@@ -747,7 +792,7 @@ struct SecretDetailFeatureTests {
     func didTapEdit_decryptionFailure_staysViewing() async {
         let secret = Self.makeSecret()
 
-        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
+        let store = TestStore(initialState: Self.readyToEditState(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
             $0.secretClient.revealPayload = { _, _ in
@@ -814,6 +859,46 @@ struct SecretDetailFeatureTests {
         }
     }
 
+    /// 드롭다운은 선택을 Set으로 다루고 `Array(Set)`으로 되돌리므로 같은 프로젝트를 껐다 켜기만 해도
+    /// 배열 순서가 달라진다. 그것을 변경으로 세면 **아무것도 안 바꾼 사용자에게 확인 alert가 뜬다.**
+    @Test("취소: 프로젝트 순서만 다른 것은 변경이 아니다")
+    func didTapCancelEdit_projectIdsReordered_returnsImmediately() async {
+        let first = UUID()
+        let second = UUID()
+        var initial = Self.editingState(projectIds: [first, second])
+        initial.editFields?.projectIds = [second, first]
+
+        let store = TestStore(initialState: initial) { SecretDetailFeature() }
+
+        await store.send(.didTapCancelEdit) {
+            $0.mode = .viewing
+            $0.editFields = nil
+            $0.editFieldsBaseline = nil
+            $0.editPayloadBaseline = nil
+        }
+    }
+
+    /// 남겨두면 다음 편집 진입이 **옛 목록으로 시작**해 그 사이 지워진 프로젝트가 선택지에 뜬다.
+    @Test("편집을 끝내면 프로젝트 선택 옵션과 로딩 표시도 함께 비워진다")
+    func endEditing_clearsProjectOptions() async {
+        var initial = Self.editingState()
+        initial.availableProjects = [
+            Project(id: UUID(), name: "DrinkiG", createdAt: Self.referenceDate, updatedAt: Self.referenceDate)
+        ]
+        initial.isLoadingProjects = true
+
+        let store = TestStore(initialState: initial) { SecretDetailFeature() }
+
+        await store.send(.didTapCancelEdit) {
+            $0.mode = .viewing
+            $0.editFields = nil
+            $0.editFieldsBaseline = nil
+            $0.editPayloadBaseline = nil
+            $0.availableProjects = []
+            $0.isLoadingProjects = false
+        }
+    }
+
     // MARK: - 편집 폼의 프로젝트 목록
 
     @Test("편집 진입 시 프로젝트 선택 옵션을 읽어 온다")
@@ -825,11 +910,7 @@ struct SecretDetailFeatureTests {
         ]
 
         let store = TestStore(
-            initialState: {
-                var state = SecretDetailFeature.State(secret: secret)
-                state.payloadState = .loaded(payload)
-                return state
-            }()
+            initialState: Self.readyToEditState(secret: secret, payloadState: .loaded(payload))
         ) {
             SecretDetailFeature()
         } withDependencies: {
@@ -857,11 +938,7 @@ struct SecretDetailFeatureTests {
         let payload = Self.editablePayload
 
         let store = TestStore(
-            initialState: {
-                var state = SecretDetailFeature.State(secret: secret)
-                state.payloadState = .loaded(payload)
-                return state
-            }()
+            initialState: Self.readyToEditState(secret: secret, payloadState: .loaded(payload))
         ) {
             SecretDetailFeature()
         } withDependencies: {
@@ -924,6 +1001,25 @@ struct SecretDetailFeatureTests {
         }
     }
 
+    /// 순서 차이를 변경으로 세면 `updatedAt`만 바꾸는 write가 나가 목록의 "최근" 정렬이 흔들린다 —
+    /// 변경 없음 판정이 막으려던 바로 그 일이다. `updateSecret`을 스텁하지 않아, 불리면 실패한다.
+    @Test("저장: 프로젝트 순서만 다르면 write 없이 조회로 돌아간다")
+    func didTapSave_projectIdsReordered_skipsWrite() async {
+        let first = UUID()
+        let second = UUID()
+        var initial = Self.editingState(projectIds: [first, second])
+        initial.editFields?.projectIds = [second, first]
+
+        let store = TestStore(initialState: initial) { SecretDetailFeature() }
+
+        await store.send(.didTapSave) {
+            $0.mode = .viewing
+            $0.editFields = nil
+            $0.editFieldsBaseline = nil
+            $0.editPayloadBaseline = nil
+        }
+    }
+
     @Test("저장: 필수 필드가 비면 인라인 경고만 세우고 저장하지 않는다")
     func didTapSave_missingRequired_setsValidationErrors() async {
         var initial = Self.editingState()
@@ -956,6 +1052,7 @@ struct SecretDetailFeatureTests {
             SecretDetailFeature()
         } withDependencies: {
             $0.secretClient.updateSecret = { _, _, _, _ in updated }
+            $0.date = .constant(Self.referenceDate)
         }
 
         await store.send(.didTapSave) {
@@ -974,6 +1071,42 @@ struct SecretDetailFeatureTests {
         await store.receive(.delegate(.secretUpdated(updated)))
     }
 
+    /// 조회 화면의 Project chip은 `linkedProjects`를 읽는다. 갱신하지 않으면
+    /// **이전 프로젝트가 그대로 남아** 방금 저장한 것과 화면이 어긋난다.
+    @Test("저장 성공: 바뀐 프로젝트 연결이 조회용 목록에도 반영된다")
+    func didTapSave_success_updatesLinkedProjects() async {
+        let picked = Project(id: UUID(), name: "DrinkiG", createdAt: Self.referenceDate, updatedAt: Self.referenceDate)
+        let other = Project(id: UUID(), name: "CheerLot", createdAt: Self.referenceDate, updatedAt: Self.referenceDate)
+
+        var initial = Self.editingState()
+        initial.availableProjects = [picked, other]
+        initial.editFields?.projectIds = [picked.id]
+        let updated = Self.makeSecret(name: "GitHub Token")
+
+        let store = TestStore(initialState: initial) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.updateSecret = { _, _, _, _ in updated }
+            $0.date = .constant(Self.referenceDate)
+        }
+
+        await store.send(.didTapSave) {
+            $0.isSaving = true
+        }
+        await store.receive(.saveResponse(.success(updated), saved: Self.editablePayload)) {
+            $0.isSaving = false
+            $0.secret = updated
+            $0.payloadState = .loaded(Self.editablePayload)
+            $0.linkedProjectsState = .loaded([picked])
+            $0.mode = .viewing
+            $0.editFields = nil
+            $0.editFieldsBaseline = nil
+            $0.editPayloadBaseline = nil
+            $0.availableProjects = []
+        }
+        await store.receive(.delegate(.secretUpdated(updated)))
+    }
+
     /// 조회로 되돌리면 사용자가 입력한 내용이 통째로 사라진다.
     @Test("저장 실패: alert를 띄우되 편집 모드와 입력을 유지한다")
     func didTapSave_failure_keepsEditing() async {
@@ -984,6 +1117,7 @@ struct SecretDetailFeatureTests {
             SecretDetailFeature()
         } withDependencies: {
             $0.secretClient.updateSecret = { _, _, _, _ in throw SecretUseCaseError.unexpected }
+            $0.date = .constant(Self.referenceDate)
         }
 
         await store.send(.didTapSave) {
@@ -1009,6 +1143,7 @@ struct SecretDetailFeatureTests {
                 recorded.setValue(patch)
                 return Self.makeSecret()
             }
+            $0.date = .constant(Self.referenceDate)
         }
 
         // 관심은 Client에 무엇이 전달됐는지 하나뿐이다. 상태 전이는 위 저장 성공 테스트가 본다.
@@ -1041,6 +1176,7 @@ struct SecretDetailFeatureTests {
                 recorded.setValue(projectIds)
                 return Self.makeSecret()
             }
+            $0.date = .constant(Self.referenceDate)
         }
 
         // 관심은 Client에 무엇이 전달됐는지 하나뿐이다. 상태 전이는 위 저장 성공 테스트가 본다.
@@ -1066,6 +1202,7 @@ struct SecretDetailFeatureTests {
                 recorded.setValue(projectIds)
                 return Self.makeSecret()
             }
+            $0.date = .constant(Self.referenceDate)
         }
 
         // 관심은 Client에 무엇이 전달됐는지 하나뿐이다. 상태 전이는 위 저장 성공 테스트가 본다.
@@ -1089,6 +1226,19 @@ extension SecretDetailFeatureTests {
     }
 
     /// 편집 진입을 마친 상태. `beginEditing`이 세우는 것과 같은 조합이어야 한다.
+    /// 수정 버튼을 누를 수 있는 조회 상태. 연결 목록을 읽어 오기 전에는 수정 진입이 막히므로,
+    /// 진입 자체가 관심사가 아닌 테스트도 이 상태에서 출발해야 한다.
+    fileprivate static func readyToEditState(
+        secret: Secret,
+        payloadState: LoadingState<CreateSecretPayload, SecretUseCaseError> = .idle,
+        linkedProjects: [Project] = []
+    ) -> SecretDetailFeature.State {
+        var state = SecretDetailFeature.State(secret: secret)
+        state.payloadState = payloadState
+        state.linkedProjectsState = .loaded(linkedProjects)
+        return state
+    }
+
     fileprivate static func editingState(
         secret: Secret = makeSecret(name: "GitHub Token"),
         projectIds: [Project.ID] = []
@@ -1096,6 +1246,9 @@ extension SecretDetailFeatureTests {
         let payload = editablePayload
         var state = SecretDetailFeature.State(secret: secret)
         state.payloadState = .loaded(payload)
+        // 실제 진입 경로를 따른다 — 편집에 들어왔다면 연결 목록을 읽었고 인증 창도 방금 열렸다.
+        state.linkedProjectsState = .loaded([])
+        state.revealAuthorizedAt = referenceDate
         let fields = SecretMetaFields(secret: secret, payload: payload, projectIds: projectIds)
         state.editFields = fields
         state.editFieldsBaseline = fields

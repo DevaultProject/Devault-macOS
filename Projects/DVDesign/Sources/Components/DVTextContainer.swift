@@ -392,13 +392,20 @@ private struct CharacterWrappingText: NSViewRepresentable {
     }
 
     func updateNSView(_ view: NSTextView, context: Context) {
-        view.textStorage?.setAttributedString(attributed)
+        Self.syncIfNeeded(view, to: attributed)
+    }
+
+    /// 내용이 그대로면 손대지 않는다. `setAttributedString`은 text storage를 통째로 갈아치워
+    /// **드래그해 둔 선택을 지우므로**, 무관한 갱신 하나에 ⌘C 직전의 선택이 풀린다.
+    private static func syncIfNeeded(_ view: NSTextView, to next: NSAttributedString) {
+        guard let storage = view.textStorage, !storage.isEqual(to: next) else { return }
+        storage.setAttributedString(next)
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSTextView, context: Context) -> CGSize? {
         guard let width = proposal.width, width.isFinite, width > 0 else { return nil }
         // 측정 전에 내용을 맞춰둔다 — `updateNSView`보다 먼저 불릴 수 있다.
-        nsView.textStorage?.setAttributedString(attributed)
+        Self.syncIfNeeded(nsView, to: attributed)
         guard let container = nsView.textContainer, let layout = nsView.layoutManager else {
             return nil
         }

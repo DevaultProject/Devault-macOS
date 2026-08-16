@@ -29,7 +29,9 @@ struct SecretDetailHeaderView: View {
     let secretType: SecretType
     let subType: SecretSubType?
     let isLiked: Bool
-    /// payload 복호화 전/실패 상태에서는 수정 진입을 막는다.
+    /// 수정 진입을 받을 수 있는지. 판정은 호출부(`SecretDetailView.isEditEnabled`)가 갖는다 —
+    /// 복호화 진행 중이거나 연결 프로젝트를 아직 못 읽은 동안 거짓이다.
+    ///
     /// `isEditing`이 참이면 수정 버튼 자체가 렌더되지 않으므로 조회 모드에서만 의미가 있다.
     var isEditEnabled: Bool = true
     /// 편집 폼 위에 얹힌 헤더인지.
@@ -281,7 +283,7 @@ private let _headerWidth: CGFloat = 380
     .previewWidth(_headerWidth + 40)
 }
 
-#Preview("수정 비활성 (payload 미복호화)") {
+#Preview("수정 비활성 (복호화 진행 중)") {
     SecretDetailHeaderView(
         secretType: .apiKeyToken,
         subType: .apiKey,
