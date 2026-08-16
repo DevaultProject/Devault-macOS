@@ -143,15 +143,13 @@ extension DVVaultContainer {
     @ViewBuilder
     private var trailingIconView: some View {
         if let trailingIcon {
-            let icon = trailingIcon.icon
+            trailingIcon.icon
                 .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(trailingIcon.colorToken))
                 .fixedSize()
-
-            if let trailingIconTooltip {
-                icon.help(trailingIconTooltip)
-            } else {
-                icon
-            }
+                // `.help(_:)`·`NSView.toolTip` 둘 다 List 행 안에서 확인해보니 안 뜬다
+                // (mouseEntered/Exited는 정상 도달하지만 시스템 tooltip 렌더링만 안 됨) —
+                // hover 상태를 직접 받아 커스텀 말풍선을 그리는 방식으로 우회한다.
+                .hoverTooltip(trailingIconTooltip)
         }
     }
 }
