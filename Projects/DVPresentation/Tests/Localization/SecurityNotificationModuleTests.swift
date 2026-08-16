@@ -12,7 +12,7 @@ struct SecurityNotificationModuleTests {
   @Test("만료 당일 알림은 오늘 만료 문구를 사용한다")
   func expirationDayContent() {
     let content = SecurityNotification.moduleContent(
-      for: .secretExpiresSoon(secretID: UUID(), daysBefore: 0)
+      for: .secretExpiresSoon(secretID: UUID(), timing: .expirationDay)
     )
 
     #expect(content.title == "A secret expires today")
@@ -22,7 +22,7 @@ struct SecurityNotificationModuleTests {
   @Test("만료 전 알림은 남은 일수를 표시한다")
   func beforeExpirationContent() {
     let content = SecurityNotification.moduleContent(
-      for: .secretExpiresSoon(secretID: UUID(), daysBefore: 7)
+      for: .secretExpiresSoon(secretID: UUID(), timing: .sevenDaysBefore)
     )
 
     #expect(content.title == "A secret is expiring soon")

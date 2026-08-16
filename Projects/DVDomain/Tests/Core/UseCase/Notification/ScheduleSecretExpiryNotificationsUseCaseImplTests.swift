@@ -12,7 +12,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
 
     // MARK: - schedule(secret:)
 
-    @Test("만료가 40일 남았으면 30/7/1일 전·당일 알림을 모두 예약한다")
+    @Test("만료가 40일 남았으면 30/7/3일 전·당일 알림을 모두 예약한다")
     func scheduleSchedulesAllMarksWhenFarEnough() async {
         let notificationService = FakeSecurityNotificationService()
         let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
@@ -29,12 +29,12 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
         #expect(identifiers == [
             "secret-expiry-\(secret.id.uuidString)-30d",
             "secret-expiry-\(secret.id.uuidString)-7d",
-            "secret-expiry-\(secret.id.uuidString)-1d",
+            "secret-expiry-\(secret.id.uuidString)-3d",
             "secret-expiry-\(secret.id.uuidString)-0d",
         ])
     }
 
-    @Test("만료가 5일 남았으면 지난 마크(30/7일 전)는 건너뛰고 1일 전·당일만 예약한다")
+    @Test("만료가 5일 남았으면 지난 마크(30/7일 전)는 건너뛰고 3일 전·당일만 예약한다")
     func scheduleSkipsPastMarks() async {
         let notificationService = FakeSecurityNotificationService()
         let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
@@ -49,7 +49,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
 
         let identifiers = Set(notificationService.scheduled.map(\.identifier))
         #expect(identifiers == [
-            "secret-expiry-\(secret.id.uuidString)-1d",
+            "secret-expiry-\(secret.id.uuidString)-3d",
             "secret-expiry-\(secret.id.uuidString)-0d",
         ])
     }
@@ -124,7 +124,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             $0 == [
                 "secret-expiry-\(secretID.uuidString)-30d",
                 "secret-expiry-\(secretID.uuidString)-7d",
-                "secret-expiry-\(secretID.uuidString)-1d",
+                "secret-expiry-\(secretID.uuidString)-3d",
                 "secret-expiry-\(secretID.uuidString)-0d",
             ]
         })
@@ -169,7 +169,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
     func scheduleUsesConfiguredDaysBeforeExpiry() async {
         let notificationService = FakeSecurityNotificationService()
         let settingsRepository = FakeSettingsRepository()
-        settingsRepository.expiryAlertDaysBeforeValue = [7]
+        settingsRepository.expiryAlertDaysBeforeValue = [.sevenDaysBefore]
         let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
             repository: InMemorySecretRepository(),
             notificationService: notificationService,
@@ -186,7 +186,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
 
     // MARK: - cancel(secretID:)
 
-    @Test("cancel은 가능한 모든(30/7/1일 전·당일) 알림 ID를 취소 요청한다")
+    @Test("cancel은 Domain이 정의한 모든(30/7/3일 전·당일) 알림 ID를 취소 요청한다")
     func cancelCancelsAllPossibleIdentifiers() async {
         let notificationService = FakeSecurityNotificationService()
         let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
@@ -202,7 +202,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
         #expect(notificationService.cancelledIdentifiers == [[
             "secret-expiry-\(secretID.uuidString)-30d",
             "secret-expiry-\(secretID.uuidString)-7d",
-            "secret-expiry-\(secretID.uuidString)-1d",
+            "secret-expiry-\(secretID.uuidString)-3d",
             "secret-expiry-\(secretID.uuidString)-0d",
         ]])
     }
@@ -234,7 +234,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
         try await sut.syncAll()
 
         #expect(notificationService.scheduled.allSatisfy { $0.identifier.contains(withExpiry.id.uuidString) })
-        // 10일 후 만료 → 7일 전/1일 전/당일 3개 마크가 미래에 해당
+        // 10일 후 만료 → 7일 전/3일 전/당일 3개 마크가 미래에 해당
         #expect(notificationService.scheduled.count == 3)
     }
 
@@ -258,7 +258,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
         #expect(notificationService.cancelledIdentifiers == [[
             "secret-expiry-\(secretID.uuidString)-30d",
             "secret-expiry-\(secretID.uuidString)-7d",
-            "secret-expiry-\(secretID.uuidString)-1d",
+            "secret-expiry-\(secretID.uuidString)-3d",
             "secret-expiry-\(secretID.uuidString)-0d",
         ]])
     }

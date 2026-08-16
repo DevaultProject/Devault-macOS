@@ -4,6 +4,7 @@ import SwiftUI
 
 import ComposableArchitecture
 import DVDesign
+import DVDomain
 
 struct NotificationsSettingsView: View {
 

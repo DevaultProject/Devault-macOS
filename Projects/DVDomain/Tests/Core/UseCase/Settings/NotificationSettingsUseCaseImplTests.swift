@@ -32,9 +32,9 @@ struct NotificationSettingsUseCaseImplTests {
             expiryNotificationScheduler: scheduler
         )
 
-        #expect(sut.expiryAlertDaysBefore() == [30, 7, 1, 0])
-        try await sut.setExpiryAlertDaysBefore([7, 1])
-        #expect(sut.expiryAlertDaysBefore() == [7, 1])
+        #expect(sut.expiryAlertDaysBefore() == ExpiryAlertDay.defaultSelection)
+        try await sut.setExpiryAlertDaysBefore([.sevenDaysBefore, .threeDaysBefore])
+        #expect(sut.expiryAlertDaysBefore() == [.sevenDaysBefore, .threeDaysBefore])
         #expect(scheduler.syncAllCount == 1)
     }
 

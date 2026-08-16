@@ -1,6 +1,7 @@
 // Copyright © 2026 Devault. All rights reserved
 
 import ComposableArchitecture
+import DVDomain
 
 // MARK: - NotificationSettingsFeature
 
@@ -56,9 +57,7 @@ public struct NotificationSettingsFeature {
       switch action {
       case .task:
         state.isExpiryAlertsEnabled = notificationSettingsClient.isExpiryAlertsEnabled()
-        state.expiryAlertDaysBefore = Set(
-          notificationSettingsClient.expiryAlertDaysBefore().compactMap(ExpiryAlertDay.init)
-        )
+        state.expiryAlertDaysBefore = Set(notificationSettingsClient.expiryAlertDaysBefore())
         state.isAuthFailureAlertEnabled = notificationSettingsClient.isAuthFailureAlertEnabled()
         state.isClipboardAbnormalAccessAlertEnabled = notificationSettingsClient.isClipboardAbnormalAccessAlertEnabled()
         return .run { send in
@@ -107,7 +106,7 @@ public struct NotificationSettingsFeature {
         } else {
           state.expiryAlertDaysBefore.insert(day)
         }
-        let days = state.expiryAlertDaysBefore.map(\.rawValue).sorted(by: >)
+        let days = state.expiryAlertDaysBefore.sorted { $0.rawValue > $1.rawValue }
         return .run { send in
           do {
             try await notificationSettingsClient.setExpiryAlertDaysBefore(days)

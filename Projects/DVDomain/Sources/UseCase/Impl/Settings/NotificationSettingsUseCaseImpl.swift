@@ -24,11 +24,11 @@ public struct NotificationSettingsUseCaseImpl: NotificationSettingsUseCase {
     try await expiryNotificationScheduler.syncAll()
   }
 
-  public func expiryAlertDaysBefore() -> [Int] {
+  public func expiryAlertDaysBefore() -> [ExpiryAlertDay] {
     repository.expiryAlertDaysBefore()
   }
 
-  public func setExpiryAlertDaysBefore(_ days: [Int]) async throws {
+  public func setExpiryAlertDaysBefore(_ days: [ExpiryAlertDay]) async throws {
     repository.setExpiryAlertDaysBefore(days)
     try await expiryNotificationScheduler.syncAll()
   }

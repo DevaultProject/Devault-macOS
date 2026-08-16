@@ -1,15 +1,17 @@
 // Copyright © 2026 Devault. All rights reserved
 
 import ComposableArchitecture
+import DVDomain
 
 @DependencyClient
 public struct NotificationSettingsClient: Sendable {
   public var isExpiryAlertsEnabled: @Sendable () -> Bool = { true }
   public var setExpiryAlertsEnabled: @Sendable (Bool) async throws -> Void
 
-  /// 만료 며칠 전에 알림을 보낼지(예: [30, 7, 1, 0], 0은 당일).
-  public var expiryAlertDaysBefore: @Sendable () -> [Int] = { [30, 7, 1, 0] }
-  public var setExpiryAlertDaysBefore: @Sendable ([Int]) async throws -> Void
+  public var expiryAlertDaysBefore: @Sendable () -> [ExpiryAlertDay] = {
+    ExpiryAlertDay.defaultSelection
+  }
+  public var setExpiryAlertDaysBefore: @Sendable ([ExpiryAlertDay]) async throws -> Void
 
   public var isAuthFailureAlertEnabled: @Sendable () -> Bool = { true }
   public var setAuthFailureAlertEnabled: @Sendable (Bool) -> Void
@@ -28,7 +30,7 @@ extension NotificationSettingsClient: TestDependencyKey {
   public static let previewValue = NotificationSettingsClient(
     isExpiryAlertsEnabled: { true },
     setExpiryAlertsEnabled: { _ in },
-    expiryAlertDaysBefore: { [30, 7, 1, 0] },
+    expiryAlertDaysBefore: { ExpiryAlertDay.defaultSelection },
     setExpiryAlertDaysBefore: { _ in },
     isAuthFailureAlertEnabled: { true },
     setAuthFailureAlertEnabled: { _ in },
