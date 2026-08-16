@@ -11,11 +11,14 @@ if [ ! -f "$CONFIG" ]; then
     cat <<'EOF'
 .signing.local 이 없습니다. 아래 두 줄로 만들어주세요.
 
-    TEAM=<팀 ID>
-    PROFILE=<프로파일 이름>
+    TEAM="<팀 ID>"
+    PROFILE="<프로파일 이름>"
 
   TEAM    : security find-identity -v -p codesigning        (괄호 안 값)
   PROFILE : security cms -D -i <프로파일> | plutil -extract Name raw -
+
+  따옴표는 생략하지 마세요. 프로파일 이름에는 공백이 흔한데(예: Devault Development),
+  따옴표가 없으면 아래 source 단계가 두 번째 단어를 명령으로 해석하고 중단됩니다.
 EOF
     exit 1
 fi
@@ -25,6 +28,14 @@ source "$CONFIG"
 
 : "${TEAM:?.signing.local 에 TEAM 이 없습니다}"
 : "${PROFILE:?.signing.local 에 PROFILE 이 없습니다}"
+
+# Project.swift는 로컬 서명을 수동 서명보다 먼저 고른다. 셸에 이 변수가 남아 있으면
+# 아래 TUIST_MANUAL_SIGNING_* 이 조용히 무시되고 ad-hoc 서명에 entitlement가 빠진
+# 프로젝트가 만들어진다 — 그 상태로는 시크릿 생성·복호화가 안 되므로 반드시 떼어낸다.
+if [ -n "${TUIST_LOCAL_SIGNING:-}" ]; then
+    echo "TUIST_LOCAL_SIGNING 이 설정되어 있어 해제합니다 (수동 서명이 우선해야 함)."
+fi
+unset TUIST_LOCAL_SIGNING
 
 echo "수동 서명으로 생성합니다 — TEAM=$TEAM / PROFILE=$PROFILE"
 
