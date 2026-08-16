@@ -26,6 +26,20 @@ extension SecretType {
     }
 }
 
+extension CreatableSecretType {
+
+    /// 저장된 서브타입을 폼·화면이 쓰는 값으로 바꾼다. **`nil`이면 이 타입의 첫 서브타입으로 본다.**
+    ///
+    /// `Secret.subType`은 도메인에서 optional이라 예전 데이터에는 비어 있을 수 있다. live
+    /// `dispatchRevealPayload`가 `(.apiKeyToken, nil)`을 `.apiKey`로 처리하는 것과 같은 규칙이고,
+    /// 여기서 갈리면 조회는 되는데 저장만 조용히 실패하는(`invalidTypeCombination`) 상태가 된다.
+    ///
+    /// 서브탭이 없는 타입(database · envSet)은 그대로 `nil`이다.
+    func resolvedSubType(_ subType: SecretSubType?) -> CreatableSecretSubType? {
+        subType?.creatableSubType ?? availableSubTypes.first
+    }
+}
+
 extension SecretSubType {
 
     var creatableSubType: CreatableSecretSubType {
