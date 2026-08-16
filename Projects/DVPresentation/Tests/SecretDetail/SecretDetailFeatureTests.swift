@@ -205,49 +205,10 @@ struct SecretDetailFeatureTests {
 
     // MARK: - payload 재시도
 
-    // `didTapRetryReveal`은 effect가 reveal 하나뿐이라 수신 순서를 맞출 필요가 없다.
-
-    @Test("didTapRetryReveal 성공: payloadState .loading → .loaded")
-    func retryReveal_success() async {
-        let secret = Self.makeSecret()
-        let payload = CreateSecretPayload.apiKey(APIKeyPayload(value: "test_token"), nil)
-
-        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
-            SecretDetailFeature()
-        } withDependencies: {
-            $0.secretClient.revealPayload = { _, _ in payload }
-            $0.date = .constant(Self.referenceDate)
-        }
-
-        await store.send(.didTapRetryReveal) {
-            $0.payloadState = .loading
-        }
-        await store.receive(.payloadResponse(.success(payload), then: .none)) {
-            $0.payloadState = .loaded(payload)
-            $0.revealAuthorizedAt = Self.referenceDate
-        }
-    }
-
-    @Test("didTapRetryReveal 실패: payloadState .failed + alert 노출")
-    func retryReveal_failure() async {
-        let secret = Self.makeSecret()
-
-        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
-            SecretDetailFeature()
-        } withDependencies: {
-            $0.secretClient.revealPayload = { _, _ in throw SecretUseCaseError.cryptoFailure(.decryptionFailed) }
-        }
-
-        await store.send(.didTapRetryReveal) {
-            $0.payloadState = .loading
-        }
-        await store.receive(.payloadResponse(.failure(.cryptoFailure(.decryptionFailed)), then: .none)) {
-            $0.payloadState = .failed(.cryptoFailure(.decryptionFailed))
-            $0.alert = .payloadRevealFailed(.decryptionFailed)
-        }
-    }
-
-    @Test("인증 취소 후 재시도: alert를 닫고 다시 시도하면 payload가 노출된다")
+    /// 실패 후 재시도는 **눈 버튼이 그대로 맡는다.** `.failed`에서 다시 누르면 그 필드를
+    /// continuation에 실은 채 복호화를 새로 걸므로, 성공하면 누른 필드가 실제로 열린다 —
+    /// 이 테스트가 확인하는 것이 그 점이고, 전용 재시도 액션이 필요 없는 근거다.
+    @Test("인증 취소 후 재시도: alert를 닫고 눈 버튼을 다시 누르면 그 필드가 열린다")
     func retryReveal_afterAuthenticationCancellation() async {
         let secret = Self.makeSecret()
         let payload = CreateSecretPayload.apiKey(APIKeyPayload(value: "test_token"), nil)
@@ -282,12 +243,15 @@ struct SecretDetailFeatureTests {
             $0.alert = nil
         }
 
-        await store.send(.didTapRetryReveal) {
+        await store.send(.didTapToggleReveal(.value)) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.success(payload), then: .none)) {
+        await store.receive(.payloadResponse(.success(payload), then: .reveal(.value))) {
             $0.payloadState = .loaded(payload)
             $0.revealAuthorizedAt = Self.referenceDate
+            // 전용 재시도 액션은 continuation을 잃어 값만 받아왔다 — 인증을 통과하고도
+            // 모든 필드가 마스킹된 채 남아 아무 일도 안 일어난 것처럼 보였다.
+            $0.revealedFields = [.value]
         }
         // 매 시도가 생체인증을 새로 타므로 호출 횟수 자체가 재시도 성립의 근거다.
         #expect(attemptCount.value == 2)

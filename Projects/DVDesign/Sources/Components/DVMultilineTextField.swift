@@ -161,7 +161,6 @@ extension DVMultilineTextField {
 
     /// 줄 구조를 유지한 마스킹 값. 전체를 하나의 `•` 덩어리로 만들지 않는다 —
     /// 가려진 상태에서도 몇 줄이 채워졌는지 확인할 수 있어야 한다.
-    /// 조회 화면(``DVMultilineTextContainer`` 호출부)이 쓰는 규칙과 같다.
     private var maskedValue: String {
         text
             .split(separator: "\n", omittingEmptySubsequences: false)
