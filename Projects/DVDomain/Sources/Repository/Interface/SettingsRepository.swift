@@ -3,10 +3,14 @@
 import Foundation
 
 public protocol SettingsRepository: Sendable {
+  // MARK: - Onboarding
+
   /// 온보딩을 완료했는지 확인한다.
   func hasCompletedOnboarding() -> Bool
   /// 온보딩 완료 상태를 저장한다.
   func setOnboardingCompleted()
+
+  // MARK: - iCloud
 
   /// iCloud 동기화 사용 여부를 확인한다.
   func isICloudSyncEnabled() -> Bool
@@ -24,9 +28,9 @@ public protocol SettingsRepository: Sendable {
   func isLaunchAtLoginEnabled() -> Bool
   func setLaunchAtLoginEnabled(_ enabled: Bool)
 
-  /// 새 Secret 생성 시 자동 적용되는 기본 환경(rawValue). 미설정이면 nil.
-  func defaultEnvironment() -> String?
-  func setDefaultEnvironment(_ rawValue: String?)
+  /// 새 Secret 생성 시 자동 적용되는 기본 환경(rawValue).
+  func defaultEnvironment() -> String
+  func setDefaultEnvironment(_ rawValue: String)
 
   // MARK: - Security
 
@@ -38,7 +42,11 @@ public protocol SettingsRepository: Sendable {
   func isRequireAuthToCopyEnabled() -> Bool
   func setRequireAuthToCopyEnabled(_ enabled: Bool)
 
-  /// 비활성 후 자동 잠금까지의 시간(분). 0이면 "사용 안 함".
+  /// 비활성 후 자동 잠금 사용 여부.
+  func isAutoLockEnabled() -> Bool
+  func setAutoLockEnabled(_ enabled: Bool)
+
+  /// 비활성 후 자동 잠금까지의 시간(분).
   func autoLockMinutes() -> Int
   func setAutoLockMinutes(_ minutes: Int)
 
@@ -53,6 +61,9 @@ public protocol SettingsRepository: Sendable {
   /// 화면 녹화 중 값 숨김 여부.
   func isHideDuringScreenRecordingEnabled() -> Bool
   func setHideDuringScreenRecordingEnabled(_ enabled: Bool)
+
+  /// 구독을 시작하면 현재 설정값을 즉시 한 번 방출하고, 이후 설정이 변경될 때마다 최신값을 방출한다.
+  func hideDuringScreenRecordingEnabledStream() -> AsyncStream<Bool>
 
   // MARK: - Notifications
 

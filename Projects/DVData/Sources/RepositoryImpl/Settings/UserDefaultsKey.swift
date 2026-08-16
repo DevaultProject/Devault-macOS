@@ -4,6 +4,8 @@ import Foundation
 
 enum UserDefaultsKey: String {
   case hasCompletedOnboarding
+
+  // iCloud
   case isICloudSyncEnabled
   case iCloudLastSyncedAt
 
@@ -14,6 +16,7 @@ enum UserDefaultsKey: String {
   // Security
   case isRequireAuthOnLaunchEnabled
   case isRequireAuthToCopyEnabled
+  case isAutoLockEnabled
   case autoLockMinutes
   case isAutoClearClipboardEnabled
   case autoClearClipboardDelaySeconds
