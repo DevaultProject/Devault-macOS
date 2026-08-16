@@ -1,0 +1,134 @@
+// Copyright © 2026 Devault. All rights reserved
+
+import SwiftUI
+
+/// hover 시 커스텀 말풍선을 띄우는 툴팁 modifier.
+///
+/// SwiftUI `.help(_:)`와 AppKit `NSView.toolTip` 둘 다 이 프로젝트의 `List` 행 컨텍스트에서
+/// 확인해보니 동작하지 않았다 — 마우스 트래킹 이벤트는 정상 도달하는데 시스템 tooltip 렌더링만 안 됐다.
+///
+/// SwiftUI `.overlay`로 직접 말풍선을 그리는 것도 시도했지만, `List`가 자기 폭 밖으로 나가는
+/// 콘텐츠를 잘라내서 긴 텍스트가 잘렸다. 그래서 별도의 borderless `NSWindow`를 화면 절대 좌표에
+/// 띄우는 방식으로 간다 — macOS 시스템 tooltip이 실제로 동작하는 방식과 같다. `List`/부모 뷰의
+/// 경계와 무관하게 항상 온전히 그려진다.
+extension View {
+    /// `text`가 `nil`이면 아무것도 붙이지 않는다.
+    public func hoverTooltip(_ text: String?) -> some View {
+        overlay {
+            if let text {
+                HoverTooltipHost(text: text)
+            }
+        }
+    }
+}
+
+private struct HoverTooltipHost: NSViewRepresentable {
+    let text: String
+
+    func makeNSView(context: Context) -> TrackingView {
+        let view = TrackingView()
+        view.text = text
+        return view
+    }
+
+    func updateNSView(_ nsView: TrackingView, context: Context) {
+        nsView.text = text
+    }
+}
+
+/// hover를 감지해 별도 `NSPanel`에 말풍선을 띄우는 뷰. `List`의 clipping과 무관하게
+/// 화면 절대 좌표에 그려지므로 항상 온전한 크기로 보인다.
+private final class TrackingView: NSView {
+    var text: String?
+
+    private var trackingArea: NSTrackingArea?
+    private var tooltipPanel: NSPanel?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea {
+            removeTrackingArea(trackingArea)
+        }
+        let newTrackingArea = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(newTrackingArea)
+        trackingArea = newTrackingArea
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        super.mouseEntered(with: event)
+        showTooltip()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        hideTooltip()
+    }
+
+    override func removeFromSuperview() {
+        hideTooltip()
+        super.removeFromSuperview()
+    }
+
+    private func showTooltip() {
+        guard let text, let window, !text.isEmpty else { return }
+
+        let hosting = NSHostingView(rootView: TooltipBubble(text: text))
+        let size = hosting.fittingSize
+        hosting.frame = CGRect(origin: .zero, size: size)
+
+        let panel = NSPanel(
+            contentRect: CGRect(origin: .zero, size: size),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = true
+        panel.level = .popUpMenu
+        panel.ignoresMouseEvents = true
+        panel.contentView = hosting
+
+        let boundsInWindow = convert(bounds, to: nil)
+        let boundsOnScreen = window.convertToScreen(boundsInWindow)
+        let origin = CGPoint(
+            x: boundsOnScreen.midX - size.width / 2,
+            y: boundsOnScreen.minY - size.height - 6
+        )
+        panel.setFrameOrigin(origin)
+        window.addChildWindow(panel, ordered: .above)
+        tooltipPanel = panel
+    }
+
+    private func hideTooltip() {
+        if let tooltipPanel {
+            tooltipPanel.parent?.removeChildWindow(tooltipPanel)
+            tooltipPanel.orderOut(nil)
+        }
+        tooltipPanel = nil
+    }
+}
+
+/// hover 말풍선. macOS 시스템 tooltip과 비슷한 외관(밝은 회색 배경 + 어두운 텍스트)으로 맞춘다.
+private struct TooltipBubble: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 12))
+            .foregroundStyle(Color(NSColor.labelColor))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color(NSColor.windowBackgroundColor), in: RoundedRectangle(cornerRadius: 4))
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+            )
+            .fixedSize()
+    }
+}
