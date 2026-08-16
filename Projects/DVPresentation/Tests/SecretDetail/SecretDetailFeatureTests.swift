@@ -1071,6 +1071,85 @@ struct SecretDetailFeatureTests {
         await store.receive(.delegate(.secretUpdated(updated)))
     }
 
+    /// 갱신하지 않으면 저장하며 Touch ID를 통과한 직후 눈 버튼이 **또** 인증을 요구한다.
+    /// 3분 캐싱 정책이 이 경로에서만 무너진다.
+    @Test("저장 직전 재인증: 인증 창을 다시 연다")
+    func didTapSave_reauthenticates_refreshesAuthWindow() async {
+        var initial = Self.editingState()
+        // 인증 창이 닫힌 채로 저장에 들어가는 상황을 만든다.
+        initial.revealAuthorizedAt = Self.referenceDate.addingTimeInterval(-1_000)
+        initial.editFields?.content = .apiKeyToken(
+            APIKeyTokenFields(value: "ghp_new", authorityScope: "repo:read")
+        )
+        let saved = CreateSecretPayload.apiKey(
+            APIKeyPayload(value: "ghp_new"),
+            APIKeyMetadata(scope: "repo:read")
+        )
+        let updated = Self.makeSecret(name: "GitHub Token")
+
+        let store = TestStore(initialState: initial) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.authenticate = { _ in }
+            $0.secretClient.updateSecret = { _, _, _, _ in updated }
+            $0.date = .constant(Self.referenceDate)
+        }
+
+        await store.send(.didTapSave) {
+            $0.isSaving = true
+        }
+        await store.receive(.saveAuthenticated) {
+            $0.revealAuthorizedAt = Self.referenceDate
+        }
+        await store.receive(.saveResponse(.success(updated), saved: saved)) {
+            $0.isSaving = false
+            $0.secret = updated
+            $0.payloadState = .loaded(saved)
+            $0.mode = .viewing
+            $0.editFields = nil
+            $0.editFieldsBaseline = nil
+            $0.editPayloadBaseline = nil
+        }
+        await store.receive(.delegate(.secretUpdated(updated)))
+    }
+
+    /// 인증이 취소되면 쓰기는 나가지 않으므로 인증 창도 열리면 안 된다.
+    /// `updateSecret`을 스텁하지 않아, 불리면 실패한다.
+    @Test("저장 직전 재인증 실패: 인증 창을 열지 않고 편집에 남는다")
+    func didTapSave_reauthenticationFails_keepsWindowClosed() async {
+        let expired = Self.referenceDate.addingTimeInterval(-1_000)
+        var initial = Self.editingState()
+        initial.revealAuthorizedAt = expired
+        initial.editFields?.content = .apiKeyToken(
+            APIKeyTokenFields(value: "ghp_new", authorityScope: "repo:read")
+        )
+        let saved = CreateSecretPayload.apiKey(
+            APIKeyPayload(value: "ghp_new"),
+            APIKeyMetadata(scope: "repo:read")
+        )
+
+        let store = TestStore(initialState: initial) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.authenticate = { _ in
+                throw SecretUseCaseError.authenticationFailure(.cancelled)
+            }
+            $0.date = .constant(Self.referenceDate)
+        }
+
+        await store.send(.didTapSave) {
+            $0.isSaving = true
+        }
+        await store.receive(
+            .saveResponse(.failure(.authenticationFailure(.cancelled)), saved: saved)
+        ) {
+            $0.isSaving = false
+            $0.alert = .updateAuthRequired
+        }
+        #expect(store.state.revealAuthorizedAt == expired)
+        #expect(store.state.mode == .editing)
+    }
+
     /// 조회 화면의 Project chip은 `linkedProjects`를 읽는다. 갱신하지 않으면
     /// **이전 프로젝트가 그대로 남아** 방금 저장한 것과 화면이 어긋난다.
     @Test("저장 성공: 바뀐 프로젝트 연결이 조회용 목록에도 반영된다")

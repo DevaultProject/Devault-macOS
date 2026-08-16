@@ -182,6 +182,9 @@ public struct SecretDetailFeature {
         )
         /// 인증만 수행한 결과. payload를 이미 들고 있는데 창만 만료된 경우에 쓴다.
         case reauthenticateResponse(Result<Bool, Never>, revealing: SecretFieldID)
+        /// 저장 직전 재인증이 통과했다. 쓰기 결과와 별개로 **인증 창부터 다시 연다** —
+        /// 쓰기가 실패해 편집에 남더라도 방금 인증한 사실은 그대로이기 때문이다.
+        case saveAuthenticated
         /// 클립보드 복사 결과. 실패도 사용자에게 알린다 — 값이 복사된 줄 알고 붙여넣으면 더 혼란스럽다.
         case copyResponse(Result<Bool, Never>)
         case likeResponse(Result<Secret, SecretUseCaseError>)
@@ -326,6 +329,11 @@ public struct SecretDetailFeature {
                 }
                 state.revealAuthorizedAt = now
                 state.revealedFields.insert(field)
+                return .none
+
+            // 갱신하지 않으면 저장하며 Touch ID를 통과한 직후 눈 버튼이 또 인증을 요구한다.
+            case .saveAuthenticated:
+                state.revealAuthorizedAt = now
                 return .none
 
             case .copyResponse(.success(let didCopy)):
@@ -595,6 +603,7 @@ public struct SecretDetailFeature {
                 do {
                     if needsAuthentication {
                         try await secretClient.authenticate(AuthenticationReason.editSecret)
+                        await send(.saveAuthenticated)
                     }
                     let updated = try await secretClient.updateSecret(id, patch, change, projectIds)
                     await send(.saveResponse(.success(updated), saved: payload))
