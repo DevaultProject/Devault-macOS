@@ -247,6 +247,10 @@ public struct SecretDetailFeature {
                 return reauthenticateEffect(revealing: field)
 
             // 복사는 인증하지 않는다. 다만 값이 없으면 복호화가 필요하고, 그 경로가 인증을 탄다.
+            //
+            // 인증 창이 만료된 뒤에도 복사는 통과한다. 눈 버튼(재인증 요구)보다 느슨한 셈이지만
+            // 의도한 정책이다 — 복사는 값을 화면에 드러내지 않고, 클립보드로 나간 값은
+            // `CopySensitiveValueUseCase`가 30초 뒤 정리하고 반복 복사를 감시한다.
             case .didTapCopy(let field):
                 guard case .loaded(let payload) = state.payloadState else {
                     state.payloadState = .loading
