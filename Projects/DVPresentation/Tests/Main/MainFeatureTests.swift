@@ -14,6 +14,51 @@ struct MainFeatureTests {
   /// 사이드바 카운트 집계의 기준 시각을 고정한다.
   static let referenceDate = Date(timeIntervalSince1970: 1_700_000_000)
 
+  nonisolated static func makeSecret(name: String = "Test Token") -> Secret {
+    Secret(
+      id: UUID(),
+      name: name,
+      secretType: .apiKeyToken,
+      createdAt: Date(),
+      updatedAt: Date(),
+      payload: SecretPayload(encryptedData: Data(), keyTag: "test", schemaVersion: 1)
+    )
+  }
+
+  // MARK: - Screen 판정
+
+  /// 화면 분기가 이 값 하나에 걸려 있다.
+  @Test("screen: 아무것도 없으면 browsing")
+  func screenDefaultsToBrowsing() {
+    #expect(MainFeature.State().screen == .browsing)
+  }
+
+  @Test("screen: 타입 선택만 있어도, 폼만 있어도 creating")
+  func screenIsCreatingForBothCreationSteps() {
+    var selecting = MainFeature.State()
+    selecting.selectSecretType = .init()
+    #expect(selecting.screen == .creating)
+
+    var form = MainFeature.State()
+    form.createSecret = .init(secretType: .apiKeyToken)
+    #expect(form.screen == .creating)
+  }
+
+  @Test("screen: 설정이 생성보다 우선한다")
+  func screenPrefersSettingsOverCreating() {
+    var state = MainFeature.State()
+    state.selectSecretType = .init()
+    state.settings = .init()
+    #expect(state.screen == .settings)
+  }
+
+  @Test("screen: 상세가 열려 있어도 browsing이다")
+  func screenStaysBrowsingWithDetail() {
+    var state = MainFeature.State()
+    state.secretDetail = .init(secret: Self.makeSecret())
+    #expect(state.screen == .browsing)
+  }
+
   // MARK: - Count Refresh
 
   @Test("secretList의 secretsChanged 델리게이트는 사이드바 카운트를 다시 세게 한다")

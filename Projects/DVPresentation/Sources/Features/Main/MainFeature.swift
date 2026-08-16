@@ -23,6 +23,21 @@ public struct MainFeature {
     /// 별도 Window가 아니라 콘텐츠 스위칭으로 처리하므로 @Presents 미사용
     var settings: SettingsFeature.State?
 
+    /// 지금 무엇을 그릴지. **화면 분기는 이 값 하나만 본다.**
+    /// 뷰에서 optional을 직접 조합하면 같은 판정이 렌더 지점마다 흩어진다.
+    var screen: Screen {
+      if settings != nil { return .settings }
+      if createSecret != nil || selectSecretType != nil { return .creating }
+      return .browsing
+    }
+
+    /// 서로 배타적인 최상위 화면.
+    enum Screen: Equatable {
+      case browsing
+      case creating
+      case settings
+    }
+
     public init() {}
   }
 
@@ -172,8 +187,7 @@ public struct MainFeature {
         return .none
 
       case .createSecret(.delegate(.secretCreated(_))):
-        state.createSecret = nil
-        state.selectSecretType = nil
+        exitCreating(&state)
         // `.merge`는 도착 순서를 보장하지 않아 테스트가 깨지기 쉬우므로 순차 실행한다.
         return .concatenate(
           .send(.sidebar(.setCreatingSecret(false))),
@@ -235,20 +249,13 @@ extension MainFeature {
   ) -> Effect<Action> {
     switch delegate {
     case .selectionChanged(let selection):
-      state.selectSecretType = nil
-      state.createSecret = nil
+      exitCreating(&state)
       state.secretDetail = nil
       state.secretList = makeSecretListState(selection: selection, projects: state.sidebar.projects)
       return .send(.sidebar(.setCreatingSecret(false)))
 
     case .addButtonTapped:
-      state.createSecret = nil
-      state.selectSecretType = .init()
-      // 생성 플로우로 들어가면 조회 중이던 시크릿을 놓는다. 생성 중에는 2컬럼이라 상세가
-      // 화면에서 사라지지만 State는 살아남으므로, 정리하지 않으면 생성을 마치고 3컬럼으로
-      // 돌아올 때 이전 시크릿 상세가 다시 나타나고 `.task(id:)`가 Touch ID까지 다시 요구한다.
-      state.secretDetail = nil
-      state.secretList.selectedSecretID = nil
+      enterCreating(&state)
       return .send(.sidebar(.setCreatingSecret(true)))
 
     case .addProjectTapped:
@@ -265,6 +272,21 @@ extension MainFeature {
       }
       return .none
     }
+  }
+
+  /// 생성 플로우로 들어간다. 조회 중이던 시크릿을 함께 놓는다 — 상세 State가 살아남으면
+  /// 돌아올 때 되살아나고 `.task(id:)`가 Touch ID까지 다시 요구한다.
+  private func enterCreating(_ state: inout State) {
+    state.createSecret = nil
+    state.selectSecretType = .init()
+    state.secretDetail = nil
+    state.secretList.selectedSecretID = nil
+  }
+
+  /// 생성 플로우를 벗어난다. 한쪽만 남으면 `screen`이 `.creating`으로 판정돼 컬럼이 접힌 채 남는다.
+  private func exitCreating(_ state: inout State) {
+    state.createSecret = nil
+    state.selectSecretType = nil
   }
 
   private func makeSecretListState(
