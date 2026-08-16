@@ -133,15 +133,19 @@ extension MainView {
     )
   }
 
+  /// 초록 토큰이 둘뿐이라 press는 색만으로 hover와 구분되지 않아 흐림을 함께 준다.
   private var lockButton: some View {
-    Button {
+    DVIconButton(
+      systemName: "lock",
+      font: .headingLG,
+      idle: .vaultGreen,
+      hovered: .vaultGreenDark,
+      pressed: .vaultGreenDark,
+      pressedOpacity: 0.7,
+      hitSize: 28
+    ) {
       store.send(.didTapLock)
-    } label: {
-      Image(systemName: "lock")
-        .foregroundStyle(Color.dv(.vaultGreen))
-        .dvFont(.headingLG)
     }
-    .buttonStyle(.plain)
     .accessibilityLabel(String.module("Lock App"))
   }
 }

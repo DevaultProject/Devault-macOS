@@ -17,6 +17,7 @@ public struct DVTitleBar: View {
     public let isSearchFocused: Binding<Bool>?
 
     @FocusState private var searchFieldFocused: Bool
+    @State private var isSortHovered = false
 
     // MARK: - Init
 
@@ -62,17 +63,21 @@ extension DVTitleBar {
         .padding(.vertical, 4)
     }
 
+    /// hover만 준다. `Menu`는 `ButtonStyle`을 타지 않아 눌림 상태를 알 수 없고,
+    /// 누르는 즉시 메뉴가 열려 그 자체가 되먹임이 된다.
     private func sortMenu(content: () -> AnyView) -> some View {
         Menu {
             content()
         } label: {
             Image(systemName: "arrow.up.arrow.down")
                 .dvFont(.bodyXL)
-                .foregroundStyle(Color.dv(.gray800))
+                .foregroundStyle(Color.dv(isSortHovered ? .gray900 : .gray800))
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
+        .onHover { isSortHovered = $0 }
+        .animation(MotionMetrics.hover, value: isSortHovered)
     }
 
     private var searchField: some View {
