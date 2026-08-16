@@ -1,49 +1,64 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import Foundation
 import SwiftUI
 
+import ComposableArchitecture
 import DVDesign
 
 struct AboutSettingsView: View {
 
-  private var version: String {
-    Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-"
-  }
-
-  private var build: String {
-    Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "-"
-  }
+  let store: StoreOf<AboutSettingsFeature>
+  private static let licenseURL = URL(
+    string: "https://github.com/DevaultProject/Devault-macOS/blob/develop/LICENSE"
+  )
 
   var body: some View {
-    SettingsScrollContainer {
+    content
+      .task { await store.send(.task).finish() }
+  }
+}
+
+// MARK: - Subviews
+
+extension AboutSettingsView {
+
+  private var content: some View {
+    SettingsDetailContainer(title: String.module("About")) {
       SettingsSection(title: String.module("Version")) {
-        HStack {
-          Text(.module("Devault"))
-            .dvFont(.bodyLG)
-            .foregroundStyle(Color.dv(.gray900))
-          Spacer()
-          Text("\(version) (\(build))")
-            .dvFont(.captionMDRegular)
-            .foregroundStyle(Color.dv(.gray600))
-        }
-        .padding(.vertical, 8)
+        SettingsValueRow(
+          title: String.module("Devault"),
+          value: store.version
+        )
       }
 
       SettingsSection(title: String.module("Developer")) {
-        Text(.module("Devault Team"))
-          .dvFont(.bodyLG)
-          .foregroundStyle(Color.dv(.gray900))
-          .padding(.vertical, 8)
+        SettingsValueRow(title: String.module("Devault Team"))
       }
 
       SettingsSection(title: String.module("License")) {
-        Link(destination: URL(string: "https://github.com/DevaultProject/Devault-macOS/blob/develop/LICENSE")!) {
-          Text(.module("MIT License"))
-            .dvFont(.bodyLG)
-            .foregroundStyle(Color.dv(.vaultGreen))
+        if let licenseURL = Self.licenseURL {
+          SettingsLinkRow(
+            title: String.module("MIT License"),
+            linkTitle: String.module("View on GitHub"),
+            destination: licenseURL
+          )
         }
-        .padding(.vertical, 8)
       }
     }
+  }
+}
+
+// MARK: - Preview
+
+#Preview("About") {
+  SettingsDetailPreview {
+    AboutSettingsView(
+      store: Store(initialState: AboutSettingsFeature.State()) {
+        AboutSettingsFeature()
+      } withDependencies: {
+        $0.aboutSettingsClient = .previewValue
+      }
+    )
   }
 }
