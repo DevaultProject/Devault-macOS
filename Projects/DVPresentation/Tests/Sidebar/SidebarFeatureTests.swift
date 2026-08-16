@@ -263,11 +263,12 @@ struct SidebarFeatureTests {
       $0.date = .constant(Self.referenceDate)
     }
 
-    await store.send(.didConfirmRename) {
+    // 편집 상태는 성공 응답에서 닫힌다.
+    await store.send(.didConfirmRename)
+    await store.receive(.renameResponse(.success(renamed))) {
       $0.renamingProjectID = nil
       $0.renameText = ""
     }
-    await store.receive(.renameResponse(.success(renamed)))
     await store.receive(.delegate(.projectRenamed(renamed)))
     await store.receive(.refresh) {
       $0.isRefreshingProjects = true
@@ -295,10 +296,8 @@ struct SidebarFeatureTests {
       $0.sidebarClient.renameProject = { _, _ in throw SidebarError.nameTaken }
     }
 
-    await store.send(.didConfirmRename) {
-      $0.renamingProjectID = nil
-      $0.renameText = ""
-    }
+    // 실패해도 닫지 않는다 — 닫으면 입력한 이름이 사라진다.
+    await store.send(.didConfirmRename)
     await store.receive(.renameResponse(.failure(.nameTaken))) {
       $0.alert = AlertState {
         TextState("이미 사용 중인 이름이에요")

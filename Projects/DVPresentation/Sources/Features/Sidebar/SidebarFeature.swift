@@ -278,11 +278,10 @@ public struct SidebarFeature {
         }
         return .none
 
+      // 편집 상태는 성공했을 때만 닫는다. 여기서 닫으면 실패 시 입력한 이름이 사라진다.
       case .didConfirmRename:
         guard let id = state.renamingProjectID else { return .none }
         let name = state.renameText.trimmingCharacters(in: .whitespacesAndNewlines)
-        state.renamingProjectID = nil
-        state.renameText = ""
         guard !name.isEmpty else {
           state.alert = makeRenameEmptyNameAlert()
           return .none
@@ -304,6 +303,8 @@ public struct SidebarFeature {
         return .none
 
       case .renameResponse(.success(let updated)):
+        state.renamingProjectID = nil
+        state.renameText = ""
         return .concatenate(
           .send(.delegate(.projectRenamed(updated))),
           .send(.refresh)
