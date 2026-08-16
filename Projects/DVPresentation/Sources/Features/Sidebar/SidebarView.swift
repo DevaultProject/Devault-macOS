@@ -255,15 +255,32 @@ extension SidebarView {
     .buttonStyle(.plain)
   }
 
+  /// macOS 26부터는 Liquid Glass 버튼으로 그린다.
+  ///
+  /// 배포 타겟이 macOS 14라 분기가 필요하다. 이 SDK의 SwiftUI에는 `glassEffect` modifier가 없고
+  /// 버튼용 `GlassProminentButtonStyle`이 제공되므로 그쪽을 쓴다 — 색을 잃지 않도록 `.glass`가
+  /// 아니라 tint를 받는 prominent 쪽을 골랐다. 26 미만은 기존 초록 원형 그대로다.
+  @ViewBuilder
   private func circleIconButton(icon: String, action: @escaping () -> Void) -> some View {
-    Button(action: action) {
-      Image(systemName: icon)
-        .dvFont(.captionLG)
-        .frame(width: 32, height: 32)
-        .background(Color.dv(.vaultGreen), in: Circle())
-        .foregroundStyle(Color.dv(.white))
+    if #available(macOS 26.0, *) {
+      Button(action: action) {
+        Image(systemName: icon)
+          .dvFont(.captionLG)
+          .frame(width: 32, height: 32)
+      }
+      .buttonStyle(.glassProminent)
+      .buttonBorderShape(.circle)
+      .tint(Color.dv(.vaultGreen))
+    } else {
+      Button(action: action) {
+        Image(systemName: icon)
+          .dvFont(.captionLG)
+          .frame(width: 32, height: 32)
+          .background(Color.dv(.vaultGreen), in: Circle())
+          .foregroundStyle(Color.dv(.white))
+      }
+      .buttonStyle(.plain)
     }
-    .buttonStyle(.plain)
   }
 }
 
