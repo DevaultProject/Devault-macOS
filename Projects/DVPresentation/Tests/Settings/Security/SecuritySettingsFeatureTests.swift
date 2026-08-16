@@ -21,7 +21,7 @@ struct SecuritySettingsFeatureTests {
       $0.securitySettingsClient.autoLockMinutes = { 15 }
       $0.securitySettingsClient.isAutoClearClipboardEnabled = { false }
       $0.securitySettingsClient.autoClearClipboardDelaySeconds = { 60 }
-      $0.securitySettingsClient.isHideDuringScreenRecordingEnabled = { false }
+      $0.securitySettingsClient.isWindowCaptureProtectionEnabled = { false }
     }
 
     await store.send(.task) {
@@ -31,7 +31,7 @@ struct SecuritySettingsFeatureTests {
       $0.autoLockInterval = .fifteenMinutes
       $0.isAutoClearClipboardEnabled = false
       $0.clipboardClearDelay = .oneMinute
-      $0.isHideDuringScreenRecordingEnabled = false
+      $0.isWindowCaptureProtectionEnabled = false
     }
   }
 
@@ -125,17 +125,17 @@ struct SecuritySettingsFeatureTests {
     #expect(saved.value == 60)
   }
 
-  @Test("화면 녹화 중 값 숨김 토글을 저장한다")
-  func hideDuringScreenRecordingTogglePersists() async {
+  @Test("앱 창 전체 캡처 보호 토글을 저장한다")
+  func windowCaptureProtectionTogglePersists() async {
     let saved = LockIsolated<Bool?>(nil)
     let store = TestStore(initialState: SecuritySettingsFeature.State()) {
       SecuritySettingsFeature()
     } withDependencies: {
-      $0.securitySettingsClient.setHideDuringScreenRecordingEnabled = { saved.setValue($0) }
+      $0.securitySettingsClient.setWindowCaptureProtectionEnabled = { saved.setValue($0) }
     }
 
-    await store.send(.binding(.set(\.isHideDuringScreenRecordingEnabled, false))) {
-      $0.isHideDuringScreenRecordingEnabled = false
+    await store.send(.binding(.set(\.isWindowCaptureProtectionEnabled, false))) {
+      $0.isWindowCaptureProtectionEnabled = false
     }
     #expect(saved.value == false)
   }

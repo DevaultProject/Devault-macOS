@@ -46,14 +46,14 @@ public protocol SecuritySettingsUseCase: Sendable {
   /// - Parameter seconds: 저장할 클립보드 자동 비우기 시간(초)
   func setAutoClearClipboardDelaySeconds(_ seconds: Int)
 
-  /// 화면 녹화 중 값 숨김 여부를 확인한다.
-  /// - Returns: 화면 녹화 중 값 숨김 여부
-  func isHideDuringScreenRecordingEnabled() -> Bool
-  /// 화면 녹화 중 값 숨김 여부를 저장한다.
-  /// - Parameter enabled: 화면 녹화 중 값 숨김 여부
-  func setHideDuringScreenRecordingEnabled(_ enabled: Bool)
+  /// 앱 창 전체의 캡처 보호 여부를 확인한다.
+  /// - Returns: 앱 창 전체의 캡처 보호 여부
+  func isWindowCaptureProtectionEnabled() -> Bool
+  /// 앱 창 전체의 캡처 보호 여부를 저장한다.
+  /// - Parameter enabled: 앱 창 전체의 캡처 보호 여부
+  func setWindowCaptureProtectionEnabled(_ enabled: Bool)
 
   /// 구독을 시작하면 현재 설정값을 즉시 한 번 방출하고, 이후 설정이 변경될 때마다 최신값을 방출한다.
-  /// - Returns: 화면 녹화 중 값 숨김 설정 스트림
-  func hideDuringScreenRecordingEnabledStream() -> AsyncStream<Bool>
+  /// - Returns: 앱 창 전체의 캡처 보호 설정 스트림
+  func windowCaptureProtectionEnabledStream() -> AsyncStream<Bool>
 }

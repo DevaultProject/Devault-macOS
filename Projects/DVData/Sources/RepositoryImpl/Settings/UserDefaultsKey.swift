@@ -20,7 +20,7 @@ enum UserDefaultsKey: String {
   case autoLockMinutes
   case isAutoClearClipboardEnabled
   case autoClearClipboardDelaySeconds
-  case isHideDuringScreenRecordingEnabled
+  case isWindowCaptureProtectionEnabled
 
   // Notifications
   case isExpiryAlertsEnabled

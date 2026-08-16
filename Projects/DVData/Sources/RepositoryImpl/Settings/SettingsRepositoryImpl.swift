@@ -30,7 +30,7 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
       UserDefaultsKey.autoLockMinutes.rawValue: 5,
       UserDefaultsKey.isAutoClearClipboardEnabled.rawValue: true,
       UserDefaultsKey.autoClearClipboardDelaySeconds.rawValue: 30,
-      UserDefaultsKey.isHideDuringScreenRecordingEnabled.rawValue: true,
+      UserDefaultsKey.isWindowCaptureProtectionEnabled.rawValue: true,
       UserDefaultsKey.isExpiryAlertsEnabled.rawValue: true,
       UserDefaultsKey.expiryAlertDaysBefore.rawValue: [30, 7, 1, 0],
       UserDefaultsKey.isAuthFailureAlertEnabled.rawValue: true,
@@ -136,25 +136,25 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
     defaults.set(seconds, forKey: .autoClearClipboardDelaySeconds)
   }
 
-  public func isHideDuringScreenRecordingEnabled() -> Bool {
-    defaults.bool(forKey: .isHideDuringScreenRecordingEnabled)
+  public func isWindowCaptureProtectionEnabled() -> Bool {
+    defaults.bool(forKey: .isWindowCaptureProtectionEnabled)
   }
 
-  public func setHideDuringScreenRecordingEnabled(_ enabled: Bool) {
-    defaults.set(enabled, forKey: .isHideDuringScreenRecordingEnabled)
+  public func setWindowCaptureProtectionEnabled(_ enabled: Bool) {
+    defaults.set(enabled, forKey: .isWindowCaptureProtectionEnabled)
   }
 
-  public func hideDuringScreenRecordingEnabledStream() -> AsyncStream<Bool> {
+  public func windowCaptureProtectionEnabledStream() -> AsyncStream<Bool> {
     AsyncStream { continuation in
       let observer = NotificationCenter.default.addObserver(
         forName: UserDefaults.didChangeNotification,
         object: defaults,
         queue: nil
       ) { _ in
-        continuation.yield(isHideDuringScreenRecordingEnabled())
+        continuation.yield(isWindowCaptureProtectionEnabled())
       }
 
-      continuation.yield(isHideDuringScreenRecordingEnabled())
+      continuation.yield(isWindowCaptureProtectionEnabled())
       continuation.onTermination = { _ in
         NotificationCenter.default.removeObserver(observer)
       }

@@ -58,15 +58,15 @@ public struct SecuritySettingsUseCaseImpl: SecuritySettingsUseCase {
     repository.setAutoClearClipboardDelaySeconds(seconds)
   }
 
-  public func isHideDuringScreenRecordingEnabled() -> Bool {
-    repository.isHideDuringScreenRecordingEnabled()
+  public func isWindowCaptureProtectionEnabled() -> Bool {
+    repository.isWindowCaptureProtectionEnabled()
   }
 
-  public func setHideDuringScreenRecordingEnabled(_ enabled: Bool) {
-    repository.setHideDuringScreenRecordingEnabled(enabled)
+  public func setWindowCaptureProtectionEnabled(_ enabled: Bool) {
+    repository.setWindowCaptureProtectionEnabled(enabled)
   }
 
-  public func hideDuringScreenRecordingEnabledStream() -> AsyncStream<Bool> {
-    repository.hideDuringScreenRecordingEnabledStream()
+  public func windowCaptureProtectionEnabledStream() -> AsyncStream<Bool> {
+    repository.windowCaptureProtectionEnabledStream()
   }
 }
