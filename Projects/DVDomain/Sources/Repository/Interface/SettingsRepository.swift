@@ -73,6 +73,10 @@ public protocol SettingsRepository: Sendable {
   /// - Parameter minutes: 저장할 자동 잠금 시간(분)
   func setAutoLockMinutes(_ minutes: Int)
 
+  /// 현재 자동 잠금 설정을 즉시 방출하고, 이후 설정이 바뀔 때마다 최신 구성을 방출한다.
+  /// - Returns: 자동 잠금 설정 스트림
+  func autoLockConfigurationStream() -> AsyncStream<AutoLockConfiguration>
+
   /// 클립보드 자동 비우기 사용 여부.
   /// - Returns: 클립보드 자동 비우기 사용 여부
   func isAutoClearClipboardEnabled() -> Bool

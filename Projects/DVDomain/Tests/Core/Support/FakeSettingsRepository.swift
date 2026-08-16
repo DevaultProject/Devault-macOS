@@ -17,6 +17,7 @@ public final class FakeSettingsRepository: SettingsRepository, @unchecked Sendab
     public var isRequireAuthToCopyEnabledValue = true
     public var isAutoLockEnabledValue = true
     public var autoLockMinutesValue = 5
+    public var autoLockConfigurationStreamValue: AsyncStream<AutoLockConfiguration>?
     public var isAutoClearClipboardEnabledValue = true
     public var autoClearClipboardDelaySecondsValue = 30
     public var isWindowCaptureProtectionEnabledValue = true
@@ -55,6 +56,18 @@ public final class FakeSettingsRepository: SettingsRepository, @unchecked Sendab
 
     public func autoLockMinutes() -> Int { autoLockMinutesValue }
     public func setAutoLockMinutes(_ minutes: Int) { autoLockMinutesValue = minutes }
+    public func autoLockConfigurationStream() -> AsyncStream<AutoLockConfiguration> {
+        if let autoLockConfigurationStreamValue {
+            return autoLockConfigurationStreamValue
+        }
+        let configuration = AutoLockConfiguration(
+            isEnabled: isAutoLockEnabledValue,
+            timeout: .seconds(autoLockMinutesValue * 60)
+        )
+        return AsyncStream { continuation in
+            continuation.yield(configuration)
+        }
+    }
 
     public func isAutoClearClipboardEnabled() -> Bool { isAutoClearClipboardEnabledValue }
     public func setAutoClearClipboardEnabled(_ enabled: Bool) { isAutoClearClipboardEnabledValue = enabled }

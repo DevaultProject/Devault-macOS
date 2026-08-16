@@ -120,6 +120,23 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
     defaults.set(minutes, forKey: .autoLockMinutes)
   }
 
+  public func autoLockConfigurationStream() -> AsyncStream<AutoLockConfiguration> {
+    AsyncStream { continuation in
+      let observer = NotificationCenter.default.addObserver(
+        forName: UserDefaults.didChangeNotification,
+        object: defaults,
+        queue: nil
+      ) { _ in
+        continuation.yield(autoLockConfiguration())
+      }
+
+      continuation.yield(autoLockConfiguration())
+      continuation.onTermination = { _ in
+        NotificationCenter.default.removeObserver(observer)
+      }
+    }
+  }
+
   public func isAutoClearClipboardEnabled() -> Bool {
     defaults.bool(forKey: .isAutoClearClipboardEnabled)
   }
@@ -193,5 +210,12 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
 
   public func setClipboardAbnormalAccessAlertEnabled(_ enabled: Bool) {
     defaults.set(enabled, forKey: .isClipboardAbnormalAccessAlertEnabled)
+  }
+
+  private func autoLockConfiguration() -> AutoLockConfiguration {
+    AutoLockConfiguration(
+      isEnabled: isAutoLockEnabled(),
+      timeout: .seconds(autoLockMinutes() * 60)
+    )
   }
 }

@@ -2,42 +2,55 @@
 
 import AppKit
 import Foundation
-
 import DVDomain
 
 public struct AppInactivityMonitorServiceImpl: AppInactivityMonitorService {
 
   public init() {}
 
-  public func inactivitySecondsStream() -> AsyncStream<TimeInterval> {
+  public func interactionStream() -> AsyncStream<Void> {
     AsyncStream { continuation in
-      let timestamp = InteractionTimestamp()
-      let task = Task { @MainActor in
+      let monitorHolder = EventMonitorHolder()
+      let registrationTask = Task { @MainActor in
+        guard !Task.isCancelled else { return }
         let monitor = NSEvent.addLocalMonitorForEvents(
           matching: Self.interactionEventMask
         ) { event in
-          timestamp.recordInteraction()
+          continuation.yield(())
           return event
         }
-
-        while !Task.isCancelled {
-          continuation.yield(timestamp.inactivitySeconds())
-
-          do {
-            try await Task.sleep(for: .seconds(1))
-          } catch {
-            break
-          }
-        }
-
-        if let monitor {
-          NSEvent.removeMonitor(monitor)
-        }
-        continuation.finish()
+        monitorHolder.store(monitor)
       }
 
-      continuation.onTermination = { _ in task.cancel() }
+      continuation.onTermination = { _ in
+        registrationTask.cancel()
+        Task { @MainActor in
+          await registrationTask.value
+          if let monitor = monitorHolder.take() {
+            NSEvent.removeMonitor(monitor)
+          }
+        }
+      }
     }
+  }
+}
+
+private final class EventMonitorHolder: @unchecked Sendable {
+
+  private let lock = NSLock()
+  private var monitor: Any?
+
+  func store(_ monitor: Any?) {
+    lock.lock()
+    self.monitor = monitor
+    lock.unlock()
+  }
+
+  func take() -> Any? {
+    lock.lock()
+    defer { lock.unlock() }
+    defer { monitor = nil }
+    return monitor
   }
 }
 
@@ -55,22 +68,4 @@ extension AppInactivityMonitorServiceImpl {
     .otherMouseDragged,
     .scrollWheel,
   ]
-}
-
-private final class InteractionTimestamp: @unchecked Sendable {
-
-  private let lock = NSLock()
-  private var lastInteractionUptime = ProcessInfo.processInfo.systemUptime
-
-  func recordInteraction() {
-    lock.lock()
-    lastInteractionUptime = ProcessInfo.processInfo.systemUptime
-    lock.unlock()
-  }
-
-  func inactivitySeconds() -> TimeInterval {
-    lock.lock()
-    defer { lock.unlock() }
-    return ProcessInfo.processInfo.systemUptime - lastInteractionUptime
-  }
 }
