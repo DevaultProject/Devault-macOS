@@ -15,6 +15,9 @@ struct SecretListView: View {
 
   @Bindable var store: StoreOf<SecretListFeature>
 
+  /// 목록을 누르면 내려 준다. 그러지 않으면 커서가 검색창에 남아 타이핑이 그리로 들어간다.
+  @State private var isSearchFocused = false
+
   // MARK: - Body
 
   var body: some View {
@@ -38,6 +41,7 @@ extension SecretListView {
       DVTitleBar(
         titleText: titleText,
         searchText: searchTextBinding,
+        isSearchFocused: $isSearchFocused,
         sortMenuContent: showsSort ? { AnyView(sortMenuContent) } : nil
       )
       .padding(.horizontal, 12)
@@ -75,6 +79,9 @@ extension SecretListView {
     .id(store.collection)
     .transition(.opacity)
     .animation(MotionMetrics.transition, value: store.collection)
+    // 빈 영역 클릭. 행 클릭은 선택 바인딩이 따로 처리한다.
+    .contentShape(Rectangle())
+    .onTapGesture { isSearchFocused = false }
   }
 
   /// "이미 지남"과 "N일 이내 예정"을 섹션으로 나눠 보여준다. 쿼리가 이미 `expiringSoon` 순으로 정렬해 와서
@@ -241,7 +248,10 @@ extension SecretListView {
   private var selectedSecretIDBinding: Binding<Secret.ID?> {
     Binding(
       get: { store.selectedSecretID },
-      set: { store.send(.didSelectSecret(id: $0)) }
+      set: {
+        isSearchFocused = false
+        store.send(.didSelectSecret(id: $0))
+      }
     )
   }
 
