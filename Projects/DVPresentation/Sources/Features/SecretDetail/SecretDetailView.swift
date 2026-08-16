@@ -37,14 +37,7 @@ public struct SecretDetailView: View {
                 }
                 if store.mode == .editing {
                     Divider()
-                    HStack {
-                        Spacer()
-                        Button("Cancel") { store.send(.didTapCancelEdit) }
-                            .buttonStyle(.plain)
-                        Button("Save") { store.send(.didTapSave) }
-                            .buttonStyle(.borderedProminent)
-                    }
-                    .padding()
+                    footer
                 }
             }
             // 프레임 상한. header/footer는 본문과 분리된 채 각자 이 프레임을 따라간다.
@@ -63,6 +56,9 @@ public struct SecretDetailView: View {
             await store.send(.task).finish()
         }
         .alert($store.scope(state: \.alert, action: \.alert))
+        .sheet(item: $store.scope(state: \.createProject, action: \.createProject)) { store in
+            CreateProjectView(store: store)
+        }
     }
 }
 
@@ -125,8 +121,8 @@ extension SecretDetailView {
             secretType: store.secret.secretType,
             subType: store.secret.subType,
             isLiked: store.secret.liked,
-            // 편집 모드는 후속 이슈 범위 — 상태 전이가 없어 비활성으로 렌더한다.
-            isEditEnabled: false,
+            isEditEnabled: isEditEnabled,
+            isEditing: store.mode == .editing,
             onToggleLike: { store.send(.didTapToggleLike) },
             onEdit: { store.send(.didTapEdit) },
             onDelete: { store.send(.didTapDelete) }
@@ -134,21 +130,67 @@ extension SecretDetailView {
         .disabled(store.isDeleting)
     }
 
+    /// 복호화가 진행 중일 때만 수정 진입을 막는다. `.idle`에서 누르면 그때 복호화가 시작되고,
+    /// `.failed`에서 누르면 재시도가 된다 — 실패했다고 수정을 영영 막을 이유가 없다.
+    private var isEditEnabled: Bool {
+        if case .loading = store.payloadState { return false }
+        return true
+    }
+
     // MARK: Editing
 
-    /// 편집 모드 진입 경로가 아직 없어 도달하지 않는다. 후속 이슈에서
-    /// `editFields` 바인딩과 SectionView 재사용으로 채운다.
+    /// 생성 화면과 **같은 SectionView**를 쓴다(`SecretFormSectionsView`). 마스킹·여러 줄 입력 같은
+    /// 배선이 그쪽에 이미 있으므로 편집 모드용으로 다시 만들 것이 없다.
+    ///
+    /// `editFields`가 `nil`인 채로 `mode == .editing`인 조합은 reducer가 만들지 않지만,
+    /// `if let`이 그 조합을 아예 렌더 불가능하게 만든다.
     @ViewBuilder
     private var editingBody: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(store.secret.name)
-                    .dvFont(.headingLG)
-                    .foregroundStyle(Color.dv(.gray900))
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
+        if let fields = Binding($store.editFields) {
+            ScrollView {
+                bodyStack {
+                    SecretFormSectionsView(
+                        secretType: store.secret.secretType.creatableType,
+                        subType: store.secret.secretType.creatableType
+                            .resolvedSubType(store.secret.subType),
+                        meta: fields,
+                        availableProjects: store.availableProjects,
+                        // 감지 힌트는 생성 화면 전용이다. 이미 저장된 값을 고치는 중에
+                        // "이 서비스로 보입니다"를 띄우면 사용자가 고른 service를 되묻는 꼴이 된다.
+                        serviceCandidates: [],
+                        validationErrors: store.validationErrors,
+                        detectedServices: [:],
+                        onCreateProject: { store.send(.didTapCreateProject) }
+                    )
+                }
             }
+            .scrollIndicators(.hidden)
+            .disabled(store.isSaving)
+            .overlay {
+                if store.isSaving {
+                    ZStack {
+                        Color.black.opacity(0.08)
+                        ProgressView().controlSize(.regular)
+                    }
+                    .allowsHitTesting(true)
+                }
+            }
+            .environment(\.isProjectLoading, store.isLoadingProjects)
         }
+    }
+
+    /// 편집 모드에서만 보이는 하단 액션 바. 생성 화면과 같은 컴포넌트를 쓰고 라벨만 다르다.
+    private var footer: some View {
+        FooterActionsView(
+            saveTitle: .module("Save"),
+            // 필수 필드 검증은 `didTapSave`가 수행해 인라인 경고를 세운다 — 여기서 미리 막으면
+            // 경고가 영영 뜨지 않는다. 생성 화면과 같은 규칙이다.
+            isSaveEnabled: !store.isSaving,
+            onCancel: { store.send(.didTapCancelEdit) },
+            onSave: { store.send(.didTapSave) }
+        )
+        .padding(.horizontal, FormLayoutMetrics.horizontalPadding)
+        .padding(.vertical, 16)
     }
 }
 
@@ -214,12 +256,68 @@ private let _previewSecret = [Secret].previewSubTypeMatrix[0]
     .frame(width: 420, height: 700)
 }
 
-#Preview("SecretDetail · Editing") {
+// MARK: 편집 모드
+
+/// `mode`만 바꾸면 `editFields`가 비어 폼이 그려지지 않는다. reducer의 `beginEditing`이 세우는
+/// 조합을 그대로 만들어 준다 — 프리뷰가 실제 진입과 다른 상태를 보여주면 확인의 의미가 없다.
+private func _editingPreviewState(
+    isSaving: Bool = false,
+    validationErrors: [SecretFieldID: String] = [:]
+) -> SecretDetailFeature.State {
+    let payload = CreateSecretPayload.apiKey(
+        APIKeyPayload(value: "ghp_preview_token"),
+        APIKeyMetadata(scope: "repo:read")
+    )
+    let projects = [Project].preview
+    var state = SecretDetailFeature.State(secret: _previewSecret)
+    state.payloadState = .loaded(payload)
+    state.linkedProjects = Array(projects.prefix(1))
+    state.availableProjects = projects
+    let fields = SecretMetaFields(
+        secret: _previewSecret,
+        payload: payload,
+        projectIds: state.linkedProjects.map(\.id)
+    )
+    state.editFields = fields
+    state.editFieldsBaseline = fields
+    state.editPayloadBaseline = payload
+    state.isSaving = isSaving
+    state.validationErrors = validationErrors
+    state.mode = .editing
+    return state
+}
+
+/// 확인 대상은 세 가지다 — 헤더에서 공유·수정·삭제가 사라지고 즐겨찾기만 회색으로 남는지,
+/// 폼이 생성 화면과 같은 SectionView로 그려지는지, footer 라벨이 Save인지.
+#Preview("SecretDetail · 편집") {
+    SecretDetailView(
+        store: Store(initialState: _editingPreviewState()) { SecretDetailFeature() }
+    )
+    .frame(width: 420, height: 700)
+}
+
+/// 컬럼이 2열 임계값을 넘으면 생성 화면과 같은 dual 배열이 되어야 한다.
+#Preview("SecretDetail · 편집 (dual)") {
+    SecretDetailView(
+        store: Store(initialState: _editingPreviewState()) { SecretDetailFeature() }
+    )
+    .frame(width: 900, height: 700)
+}
+
+#Preview("SecretDetail · 편집 저장 중") {
+    SecretDetailView(
+        store: Store(initialState: _editingPreviewState(isSaving: true)) { SecretDetailFeature() }
+    )
+    .frame(width: 420, height: 700)
+}
+
+/// 필수 필드를 비우고 Save를 누른 뒤의 모습.
+#Preview("SecretDetail · 편집 검증 실패") {
     SecretDetailView(
         store: Store(
             initialState: {
-                var state = SecretDetailFeature.State(secret: _previewSecret)
-                state.mode = .editing
+                var state = _editingPreviewState(validationErrors: [.value: .module("Required")])
+                state.editFields?.content = .apiKeyToken(APIKeyTokenFields(value: ""))
                 return state
             }()
         ) {
