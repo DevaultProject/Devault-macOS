@@ -189,7 +189,6 @@ extension SidebarView {
           .tag(project.id)
           .contextMenu {
             Button(String.module("Rename")) { store.send(.didTapRename(id: project.id)) }
-            Button(String.module("New Secret")) { store.send(.didTapAddButton) }
             Divider()
             Button(String.module("Delete Project"), role: .destructive) {
               store.send(.didTapDelete(id: project.id))
