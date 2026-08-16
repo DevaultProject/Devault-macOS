@@ -2,6 +2,7 @@
 
 import Foundation
 
+/// 사용자 인증 후 Secret의 암호화된 payload를 공개합니다.
 public protocol RevealSecretPayloadUseCase: Sendable {
     /// 생체인증 후 Secret의 암호화된 payload를 복호화해 반환한다.
     /// `FetchSecretUseCase`와 분리해두는 이유는, 목록/개수 조회만 필요한 소비처(사이드바 카운트 등)가

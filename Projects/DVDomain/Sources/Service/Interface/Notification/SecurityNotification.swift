@@ -14,16 +14,26 @@ public enum SecurityNotification: Equatable, Sendable {
 
 /// `abnormalAccess`를 유발한 반복 행위의 종류입니다. 문구는 소비처가 만들고, 여기선 분기 값만 제공합니다.
 public enum AbnormalAccessKind: Equatable, Sendable {
+    /// 사용자 인증이 짧은 시간 안에 반복해서 실패함
     case authenticationFailure
+    /// 민감 값 복사가 짧은 시간 안에 반복됨
     case repeatedCopy
 }
 
 /// 특정 시각에 발송되도록 예약하는 알림 요청입니다.
 public struct ScheduledSecurityNotification: Equatable, Sendable {
+    /// 예약과 취소에 사용하는 고유 식별자
     public let identifier: String
+    /// 발송할 보안 이벤트
     public let notification: SecurityNotification
+    /// 알림을 발송할 시각
     public let fireDate: Date
 
+    /// 예약 식별자, 보안 이벤트와 발송 시각으로 요청을 생성한다.
+    /// - Parameters:
+    ///   - identifier: 예약과 취소에 사용할 고유 식별자
+    ///   - notification: 발송할 보안 이벤트
+    ///   - fireDate: 알림을 발송할 시각
     public init(identifier: String, notification: SecurityNotification, fireDate: Date) {
         self.identifier = identifier
         self.notification = notification
