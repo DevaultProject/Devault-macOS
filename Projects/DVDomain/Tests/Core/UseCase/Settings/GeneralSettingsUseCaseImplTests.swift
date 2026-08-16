@@ -14,14 +14,28 @@ struct GeneralSettingsUseCaseImplTests {
     repository.isLaunchAtLoginEnabledValue = false
 
     let service = FakeLaunchAtLoginService()
-    service.isEnabledValue = true
+    service.statusValue = .enabled
 
     let sut = GeneralSettingsUseCaseImpl(
       repository: repository,
       launchAtLoginService: service
     )
 
-    #expect(sut.isLaunchAtLoginEnabled())
+    #expect(sut.launchAtLoginStatus() == .enabled)
+    #expect(repository.isLaunchAtLoginEnabledValue)
+  }
+
+  @Test("시스템 승인 대기 상태도 등록 의도로 저장한다")
+  func approvalRequiredPreservesRegistrationIntent() {
+    let repository = FakeSettingsRepository()
+    let service = FakeLaunchAtLoginService()
+    service.statusValue = .requiresApproval
+    let sut = GeneralSettingsUseCaseImpl(
+      repository: repository,
+      launchAtLoginService: service
+    )
+
+    #expect(sut.launchAtLoginStatus() == .requiresApproval)
     #expect(repository.isLaunchAtLoginEnabledValue)
   }
 
@@ -34,10 +48,24 @@ struct GeneralSettingsUseCaseImplTests {
       launchAtLoginService: service
     )
 
-    try sut.setLaunchAtLoginEnabled(true)
+    let status = try sut.setLaunchAtLoginEnabled(true)
 
-    #expect(service.isEnabledValue)
+    #expect(status == .enabled)
+    #expect(service.statusValue == .enabled)
     #expect(repository.isLaunchAtLoginEnabledValue)
+  }
+
+  @Test("승인 안내에서 시스템 설정을 연다")
+  func opensLoginItemsSystemSettings() {
+    let service = FakeLaunchAtLoginService()
+    let sut = GeneralSettingsUseCaseImpl(
+      repository: FakeSettingsRepository(),
+      launchAtLoginService: service
+    )
+
+    sut.openLoginItemsSystemSettings()
+
+    #expect(service.didOpenSystemSettings)
   }
 
   @Test("로그인 항목 변경에 실패하면 저장값을 변경하지 않는다")

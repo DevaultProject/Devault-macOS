@@ -15,19 +15,25 @@ public struct GeneralSettingsUseCaseImpl: GeneralSettingsUseCase {
     self.launchAtLoginService = launchAtLoginService
   }
 
-  public func isLaunchAtLoginEnabled() -> Bool {
-    let isEnabled = launchAtLoginService.isEnabled()
+  public func launchAtLoginStatus() -> LaunchAtLoginStatus {
+    let status = launchAtLoginService.status()
+    let isRegistered = status.isRegistered
 
-    if repository.isLaunchAtLoginEnabled() != isEnabled {
-      repository.setLaunchAtLoginEnabled(isEnabled)
+    if repository.isLaunchAtLoginEnabled() != isRegistered {
+      repository.setLaunchAtLoginEnabled(isRegistered)
     }
 
-    return isEnabled
+    return status
   }
 
-  public func setLaunchAtLoginEnabled(_ enabled: Bool) throws {
-    try launchAtLoginService.setEnabled(enabled)
-    repository.setLaunchAtLoginEnabled(enabled)
+  public func setLaunchAtLoginEnabled(_ enabled: Bool) throws -> LaunchAtLoginStatus {
+    let status = try launchAtLoginService.setEnabled(enabled)
+    repository.setLaunchAtLoginEnabled(status.isRegistered)
+    return status
+  }
+
+  public func openLoginItemsSystemSettings() {
+    launchAtLoginService.openSystemSettings()
   }
 
   public func defaultEnvironment() -> String {

@@ -13,11 +13,14 @@ extension GeneralSettingsClient: @retroactive DependencyKey {
     )
 
     return GeneralSettingsClient(
-      isLaunchAtLoginEnabled: {
-        useCase.isLaunchAtLoginEnabled()
+      launchAtLoginStatus: {
+        useCase.launchAtLoginStatus()
       },
       setLaunchAtLoginEnabled: { enabled in
         try useCase.setLaunchAtLoginEnabled(enabled)
+      },
+      openLoginItemsSystemSettings: {
+        useCase.openLoginItemsSystemSettings()
       },
       defaultEnvironment: {
         useCase.defaultEnvironment()

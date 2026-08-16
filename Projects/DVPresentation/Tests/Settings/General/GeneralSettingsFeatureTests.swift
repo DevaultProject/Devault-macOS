@@ -3,6 +3,7 @@
 import Foundation
 
 import ComposableArchitecture
+import DVDomain
 import Testing
 
 @testable import DVPresentation
@@ -20,12 +21,13 @@ struct GeneralSettingsFeatureTests {
     let store = TestStore(initialState: GeneralSettingsFeature.State()) {
       GeneralSettingsFeature()
     } withDependencies: {
-      $0.generalSettingsClient.isLaunchAtLoginEnabled = { true }
+      $0.generalSettingsClient.launchAtLoginStatus = { .enabled }
       $0.generalSettingsClient.defaultEnvironment = { "prod" }
     }
 
     await store.send(.task) {
       $0.isLaunchAtLoginEnabled = true
+      $0.launchAtLoginStatus = .enabled
       $0.defaultEnvironment = .prod
     }
   }
@@ -37,13 +39,43 @@ struct GeneralSettingsFeatureTests {
     let store = TestStore(initialState: initialState) {
       GeneralSettingsFeature()
     } withDependencies: {
-      $0.generalSettingsClient.isLaunchAtLoginEnabled = { false }
+      $0.generalSettingsClient.launchAtLoginStatus = { .notRegistered }
       $0.generalSettingsClient.defaultEnvironment = { "invalid" }
     }
 
     await store.send(.task) {
       $0.defaultEnvironment = .dev
     }
+  }
+
+  @Test("승인 대기 상태에서는 토글을 유지하고 승인 상태를 표시한다")
+  func launchAtLoginKeepsToggleOnWhenApprovalIsRequired() async {
+    let store = TestStore(initialState: GeneralSettingsFeature.State()) {
+      GeneralSettingsFeature()
+    } withDependencies: {
+      $0.generalSettingsClient.setLaunchAtLoginEnabled = { _ in .requiresApproval }
+    }
+
+    await store.send(.binding(.set(\.isLaunchAtLoginEnabled, true))) {
+      $0.isLaunchAtLoginEnabled = true
+    }
+    await store.receive(.launchAtLoginStatusChanged(.requiresApproval)) {
+      $0.launchAtLoginStatus = .requiresApproval
+    }
+  }
+
+  @Test("로그인 항목 시스템 설정 열기를 요청한다")
+  func openLoginItemsSettingsCallsClient() async {
+    let opened = LockIsolated(false)
+    let store = TestStore(initialState: GeneralSettingsFeature.State()) {
+      GeneralSettingsFeature()
+    } withDependencies: {
+      $0.generalSettingsClient.openLoginItemsSystemSettings = { opened.setValue(true) }
+    }
+
+    await store.send(.didTapOpenLoginItemsSettings)
+
+    #expect(opened.value)
   }
 
   @Test("로그인 시 자동 실행 등록이 실패하면 토글을 되돌린다")

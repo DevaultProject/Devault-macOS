@@ -8,15 +8,31 @@ public struct LaunchAtLoginServiceImpl: LaunchAtLoginService {
 
   public init() {}
 
-  public func isEnabled() -> Bool {
-    SMAppService.mainApp.status == .enabled
+  public func status() -> LaunchAtLoginStatus {
+    switch SMAppService.mainApp.status {
+    case .notRegistered:
+      .notRegistered
+    case .enabled:
+      .enabled
+    case .requiresApproval:
+      .requiresApproval
+    case .notFound:
+      .notFound
+    @unknown default:
+      .notFound
+    }
   }
 
-  public func setEnabled(_ enabled: Bool) throws {
+  public func setEnabled(_ enabled: Bool) throws -> LaunchAtLoginStatus {
     if enabled {
       try SMAppService.mainApp.register()
     } else {
       try SMAppService.mainApp.unregister()
     }
+    return status()
+  }
+
+  public func openSystemSettings() {
+    SMAppService.openSystemSettingsLoginItems()
   }
 }

@@ -4,6 +4,7 @@ import SwiftUI
 
 import ComposableArchitecture
 import DVDesign
+import DVDomain
 
 struct GeneralSettingsView: View {
 
@@ -27,6 +28,20 @@ extension GeneralSettingsView {
           description: String.module("Automatically starts DeVault when you log in to your Mac."),
           isOn: $store.isLaunchAtLoginEnabled
         )
+
+        if store.launchAtLoginStatus == .requiresApproval {
+          SettingsButtonRow(
+            title: String.module("Approval required"),
+            description: String.module(
+              "Allow DeVault in System Settings to launch it automatically when you log in."
+            ),
+            buttonTitle: String.module("Open System Settings"),
+            systemImage: "exclamationmark.triangle.fill",
+            iconColor: Color.dv(.warning)
+          ) {
+            store.send(.didTapOpenLoginItemsSettings)
+          }
+        }
       }
 
       SettingsSection(title: String.module("Defaults")) {
