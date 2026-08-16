@@ -24,6 +24,10 @@ import SwiftUI
 /// 본문이 폭을 넘으면 잘리거나 가로 스크롤되지 않고 **다음 줄로 접힙니다**. 개행이 있는 값
 /// (PEM, JSON, `KEY=value` 목록)도 줄 구조 그대로 전부 보입니다.
 ///
+/// 접히는 단위는 단어가 아니라 **글자**입니다. 이 컨테이너가 다루는 값은 인증서·키·JSON·명령어처럼
+/// 단어 경계가 의미 없는 기계값이라, 단어 단위로 접으면 오른쪽에 큰 여백이 남아 상자가 실제보다
+/// 좁아 보입니다. 공백이 의미를 갖는 값도 단어 중간에서 접히는 것이 이 선택의 대가입니다.
+///
 /// 읽기 전용 표시라 값을 확인할 다른 수단이 없으므로, 스크롤 조작을 요구하는 대신 다 펼쳐 보여줍니다.
 /// 그래서 ``DVTextField``(입력)의 가로 시프트 동작과는 다릅니다 — 입력은 커서를 따라가야 하지만
 /// 표시는 전체를 한눈에 보여주는 쪽이 맞습니다.
@@ -33,7 +37,7 @@ import SwiftUI
 ///
 /// ## 텍스트 선택·복사
 ///
-/// 본문에 `.textSelection(.enabled)`이 적용되어 있어, 사용자가 마우스 드래그 또는 ⌘+A로 텍스트를 선택하고 ⌘+C로 클립보드에 복사할 수 있습니다.
+/// 본문을 마우스로 드래그해 선택하고 ⌘+C로 클립보드에 복사할 수 있습니다.
 /// ``init(copyable:size:onCopy:)`` 편의 init과 별도로 동작하므로 둘 다 함께 활용 가능합니다.
 ///
 /// ## 액세서리
@@ -153,12 +157,7 @@ public struct DVTextContainer<Accessories: View>: View {
             // leading 아이콘은 본문과 한 덩어리로 읽히도록 액세서리보다 좁은 6pt로 붙인다.
             HStack(alignment: .top, spacing: 6) {
                 leadingIconView
-                Text(text)
-                    .font(DVFont.bodyLG.font)
-                    .foregroundStyle(Color.dv(textColor))
-                    .lineSpacing(DVFont.bodyLG.lineSpacing)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .textSelection(.enabled)
+                CharacterWrappingText(text, textColor: textColor)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             accessories()
@@ -341,6 +340,76 @@ extension DVTextContainer where Accessories == AnyView {
     }
 }
 
+// MARK: - Character wrapping
+
+/// 본문을 **글자 단위로** 접어 그리는 텍스트. 선택·복사는 그대로 된다.
+///
+/// AppKit으로 내려오는 이유는 SwiftUI `Text`가 단어 단위로만 접히고 wrap 모드를 여는 API가 없기
+/// 때문이다. 글자 단위로 접는 이유 자체는 ``DVTextContainer``의 "높이와 줄바꿈"에 있다.
+///
+/// `NSTextField`가 아니라 `NSTextView`를 쓰는 이유는 **높이를 정확히 재기 위해서**다. 컨테이너
+/// 인셋과 line fragment padding을 0으로 두고 실제로 그리는 레이아웃 매니저에게 높이를 물으므로,
+/// 측정값과 그리는 폭이 어긋나 마지막 글자가 한 줄 더 밀리는 일이 없다.
+private struct CharacterWrappingText: NSViewRepresentable {
+
+    private let text: String
+    private let textColor: DVColor
+
+    init(_ text: String, textColor: DVColor) {
+        self.text = text
+        self.textColor = textColor
+    }
+
+    private static let font = DVFont.bodyLG
+
+    private var attributed: NSAttributedString {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byCharWrapping
+        paragraph.lineSpacing = Self.font.lineSpacing
+        return NSAttributedString(
+            string: text,
+            attributes: [
+                .font: Self.font.nsFont,
+                .foregroundColor: textColor.nsColor,
+                .paragraphStyle: paragraph,
+            ]
+        )
+    }
+
+    func makeNSView(context: Context) -> NSTextView {
+        let view = NSTextView()
+        view.isEditable = false
+        view.isSelectable = true
+        view.drawsBackground = false
+        view.isRichText = false
+        // 인셋을 0으로 둬야 측정한 높이와 그리는 높이가 같다.
+        view.textContainerInset = .zero
+        view.textContainer?.lineFragmentPadding = 0
+        view.textContainer?.widthTracksTextView = true
+        view.isHorizontallyResizable = false
+        view.isVerticallyResizable = true
+        return view
+    }
+
+    func updateNSView(_ view: NSTextView, context: Context) {
+        view.textStorage?.setAttributedString(attributed)
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSTextView, context: Context) -> CGSize? {
+        guard let width = proposal.width, width.isFinite, width > 0 else { return nil }
+        // 측정 전에 내용을 맞춰둔다 — `updateNSView`보다 먼저 불릴 수 있다.
+        nsView.textStorage?.setAttributedString(attributed)
+        guard let container = nsView.textContainer, let layout = nsView.layoutManager else {
+            return nil
+        }
+        container.containerSize = CGSize(width: width, height: .greatestFiniteMagnitude)
+        layout.ensureLayout(for: container)
+        // 빈 값이어도 한 줄 높이는 차지해야 상자 높이가 값 유무에 따라 튀지 않는다.
+        let height = max(layout.usedRect(for: container).height, Self.font.lineHeight)
+        return CGSize(width: width, height: ceil(height))
+    }
+}
+
 // MARK: - Previews
 
 #if DEBUG
@@ -386,6 +455,22 @@ extension DVTextContainer where Accessories == AnyView {
 #Preview("Interactive (manual state lift)") {
     DVTextContainerInteractivePreview()
         .padding()
+}
+
+#Preview("Character wrapping") {
+    VStack(alignment: .leading, spacing: 12) {
+        DVTextContainer(
+            "Server=db.internal.example.com; Port=5432; Database=vault_prod; "
+                + "User Id=svc_reader; Timeout=30",
+            size: .md
+        )
+        DVTextContainer(
+            "-----BEGIN PRIVATE KEY-----MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcw"
+                + "ggSjAgEAAoIBAQC7VJTUt9Us8cKjMzEfYyjiWA4R4/M2bS1GB4t7NXp98C3SC6dV",
+            size: .md
+        )
+    }
+    .padding()
 }
 
 #Preview("Sizes") {

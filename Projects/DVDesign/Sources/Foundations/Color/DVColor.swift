@@ -1,5 +1,6 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import AppKit
 import SwiftUI
 
 public enum DVColor: CaseIterable {
@@ -22,26 +23,36 @@ public enum DVColor: CaseIterable {
     case warning
     case required
 
-    public var color: Color {
+    /// Asset catalog에 등록된 이름. `color`와 `nsColor`가 공유해 두 벌로 갈리지 않게 한다.
+    private var assetName: String {
         switch self {
-        case .vaultGreen:      return Color("vault green", bundle: .module)
-        case .vaultGreenDark:  return Color("vault green dark", bundle: .module)
-        case .vaultGreenTint:  return Color("vault green tint", bundle: .module)
-        case .vaultDark:       return Color("vault dark", bundle: .module)
-        case .gray900:         return Color("gray900", bundle: .module)
-        case .gray800:         return Color("gray800", bundle: .module)
-        case .gray700:         return Color("gray700", bundle: .module)
-        case .gray600:         return Color("gray600", bundle: .module)
-        case .gray500:         return Color("gray500", bundle: .module)
-        case .gray400:         return Color("gray400", bundle: .module)
-        case .gray300:         return Color("gray300", bundle: .module)
-        case .gray200:         return Color("gray200", bundle: .module)
-        case .gray100:         return Color("gray100", bundle: .module)
-        case .white:           return Color("white", bundle: .module)
-        case .black:           return Color("black", bundle: .module)
-        case .danger:          return Color("danger", bundle: .module)
-        case .warning:         return Color("warning", bundle: .module)
-        case .required:        return Color("required", bundle: .module)
+        case .vaultGreen:      return "vault green"
+        case .vaultGreenDark:  return "vault green dark"
+        case .vaultGreenTint:  return "vault green tint"
+        case .vaultDark:       return "vault dark"
+        case .gray900:         return "gray900"
+        case .gray800:         return "gray800"
+        case .gray700:         return "gray700"
+        case .gray600:         return "gray600"
+        case .gray500:         return "gray500"
+        case .gray400:         return "gray400"
+        case .gray300:         return "gray300"
+        case .gray200:         return "gray200"
+        case .gray100:         return "gray100"
+        case .white:           return "white"
+        case .black:           return "black"
+        case .danger:          return "danger"
+        case .warning:         return "warning"
+        case .required:        return "required"
         }
+    }
+
+    public var color: Color {
+        Color(assetName, bundle: .module)
+    }
+
+    /// `NSView`를 직접 쓰는 자리에 넘길 색. `color`와 같은 asset을 가리킨다.
+    public var nsColor: NSColor {
+        NSColor(named: assetName, bundle: .module) ?? .labelColor
     }
 }
