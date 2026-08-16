@@ -70,8 +70,11 @@ extension SecuritySettingsView {
 
       SettingsSection(title: String.module("Screen Protection")) {
         SettingsToggleRow(
-          title: String.module("Hide values during screen recording"),
-          isOn: $store.isHideDuringScreenRecordingEnabled
+          title: String.module("Protect the entire app window"),
+          description: String.module(
+            "Excludes the DeVault window from screenshots, screen recordings, and screen sharing."
+          ),
+          isOn: $store.isWindowCaptureProtectionEnabled
         )
       }
     }

@@ -17,7 +17,7 @@ public struct SecuritySettingsFeature {
     var autoLockInterval: AutoLockInterval = .fiveMinutes
     var isAutoClearClipboardEnabled = true
     var clipboardClearDelay: ClipboardClearDelay = .thirtySeconds
-    var isHideDuringScreenRecordingEnabled = true
+    var isWindowCaptureProtectionEnabled = true
 
     public init() {}
   }
@@ -53,7 +53,7 @@ public struct SecuritySettingsFeature {
         state.clipboardClearDelay = ClipboardClearDelay(
           rawValue: securitySettingsClient.autoClearClipboardDelaySeconds()
         ) ?? .thirtySeconds
-        state.isHideDuringScreenRecordingEnabled = securitySettingsClient.isHideDuringScreenRecordingEnabled()
+        state.isWindowCaptureProtectionEnabled = securitySettingsClient.isWindowCaptureProtectionEnabled()
         return .none
 
       case .binding(\.isRequireAuthOnLaunchEnabled):
@@ -80,9 +80,9 @@ public struct SecuritySettingsFeature {
         let delay = state.clipboardClearDelay
         return .run { _ in securitySettingsClient.setAutoClearClipboardDelaySeconds(delay.rawValue) }
 
-      case .binding(\.isHideDuringScreenRecordingEnabled):
-        let enabled = state.isHideDuringScreenRecordingEnabled
-        return .run { _ in securitySettingsClient.setHideDuringScreenRecordingEnabled(enabled) }
+      case .binding(\.isWindowCaptureProtectionEnabled):
+        let enabled = state.isWindowCaptureProtectionEnabled
+        return .run { _ in securitySettingsClient.setWindowCaptureProtectionEnabled(enabled) }
 
       case .binding:
         return .none

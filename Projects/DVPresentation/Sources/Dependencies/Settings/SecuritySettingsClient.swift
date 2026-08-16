@@ -23,8 +23,8 @@ public struct SecuritySettingsClient: Sendable {
   public var autoClearClipboardDelaySeconds: @Sendable () -> Int = { 30 }
   public var setAutoClearClipboardDelaySeconds: @Sendable (Int) -> Void
 
-  public var isHideDuringScreenRecordingEnabled: @Sendable () -> Bool = { true }
-  public var setHideDuringScreenRecordingEnabled: @Sendable (Bool) -> Void
+  public var isWindowCaptureProtectionEnabled: @Sendable () -> Bool = { true }
+  public var setWindowCaptureProtectionEnabled: @Sendable (Bool) -> Void
 }
 
 extension SecuritySettingsClient: TestDependencyKey {
@@ -43,8 +43,8 @@ extension SecuritySettingsClient: TestDependencyKey {
     setAutoClearClipboardEnabled: { _ in },
     autoClearClipboardDelaySeconds: { 30 },
     setAutoClearClipboardDelaySeconds: { _ in },
-    isHideDuringScreenRecordingEnabled: { true },
-    setHideDuringScreenRecordingEnabled: { _ in }
+    isWindowCaptureProtectionEnabled: { true },
+    setWindowCaptureProtectionEnabled: { _ in }
   )
 }
 

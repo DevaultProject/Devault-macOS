@@ -12,7 +12,7 @@ extension WindowCaptureBlockerClient: @retroactive DependencyKey {
 
     return WindowCaptureBlockerClient(
       enabledStream: {
-        useCase.hideDuringScreenRecordingEnabledStream()
+        useCase.windowCaptureProtectionEnabledStream()
       }
     )
   }()

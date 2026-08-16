@@ -47,11 +47,11 @@ extension SecuritySettingsClient: @retroactive DependencyKey {
       setAutoClearClipboardDelaySeconds: { seconds in
         useCase.setAutoClearClipboardDelaySeconds(seconds)
       },
-      isHideDuringScreenRecordingEnabled: {
-        useCase.isHideDuringScreenRecordingEnabled()
+      isWindowCaptureProtectionEnabled: {
+        useCase.isWindowCaptureProtectionEnabled()
       },
-      setHideDuringScreenRecordingEnabled: { enabled in
-        useCase.setHideDuringScreenRecordingEnabled(enabled)
+      setWindowCaptureProtectionEnabled: { enabled in
+        useCase.setWindowCaptureProtectionEnabled(enabled)
       }
     )
   }()

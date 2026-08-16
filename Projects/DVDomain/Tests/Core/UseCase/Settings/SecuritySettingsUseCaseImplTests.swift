@@ -53,25 +53,25 @@ struct SecuritySettingsUseCaseImplTests {
     }
 
     @Test("화면 녹화 중 값 숨김 설정을 읽고 쓴다")
-    func hideDuringScreenRecordingRoundTrips() {
+    func windowCaptureProtectionRoundTrips() {
         let repository = FakeSettingsRepository()
         let sut = SecuritySettingsUseCaseImpl(repository: repository)
 
-        #expect(sut.isHideDuringScreenRecordingEnabled() == true)
-        sut.setHideDuringScreenRecordingEnabled(false)
-        #expect(sut.isHideDuringScreenRecordingEnabled() == false)
+        #expect(sut.isWindowCaptureProtectionEnabled() == true)
+        sut.setWindowCaptureProtectionEnabled(false)
+        #expect(sut.isWindowCaptureProtectionEnabled() == false)
     }
 
     @Test("화면 녹화 중 값 숨김 설정 스트림을 전달한다")
-    func hideDuringScreenRecordingStreamPassesThrough() async {
+    func windowCaptureProtectionStreamPassesThrough() async {
         let repository = FakeSettingsRepository()
-        repository.hideDuringScreenRecordingEnabledStreamValue = AsyncStream { continuation in
+        repository.windowCaptureProtectionEnabledStreamValue = AsyncStream { continuation in
             continuation.yield(false)
             continuation.finish()
         }
         let sut = SecuritySettingsUseCaseImpl(repository: repository)
 
-        var iterator = sut.hideDuringScreenRecordingEnabledStream().makeAsyncIterator()
+        var iterator = sut.windowCaptureProtectionEnabledStream().makeAsyncIterator()
         let value = await iterator.next()
 
         #expect(value == false)

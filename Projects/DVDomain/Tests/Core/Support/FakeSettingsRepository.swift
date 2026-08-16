@@ -19,8 +19,8 @@ public final class FakeSettingsRepository: SettingsRepository, @unchecked Sendab
     public var autoLockMinutesValue = 5
     public var isAutoClearClipboardEnabledValue = true
     public var autoClearClipboardDelaySecondsValue = 30
-    public var isHideDuringScreenRecordingEnabledValue = true
-    public var hideDuringScreenRecordingEnabledStreamValue: AsyncStream<Bool>?
+    public var isWindowCaptureProtectionEnabledValue = true
+    public var windowCaptureProtectionEnabledStreamValue: AsyncStream<Bool>?
 
     public var isExpiryAlertsEnabledValue = true
     public var expiryAlertDaysBeforeValue = [30, 7, 1, 0]
@@ -62,14 +62,14 @@ public final class FakeSettingsRepository: SettingsRepository, @unchecked Sendab
     public func autoClearClipboardDelaySeconds() -> Int { autoClearClipboardDelaySecondsValue }
     public func setAutoClearClipboardDelaySeconds(_ seconds: Int) { autoClearClipboardDelaySecondsValue = seconds }
 
-    public func isHideDuringScreenRecordingEnabled() -> Bool { isHideDuringScreenRecordingEnabledValue }
-    public func setHideDuringScreenRecordingEnabled(_ enabled: Bool) { isHideDuringScreenRecordingEnabledValue = enabled }
-    public func hideDuringScreenRecordingEnabledStream() -> AsyncStream<Bool> {
-        if let hideDuringScreenRecordingEnabledStreamValue {
-            return hideDuringScreenRecordingEnabledStreamValue
+    public func isWindowCaptureProtectionEnabled() -> Bool { isWindowCaptureProtectionEnabledValue }
+    public func setWindowCaptureProtectionEnabled(_ enabled: Bool) { isWindowCaptureProtectionEnabledValue = enabled }
+    public func windowCaptureProtectionEnabledStream() -> AsyncStream<Bool> {
+        if let windowCaptureProtectionEnabledStreamValue {
+            return windowCaptureProtectionEnabledStreamValue
         }
         return AsyncStream { continuation in
-            continuation.yield(isHideDuringScreenRecordingEnabledValue)
+            continuation.yield(isWindowCaptureProtectionEnabledValue)
             continuation.finish()
         }
     }
