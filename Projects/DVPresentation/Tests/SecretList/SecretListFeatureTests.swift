@@ -250,18 +250,6 @@ struct SecretListFeatureTests {
         }
     }
 
-    @Test("didTapAddToProject는 destination을 연다")
-    func addToProjectPresentsDestination() async {
-        let secretID = UUID()
-        let store = TestStore(initialState: SecretListFeature.State()) {
-            SecretListFeature()
-        }
-
-        await store.send(.didTapAddToProject(id: secretID)) {
-            $0.destination = .addToProject(AddToProjectFeature.State(secretID: secretID))
-        }
-    }
-
     // MARK: - Helpers
 
     private func makeSecret(name: String) -> Secret {

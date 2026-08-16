@@ -22,7 +22,6 @@ public struct SecretListFeature {
     public internal(set) var selectedSecretID: Secret.ID?
     public internal(set) var searchText = ""
     public internal(set) var sort: SecretQuery.Sort = .recentlyAdded
-    @Presents var destination: Destination.State?
     @Presents var alert: AlertState<Action.Alert>?
 
     public init(collection: SecretQuery.Collection = .all, projectName: String? = nil) {
@@ -82,7 +81,6 @@ public struct SecretListFeature {
     case didSelectSecret(id: Secret.ID?)
     case didChangeSearchText(String)
     case didSelectSort(SecretQuery.Sort)
-    case didTapAddToProject(id: Secret.ID)
     case didTapDelete(id: Secret.ID)
     case didTapRecover(id: Secret.ID)
     case didTapDeleteForever(id: Secret.ID)
@@ -99,7 +97,6 @@ public struct SecretListFeature {
 
     // MARK: - Child
 
-    case destination(PresentationAction<Destination.Action>)
     case alert(PresentationAction<Alert>)
 
     // MARK: - Delegate
@@ -114,13 +111,6 @@ public struct SecretListFeature {
     }
 
     public enum Alert: Equatable {}
-  }
-
-  // MARK: - Destination
-
-  @Reducer
-  public enum Destination {
-    case addToProject(AddToProjectFeature)
   }
 
   // MARK: - Dependencies
@@ -168,10 +158,6 @@ public struct SecretListFeature {
         state.selectedSecretID = id
         return .send(.delegate(.secretSelected(id)))
 
-      case .didTapAddToProject(let id):
-        state.destination = .addToProject(AddToProjectFeature.State(secretID: id))
-        return .none
-
       case .didTapDelete(let id):
         return mutationEffect(id: id) { try await secretClient.softDelete(id) }
 
@@ -199,16 +185,6 @@ public struct SecretListFeature {
         }
         return .none
 
-      // 프로젝트 연결로 프로젝트별 개수가 바뀌므로 목록 갱신과 함께 부모에게도 알린다.
-      case .destination(.presented(.addToProject(.delegate(.projectLinked)))):
-        return .concatenate(
-          .send(.delegate(.secretsChanged)),
-          fetchSecretsEffect(query: state.query, debounced: false)
-        )
-
-      case .destination:
-        return .none
-
       case .alert:
         return .none
 
@@ -216,7 +192,6 @@ public struct SecretListFeature {
         return .none
       }
     }
-    .ifLet(\.$destination, action: \.destination)
     .ifLet(\.$alert, action: \.alert)
   }
 
@@ -248,9 +223,3 @@ public struct SecretListFeature {
     }
   }
 }
-
-// MARK: - Destination Equatable
-
-// swift-composable-architecture는 @Reducer enum의 State/Action에 Equatable을 자동으로 붙이지 않는다 (공식 예제도 동일하게 명시적으로 붙임).
-extension SecretListFeature.Destination.State: Equatable {}
-extension SecretListFeature.Destination.Action: Equatable {}
