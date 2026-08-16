@@ -19,6 +19,9 @@ public struct SecretClient: Sendable {
   /// 생체인증 후 Secret의 암호화된 payload를 복호화해 `CreateSecretPayload`로 반환한다.
   /// secretType/subType에 따라 적절한 도메인 payload 타입으로 dispatch하고 metadata JSON을 병합한다.
   public var revealPayload: @Sendable (_ secret: Secret) async throws -> CreateSecretPayload
+  /// Copy가 자체 인증 정책을 적용하도록 Reveal 인증 없이 payload를 복호화한다.
+  /// 반환값은 화면에 공개하지 않고 민감 값 Copy 흐름에서만 사용한다.
+  public var loadPayloadForCopy: @Sendable (_ secret: Secret) async throws -> CreateSecretPayload
   /// 즐겨찾기 여부를 갱신하고 갱신된 Secret을 반환한다.
   /// payload 복호화가 없으므로 **생체인증을 타지 않는다**(`PatchSecretUseCase.updateSimple`).
   public var setLiked: @Sendable (_ id: Secret.ID, _ liked: Bool) async throws -> Secret
@@ -175,6 +178,9 @@ private extension SecretClient {
               assertionFailure("Unexpected (secretType, subType) combination: \(secret.secretType), \(String(describing: secret.subType))")
               throw SecretUseCaseError.unexpected
           }
+      },
+      loadPayloadForCopy: { secret in
+        try await dummyClient().revealPayload(secret)
       },
       setLiked: { _, liked in
           var secret = Secret.preview

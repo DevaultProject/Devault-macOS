@@ -411,7 +411,7 @@ struct SecretDetailFeatureTests {
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
-            $0.secretClient.revealPayload = { _ in payload }
+            $0.secretClient.loadPayloadForCopy = { _ in payload }
             $0.secretClient.copySensitiveValue = { value in
                 copied.withValue { $0 = value }
             }
@@ -423,7 +423,6 @@ struct SecretDetailFeatureTests {
         }
         await store.receive(.payloadResponse(.success(payload), revealing: nil, thenCopy: .value)) {
             $0.payloadState = .loaded(payload)
-            $0.revealAuthorizedAt = Self.referenceDate
         }
         await store.receive(.copyResponse(.success(true)))
         #expect(copied.value == "ghp_secret")
@@ -467,6 +466,10 @@ struct SecretDetailFeatureTests {
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
+            $0.secretClient.loadPayloadForCopy = { _ in
+                try await clock.sleep(for: .seconds(1))
+                return payload
+            }
             $0.secretClient.revealPayload = { _ in
                 try await clock.sleep(for: .seconds(1))
                 return payload

@@ -111,8 +111,10 @@ struct RevealSecretPayloadUseCaseImplTests {
         settingsRepository: FakeSettingsRepository = FakeSettingsRepository()
     ) -> RevealSecretPayloadUseCaseImpl {
         RevealSecretPayloadUseCaseImpl(
-            repository: repository,
-            cryptoService: cryptoService,
+            decryptPayloadUseCase: DecryptSecretPayloadUseCaseImpl(
+                repository: repository,
+                cryptoService: cryptoService
+            ),
             authenticateUseCase: AuthenticateUseCaseImpl(
                 authenticationService: authenticationService,
                 notificationService: FakeSecurityNotificationService(),

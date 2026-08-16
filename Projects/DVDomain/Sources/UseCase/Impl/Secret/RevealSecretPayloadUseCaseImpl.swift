@@ -3,17 +3,14 @@
 import Foundation
 
 public struct RevealSecretPayloadUseCaseImpl: RevealSecretPayloadUseCase {
-    private let repository: any SecretRepository
-    private let cryptoService: any SecretCryptoService
+    private let decryptPayloadUseCase: any DecryptSecretPayloadUseCase
     private let authenticateUseCase: any AuthenticateUseCase
 
     public init(
-        repository: any SecretRepository,
-        cryptoService: any SecretCryptoService,
+        decryptPayloadUseCase: any DecryptSecretPayloadUseCase,
         authenticateUseCase: any AuthenticateUseCase
     ) {
-        self.repository = repository
-        self.cryptoService = cryptoService
+        self.decryptPayloadUseCase = decryptPayloadUseCase
         self.authenticateUseCase = authenticateUseCase
     }
 
@@ -23,10 +20,7 @@ public struct RevealSecretPayloadUseCaseImpl: RevealSecretPayloadUseCase {
     ) async throws -> Payload {
         do {
             try await authenticateUseCase.authenticate(reason: AuthenticationReason.revealSecret)
-            guard let secret = try await repository.fetch(id: id) else {
-                throw SecretUseCaseError.secretNotFound(id: id)
-            }
-            return try await cryptoService.decryptPayload(secret.payload, as: type)
+            return try await decryptPayloadUseCase.decryptPayload(id: id, as: type)
         } catch {
             throw SecretUseCaseError.map(error)
         }
