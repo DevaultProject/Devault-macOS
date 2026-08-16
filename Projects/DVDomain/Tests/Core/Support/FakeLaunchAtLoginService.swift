@@ -8,20 +8,26 @@ public final class FakeLaunchAtLoginService: LaunchAtLoginService, @unchecked Se
     case failed
   }
 
-  public var isEnabledValue = false
+  public var statusValue: LaunchAtLoginStatus = .notRegistered
   public var setEnabledError: Failure?
+  public private(set) var didOpenSystemSettings = false
 
   public init() {}
 
-  public func isEnabled() -> Bool {
-    isEnabledValue
+  public func status() -> LaunchAtLoginStatus {
+    statusValue
   }
 
-  public func setEnabled(_ enabled: Bool) throws {
+  public func setEnabled(_ enabled: Bool) throws -> LaunchAtLoginStatus {
     if let setEnabledError {
       throw setEnabledError
     }
 
-    isEnabledValue = enabled
+    statusValue = enabled ? .enabled : .notRegistered
+    return statusValue
+  }
+
+  public func openSystemSettings() {
+    didOpenSystemSettings = true
   }
 }

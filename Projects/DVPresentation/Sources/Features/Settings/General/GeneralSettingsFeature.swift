@@ -1,6 +1,7 @@
 // Copyright © 2026 Devault. All rights reserved
 
 import ComposableArchitecture
+import DVDomain
 
 // MARK: - GeneralSettingsFeature
 
@@ -12,6 +13,7 @@ public struct GeneralSettingsFeature {
   @ObservableState
   public struct State: Equatable {
     var isLaunchAtLoginEnabled = false
+    var launchAtLoginStatus: LaunchAtLoginStatus = .notRegistered
     var defaultEnvironment: SecretEnvironment = .dev
 
     public init() {}
@@ -25,10 +27,12 @@ public struct GeneralSettingsFeature {
 
     case binding(BindingAction<State>)
     case task
+    case didTapOpenLoginItemsSettings
 
     // MARK: - Internal
 
     case launchAtLoginFailed(previousValue: Bool)
+    case launchAtLoginStatusChanged(LaunchAtLoginStatus)
   }
 
   // MARK: - Dependencies
@@ -42,7 +46,9 @@ public struct GeneralSettingsFeature {
     Reduce { state, action in
       switch action {
       case .task:
-        state.isLaunchAtLoginEnabled = generalSettingsClient.isLaunchAtLoginEnabled()
+        let status = generalSettingsClient.launchAtLoginStatus()
+        state.launchAtLoginStatus = status
+        state.isLaunchAtLoginEnabled = status.isRegistered
         state.defaultEnvironment = SecretEnvironment(
           rawValue: generalSettingsClient.defaultEnvironment()
         ) ?? .dev
@@ -52,11 +58,15 @@ public struct GeneralSettingsFeature {
         let enabled = state.isLaunchAtLoginEnabled
         return .run { send in
           do {
-            try generalSettingsClient.setLaunchAtLoginEnabled(enabled)
+            let status = try generalSettingsClient.setLaunchAtLoginEnabled(enabled)
+            await send(.launchAtLoginStatusChanged(status))
           } catch {
             await send(.launchAtLoginFailed(previousValue: !enabled))
           }
         }
+
+      case .didTapOpenLoginItemsSettings:
+        return .run { _ in generalSettingsClient.openLoginItemsSystemSettings() }
 
       case .binding(\.defaultEnvironment):
         let environment = state.defaultEnvironment
@@ -68,6 +78,11 @@ public struct GeneralSettingsFeature {
       case .launchAtLoginFailed(let previousValue):
         // 시스템 로그인 항목 변경에 실패하면 표시값을 이전 상태로 되돌린다.
         state.isLaunchAtLoginEnabled = previousValue
+        return .none
+
+      case .launchAtLoginStatusChanged(let status):
+        state.launchAtLoginStatus = status
+        state.isLaunchAtLoginEnabled = status.isRegistered
         return .none
 
       }
