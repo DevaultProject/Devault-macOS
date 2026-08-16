@@ -11,14 +11,16 @@ public final class FakeSettingsRepository: SettingsRepository, @unchecked Sendab
     public var iCloudLastSyncedAtValue: Date?
 
     public var isLaunchAtLoginEnabledValue = false
-    public var defaultEnvironmentValue: String?
+    public var defaultEnvironmentValue = "dev"
 
     public var isRequireAuthOnLaunchEnabledValue = true
     public var isRequireAuthToCopyEnabledValue = true
+    public var isAutoLockEnabledValue = true
     public var autoLockMinutesValue = 5
     public var isAutoClearClipboardEnabledValue = true
     public var autoClearClipboardDelaySecondsValue = 30
     public var isHideDuringScreenRecordingEnabledValue = true
+    public var hideDuringScreenRecordingEnabledStreamValue: AsyncStream<Bool>?
 
     public var isExpiryAlertsEnabledValue = true
     public var expiryAlertDaysBeforeValue = [30, 7, 1, 0]
@@ -39,14 +41,17 @@ public final class FakeSettingsRepository: SettingsRepository, @unchecked Sendab
     public func isLaunchAtLoginEnabled() -> Bool { isLaunchAtLoginEnabledValue }
     public func setLaunchAtLoginEnabled(_ enabled: Bool) { isLaunchAtLoginEnabledValue = enabled }
 
-    public func defaultEnvironment() -> String? { defaultEnvironmentValue }
-    public func setDefaultEnvironment(_ rawValue: String?) { defaultEnvironmentValue = rawValue }
+    public func defaultEnvironment() -> String { defaultEnvironmentValue }
+    public func setDefaultEnvironment(_ rawValue: String) { defaultEnvironmentValue = rawValue }
 
     public func isRequireAuthOnLaunchEnabled() -> Bool { isRequireAuthOnLaunchEnabledValue }
     public func setRequireAuthOnLaunchEnabled(_ enabled: Bool) { isRequireAuthOnLaunchEnabledValue = enabled }
 
     public func isRequireAuthToCopyEnabled() -> Bool { isRequireAuthToCopyEnabledValue }
     public func setRequireAuthToCopyEnabled(_ enabled: Bool) { isRequireAuthToCopyEnabledValue = enabled }
+
+    public func isAutoLockEnabled() -> Bool { isAutoLockEnabledValue }
+    public func setAutoLockEnabled(_ enabled: Bool) { isAutoLockEnabledValue = enabled }
 
     public func autoLockMinutes() -> Int { autoLockMinutesValue }
     public func setAutoLockMinutes(_ minutes: Int) { autoLockMinutesValue = minutes }
@@ -59,6 +64,15 @@ public final class FakeSettingsRepository: SettingsRepository, @unchecked Sendab
 
     public func isHideDuringScreenRecordingEnabled() -> Bool { isHideDuringScreenRecordingEnabledValue }
     public func setHideDuringScreenRecordingEnabled(_ enabled: Bool) { isHideDuringScreenRecordingEnabledValue = enabled }
+    public func hideDuringScreenRecordingEnabledStream() -> AsyncStream<Bool> {
+        if let hideDuringScreenRecordingEnabledStreamValue {
+            return hideDuringScreenRecordingEnabledStreamValue
+        }
+        return AsyncStream { continuation in
+            continuation.yield(isHideDuringScreenRecordingEnabledValue)
+            continuation.finish()
+        }
+    }
 
     public func isExpiryAlertsEnabled() -> Bool { isExpiryAlertsEnabledValue }
     public func setExpiryAlertsEnabled(_ enabled: Bool) { isExpiryAlertsEnabledValue = enabled }

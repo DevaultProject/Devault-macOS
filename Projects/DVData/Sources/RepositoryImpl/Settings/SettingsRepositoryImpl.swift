@@ -9,15 +9,24 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
   private let defaults: UserDefaults
   private let ubiquitousStore: NSUbiquitousKeyValueStore
 
+  // TODO: SecretEnvironment를 DVDomain 공용 타입으로 이동하면 `.dev.rawValue`로 대체한다.
+  private enum DefaultValue {
+    static let environment = "dev"
+  }
+
   public init(
     defaults: UserDefaults = .standard,
     ubiquitousStore: NSUbiquitousKeyValueStore = .default
   ) {
     self.defaults = defaults
     self.ubiquitousStore = ubiquitousStore
+
+    // 아직 사용자가 저장한 값이 없을 때 사용할 기본값
     defaults.register(defaults: [
+      UserDefaultsKey.defaultEnvironment.rawValue: DefaultValue.environment,
       UserDefaultsKey.isRequireAuthOnLaunchEnabled.rawValue: true,
       UserDefaultsKey.isRequireAuthToCopyEnabled.rawValue: true,
+      UserDefaultsKey.isAutoLockEnabled.rawValue: true,
       UserDefaultsKey.autoLockMinutes.rawValue: 5,
       UserDefaultsKey.isAutoClearClipboardEnabled.rawValue: true,
       UserDefaultsKey.autoClearClipboardDelaySeconds.rawValue: 30,
@@ -29,6 +38,8 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
     ])
   }
 
+  // MARK: - Onboarding
+
   // hasCompletedOnboarding은 기기별로 Touch ID 확인이 필요하므로 로컬 UserDefaults로 관리
   public func hasCompletedOnboarding() -> Bool {
     defaults.bool(forKey: .hasCompletedOnboarding)
@@ -37,6 +48,8 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
   public func setOnboardingCompleted() {
     defaults.set(true, forKey: .hasCompletedOnboarding)
   }
+
+  // MARK: - iCloud
 
   // iCloud 동기화 사용 여부는 독립적으로 켜야 하므로 로컬 UserDefaults로 관리
   public func isICloudSyncEnabled() -> Bool {
@@ -65,11 +78,11 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
     defaults.set(enabled, forKey: .isLaunchAtLoginEnabled)
   }
 
-  public func defaultEnvironment() -> String? {
-    defaults.string(forKey: .defaultEnvironment)
+  public func defaultEnvironment() -> String {
+    defaults.string(forKey: .defaultEnvironment) ?? DefaultValue.environment
   }
 
-  public func setDefaultEnvironment(_ rawValue: String?) {
+  public func setDefaultEnvironment(_ rawValue: String) {
     defaults.set(rawValue, forKey: .defaultEnvironment)
   }
 
@@ -89,6 +102,14 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
 
   public func setRequireAuthToCopyEnabled(_ enabled: Bool) {
     defaults.set(enabled, forKey: .isRequireAuthToCopyEnabled)
+  }
+
+  public func isAutoLockEnabled() -> Bool {
+    defaults.bool(forKey: .isAutoLockEnabled)
+  }
+
+  public func setAutoLockEnabled(_ enabled: Bool) {
+    defaults.set(enabled, forKey: .isAutoLockEnabled)
   }
 
   public func autoLockMinutes() -> Int {
@@ -121,6 +142,23 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
 
   public func setHideDuringScreenRecordingEnabled(_ enabled: Bool) {
     defaults.set(enabled, forKey: .isHideDuringScreenRecordingEnabled)
+  }
+
+  public func hideDuringScreenRecordingEnabledStream() -> AsyncStream<Bool> {
+    AsyncStream { continuation in
+      let observer = NotificationCenter.default.addObserver(
+        forName: UserDefaults.didChangeNotification,
+        object: defaults,
+        queue: nil
+      ) { _ in
+        continuation.yield(isHideDuringScreenRecordingEnabled())
+      }
+
+      continuation.yield(isHideDuringScreenRecordingEnabled())
+      continuation.onTermination = { _ in
+        NotificationCenter.default.removeObserver(observer)
+      }
+    }
   }
 
   // MARK: - Notifications
