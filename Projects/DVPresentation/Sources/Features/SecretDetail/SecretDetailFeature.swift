@@ -36,6 +36,12 @@ public struct SecretDetailFeature {
         case reveal(SecretFieldID)
         /// 복사 버튼이 유발했다. 성공하면 이어서 복사한다.
         case copy(SecretFieldID)
+        /// 수정 버튼이 유발했다. 성공하면 편집 모드로 들어간다.
+        ///
+        /// 편집 폼의 type-specific 필드는 평문에서만 만들 수 있어서(`secret.payload`는 암호문)
+        /// **수정 진입이 복호화를, 따라서 인증을 탄다.** 실패하면 조회 모드에 남는다 —
+        /// 인증을 취소했는데 편집 화면이 열려 있으면 안 된다.
+        case edit
     }
 
     // MARK: - State
@@ -56,9 +62,25 @@ public struct SecretDetailFeature {
         public var mode: Mode = .viewing
         /// 수정 모드에서만 유효. viewing일 때는 반드시 nil.
         var editFields: SecretMetaFields?
+        /// 편집 진입 시점의 폼 스냅샷. **사용자가 폼에서 무엇을 건드렸는지**의 기준이다.
+        /// 취소 시 확인 alert를 띄울지 판정하고, 저장 시 공통 필드·프로젝트 연결의 변경분을 가린다.
+        var editFieldsBaseline: SecretMetaFields?
+        /// 편집 진입 시점의 복호화 payload. **저장할 때 무엇을 다시 써야 하는지**의 기준이다.
+        ///
+        /// `editFieldsBaseline`과 따로 두는 이유는 둘의 쓰임이 다르기 때문이다. 전자만 있으면
+        /// UI에 노출되지 않는 metadata 필드를 병합할 원본이 없고, 후자만 있으면 `projectIds`·`memo`처럼
+        /// payload 밖에 있는 변경을 취소 확인에서 놓친다.
+        /// `payloadState`와도 분리한다 — 편집 중 다른 필드를 reveal해도 병합 기준이 흔들리면 안 된다.
+        var editPayloadBaseline: CreateSecretPayload?
         /// 이 Secret에 연결된 Project. `Secret` 엔티티에 프로젝트 정보가 없어 별도 조회한다.
         /// 조회 화면의 Project 필드 표시와, 수정 진입 시 `projectIds` 초기값에 함께 쓰인다.
         public var linkedProjects: [Project] = []
+        /// 프로젝트 선택 드롭다운의 옵션. **편집 진입 시에만 로드한다** —
+        /// 조회만 하는 사용자에게 전체 프로젝트 목록을 읽힐 이유가 없다.
+        public var availableProjects: [Project] = []
+        public var isLoadingProjects = false
+        /// 저장 시도에서 누락된 필수 필드의 인라인 경고. 생성 화면과 같은 규칙으로 채운다.
+        var validationErrors: [SecretFieldID: String] = [:]
         public var isSaving = false
         /// 삭제 요청 진행 중. 진행 중에는 삭제 버튼을 비활성화한다.
         public var isDeleting = false
@@ -73,6 +95,8 @@ public struct SecretDetailFeature {
         /// 새로 할당하므로 창이 자동으로 닫힌다("시크릿 변경 시 재인증").
         var revealAuthorizedAt: Date?
         @Presents public var alert: AlertState<Action.Alert>?
+        /// 프로젝트 생성 시트. 편집 폼의 SectionView가 `onCreateProject`로 연다.
+        @Presents var createProject: CreateProjectFeature.State?
 
         public init(secret: Secret) {
             self.secret = secret
@@ -102,9 +126,13 @@ public struct SecretDetailFeature {
         case didTapEdit
         case didTapCancelEdit
         case didTapSave
+        /// 편집 폼의 프로젝트 필드에서 "새 프로젝트" 를 누른 경우.
+        case didTapCreateProject
 
         // MARK: Internal
         case linkedProjectsResponse(Result<[Project], SecretUseCaseError>)
+        /// 편집 폼의 프로젝트 선택 옵션. 조회 중에는 조회하지 않는다.
+        case availableProjectsResponse(Result<[Project], ProjectUseCaseError>)
         /// 복호화 응답. 복호화를 유발한 동작을 `then`에 함께 싣는다 (``RevealContinuation`` 참조).
         case payloadResponse(
             Result<CreateSecretPayload, SecretUseCaseError>,
@@ -121,6 +149,7 @@ public struct SecretDetailFeature {
 
         // MARK: Child
         case alert(PresentationAction<Alert>)
+        case createProject(PresentationAction<CreateProjectFeature.Action>)
 
         // MARK: Delegate
         case delegate(Delegate)
@@ -221,6 +250,9 @@ public struct SecretDetailFeature {
                     return .none
                 case .copy(let field):
                     return copyEffect(value: payload.value(for: field))
+                case .edit:
+                    beginEditing(&state, payload: payload)
+                    return .none
                 }
 
             case .payloadResponse(.failure(let error), _):
@@ -326,20 +358,117 @@ public struct SecretDetailFeature {
                 state.alert = .deleteFailed
                 return .none
 
-            // 편집 모드는 후속 이슈 범위다. 상태 전이가 없으므로 헤더의 수정 버튼은
-            // `isEditEnabled: false`로 비활성 렌더되고 Cancel / Save 컨트롤은 노출되지 않는다.
-            // 여기서는 액션 case만 예약해 둔다.
-            case .didTapEdit, .didTapCancelEdit, .didTapSave:
+            // 편집 폼은 평문이 있어야 만들 수 있다. 값이 없으면 복호화(= 인증)를 먼저 타고,
+            // 성공한 뒤에야 편집 모드로 들어간다 (`RevealContinuation.edit`).
+            case .didTapEdit:
+                // 헤더에서 수정 버튼이 사라지므로 편집 중에는 도달하지 않지만,
+                // 상태 전이를 한곳에서 막아 두는 편이 안전하다.
+                guard state.mode == .viewing else { return .none }
+                state.isLoadingProjects = true
+                let projects = availableProjectsEffect()
+
+                // 값이 이미 있으면 인증 없이 들어간다. TTL은 보지 않는다 — 여기서 지키려는 것은
+                // "값 없이 편집에 들어가지 않는다"이지 노출 통제가 아니고, 값은 이미 메모리에 있다.
+                if case .loaded(let payload) = state.payloadState {
+                    beginEditing(&state, payload: payload)
+                    return projects
+                }
+                state.payloadState = .loading
+                return .merge(revealEffect(secret: state.secret, then: .edit), projects)
+
+            // 건드린 것이 없으면 확인 없이 나간다. 물어보는 것 자체가 성가신 확인이 된다.
+            case .didTapCancelEdit:
+                guard state.mode == .editing else { return .none }
+                guard state.editFields == state.editFieldsBaseline else {
+                    state.alert = .confirmDiscard
+                    return .none
+                }
+                endEditing(&state)
                 return .none
 
-            case .binding, .alert, .delegate:
+            case .alert(.presented(.confirmDiscard)):
+                endEditing(&state)
+                return .none
+
+            case .availableProjectsResponse(.success(let projects)):
+                state.isLoadingProjects = false
+                state.availableProjects = projects
+                return .none
+
+            // 편집은 계속할 수 있게 둔다 — 프로젝트 연결만 못 바꿀 뿐 나머지 필드는 영향이 없다.
+            case .availableProjectsResponse(.failure):
+                state.isLoadingProjects = false
+                state.availableProjects = []
+                state.alert = .projectsLoadFailed
+                return .none
+
+            case .didTapCreateProject:
+                state.createProject = CreateProjectFeature.State()
+                return .none
+
+            // 방금 만든 프로젝트를 목록에 얹는다. 전체 재조회는 하지 않는다 —
+            // 편집 중인 폼이 그대로 있어야 하고, 필요한 정보는 delegate가 다 실어 준다.
+            case .createProject(.presented(.delegate(.projectCreated(let project)))):
+                state.availableProjects.append(
+                    Project(id: project.id, name: project.name, createdAt: now, updatedAt: now)
+                )
+                return .none
+
+            // 저장은 후속 커밋 범위다.
+            case .didTapSave:
+                return .none
+
+            case .binding, .alert, .delegate, .createProject:
                 return .none
             }
         }
         .ifLet(\.$alert, action: \.alert)
+        .ifLet(\.$createProject, action: \.createProject) {
+            CreateProjectFeature()
+        }
+    }
+
+    // MARK: - Editing
+
+    /// 편집 진입. 폼 초기값과 dirty 판정 기준 둘을 함께 세운다.
+    private func beginEditing(_ state: inout State, payload: CreateSecretPayload) {
+        let fields = SecretMetaFields(
+            secret: state.secret,
+            payload: payload,
+            // 조회 화면은 chip 라벨 때문에 엔티티를 들고 있다. 폼은 ID만 쓴다.
+            projectIds: state.linkedProjects.map(\.id)
+        )
+        state.editFields = fields
+        state.editFieldsBaseline = fields
+        state.editPayloadBaseline = payload
+        state.validationErrors = [:]
+        state.mode = .editing
+    }
+
+    /// 편집 종료. 편집 전용 상태를 한 번에 비운다 —
+    /// 하나라도 남으면 다음 진입의 dirty 판정 기준이 어긋난다.
+    private func endEditing(_ state: inout State) {
+        state.mode = .viewing
+        state.editFields = nil
+        state.editFieldsBaseline = nil
+        state.editPayloadBaseline = nil
+        state.validationErrors = [:]
     }
 
     // MARK: - Effects
+
+    /// 편집 폼의 프로젝트 선택 옵션을 읽어 온다.
+    private func availableProjectsEffect() -> Effect<Action> {
+        .run { send in
+            do {
+                let projects = try await secretClient.fetchProjects()
+                await send(.availableProjectsResponse(.success(projects)))
+            } catch is CancellationError {
+            } catch {
+                await send(.availableProjectsResponse(.failure(ProjectUseCaseError.map(error))))
+            }
+        }
+    }
 
     /// 인증 + 복호화. `revealPayload`가 둘을 함께 하므로 값이 아직 없을 때만 쓴다.
     /// - Parameter then: 복호화가 끝나면 이어서 할 일 (``RevealContinuation``).

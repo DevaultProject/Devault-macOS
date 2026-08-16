@@ -17,7 +17,9 @@ struct SecretDetailFeatureTests {
 
     // MARK: - Helpers
 
-    private static func makeSecret(
+    /// 순수 팩토리라 격리가 필요 없다. `nonisolated`인 것은 기본 인자 위치에서도 부를 수 있어야
+    /// 하기 때문이다 — 기본 인자는 함수의 격리와 무관하게 nonisolated 문맥에서 평가된다.
+    nonisolated private static func makeSecret(
         name: String = "Test Secret",
         secretType: SecretType = .apiKeyToken,
         liked: Bool = false
@@ -673,5 +675,261 @@ struct SecretDetailFeatureTests {
             $0.isDeleting = false
             $0.alert = .deleteFailed
         }
+    }
+
+    // MARK: - 편집 진입
+
+    /// 편집 폼의 type-specific 필드는 평문에서만 만들 수 있다. 값이 이미 있으면 다시 받을 이유가
+    /// 없으므로 인증도 복호화도 타지 않는다 — `revealPayload`를 스텁하지 않아, 불리면 실패한다.
+    @Test("수정 진입: 값이 이미 있으면 인증 없이 편집 모드로 들어간다")
+    func didTapEdit_withLoadedPayload_entersEditingWithoutAuthentication() async {
+        let secret = Self.makeSecret(name: "GitHub Token")
+        let payload = Self.editablePayload
+        let project = Project(
+            id: UUID(), name: "DrinkiG",
+            createdAt: Self.referenceDate, updatedAt: Self.referenceDate
+        )
+
+        let store = TestStore(
+            initialState: {
+                var state = SecretDetailFeature.State(secret: secret)
+                state.payloadState = .loaded(payload)
+                state.linkedProjects = [project]
+                return state
+            }()
+        ) {
+            SecretDetailFeature()
+        } withDependencies: {
+            // 프로젝트 목록은 이 테스트의 관심사가 아니다. 액션을 내지 않게 해 순서 의존을 없앤다.
+            $0.secretClient.fetchProjects = { throw CancellationError() }
+            $0.date = .constant(Self.referenceDate)
+        }
+
+        await store.send(.didTapEdit) {
+            $0.isLoadingProjects = true
+            $0.mode = .editing
+            $0.editFields = SecretMetaFields(secret: secret, payload: payload, projectIds: [project.id])
+            $0.editFieldsBaseline = $0.editFields
+            $0.editPayloadBaseline = payload
+        }
+    }
+
+    @Test("수정 진입: 값이 없으면 복호화한 뒤 편집 모드로 들어간다")
+    func didTapEdit_withoutPayload_decryptsThenEnters() async {
+        let secret = Self.makeSecret()
+        let payload = Self.editablePayload
+
+        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.revealPayload = { _ in payload }
+            $0.secretClient.fetchProjects = { throw CancellationError() }
+            $0.date = .constant(Self.referenceDate)
+        }
+
+        await store.send(.didTapEdit) {
+            $0.isLoadingProjects = true
+            $0.payloadState = .loading
+        }
+        await store.receive(.payloadResponse(.success(payload), then: .edit)) {
+            $0.payloadState = .loaded(payload)
+            $0.revealAuthorizedAt = Self.referenceDate
+            $0.mode = .editing
+            $0.editFields = SecretMetaFields(secret: secret, payload: payload, projectIds: [])
+            $0.editFieldsBaseline = $0.editFields
+            $0.editPayloadBaseline = payload
+        }
+    }
+
+    /// 인증을 취소했는데 편집 화면이 열려 있으면 안 된다. TestStore가 상태 변화를 전수 검사하므로
+    /// mode가 `.editing`으로 넘어갔다면 이 테스트가 실패한다.
+    @Test("수정 진입: 복호화에 실패하면 조회 모드에 남는다")
+    func didTapEdit_decryptionFailure_staysViewing() async {
+        let secret = Self.makeSecret()
+
+        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.revealPayload = { _ in
+                throw SecretUseCaseError.authenticationFailure(.cancelled)
+            }
+            $0.secretClient.fetchProjects = { throw CancellationError() }
+            $0.date = .constant(Self.referenceDate)
+        }
+
+        await store.send(.didTapEdit) {
+            $0.isLoadingProjects = true
+            $0.payloadState = .loading
+        }
+        await store.receive(.payloadResponse(.failure(.authenticationFailure(.cancelled)), then: .edit)) {
+            $0.payloadState = .failed(.authenticationFailure(.cancelled))
+            $0.alert = .payloadRevealFailed(.authRequired)
+        }
+    }
+
+    // MARK: - 편집 취소
+
+    @Test("취소: 건드린 것이 없으면 확인 없이 조회로 돌아간다")
+    func didTapCancelEdit_withoutChanges_returnsImmediately() async {
+        let store = TestStore(initialState: Self.editingState()) {
+            SecretDetailFeature()
+        }
+
+        await store.send(.didTapCancelEdit) {
+            $0.mode = .viewing
+            $0.editFields = nil
+            $0.editFieldsBaseline = nil
+            $0.editPayloadBaseline = nil
+        }
+    }
+
+    @Test("취소: 변경이 있으면 확인 alert를 띄우고 편집 모드에 남는다")
+    func didTapCancelEdit_withChanges_presentsConfirmDiscard() async {
+        var initial = Self.editingState()
+        initial.editFields?.memo = "고친 메모"
+
+        let store = TestStore(initialState: initial) { SecretDetailFeature() }
+
+        await store.send(.didTapCancelEdit) {
+            $0.alert = .confirmDiscard
+        }
+    }
+
+    @Test("취소 확정: 편집 전용 상태가 모두 비워진다")
+    func confirmDiscard_clearsEditingState() async {
+        var initial = Self.editingState()
+        initial.editFields?.name = "고친 이름"
+
+        let store = TestStore(initialState: initial) { SecretDetailFeature() }
+
+        await store.send(.didTapCancelEdit) {
+            $0.alert = .confirmDiscard
+        }
+        await store.send(.alert(.presented(.confirmDiscard))) {
+            $0.alert = nil
+            $0.mode = .viewing
+            $0.editFields = nil
+            $0.editFieldsBaseline = nil
+            $0.editPayloadBaseline = nil
+        }
+    }
+
+    // MARK: - 편집 폼의 프로젝트 목록
+
+    @Test("편집 진입 시 프로젝트 선택 옵션을 읽어 온다")
+    func didTapEdit_loadsAvailableProjects() async {
+        let secret = Self.makeSecret()
+        let payload = Self.editablePayload
+        let projects = [
+            Project(id: UUID(), name: "DrinkiG", createdAt: Self.referenceDate, updatedAt: Self.referenceDate)
+        ]
+
+        let store = TestStore(
+            initialState: {
+                var state = SecretDetailFeature.State(secret: secret)
+                state.payloadState = .loaded(payload)
+                return state
+            }()
+        ) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.fetchProjects = { projects }
+            $0.date = .constant(Self.referenceDate)
+        }
+
+        await store.send(.didTapEdit) {
+            $0.isLoadingProjects = true
+            $0.mode = .editing
+            $0.editFields = SecretMetaFields(secret: secret, payload: payload, projectIds: [])
+            $0.editFieldsBaseline = $0.editFields
+            $0.editPayloadBaseline = payload
+        }
+        await store.receive(.availableProjectsResponse(.success(projects))) {
+            $0.isLoadingProjects = false
+            $0.availableProjects = projects
+        }
+    }
+
+    /// 프로젝트 연결만 못 바꿀 뿐 나머지 필드는 영향이 없으므로 편집을 계속할 수 있게 둔다.
+    @Test("프로젝트 목록 조회 실패: alert를 띄우되 편집 모드는 유지한다")
+    func availableProjectsFailure_keepsEditing() async {
+        let secret = Self.makeSecret()
+        let payload = Self.editablePayload
+
+        let store = TestStore(
+            initialState: {
+                var state = SecretDetailFeature.State(secret: secret)
+                state.payloadState = .loaded(payload)
+                return state
+            }()
+        ) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.fetchProjects = { throw ProjectUseCaseError.unexpected }
+            $0.date = .constant(Self.referenceDate)
+        }
+
+        await store.send(.didTapEdit) {
+            $0.isLoadingProjects = true
+            $0.mode = .editing
+            $0.editFields = SecretMetaFields(secret: secret, payload: payload, projectIds: [])
+            $0.editFieldsBaseline = $0.editFields
+            $0.editPayloadBaseline = payload
+        }
+        await store.receive(.availableProjectsResponse(.failure(.unexpected))) {
+            $0.isLoadingProjects = false
+            $0.alert = .projectsLoadFailed
+        }
+    }
+
+    /// 전체 재조회를 하지 않는 것이 요지다 — 편집 중인 폼이 그대로 있어야 한다.
+    @Test("프로젝트 생성 시트: 만들어진 프로젝트가 선택 옵션에 더해진다")
+    func createProject_appendsToAvailableProjects() async {
+        let newItem = ProjectItem(id: UUID(), name: "새 프로젝트")
+
+        let store = TestStore(initialState: Self.editingState()) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.date = .constant(Self.referenceDate)
+        }
+
+        await store.send(.didTapCreateProject) {
+            $0.createProject = CreateProjectFeature.State()
+        }
+        await store.send(.createProject(.presented(.delegate(.projectCreated(newItem))))) {
+            $0.availableProjects = [
+                Project(
+                    id: newItem.id, name: newItem.name,
+                    createdAt: Self.referenceDate, updatedAt: Self.referenceDate
+                )
+            ]
+        }
+    }
+}
+
+// MARK: - 편집 Fixtures
+
+@MainActor
+extension SecretDetailFeatureTests {
+
+    /// metadata까지 있는 조합이라야 보존·dirty 판정 경로가 함께 걸린다.
+    fileprivate static var editablePayload: CreateSecretPayload {
+        .apiKey(APIKeyPayload(value: "ghp_x"), APIKeyMetadata(scope: "repo:read"))
+    }
+
+    /// 편집 진입을 마친 상태. `beginEditing`이 세우는 것과 같은 조합이어야 한다.
+    fileprivate static func editingState(
+        secret: Secret = makeSecret(name: "GitHub Token"),
+        projectIds: [Project.ID] = []
+    ) -> SecretDetailFeature.State {
+        let payload = editablePayload
+        var state = SecretDetailFeature.State(secret: secret)
+        state.payloadState = .loaded(payload)
+        let fields = SecretMetaFields(secret: secret, payload: payload, projectIds: projectIds)
+        state.editFields = fields
+        state.editFieldsBaseline = fields
+        state.editPayloadBaseline = payload
+        state.mode = .editing
+        return state
     }
 }
