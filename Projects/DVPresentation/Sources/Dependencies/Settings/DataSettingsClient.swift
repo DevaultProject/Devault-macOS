@@ -6,7 +6,7 @@ import ComposableArchitecture
 public struct DataSettingsClient: Sendable {
   /// 현재 활성 저장소가 iCloud 동기화 구성인지 확인한다.
   public var isICloudSyncEnabled: @Sendable () -> Bool = { false }
-  /// 재인증 후 모든 Secret·Project를 영구 삭제한다. 되돌릴 수 없다.
+  /// 재인증 후 모든 Secret·Project를 영구 삭제한다. 백업과 암호화 키는 유지한다.
   public var deleteAllData: @Sendable () async throws -> Void
 }
 
