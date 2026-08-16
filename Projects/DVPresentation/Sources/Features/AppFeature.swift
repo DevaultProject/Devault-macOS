@@ -116,7 +116,7 @@ public struct AppFeature {
           } catch {
             return
           }
-          appLaunchClient.setICloudLastSyncedAt(detectedAt)
+          appLaunchClient.setICloudLastUpdateDetectedAt(detectedAt)
           await appLaunchClient.syncExpiryNotifications()
           await send(.iCloudRemoteChangeHandled)
         }

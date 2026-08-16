@@ -11,6 +11,9 @@ public final class LocalStorage {
     }
 
     public static func makeDefault(iCloudSyncEnabled: Bool) throws -> LocalStorage {
+        // local/cloud 모드 모두 같은 "Synced" 저장소를 사용한다. 동기화를 꺼도 이 Mac의
+        // 데이터와 CloudKit 데이터는 삭제하지 않고, CloudKit mirroring만 비활성화한다.
+        // 다시 켜면 같은 로컬 저장소가 CloudKit과 변경사항을 병합한다.
         let syncedConfiguration = ModelConfiguration(
             "Synced",
             schema: Schema.syncedSchema,

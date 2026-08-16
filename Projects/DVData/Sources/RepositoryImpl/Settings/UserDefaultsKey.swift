@@ -7,7 +7,7 @@ enum UserDefaultsKey: String {
 
   // iCloud
   case isICloudSyncEnabled
-  case iCloudLastSyncedAt
+  case iCloudLastUpdateDetectedAt
 
   // General
   case isLaunchAtLoginEnabled

@@ -35,23 +35,17 @@ extension ICloudSettingsClient: @retroactive DependencyKey {
         ) else { return }
         NSWorkspace.shared.open(url)
       },
-      lastSyncedAt: {
-        useCase.lastSyncedAt()
+      lastUpdateDetectedAt: {
+        useCase.lastUpdateDetectedAt()
       },
-      setLastSyncedAt: { date in
-        useCase.setLastSyncedAt(date)
+      setLastUpdateDetectedAt: { date in
+        useCase.setLastUpdateDetectedAt(date)
       },
       remoteChangeStream: {
         useCase.remoteChangeStream()
       },
       accountStatus: {
         await useCase.accountStatus()
-      },
-      syncedSecretCount: {
-        try await LiveRepositories.secret.count(SecretQuery(collection: .all))
-      },
-      syncedProjectCount: {
-        try await LiveRepositories.project.fetchAll().count
       }
     )
   }()

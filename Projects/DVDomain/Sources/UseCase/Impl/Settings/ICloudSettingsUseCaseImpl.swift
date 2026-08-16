@@ -32,11 +32,11 @@ public struct ICloudSettingsUseCaseImpl: ICloudSettingsUseCase {
     iCloudService.remoteChangeStream()
   }
 
-  public func lastSyncedAt() -> Date? {
-    repository.iCloudLastSyncedAt()
+  public func lastUpdateDetectedAt() -> Date? {
+    repository.iCloudLastUpdateDetectedAt()
   }
 
-  public func setLastSyncedAt(_ date: Date) {
-    repository.setICloudLastSyncedAt(date)
+  public func setLastUpdateDetectedAt(_ date: Date) {
+    repository.setICloudLastUpdateDetectedAt(date)
   }
 }

@@ -16,9 +16,9 @@ public struct ICloudSettingsFeature {
   public struct State: Equatable {
     var isSyncEnabled = false
     var isTogglingSync = false
-    var lastSyncedAt: Date?
-    var syncedSecretCount: Int?
-    var syncedProjectCount: Int?
+    var isRefreshingStatus = false
+    var accountStatus: ICloudAccountStatus?
+    var lastUpdateDetectedAt: Date?
     @Presents var alert: AlertState<Action.Alert>?
 
     public init() {}
@@ -32,24 +32,34 @@ public struct ICloudSettingsFeature {
 
     case binding(BindingAction<State>)
     case task
-    case didTapSyncNow
+    case didTapRefreshStatus
 
     // MARK: - Internal
 
     case enableSyncStatusResponse(ICloudAccountStatus)
+    case refreshStatusResponse(ICloudAccountStatus)
     case remoteChangeDetected
-    case countsResponse(secretCount: Int, projectCount: Int)
-    case countsFailed
     case syncSettingResponse(enabled: Bool, succeeded: Bool)
 
     // MARK: - Child
 
     case alert(PresentationAction<Alert>)
 
+    // MARK: - Delegate
+
+    case delegate(Delegate)
+
     public enum Alert: Equatable {
-      case retry
+      case retryEnable
+      case retryDisable
+      case retryRefreshStatus
+      case confirmDisableSync
       case continueWithoutSync
       case openSystemSettings
+    }
+
+    public enum Delegate: Equatable {
+      case storageDidSwitch
     }
   }
 
@@ -66,9 +76,10 @@ public struct ICloudSettingsFeature {
       switch action {
       case .task:
         state.isSyncEnabled = iCloudSettingsClient.isEnabled()
-        state.lastSyncedAt = iCloudSettingsClient.lastSyncedAt()
+        state.lastUpdateDetectedAt = iCloudSettingsClient.lastUpdateDetectedAt()
+        state.isRefreshingStatus = state.isSyncEnabled
         return .merge(
-          refreshCountsEffect(),
+          state.isSyncEnabled ? requestRefreshStatusEffect() : .none,
           .run { send in
             for await _ in iCloudSettingsClient.remoteChangeStream() {
               await send(.remoteChangeDetected)
@@ -78,8 +89,9 @@ public struct ICloudSettingsFeature {
 
       case .binding(\.isSyncEnabled):
         guard state.isSyncEnabled else {
-          state.isTogglingSync = true
-          return applySyncSettingEffect(false)
+          state.isSyncEnabled = true
+          state.alert = disableSyncConfirmationAlert
+          return .none
         }
         state.isTogglingSync = true
         return requestICloudAccountStatusEffect()
@@ -87,50 +99,65 @@ public struct ICloudSettingsFeature {
       case .enableSyncStatusResponse(let status):
         return handleEnableSyncStatusResponse(&state, status: status)
 
+      case .refreshStatusResponse(let status):
+        state.isRefreshingStatus = false
+        state.accountStatus = status
+        guard status != .available else { return .none }
+        state.alert = makeICloudSyncUnavailableAlert(
+          status,
+          retry: .retryRefreshStatus,
+          continueWithoutSync: nil,
+          openSystemSettings: .openSystemSettings
+        )
+        return .none
+
       case .binding:
         return .none
 
-      case .didTapSyncNow:
-        return refreshCountsEffect()
+      case .didTapRefreshStatus:
+        guard state.isSyncEnabled, !state.isRefreshingStatus else { return .none }
+        state.isRefreshingStatus = true
+        return requestRefreshStatusEffect()
 
       case .remoteChangeDetected:
-        state.lastSyncedAt = now
-        return .merge(
-          .run { [now] _ in iCloudSettingsClient.setLastSyncedAt(now) },
-          refreshCountsEffect()
-        )
-
-      case .countsResponse(let secretCount, let projectCount):
-        state.syncedSecretCount = secretCount
-        state.syncedProjectCount = projectCount
-        return .none
-
-      case .countsFailed:
-        state.syncedSecretCount = nil
-        state.syncedProjectCount = nil
-        return .none
+        state.lastUpdateDetectedAt = now
+        return .run { [now] _ in iCloudSettingsClient.setLastUpdateDetectedAt(now) }
 
       case let .syncSettingResponse(enabled, succeeded):
         state.isTogglingSync = false
         guard succeeded else {
           state.isSyncEnabled = !enabled
-          if enabled {
-            state.alert = makeICloudSyncUnavailableAlert(
-              .configurationUnavailable,
-              retry: .retry,
-              continueWithoutSync: .continueWithoutSync,
-              openSystemSettings: .openSystemSettings
-            )
-          }
+          state.accountStatus = .configurationUnavailable
+          state.alert = makeICloudSyncUnavailableAlert(
+            .configurationUnavailable,
+            retry: enabled ? .retryEnable : .retryDisable,
+            continueWithoutSync: enabled ? .continueWithoutSync : nil,
+            openSystemSettings: .openSystemSettings
+          )
           return .none
         }
         state.isSyncEnabled = enabled
-        return .none
+        state.accountStatus = enabled ? .available : nil
+        return .send(.delegate(.storageDidSwitch))
 
-      case .alert(.presented(.retry)):
+      case .alert(.presented(.retryEnable)):
         state.isSyncEnabled = true
         state.isTogglingSync = true
         return requestICloudAccountStatusEffect()
+
+      case .alert(.presented(.retryDisable)):
+        state.isSyncEnabled = false
+        state.isTogglingSync = true
+        return applySyncSettingEffect(false)
+
+      case .alert(.presented(.retryRefreshStatus)):
+        state.isRefreshingStatus = true
+        return requestRefreshStatusEffect()
+
+      case .alert(.presented(.confirmDisableSync)):
+        state.isSyncEnabled = false
+        state.isTogglingSync = true
+        return applySyncSettingEffect(false)
 
       case .alert(.presented(.continueWithoutSync)):
         return .none
@@ -139,6 +166,9 @@ public struct ICloudSettingsFeature {
         return .run { _ in iCloudSettingsClient.openSystemSettings() }
 
       case .alert:
+        return .none
+
+      case .delegate:
         return .none
       }
     }
@@ -150,8 +180,23 @@ public struct ICloudSettingsFeature {
 
 extension ICloudSettingsFeature {
 
-  private enum CancelID {
-    case refreshCounts
+  private var disableSyncConfirmationAlert: AlertState<Action.Alert> {
+    AlertState {
+      TextState(String.module("Turn Off iCloud Sync?"))
+    } actions: {
+      ButtonState(role: .destructive, action: .confirmDisableSync) {
+        TextState(String.module("Turn Off"))
+      }
+      ButtonState(role: .cancel) {
+        TextState(String.module("Cancel"))
+      }
+    } message: {
+      TextState(
+        String.module(
+          "Data on this Mac and in iCloud won't be deleted. Future changes on this Mac won't sync until iCloud Sync is turned on again."
+        )
+      )
+    }
   }
 
   private func handleEnableSyncStatusResponse(
@@ -163,7 +208,7 @@ extension ICloudSettingsFeature {
       state.isSyncEnabled = false
       state.alert = makeICloudSyncUnavailableAlert(
         status,
-        retry: .retry,
+        retry: .retryEnable,
         continueWithoutSync: .continueWithoutSync,
         openSystemSettings: .openSystemSettings
       )
@@ -179,6 +224,13 @@ extension ICloudSettingsFeature {
     }
   }
 
+  private func requestRefreshStatusEffect() -> Effect<Action> {
+    .run { send in
+      let status = await iCloudSettingsClient.accountStatus()
+      await send(.refreshStatusResponse(status))
+    }
+  }
+
   private func applySyncSettingEffect(_ enabled: Bool) -> Effect<Action> {
     .run { send in
       do {
@@ -190,20 +242,4 @@ extension ICloudSettingsFeature {
     }
   }
 
-  /// iCloud가 꺼져 있어도 로컬 개수는 그대로 유효한 값이라 계속 보여준다 — 켜져 있을 때만
-  /// "동기화된" 개수라는 의미가 더해질 뿐, 조회 자체는 항상 가능하다.
-  private func refreshCountsEffect() -> Effect<Action> {
-    .run { send in
-      do {
-        async let secretCount = iCloudSettingsClient.syncedSecretCount()
-        async let projectCount = iCloudSettingsClient.syncedProjectCount()
-        let (secrets, projects) = try await (secretCount, projectCount)
-        await send(.countsResponse(secretCount: secrets, projectCount: projects))
-      } catch is CancellationError {
-      } catch {
-        await send(.countsFailed)
-      }
-    }
-    .cancellable(id: CancelID.refreshCounts, cancelInFlight: true)
-  }
 }
