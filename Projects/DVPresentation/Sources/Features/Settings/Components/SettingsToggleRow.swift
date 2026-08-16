@@ -11,8 +11,8 @@ struct SettingsToggleRow: View {
   @Binding var isOn: Bool
 
   var body: some View {
-    HStack(alignment: .top, spacing: 12) {
-      VStack(alignment: .leading, spacing: 4) {
+    HStack(alignment: .center) {
+      VStack(alignment: .leading, spacing: 2) {
         Text(title)
           .dvFont(.bodyLG)
           .foregroundStyle(Color.dv(.gray900))
@@ -24,10 +24,33 @@ struct SettingsToggleRow: View {
       }
       Spacer(minLength: 12)
       Toggle("", isOn: $isOn)
-        .labelsHidden()
         .toggleStyle(.switch)
+        .labelsHidden()
         .accessibilityLabel(title)
     }
-    .padding(.vertical, 8)
+    .settingsRowLayout()
   }
+}
+
+// MARK: - Preview
+
+#Preview("Settings Toggle Row") {
+  Form {
+    Section {
+      SettingsToggleRow(
+        title: "Require authentication on app launch",
+        description: "Authenticate before showing saved secrets.",
+        isOn: .constant(true)
+      )
+
+      SettingsToggleRow(
+        title: "Require authentication to copy secret",
+        isOn: .constant(false)
+      )
+    }
+  }
+  .formStyle(.grouped)
+  .scrollContentBackground(.hidden)
+  .frame(width: 656)
+  .background(Color.dv(.gray100))
 }

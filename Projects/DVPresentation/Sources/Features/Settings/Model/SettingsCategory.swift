@@ -2,7 +2,7 @@
 
 // MARK: - SettingsCategory
 
-enum SettingsCategory: String, Equatable, CaseIterable, Hashable, Sendable {
+public enum SettingsCategory: String, Equatable, CaseIterable, Hashable, Sendable {
   case general
   case security
   case icloud
@@ -15,7 +15,7 @@ enum SettingsCategory: String, Equatable, CaseIterable, Hashable, Sendable {
     switch self {
     case .general:       .module("General")
     case .security:      .module("Security")
-    case .icloud:         .module("iCloud")
+    case .icloud:        .module("iCloud")
     case .notifications: .module("Notifications")
     case .shortcuts:     .module("Shortcuts")
     case .data:          .module("Data")
@@ -27,7 +27,7 @@ enum SettingsCategory: String, Equatable, CaseIterable, Hashable, Sendable {
     switch self {
     case .general:       "gearshape"
     case .security:      "lock.shield"
-    case .icloud:         "icloud"
+    case .icloud:        "icloud"
     case .notifications: "bell"
     case .shortcuts:     "keyboard"
     case .data:          "externaldrive"
