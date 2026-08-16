@@ -3,6 +3,7 @@
 import SwiftUI
 
 import ComposableArchitecture
+import DVDesign
 
 // MARK: - AppView
 
@@ -18,17 +19,11 @@ public struct AppView: View {
     self.store = store
   }
 
-  // MARK: - Metrics
-
-  private enum Metrics {
-    static let screenFade: Animation = .easeInOut(duration: 0.25)
-  }
-
   // MARK: - Body
 
   public var body: some View {
     content
-      .animation(Metrics.screenFade, value: store.screen)
+      .animation(MotionMetrics.transition, value: store.screen)
       // 진행 오버레이를 그리는 유일한 지점 (`.omc/GUIDELINES.md`).
       .windowBusyOverlay()
       .task { store.send(.task) }
