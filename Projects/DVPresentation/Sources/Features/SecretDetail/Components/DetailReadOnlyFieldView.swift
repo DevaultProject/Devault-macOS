@@ -146,6 +146,7 @@ extension DetailReadOnlyFieldView {
         .foregroundStyle(Color.dv(.gray900))
         .buttonStyle(.plain)
     }
+}
 
 // MARK: - Preview
 
