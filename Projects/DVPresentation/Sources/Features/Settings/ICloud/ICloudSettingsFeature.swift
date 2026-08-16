@@ -8,35 +8,45 @@ import DVDomain
 // MARK: - ICloudSettingsFeature
 
 @Reducer
-struct ICloudSettingsFeature {
+public struct ICloudSettingsFeature {
 
   // MARK: - State
 
   @ObservableState
-  struct State: Equatable {
+  public struct State: Equatable {
     var isSyncEnabled = false
     var isTogglingSync = false
     var lastSyncedAt: Date?
     var syncedSecretCount: Int?
     var syncedProjectCount: Int?
-    /// 토글 직후 앱을 재시작해야 실제로 반영된다는 안내. `LiveStorage`가 앱 실행 중 재구성되지
-    /// 않기 때문 — 후속 이슈(런타임 hot-swap) 전까지의 임시 UX.
-    var showsRestartBanner = false
     @Presents var alert: AlertState<Action.Alert>?
+
+    public init() {}
   }
 
   // MARK: - Action
 
-  enum Action: Equatable {
+  public enum Action: BindableAction, Equatable {
+
+    // MARK: - View
+
+    case binding(BindingAction<State>)
     case task
-    case didToggleSync(Bool)
-    case enableSyncStatusResponse(ICloudAccountStatus)
     case didTapSyncNow
+
+    // MARK: - Internal
+
+    case enableSyncStatusResponse(ICloudAccountStatus)
     case remoteChangeDetected
     case countsResponse(secretCount: Int, projectCount: Int)
+    case countsFailed
+    case syncSettingResponse(enabled: Bool, succeeded: Bool)
+
+    // MARK: - Child
+
     case alert(PresentationAction<Alert>)
 
-    enum Alert: Equatable {
+    public enum Alert: Equatable {
       case retry
       case continueWithoutSync
       case openSystemSettings
@@ -45,53 +55,40 @@ struct ICloudSettingsFeature {
 
   // MARK: - Dependencies
 
-  @Dependency(\.settingsClient) var settingsClient
-  @Dependency(\.iCloudSyncStatusClient) var iCloudSyncStatusClient
+  @Dependency(\.iCloudSettingsClient) var iCloudSettingsClient
   @Dependency(\.date.now) var now
 
   // MARK: - Body
 
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
+    BindingReducer()
     Reduce { state, action in
       switch action {
       case .task:
-        state.isSyncEnabled = settingsClient.isICloudSyncEnabled()
-        state.lastSyncedAt = iCloudSyncStatusClient.lastSyncedAt()
+        state.isSyncEnabled = iCloudSettingsClient.isEnabled()
+        state.lastSyncedAt = iCloudSettingsClient.lastSyncedAt()
         return .merge(
           refreshCountsEffect(),
           .run { send in
-            for await _ in iCloudSyncStatusClient.remoteChangeStream() {
+            for await _ in iCloudSettingsClient.remoteChangeStream() {
               await send(.remoteChangeDetected)
             }
           }
         )
 
-      case .didToggleSync(let enabled):
-        guard enabled else {
-          state.isSyncEnabled = false
-          state.showsRestartBanner = true
-          return .run { _ in settingsClient.setICloudSyncEnabled(false) }
+      case .binding(\.isSyncEnabled):
+        guard state.isSyncEnabled else {
+          state.isTogglingSync = true
+          return applySyncSettingEffect(false)
         }
         state.isTogglingSync = true
-        return .run { send in
-          let status = await iCloudSyncStatusClient.accountStatus()
-          await send(.enableSyncStatusResponse(status))
-        }
+        return requestICloudAccountStatusEffect()
 
       case .enableSyncStatusResponse(let status):
-        state.isTogglingSync = false
-        guard status == .available else {
-          state.alert = makeICloudSyncUnavailableAlert(
-            status,
-            retry: .retry,
-            continueWithoutSync: .continueWithoutSync,
-            openSystemSettings: .openSystemSettings
-          )
-          return .none
-        }
-        state.isSyncEnabled = true
-        state.showsRestartBanner = true
-        return .run { _ in settingsClient.setICloudSyncEnabled(true) }
+        return handleEnableSyncStatusResponse(&state, status: status)
+
+      case .binding:
+        return .none
 
       case .didTapSyncNow:
         return refreshCountsEffect()
@@ -99,7 +96,7 @@ struct ICloudSettingsFeature {
       case .remoteChangeDetected:
         state.lastSyncedAt = now
         return .merge(
-          .run { [now] _ in iCloudSyncStatusClient.setLastSyncedAt(now) },
+          .run { [now] _ in iCloudSettingsClient.setLastSyncedAt(now) },
           refreshCountsEffect()
         )
 
@@ -108,14 +105,38 @@ struct ICloudSettingsFeature {
         state.syncedProjectCount = projectCount
         return .none
 
+      case .countsFailed:
+        state.syncedSecretCount = nil
+        state.syncedProjectCount = nil
+        return .none
+
+      case let .syncSettingResponse(enabled, succeeded):
+        state.isTogglingSync = false
+        guard succeeded else {
+          state.isSyncEnabled = !enabled
+          if enabled {
+            state.alert = makeICloudSyncUnavailableAlert(
+              .configurationUnavailable,
+              retry: .retry,
+              continueWithoutSync: .continueWithoutSync,
+              openSystemSettings: .openSystemSettings
+            )
+          }
+          return .none
+        }
+        state.isSyncEnabled = enabled
+        return .none
+
       case .alert(.presented(.retry)):
-        return .send(.didToggleSync(true))
+        state.isSyncEnabled = true
+        state.isTogglingSync = true
+        return requestICloudAccountStatusEffect()
 
       case .alert(.presented(.continueWithoutSync)):
         return .none
 
       case .alert(.presented(.openSystemSettings)):
-        return .run { _ in settingsClient.openICloudSystemSettings() }
+        return .run { _ in iCloudSettingsClient.openSystemSettings() }
 
       case .alert:
         return .none
@@ -127,20 +148,62 @@ struct ICloudSettingsFeature {
 
 // MARK: - Private
 
-private extension ICloudSettingsFeature {
-  /// iCloud가 꺼져 있어도 로컬 개수는 그대로 유효한 값이라 계속 보여준다 — 켜져 있을 때만
-  /// "동기화된" 개수라는 의미가 더해질 뿐, 조회 자체는 항상 가능하다.
-  func refreshCountsEffect() -> Effect<Action> {
+extension ICloudSettingsFeature {
+
+  private enum CancelID {
+    case refreshCounts
+  }
+
+  private func handleEnableSyncStatusResponse(
+    _ state: inout State,
+    status: ICloudAccountStatus
+  ) -> Effect<Action> {
+    guard status == .available else {
+      state.isTogglingSync = false
+      state.isSyncEnabled = false
+      state.alert = makeICloudSyncUnavailableAlert(
+        status,
+        retry: .retry,
+        continueWithoutSync: .continueWithoutSync,
+        openSystemSettings: .openSystemSettings
+      )
+      return .none
+    }
+    return applySyncSettingEffect(true)
+  }
+
+  private func requestICloudAccountStatusEffect() -> Effect<Action> {
+    .run { send in
+      let status = await iCloudSettingsClient.accountStatus()
+      await send(.enableSyncStatusResponse(status))
+    }
+  }
+
+  private func applySyncSettingEffect(_ enabled: Bool) -> Effect<Action> {
     .run { send in
       do {
-        async let secretCount = iCloudSyncStatusClient.syncedSecretCount()
-        async let projectCount = iCloudSyncStatusClient.syncedProjectCount()
+        try await iCloudSettingsClient.setEnabled(enabled)
+        await send(.syncSettingResponse(enabled: enabled, succeeded: true))
+      } catch {
+        await send(.syncSettingResponse(enabled: enabled, succeeded: false))
+      }
+    }
+  }
+
+  /// iCloud가 꺼져 있어도 로컬 개수는 그대로 유효한 값이라 계속 보여준다 — 켜져 있을 때만
+  /// "동기화된" 개수라는 의미가 더해질 뿐, 조회 자체는 항상 가능하다.
+  private func refreshCountsEffect() -> Effect<Action> {
+    .run { send in
+      do {
+        async let secretCount = iCloudSettingsClient.syncedSecretCount()
+        async let projectCount = iCloudSettingsClient.syncedProjectCount()
         let (secrets, projects) = try await (secretCount, projectCount)
         await send(.countsResponse(secretCount: secrets, projectCount: projects))
       } catch is CancellationError {
       } catch {
-        // 카운트 조회 실패는 카드에 값만 비워두고 조용히 무시한다 — 동기화 자체를 막을 이유가 아니다.
+        await send(.countsFailed)
       }
     }
+    .cancellable(id: CancelID.refreshCounts, cancelInFlight: true)
   }
 }

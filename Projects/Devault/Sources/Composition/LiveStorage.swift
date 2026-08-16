@@ -1,21 +1,74 @@
 // Copyright © 2026 Devault. All rights reserved
 
 import OSLog
+
 import DVData
 import DVDomain
 
-/// Composition Root에서 공유하는 ModelContainer 단일 인스턴스.
-enum LiveStorage {
+/// 앱에서 사용하는 저장소 구성을 지연 생성하고, iCloud 설정 변경 시 Repository 묶음을 원자적으로 교체한다.
+actor LiveStorage {
   private static let logger = Logger(subsystem: "com.devault", category: "LiveStorage")
 
-  // shared는 static let이라 앱 실행 중 isICloudSyncEnabled가 바뀌어도 이미 만들어진 ModelContainer에는 반영되지 않는다.
-  // TODO: Settings 화면에서 토글을 지원하려면 재시작 안내를 띄우거나, ModelContainer를 런타임에 재생성하는 hot-swap이 필요하다.
-  static let shared: LocalStorage = {
+  private struct RepositorySet {
+    let storage: LocalStorage
+    let secret: any SecretRepository
+    let project: any ProjectRepository
+    let dataReset: any DataResetRepository
+    let isICloudSyncEnabled: Bool
+  }
+
+  private let settingsRepository: any SettingsRepository
+  private var current: RepositorySet?
+
+  init(settingsRepository: any SettingsRepository) {
+    self.settingsRepository = settingsRepository
+  }
+
+  func secretRepository() throws -> any SecretRepository {
+    try repositories().secret
+  }
+
+  func projectRepository() throws -> any ProjectRepository {
+    try repositories().project
+  }
+
+  func dataResetRepository() throws -> any DataResetRepository {
+    try repositories().dataReset
+  }
+
+  /// 새 Repository 묶음 생성에 성공한 경우에만 현재 구성을 교체한다.
+  func configure(iCloudSyncEnabled: Bool) throws {
+    guard current?.isICloudSyncEnabled != iCloudSyncEnabled else { return }
+    current = try makeRepositorySet(iCloudSyncEnabled: iCloudSyncEnabled)
+  }
+}
+
+private extension LiveStorage {
+  private func repositories() throws -> RepositorySet {
+    if let current { return current }
+
+    let repositorySet = try makeRepositorySet(
+      iCloudSyncEnabled: settingsRepository.isICloudSyncEnabled()
+    )
+    current = repositorySet
+    return repositorySet
+  }
+
+  private func makeRepositorySet(iCloudSyncEnabled: Bool) throws -> RepositorySet {
     do {
-      return try LocalStorage.makeDefault(iCloudSyncEnabled: LiveRepositories.settings.isICloudSyncEnabled())
+      let storage = try LocalStorage.makeDefault(iCloudSyncEnabled: iCloudSyncEnabled)
+      return RepositorySet(
+        storage: storage,
+        secret: SecretRepositoryImpl(modelContainer: storage.modelContainer),
+        project: ProjectRepositoryImpl(modelContainer: storage.modelContainer),
+        dataReset: DataResetRepositoryImpl(modelContainer: storage.modelContainer),
+        isICloudSyncEnabled: iCloudSyncEnabled
+      )
     } catch {
-      logger.critical("LocalStorage 초기화 실패: \(error, privacy: .public)")
-      fatalError("LocalStorage 초기화 실패 — 앱을 재시작하거나 데이터를 복원하세요.\n\(error)")
+      Self.logger.error(
+        "저장소 구성 실패(iCloud: \(iCloudSyncEnabled)): \(error, privacy: .public)"
+      )
+      throw error
     }
-  }()
+  }
 }

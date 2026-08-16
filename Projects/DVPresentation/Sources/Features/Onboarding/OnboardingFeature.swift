@@ -117,13 +117,18 @@ public struct OnboardingFeature {
         return .none
 
       case .didTapNotNow:
-        return .send(.delegate(.completed))
+        state.isEnablingSync = true
+        return continueWithoutICloudEffect()
 
       case .didTapEnableSync:
         state.isEnablingSync = true
         return .run { send in
-          let status = await onboardingClient.enableICloudSync()
-          await send(.iCloudSyncStatusResponse(status))
+          do {
+            let status = try await onboardingClient.enableICloudSync()
+            await send(.iCloudSyncStatusResponse(status))
+          } catch {
+            await send(.iCloudSyncStatusResponse(.configurationUnavailable))
+          }
         }
 
       case .iCloudSyncStatusResponse(let status):
@@ -148,7 +153,8 @@ public struct OnboardingFeature {
         return .send(.didTapEnableSync)
 
       case .alert(.presented(.continueWithoutSync)):
-        return .send(.delegate(.completed))
+        state.isEnablingSync = true
+        return continueWithoutICloudEffect()
 
       case .alert(.presented(.openSystemSettings)):
         return .run { _ in await onboardingClient.openICloudSystemSettings() }
@@ -179,5 +185,12 @@ private extension OnboardingFeature {
       continueWithoutSync: .continueWithoutSync,
       openSystemSettings: .openSystemSettings
     )
+  }
+
+  func continueWithoutICloudEffect() -> Effect<Action> {
+    .run { send in
+      await onboardingClient.continueWithoutICloud()
+      await send(.delegate(.completed))
+    }
   }
 }

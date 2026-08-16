@@ -1,16 +1,23 @@
 // Copyright © 2026 Devault. All rights reserved
 
 import CloudKit
+import CoreData
+import Foundation
+
 import DVCore
 import DVDomain
 
-public struct CloudKitAccountServiceImpl: ICloudAccountService {
+public struct ICloudServiceImpl: ICloudService {
 
     private let container: CKContainer
+    private let storageConfigurator: @Sendable (Bool) async throws -> Void
 
-    /// - Parameter containerIdentifier: entitlements에 등록된 iCloud 컨테이너 식별자
-    public init(containerIdentifier: String) {
+    public init(
+        containerIdentifier: String,
+        storageConfigurator: @escaping @Sendable (Bool) async throws -> Void
+    ) {
         self.container = CKContainer(identifier: containerIdentifier)
+        self.storageConfigurator = storageConfigurator
     }
 
     public func fetchAccountStatus() async -> ICloudAccountStatus {
@@ -45,5 +52,26 @@ public struct CloudKitAccountServiceImpl: ICloudAccountService {
         } catch {
             return .couldNotDetermine
         }
+    }
+
+    public func remoteChangeStream() -> AsyncStream<Void> {
+        AsyncStream { continuation in
+            // SwiftData+CloudKit도 내부적으로 Core Data 스택을 사용하므로 원격 변경 시
+            // NSPersistentStoreRemoteChange가 시스템 NotificationCenter에 게시된다.
+            let observer = NotificationCenter.default.addObserver(
+                forName: .NSPersistentStoreRemoteChange,
+                object: nil,
+                queue: nil
+            ) { _ in
+                continuation.yield(())
+            }
+            continuation.onTermination = { _ in
+                NotificationCenter.default.removeObserver(observer)
+            }
+        }
+    }
+
+    public func configureStorage(iCloudSyncEnabled: Bool) async throws {
+        try await storageConfigurator(iCloudSyncEnabled)
     }
 }
