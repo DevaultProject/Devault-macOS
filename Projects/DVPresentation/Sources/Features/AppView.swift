@@ -22,6 +22,8 @@ public struct AppView: View {
 
   public var body: some View {
     content
+      // 진행 오버레이를 그리는 유일한 지점 (`.omc/GUIDELINES.md`).
+      .windowBusyOverlay()
       .task { store.send(.task) }
   }
 }
