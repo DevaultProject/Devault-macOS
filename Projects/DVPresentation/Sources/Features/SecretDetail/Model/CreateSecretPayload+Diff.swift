@@ -50,7 +50,11 @@ extension CreateSecretPayload {
         // 서브타입이 고정이므로 도달할 수 없다. 도달했다면 매핑 버그이고, 그때 변경 없음으로
         // 처리하면 사용자 입력이 조용히 사라진다 — 보수적으로 둘 다 다시 쓴다.
         default:
-            assertionFailure("서브타입이 다른 payload 조합: \(baseline) → \(updated)")
+            // payload를 그대로 보간하면 연관값의 평문(API 키·개인키·클라이언트 시크릿)이
+            // 문자열에 실린다. `assertionFailure` 메시지는 Debug 크래시 리포트에 남으므로
+            // 리포트가 수집·공유되는 순간 시크릿이 함께 나간다. 진단에 필요한 것은 어느 case끼리
+            // 어긋났는지뿐이라 값 없는 이름만 남긴다.
+            assertionFailure("서브타입이 다른 payload 조합: \(baseline.caseName) → \(updated.caseName)")
             return (true, true)
         }
     }
@@ -87,6 +91,27 @@ extension CreateSecretPayload {
         case .sslTlsCertificate(_, let metadata): return metadata != nil
         case .licenseKey(_, let metadata):        return metadata != nil
         case .environmentVariableSet, .custom:    return false
+        }
+    }
+
+    /// 값을 뺀 case 이름. **진단 문자열에는 이것만 쓴다** — payload를 그대로 보간하면
+    /// 연관값의 평문 시크릿이 로그·크래시 리포트로 새어 나간다.
+    ///
+    /// `String(describing:)`이나 `Mirror`로도 이름을 얻을 수 있지만 둘 다 값에 닿는다.
+    /// 여기서 명시적으로 나열하면 값이 실릴 길 자체가 없고, case가 늘면 컴파일러가 알려준다.
+    var caseName: String {
+        switch self {
+        case .apiKey:                 return "apiKey"
+        case .accessToken:            return "accessToken"
+        case .webhookSecret:          return "webhookSecret"
+        case .oauthClient:            return "oauthClient"
+        case .serviceAccount:         return "serviceAccount"
+        case .database:               return "database"
+        case .sshKey:                 return "sshKey"
+        case .sslTlsCertificate:      return "sslTlsCertificate"
+        case .environmentVariableSet: return "environmentVariableSet"
+        case .licenseKey:             return "licenseKey"
+        case .custom:                 return "custom"
         }
     }
 }
