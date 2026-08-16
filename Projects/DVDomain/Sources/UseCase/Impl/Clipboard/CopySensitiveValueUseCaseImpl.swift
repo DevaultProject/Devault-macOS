@@ -5,7 +5,7 @@ import Foundation
 import DVCore
 
 /// `ClipboardService`(pasteboard I/O)와 `SecurityNotificationService`(알림)를 조합해
-/// 복사 후 30초 자동 정리, 반복 복사 시 비정상 접근 알림 정책을 구현한다.
+/// 설정된 시간 후 자동 정리, 반복 복사 시 비정상 접근 알림 정책을 구현한다.
 /// 반복 판단 로직 자체는 `AbnormalAccessMonitor`(순수·테스트 가능)에 위임한다.
 ///
 /// 알림 발송 실패는 복사 자체를 실패시키지 않는다 — 로깅만 하고 삼킨다.
@@ -15,12 +15,9 @@ public actor CopySensitiveValueUseCaseImpl: CopySensitiveValueUseCase {
 
     private let clipboardService: any ClipboardService
     private let notificationService: any SecurityNotificationService
-    /// 호출마다 새로 읽는다 — 설정 화면에서 값을 바꾸면 다음 복사부터 바로 반영되어야 한다.
-    /// nil이면 자동 정리를 사용하지 않는다.
-    private let clipboardClearDelay: @Sendable () -> Duration?
+    private let settingsRepository: any SettingsRepository
     private let now: @Sendable () -> ContinuousClock.Instant
-    /// 호출마다 새로 읽는다. 꺼져 있어도 카운팅 자체는 계속한다.
-    private let isAbnormalAccessAlertEnabled: @Sendable () -> Bool
+    private let sleep: @Sendable (Duration) async throws -> Void
     private let abnormalAccessMonitor = AbnormalAccessMonitor(
         window: abnormalAccessWindow,
         threshold: abnormalAccessThreshold
@@ -29,15 +26,17 @@ public actor CopySensitiveValueUseCaseImpl: CopySensitiveValueUseCase {
     public init(
         clipboardService: any ClipboardService,
         notificationService: any SecurityNotificationService,
-        clipboardClearDelay: @escaping @Sendable () -> Duration? = { .seconds(30) },
+        settingsRepository: any SettingsRepository,
         now: @escaping @Sendable () -> ContinuousClock.Instant = { ContinuousClock.now },
-        isAbnormalAccessAlertEnabled: @escaping @Sendable () -> Bool = { true }
+        sleep: @escaping @Sendable (Duration) async throws -> Void = {
+            try await Task.sleep(for: $0)
+        }
     ) {
         self.clipboardService = clipboardService
         self.notificationService = notificationService
-        self.clipboardClearDelay = clipboardClearDelay
+        self.settingsRepository = settingsRepository
         self.now = now
-        self.isAbnormalAccessAlertEnabled = isAbnormalAccessAlertEnabled
+        self.sleep = sleep
     }
 
     public func execute(_ value: String) async throws {
@@ -45,10 +44,16 @@ public actor CopySensitiveValueUseCaseImpl: CopySensitiveValueUseCase {
         let changeCount = try clipboardService.write(value)
 
         // 알림 발송이 오래 걸려도 정리 시작 시점이 밀리지 않도록, 값을 쓰자마자 먼저 스케줄링한다.
-        // execute()를 30초씩 붙잡아둘 수 없으므로 별도 Task로 분리, 필요한 값만 캡처해서 넘김
-        if let delay = clipboardClearDelay() {
-            Task { [clipboardService, notificationService] in
-                try? await Task.sleep(for: delay)
+        // execute()를 설정 시간만큼 붙잡아둘 수 없으므로 별도 Task로 분리, 필요한 값만 캡처해서 넘김
+        if settingsRepository.isAutoClearClipboardEnabled() {
+            let delay = Duration.seconds(settingsRepository.autoClearClipboardDelaySeconds())
+            let sleep = self.sleep
+            Task { [clipboardService, notificationService, sleep] in
+                do {
+                    try await sleep(delay)
+                } catch {
+                    return
+                }
                 // changeCount가 그대로면 방치된 것으로 보고 정리, 바뀌었으면 아무것도 하지 않음
                 guard clipboardService.clearIfUnchanged(from: changeCount) else { return }
                 do {
@@ -61,7 +66,8 @@ public actor CopySensitiveValueUseCaseImpl: CopySensitiveValueUseCase {
         }
 
         // 반복 복사 알림 발송
-        if abnormalAccessMonitor.recordAccess(at: now()), isAbnormalAccessAlertEnabled() {
+        if abnormalAccessMonitor.recordAccess(at: now()),
+           settingsRepository.isClipboardAbnormalAccessAlertEnabled() {
             do {
                 try await notificationService.notify(
                     .abnormalAccess(kind: .repeatedCopy, threshold: Self.abnormalAccessThreshold)

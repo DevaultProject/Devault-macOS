@@ -107,9 +107,10 @@ struct RevealSecretPayloadUseCaseImplTests {
             cryptoService: cryptoService,
             authenticateUseCase: AuthenticateUseCaseImpl(
                 authenticationService: authenticationService,
-                notificationService: FakeSecurityNotificationService()
+                notificationService: FakeSecurityNotificationService(),
+                settingsRepository: settingsRepository
             ),
-            securitySettingsUseCase: SecuritySettingsUseCaseImpl(repository: settingsRepository)
+            settingsRepository: settingsRepository
         )
     }
 }

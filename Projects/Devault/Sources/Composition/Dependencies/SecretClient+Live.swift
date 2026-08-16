@@ -12,9 +12,6 @@ extension SecretClient: @retroactive DependencyKey {
         let projectRepo = LiveRepositories.project
         let cryptoService: any SecretCryptoService = SecretCryptoServiceImpl()
         let authenticateUseCase: any AuthenticateUseCase = LiveUseCases.authenticate
-        let securitySettingsUseCase: any SecuritySettingsUseCase = SecuritySettingsUseCaseImpl(
-            repository: LiveRepositories.settings
-        )
         let fetchSecretUseCase: any FetchSecretUseCase = FetchSecretUseCaseImpl(
             repository: secretRepo
         )
@@ -22,7 +19,7 @@ extension SecretClient: @retroactive DependencyKey {
             repository: secretRepo,
             cryptoService: cryptoService,
             authenticateUseCase: authenticateUseCase,
-            securitySettingsUseCase: securitySettingsUseCase
+            settingsRepository: LiveRepositories.settings
         )
         let deleteSecretUseCase: any DeleteSecretUseCase = DeleteSecretUseCaseImpl(
             repository: secretRepo
