@@ -234,8 +234,11 @@ struct MainFeatureTests {
         projectName: "Backend"
       )
     }
-    await store.receive(.sidebar(.refresh))
+    await store.receive(.sidebar(.refresh)) {
+      $0.sidebar.isRefreshingProjects = true
+    }
     await store.receive(.sidebar(.projectsResponse(.success([item])))) {
+      $0.sidebar.isRefreshingProjects = false
       $0.sidebar.projectsState = .loaded([item])
     }
     await store.receive(.sidebar(.countsResponse(.success(SecretCounts())))) {
@@ -263,8 +266,11 @@ struct MainFeatureTests {
       $0.createProject = nil
       // selection 및 secretList 변경 없음
     }
-    await store.receive(.sidebar(.refresh))
+    await store.receive(.sidebar(.refresh)) {
+      $0.sidebar.isRefreshingProjects = true
+    }
     await store.receive(.sidebar(.projectsResponse(.success([item])))) {
+      $0.sidebar.isRefreshingProjects = false
       $0.sidebar.projectsState = .loaded([item])
     }
     await store.receive(.sidebar(.countsResponse(.success(SecretCounts())))) {
@@ -441,8 +447,11 @@ struct MainFeatureTests {
     }
 
     await store.send(.secretDetail(.delegate(.projectsChanged)))
-    await store.receive(.sidebar(.refresh))
+    await store.receive(.sidebar(.refresh)) {
+      $0.sidebar.isRefreshingProjects = true
+    }
     await store.receive(.sidebar(.projectsResponse(.success(created)))) {
+      $0.sidebar.isRefreshingProjects = false
       $0.sidebar.projectsState = .loaded(IdentifiedArray(uniqueElements: created))
     }
     await store.receive(.sidebar(.countsResponse(.success(SecretCounts())))) {
@@ -468,8 +477,11 @@ struct MainFeatureTests {
     }
 
     await store.send(.createSecret(.delegate(.projectsChanged)))
-    await store.receive(.sidebar(.refresh))
+    await store.receive(.sidebar(.refresh)) {
+      $0.sidebar.isRefreshingProjects = true
+    }
     await store.receive(.sidebar(.projectsResponse(.success(created)))) {
+      $0.sidebar.isRefreshingProjects = false
       $0.sidebar.projectsState = .loaded(IdentifiedArray(uniqueElements: created))
     }
     await store.receive(.sidebar(.countsResponse(.success(SecretCounts())))) {
@@ -588,8 +600,11 @@ struct MainFeatureTests {
       )
     }
     // 이후 refetch로 목록도 동기화
-    await store.receive(.sidebar(.refresh))
+    await store.receive(.sidebar(.refresh)) {
+      $0.sidebar.isRefreshingProjects = true
+    }
     await store.receive(.sidebar(.projectsResponse(.success([renamed])))) {
+      $0.sidebar.isRefreshingProjects = false
       $0.sidebar.projectsState = .loaded([renamed])
     }
     await store.receive(.sidebar(.countsResponse(.success(SecretCounts())))) {

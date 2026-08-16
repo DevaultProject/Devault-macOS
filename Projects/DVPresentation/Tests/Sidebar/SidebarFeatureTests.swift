@@ -45,6 +45,35 @@ struct SidebarFeatureTests {
     }
   }
 
+  /// 2컬럼 ↔ 3컬럼 전환으로 사이드바가 다시 만들어지면 `.task`가 한 번 더 실행된다.
+  /// 여기서 `.loading`으로 되돌리면 생성 화면을 드나들 때마다 사이드바가 깜빡인다.
+  @Test("이미 로드된 상태에서 task가 다시 실행돼도 값을 비우지 않는다")
+  func taskAfterReloadKeepsLoadedValues() async {
+    let projects = [ProjectItem(id: UUID(), name: "Backend")]
+    let counts = SecretCounts(byFilter: [.all: 5], byProject: [:])
+
+    var initial = SidebarFeature.State()
+    initial.projectsState = .loaded(IdentifiedArray(uniqueElements: projects))
+    initial.countsState = .loaded(counts)
+
+    let store = TestStore(initialState: initial) {
+      SidebarFeature()
+    } withDependencies: {
+      $0.sidebarClient.fetchProjects = { projects }
+      $0.sidebarClient.fetchCounts = { _, _ in counts }
+      $0.date = .constant(Self.referenceDate)
+    }
+
+    // `projectsState`·`countsState`를 단언하지 않는 것 자체가 검증이다 — 바뀌면 전수 검사에 걸린다.
+    await store.send(.task) {
+      $0.isRefreshingProjects = true
+    }
+    await store.receive(.projectsResponse(.success(projects))) {
+      $0.isRefreshingProjects = false
+    }
+    await store.receive(.countsResponse(.success(counts)))
+  }
+
   @Test("task fetch 실패 시 projectsState가 .failed로 전환된다")
   func taskFetchFailureSetsFailedState() async {
     let counts = SecretCounts(byFilter: [.all: 5], byProject: [:])
@@ -208,8 +237,11 @@ struct SidebarFeatureTests {
     }
     await store.receive(.renameResponse(.success(renamed)))
     await store.receive(.delegate(.projectRenamed(renamed)))
-    await store.receive(.refresh)
+    await store.receive(.refresh) {
+      $0.isRefreshingProjects = true
+    }
     await store.receive(.projectsResponse(.success([renamed]))) {
+      $0.isRefreshingProjects = false
       $0.projectsState = .loaded([renamed])
     }
     await store.receive(.countsResponse(.success(SecretCounts()))) {
@@ -321,8 +353,11 @@ struct SidebarFeatureTests {
       $0.selection = .filter(.all)
     }
     await store.receive(.delegate(.selectionChanged(.filter(.all))))
-    await store.receive(.refresh)
+    await store.receive(.refresh) {
+      $0.isRefreshingProjects = true
+    }
     await store.receive(.projectsResponse(.success([]))) {
+      $0.isRefreshingProjects = false
       $0.projectsState = .loaded([])
     }
     await store.receive(.countsResponse(.success(SecretCounts()))) {
