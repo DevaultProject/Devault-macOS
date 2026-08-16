@@ -1,8 +1,8 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import AppKit
 import SwiftUI
 
-import ComposableArchitecture
 import DVDesign
 
 /// 조회 모드 전용 읽기 전용 필드 (`DVLabeledField` + 값 컨테이너).

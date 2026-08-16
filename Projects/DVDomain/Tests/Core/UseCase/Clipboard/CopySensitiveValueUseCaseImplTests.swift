@@ -15,6 +15,7 @@ struct CopySensitiveValueUseCaseImplTests {
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: FakeSecurityNotificationService(),
+            settingsRepository: makeSettingsRepository(),
             now: { self.fixedInstant }
         )
 
@@ -30,6 +31,7 @@ struct CopySensitiveValueUseCaseImplTests {
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: FakeSecurityNotificationService(),
+            settingsRepository: makeSettingsRepository(),
             now: { self.fixedInstant }
         )
 
@@ -45,6 +47,7 @@ struct CopySensitiveValueUseCaseImplTests {
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: notificationService,
+            settingsRepository: makeSettingsRepository(),
             now: { self.fixedInstant }
         )
 
@@ -66,8 +69,10 @@ struct CopySensitiveValueUseCaseImplTests {
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: notificationService,
-            now: { self.fixedInstant },
-            isAbnormalAccessAlertEnabled: { false }
+            settingsRepository: makeSettingsRepository(
+                isClipboardAbnormalAccessAlertEnabled: false
+            ),
+            now: { self.fixedInstant }
         )
 
         for _ in 0..<5 {
@@ -81,35 +86,40 @@ struct CopySensitiveValueUseCaseImplTests {
         #expect(abnormalAccessCount == 0)
     }
 
-    @Test("정해진 시간 뒤 pasteboard가 그대로면 정리하고 clipboardExceeded 알림을 보낸다")
+    @Test("설정된 시간 뒤 pasteboard가 그대로면 정리하고 clipboardExceeded 알림을 보낸다")
     func executeClearsAndNotifiesWhenUnchanged() async throws {
         let clipboardService = FakeClipboardService()
         let notificationService = FakeSecurityNotificationService()
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: notificationService,
-            clipboardClearDelay: { .milliseconds(10) },
-            now: { self.fixedInstant }
+            settingsRepository: makeSettingsRepository(
+                isAutoClearClipboardEnabled: true,
+                autoClearClipboardDelaySeconds: 15
+            ),
+            now: { self.fixedInstant },
+            sleep: { _ in }
         )
 
         try await sut.execute("secret-value")
         try await Task.sleep(for: .milliseconds(100))
 
         #expect(clipboardService.clearIfUnchangedCalls == [clipboardService.changeCountToReturn])
-        // clipboardClearDelay가 10ms(=0초)이므로, 알림 문구도 하드코딩된 값이 아니라
-        // 실제 delay에서 계산된 0초여야 한다(30초 리터럴이 남아있었다면 이 테스트가 실패했을 것).
-        #expect(notificationService.notified.contains(.clipboardExceeded(seconds: 0)))
+        #expect(notificationService.notified.contains(.clipboardExceeded(seconds: 15)))
     }
 
-    @Test("clipboardClearDelay가 nil이면 자동 정리를 예약하지 않는다")
-    func executeSkipsAutoClearWhenDelayIsNil() async throws {
+    @Test("클립보드 자동 비우기가 꺼져 있으면 정리를 예약하지 않는다")
+    func executeSkipsAutoClearWhenDisabled() async throws {
         let clipboardService = FakeClipboardService()
         let notificationService = FakeSecurityNotificationService()
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: notificationService,
-            clipboardClearDelay: { nil },
-            now: { self.fixedInstant }
+            settingsRepository: makeSettingsRepository(
+                isAutoClearClipboardEnabled: false
+            ),
+            now: { self.fixedInstant },
+            sleep: { _ in }
         )
 
         try await sut.execute("secret-value")
@@ -118,7 +128,7 @@ struct CopySensitiveValueUseCaseImplTests {
         #expect(clipboardService.clearIfUnchangedCalls.isEmpty)
     }
 
-    @Test("그 사이 다른 값이 복사됐으면(changeCount 변경) 정리·알림 모두 하지 않는다")
+    @Test("그 사이 다른 값이 복사됐으면 정리와 알림을 모두 건너뛴다")
     func executeSkipsWhenPasteboardChanged() async throws {
         let clipboardService = FakeClipboardService()
         clipboardService.clearIfUnchangedResult = false
@@ -126,13 +136,31 @@ struct CopySensitiveValueUseCaseImplTests {
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: notificationService,
-            clipboardClearDelay: { .milliseconds(10) },
-            now: { self.fixedInstant }
+            settingsRepository: makeSettingsRepository(
+                isAutoClearClipboardEnabled: true,
+                autoClearClipboardDelaySeconds: 15
+            ),
+            now: { self.fixedInstant },
+            sleep: { _ in }
         )
 
         try await sut.execute("secret-value")
         try await Task.sleep(for: .milliseconds(100))
 
-        #expect(!notificationService.notified.contains(.clipboardExceeded(seconds: 0)))
+        #expect(!notificationService.notified.contains(.clipboardExceeded(seconds: 15)))
+    }
+}
+
+extension CopySensitiveValueUseCaseImplTests {
+    private func makeSettingsRepository(
+        isAutoClearClipboardEnabled: Bool = false,
+        autoClearClipboardDelaySeconds: Int = 30,
+        isClipboardAbnormalAccessAlertEnabled: Bool = true
+    ) -> FakeSettingsRepository {
+        let repository = FakeSettingsRepository()
+        repository.isAutoClearClipboardEnabledValue = isAutoClearClipboardEnabled
+        repository.autoClearClipboardDelaySecondsValue = autoClearClipboardDelaySeconds
+        repository.isClipboardAbnormalAccessAlertEnabledValue = isClipboardAbnormalAccessAlertEnabled
+        return repository
     }
 }

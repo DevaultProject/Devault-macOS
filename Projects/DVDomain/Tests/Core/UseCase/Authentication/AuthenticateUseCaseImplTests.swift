@@ -16,6 +16,7 @@ struct AuthenticateUseCaseImplTests {
         let sut = AuthenticateUseCaseImpl(
             authenticationService: authenticationService,
             notificationService: FakeSecurityNotificationService(),
+            settingsRepository: FakeSettingsRepository(),
             now: { self.fixedInstant }
         )
 
@@ -32,6 +33,7 @@ struct AuthenticateUseCaseImplTests {
         let sut = AuthenticateUseCaseImpl(
             authenticationService: authenticationService,
             notificationService: notificationService,
+            settingsRepository: FakeSettingsRepository(),
             now: { self.fixedInstant }
         )
 
@@ -50,6 +52,7 @@ struct AuthenticateUseCaseImplTests {
         let sut = AuthenticateUseCaseImpl(
             authenticationService: authenticationService,
             notificationService: notificationService,
+            settingsRepository: FakeSettingsRepository(),
             postNotificationDelay: .milliseconds(0),
             now: { self.fixedInstant }
         )
@@ -69,12 +72,14 @@ struct AuthenticateUseCaseImplTests {
         let authenticationService = StubUserAuthenticationService()
         authenticationService.errorOnAuthenticate = .failed
         let notificationService = FakeSecurityNotificationService()
+        let settingsRepository = FakeSettingsRepository()
+        settingsRepository.isAuthFailureAlertEnabledValue = false
         let sut = AuthenticateUseCaseImpl(
             authenticationService: authenticationService,
             notificationService: notificationService,
+            settingsRepository: settingsRepository,
             postNotificationDelay: .milliseconds(0),
-            now: { self.fixedInstant },
-            isAlertEnabled: { false }
+            now: { self.fixedInstant }
         )
 
         for _ in 0..<3 {
@@ -91,6 +96,7 @@ struct AuthenticateUseCaseImplTests {
         let sut = AuthenticateUseCaseImpl(
             authenticationService: authenticationService,
             notificationService: notificationService,
+            settingsRepository: FakeSettingsRepository(),
             now: { self.fixedInstant }
         )
 

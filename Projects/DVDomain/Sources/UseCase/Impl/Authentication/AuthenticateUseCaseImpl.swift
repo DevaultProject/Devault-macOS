@@ -19,11 +19,9 @@ public actor AuthenticateUseCaseImpl: AuthenticateUseCase {
 
     private let authenticationService: any UserAuthenticationService
     private let notificationService: any SecurityNotificationService
+    private let settingsRepository: any SettingsRepository
     private let postNotificationDelay: Duration
     private let now: @Sendable () -> ContinuousClock.Instant
-    /// 호출마다 새로 읽는다. 꺼져 있어도 카운팅 자체는 계속한다 — 나중에 다시 켰을 때
-    /// 그 사이 실패가 없었던 것처럼 되지 않도록.
-    private let isAlertEnabled: @Sendable () -> Bool
     private let abnormalAccessMonitor = AbnormalAccessMonitor(
         window: abnormalAccessWindow,
         threshold: abnormalAccessThreshold
@@ -32,15 +30,15 @@ public actor AuthenticateUseCaseImpl: AuthenticateUseCase {
     public init(
         authenticationService: any UserAuthenticationService,
         notificationService: any SecurityNotificationService,
+        settingsRepository: any SettingsRepository,
         postNotificationDelay: Duration = .milliseconds(300),
-        now: @escaping @Sendable () -> ContinuousClock.Instant = { ContinuousClock.now },
-        isAlertEnabled: @escaping @Sendable () -> Bool = { true }
+        now: @escaping @Sendable () -> ContinuousClock.Instant = { ContinuousClock.now }
     ) {
         self.authenticationService = authenticationService
         self.notificationService = notificationService
+        self.settingsRepository = settingsRepository
         self.postNotificationDelay = postNotificationDelay
         self.now = now
-        self.isAlertEnabled = isAlertEnabled
     }
 
     public func authenticate(reason: String) async throws {
@@ -48,7 +46,8 @@ public actor AuthenticateUseCaseImpl: AuthenticateUseCase {
             try await authenticationService.authenticate(reason: reason)
         } catch {
             // 성공했다면 실패로 기록하지 않는다 — 인증 실패만 비정상 접근 신호로 본다.
-            if abnormalAccessMonitor.recordAccess(at: now()), isAlertEnabled() {
+            if abnormalAccessMonitor.recordAccess(at: now()),
+               settingsRepository.isAuthFailureAlertEnabled() {
                 do {
                     try await notificationService.notify(
                         .abnormalAccess(kind: .authenticationFailure, threshold: Self.abnormalAccessThreshold)
