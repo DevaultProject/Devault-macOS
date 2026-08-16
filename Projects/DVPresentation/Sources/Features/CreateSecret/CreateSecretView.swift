@@ -53,10 +53,19 @@ extension CreateSecretView {
         )
     }
 
-    /// 중간 스크롤 영역. secretType에 따라 대응 SectionView로 분기.
+    /// 중간 스크롤 영역. 타입별 분기는 `SecretFormSectionsView`가 맡는다 — 수정 화면과 공유한다.
     private var scrollContent: some View {
         ScrollView {
-            typeSpecificSection
+            SecretFormSectionsView(
+                secretType: store.secretType,
+                subType: store.selectedSubType,
+                meta: $store.meta,
+                availableProjects: store.availableProjects,
+                serviceCandidates: store.serviceCandidates,
+                validationErrors: store.validationErrors,
+                detectedServices: store.detectedServices,
+                onCreateProject: { store.send(.didTapCreateProject) }
+            )
         }
         .scrollIndicators(.hidden)
         .disabled(store.isSaving)
@@ -71,184 +80,6 @@ extension CreateSecretView {
             }
         }
     }
-
-    @ViewBuilder
-    private var typeSpecificSection: some View {
-        switch store.secretType {
-        case .apiKeyToken:
-            APIKeysTokenSectionView(
-                name: $store.meta.name,
-                projectIds: $store.meta.projectIds,
-                service: $store.meta.service,
-                expireDate: $store.meta.expireDate,
-                environment: $store.meta.environment,
-                memo: $store.meta.memo,
-                apiKeyToken: $store.meta.content.typed(\.apiKeyToken, default: APIKeyTokenFields()),
-                availableProjects: store.availableProjects,
-                serviceCandidates: store.serviceCandidates,
-                validationErrors: store.validationErrors,
-                detectedServices: store.detectedServices,
-                onCreateProject: { store.send(.didTapCreateProject) }
-            )
-
-        case .oauth:
-            oauthSection
-
-        case .database:
-            DatabaseSectionView(
-                name: $store.meta.name,
-                projectIds: $store.meta.projectIds,
-                service: $store.meta.service,
-                expireDate: $store.meta.expireDate,
-                environment: $store.meta.environment,
-                memo: $store.meta.memo,
-                database: $store.meta.content.typed(\.database, default: DatabaseFields()),
-                availableProjects: store.availableProjects,
-                serviceCandidates: store.serviceCandidates,
-                validationErrors: store.validationErrors,
-                detectedServices: store.detectedServices,
-                onCreateProject: { store.send(.didTapCreateProject) }
-            )
-
-        case .sshAndCredentials:
-            sshAndCredentialsSection
-
-        case .environmentVariableSet:
-            EnvSetSectionView(
-                name: $store.meta.name,
-                projectIds: $store.meta.projectIds,
-                environment: $store.meta.environment,
-                memo: $store.meta.memo,
-                envSet: $store.meta.content.typed(\.envSet, default: EnvSetFields()),
-                availableProjects: store.availableProjects,
-                validationErrors: store.validationErrors,
-                detectedServices: store.detectedServices,
-                onCreateProject: { store.send(.didTapCreateProject) }
-            )
-
-        case .etc:
-            etcSection
-        }
-    }
-
-    /// etc는 2개 subtype(licenseKey / custom)이 서로 다른 필드 구성 —
-    /// SectionView를 분리하고 selectedSubType으로 분기.
-    @ViewBuilder
-    private var etcSection: some View {
-        switch store.selectedSubType {
-        case .licenseKey:
-            LicenseKeySectionView(
-                name: $store.meta.name,
-                projectIds: $store.meta.projectIds,
-                service: $store.meta.service,
-                expireDate: $store.meta.expireDate,
-                memo: $store.meta.memo,
-                licenseKey: $store.meta.content.typed(\.licenseKey, default: LicenseKeyFields()),
-                availableProjects: store.availableProjects,
-                serviceCandidates: store.serviceCandidates,
-                validationErrors: store.validationErrors,
-                detectedServices: store.detectedServices,
-                onCreateProject: { store.send(.didTapCreateProject) }
-            )
-
-        case .custom:
-            CustomSectionView(
-                name: $store.meta.name,
-                projectIds: $store.meta.projectIds,
-                service: $store.meta.service,
-                expireDate: $store.meta.expireDate,
-                environment: $store.meta.environment,
-                memo: $store.meta.memo,
-                custom: $store.meta.content.typed(\.custom, default: CustomFields()),
-                availableProjects: store.availableProjects,
-                serviceCandidates: store.serviceCandidates,
-                validationErrors: store.validationErrors,
-                detectedServices: store.detectedServices,
-                onCreateProject: { store.send(.didTapCreateProject) }
-            )
-
-        default:
-            EmptyView()
-        }
-    }
-
-    /// sshAndCredentials는 2개 subtype(sshKey / sslTlsCertificate)이 서로 다른 필드 구성 —
-    /// SectionView를 분리하고 selectedSubType으로 분기.
-    @ViewBuilder
-    private var sshAndCredentialsSection: some View {
-        switch store.selectedSubType {
-        case .sshKey:
-            SSHKeySectionView(
-                name: $store.meta.name,
-                projectIds: $store.meta.projectIds,
-                environment: $store.meta.environment,
-                memo: $store.meta.memo,
-                sshKey: $store.meta.content.typed(\.sshKey, default: SSHKeyFields()),
-                availableProjects: store.availableProjects,
-                validationErrors: store.validationErrors,
-                detectedServices: store.detectedServices,
-                onCreateProject: { store.send(.didTapCreateProject) }
-            )
-
-        case .sslTlsCertificate:
-            SSLTLSCertSectionView(
-                name: $store.meta.name,
-                projectIds: $store.meta.projectIds,
-                environment: $store.meta.environment,
-                memo: $store.meta.memo,
-                sslCert: $store.meta.content.typed(\.sslTlsCertificate, default: SSLCertFields()),
-                availableProjects: store.availableProjects,
-                validationErrors: store.validationErrors,
-                detectedServices: store.detectedServices,
-                onCreateProject: { store.send(.didTapCreateProject) }
-            )
-
-        default:
-            EmptyView()
-        }
-    }
-
-    /// OAuth는 2개 subtype(oauthClient / serviceAccount)이 서로 다른 필드 구성 —
-    /// SectionView를 분리하고 selectedSubType으로 분기.
-    @ViewBuilder
-    private var oauthSection: some View {
-        switch store.selectedSubType {
-        case .oauthClient:
-            OAuthClientSectionView(
-                name: $store.meta.name,
-                projectIds: $store.meta.projectIds,
-                service: $store.meta.service,
-                expireDate: $store.meta.expireDate,
-                environment: $store.meta.environment,
-                memo: $store.meta.memo,
-                oauthClient: $store.meta.content.typed(\.oauthClient, default: OAuthClientFields()),
-                availableProjects: store.availableProjects,
-                serviceCandidates: store.serviceCandidates,
-                validationErrors: store.validationErrors,
-                detectedServices: store.detectedServices,
-                onCreateProject: { store.send(.didTapCreateProject) }
-            )
-
-        case .serviceAccount:
-            ServiceAccountSectionView(
-                name: $store.meta.name,
-                projectIds: $store.meta.projectIds,
-                service: $store.meta.service,
-                expireDate: $store.meta.expireDate,
-                memo: $store.meta.memo,
-                serviceAccount: $store.meta.content.typed(\.serviceAccount, default: ServiceAccountFields()),
-                availableProjects: store.availableProjects,
-                serviceCandidates: store.serviceCandidates,
-                validationErrors: store.validationErrors,
-                detectedServices: store.detectedServices,
-                onCreateProject: { store.send(.didTapCreateProject) }
-            )
-
-        default:
-            EmptyView()
-        }
-    }
-
 
     /// FIXED BOTTOM. Cancel + Save 액션 바.
     private var footer: some View {
