@@ -32,8 +32,7 @@ extension SecretQuery {
     public enum Collection: Equatable, Sendable {
         case all
         case liked
-        /// 만료 배지(critical/upcoming)가 붙는 대상만 모은 컬렉션. 이미 만료된 것은 제외한다 —
-        /// Expired 탭이 "이미 지남"을 전담하므로 여기서까지 중복해 보여줄 이유가 없다.
+        /// 아직 안 지났지만 곧 지날 것만 모은 컬렉션. Expired(30일)의 부분집합이며, 이미 지난 건 제외한다.
         case notice(referenceDate: Date)
         case expired(referenceDate: Date)
         case deleted
@@ -42,6 +41,11 @@ extension SecretQuery {
         /// Notice에 담을 "만료 임박" 기간(일). 목록 행 배지의 upcoming window(7일)와 같은 기준을 써야
         /// 사이드바 카드 숫자와 배지가 뜨는 시크릿 집합이 어긋나지 않는다.
         public static let noticeWindowDays = 7
+
+        /// `referenceDate`로부터 `noticeWindowDays`만큼 민 시각.
+        public static func noticeWindowEnd(from referenceDate: Date) -> Date {
+            referenceDate.addingTimeInterval(TimeInterval(noticeWindowDays) * 86_400)
+        }
 
         /// Expired 범위에 함께 담을 "만료 예정" 기간(일).
         public static let expiringSoonWindowDays = 30

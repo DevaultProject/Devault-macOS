@@ -3,6 +3,7 @@
 import Foundation
 
 import DVDesign
+import DVDomain
 
 /// 만료 임박 표기 정책의 단일 정의부 — 목록(`SecretListView`)과 조회(`DetailExpireDateFieldView`)가 함께 쓴다.
 ///
@@ -27,7 +28,8 @@ enum SecretExpiryStatus: Equatable {
     static let criticalWindow: TimeInterval = 3 * secondsPerDay
 
     /// 남은 기간이 ``criticalWindow`` 초과이면서 이 값 이하면 ``upcoming``.
-    static let upcomingWindow: TimeInterval = 7 * secondsPerDay
+    /// Notice 탭과 같은 "7일" 기준을 쓰기 위해 `noticeWindowDays`에서 파생시킨다.
+    static let upcomingWindow = TimeInterval(SecretQuery.Collection.noticeWindowDays) * secondsPerDay
 
     /// 만료일로부터 상태를 산출한다. 만료일이 없거나 ``upcomingWindow``보다 멀면 `nil` — 아무 표시도 하지 않는다.
     ///

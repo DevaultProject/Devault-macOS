@@ -4,6 +4,7 @@ import Foundation
 import Testing
 
 import DVDesign
+import DVDomain
 
 @testable import DVPresentation
 
@@ -92,5 +93,14 @@ struct SecretExpiryStatusTests {
     func windowConstants() {
         #expect(SecretExpiryStatus.criticalWindow == 3 * 86_400)
         #expect(SecretExpiryStatus.upcomingWindow == 7 * 86_400)
+    }
+
+    /// Notice 탭 기준과 어긋나면 같은 시크릿이 한쪽에만 보이는 모순이 생긴다.
+    @Test("upcomingWindow는 SecretQuery.Collection.noticeWindowDays와 같은 기준이다")
+    func upcomingWindowMatchesNoticeWindowDays() {
+        #expect(
+            SecretExpiryStatus.upcomingWindow
+                == TimeInterval(SecretQuery.Collection.noticeWindowDays) * 86_400
+        )
     }
 }

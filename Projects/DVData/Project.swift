@@ -13,5 +13,12 @@ let project = Project.project(
                 .core(),
             ]
         ),
+        .tests(
+            name: "DVDataTests",
+            dependencies: [
+                .data(),
+                .domain(),
+            ]
+        ),
     ]
 )

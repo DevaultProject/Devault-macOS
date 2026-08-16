@@ -35,9 +35,22 @@ struct SecretQueryTests {
         #expect(a != b)
     }
 
-    @Test("noticeWindowDays는 7일이다 — 목록 행 배지의 upcoming window와 같은 기준")
-    func noticeWindowDaysMatchesUpcomingWindow() {
+    @Test("noticeWindowDays는 7일이다")
+    func noticeWindowDaysIsSevenDays() {
+        // upcomingWindow와의 일치 여부는 DVPresentation쪽 SecretExpiryStatusTests가 검증한다.
         #expect(SecretQuery.Collection.noticeWindowDays == 7)
+    }
+
+    @Test("noticeWindowEnd는 referenceDate를 noticeWindowDays만큼 민 시각이다")
+    func noticeWindowEndShiftsReferenceDate() {
+        let referenceDate = Date(timeIntervalSince1970: 0)
+
+        let windowEnd = SecretQuery.Collection.noticeWindowEnd(from: referenceDate)
+
+        let expected = referenceDate.addingTimeInterval(
+            TimeInterval(SecretQuery.Collection.noticeWindowDays) * 86_400
+        )
+        #expect(windowEnd == expected)
     }
 
     @Test("expiringWindow는 기준일을 expiringSoonWindowDays만큼 민 expired 컬렉션을 만든다")
