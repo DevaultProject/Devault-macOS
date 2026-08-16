@@ -67,7 +67,8 @@ extension SettingsView {
       }
     }
     .listStyle(.sidebar)
-    // 메인 화면 사이드바와 같은 값으로 고정한다. 설정을 드나들 때 폭이 달라지지 않는다.
+    // 메인 화면 사이드바와 같은 값으로 고정한다(`MainView.sidebarColumn`). 설정을 드나들 때
+    // 사이드바 폭이 달라지지 않고, 범위를 없애 `.balanced`가 폭을 재분배할 여지도 남기지 않는다.
     .navigationSplitViewColumnWidth(
       min: WindowLayoutMetrics.sidebarWidth,
       ideal: WindowLayoutMetrics.sidebarWidth,

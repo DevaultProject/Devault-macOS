@@ -23,7 +23,6 @@ struct CreateSecretFeatureTests {
         let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
             CreateSecretFeature()
         } withDependencies: {
-            // 기본 환경은 이 테스트의 관심사가 아니다. State 초기값과 같은 값을 물려 폼이 그대로이게 한다.
             $0.generalSettingsClient.defaultEnvironment = { "dev" }
             $0.projectClient.fetchProjects = { projects }
         }
@@ -103,8 +102,7 @@ struct CreateSecretFeatureTests {
     /// `.dev`에 떨어져야 한다 — 폼이 빈 선택으로 열리면 안 된다.
     @Test("task: 설정에 알 수 없는 환경이 저장돼 있으면 dev로 떨어진다")
     func task_unknownDefaultEnvironment_fallsBackToDev() async {
-        // 초기값을 `.dev`가 아닌 것으로 두고 시작한다. `.dev`에서 출발하면 "폴백해서 dev가 됐다"와
-        // "아무것도 하지 않았다"가 같은 결과라 단언이 공허해진다.
+        // `.dev`에서 출발하면 "폴백했다"와 "아무것도 안 했다"가 같은 결과라 단언이 공허해진다.
         var initial = CreateSecretFeature.State(secretType: .apiKeyToken)
         initial.meta.environment = .prod
 
