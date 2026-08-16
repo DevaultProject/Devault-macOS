@@ -25,6 +25,26 @@ public struct SecretClient: Sendable {
   /// 즐겨찾기 여부를 갱신하고 갱신된 Secret을 반환한다.
   /// payload 복호화가 없으므로 **생체인증을 타지 않는다**(`PatchSecretUseCase.updateSimple`).
   public var setLiked: @Sendable (_ id: Secret.ID, _ liked: Bool) async throws -> Secret
+
+  /// 수정 화면의 저장. 공통 필드·프로젝트 연결과 함께 `change`가 가리키는 것만 다시 쓴다.
+  ///
+  /// `PatchSecretUseCase`의 overload 4개를 그대로 노출하지 않는 이유는 그것들이 제네릭이라
+  /// `@DependencyClient`의 저장 프로퍼티에 담기지 않기 때문이다. 생성 경로가 `dispatchCreateSecret`으로
+  /// 같은 문제를 푼 것과 같은 형태로, Live가 `change`를 보고 overload를 고른다.
+  ///
+  /// **인증을 타지 않는다.** payload를 다시 쓰더라도 암호화만 하고 복호화는 하지 않기 때문이다 —
+  /// 평문은 이미 수정 진입 시점의 `revealPayload`가 인증을 통과해 받아온 것이다.
+  ///
+  /// - Parameter patch: 공통 필드. 바뀐 것만 `.set`, 나머지는 `.unchanged`. 이름 trim과
+  ///   만료일 23:59:59 고정은 도메인(`PatchSecretUseCase`)이 수행하므로 화면에서 맞출 필요가 없다.
+  /// - Parameter projectIds: 연결이 **바뀐 경우에만** `.set`으로 최종 목록 전체를 전달한다.
+  ///   바뀌지 않았으면 `.unchanged` — `.set`은 목록이 같아도 연결을 다시 조정하는 write를 일으킨다.
+  public var updateSecret: @Sendable (
+    _ id: Secret.ID,
+    _ patch: SecretPatch,
+    _ change: SecretContentChange,
+    _ projectIds: PatchField<[Project.ID]>
+  ) async throws -> Secret
   /// 해당 Secret에 연결된 Project 목록. `Secret` 엔티티에는 프로젝트 정보가 없어 별도 조회가 필요하다.
   public var fetchLinkedProjects: @Sendable (_ secretID: Secret.ID) async throws -> [Project]
 
@@ -185,6 +205,19 @@ private extension SecretClient {
       setLiked: { _, liked in
           var secret = Secret.preview
           secret.liked = liked
+          return secret
+      },
+      // 편집한 값이 프리뷰에서도 화면에 반영되도록 patch를 실제로 적용해 돌려준다.
+      // payload·metadata는 프리뷰에서 확인할 대상이 아니라 건드리지 않는다.
+      updateSecret: { id, patch, _, _ in
+          var secret = Secret.preview
+          secret.id = id
+          if case .set(let name) = patch.name { secret.name = name }
+          if case .set(let service) = patch.service { secret.service = service }
+          if case .set(let environment) = patch.environment { secret.environment = environment }
+          if case .set(let expiresAt) = patch.expiresAt { secret.expiresAt = expiresAt }
+          if case .set(let memo) = patch.memo { secret.memo = memo }
+          secret.updatedAt = .now
           return secret
       },
       fetchLinkedProjects: { _ in Array([Project].preview.prefix(1)) },

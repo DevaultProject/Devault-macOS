@@ -76,6 +76,19 @@ extension SecretClient: @retroactive DependencyKey {
                     with: SecretPatch(liked: .set(liked))
                 )
             },
+            updateSecret: { id, patch, change, projectIds in
+                let updated = try await dispatchUpdateSecret(
+                    useCase: patchSecretUseCase,
+                    id: id,
+                    patch: patch,
+                    change: change,
+                    projectIDs: projectIds
+                )
+                // 만료일이 바뀌었을 수 있다. `schedule`은 예약 전에 이전 마크를 먼저 취소하므로
+                // 만료일을 지운 경우의 정리까지 같은 호출이 처리한다.
+                await expiryUseCase.schedule(secret: updated)
+                return updated
+            },
             fetchLinkedProjects: { secretID in
                 try await fetchSecretUseCase.fetchProjects(secretID: secretID)
             },
@@ -101,6 +114,100 @@ extension SecretClient: @retroactive DependencyKey {
             }
         )
     }()
+}
+
+// MARK: - Update Dispatch
+
+/// `SecretContentChange`가 가리키는 것만 다시 쓰도록 `PatchSecretUseCase`의 overload를 고른다.
+///
+/// `dispatchCreateSecret`과 같은 이유로 존재한다 — 도메인 overload가 제네릭이라 Client 경계를
+/// 넘지 못하고, 구체 payload·metadata 타입은 `CreateSecretPayload`의 case에서만 나온다.
+private func dispatchUpdateSecret(
+    useCase: any PatchSecretUseCase,
+    id: UUID,
+    patch: SecretPatch,
+    change: SecretContentChange,
+    projectIDs: PatchField<[UUID]>
+) async throws -> Secret {
+    // metadata 삭제는 overload가 아니라 patch로 표현한다 — metadata overload는 값을 요구해
+    // nil을 실을 수 없는 반면 `SecretPatch.metadata`는 `.set(nil)`을 지원한다.
+    let effectivePatch: SecretPatch = {
+        guard change.clearsMetadata else { return patch }
+        var next = patch
+        next.metadata = .set(nil)
+        return next
+    }()
+
+    /// metadata 스키마가 있는 9개 타입용.
+    func write<Payload: SecretPayloadData, Metadata: SecretMetadataContent>(
+        _ payload: Payload,
+        _ metadata: Metadata?
+    ) async throws -> Secret {
+        // 폼이 metadata의 모든 필드를 비우면 조립 결과가 nil이 된다. 그 삭제는 위 patch가
+        // 이미 처리했으므로 여기서는 값이 있을 때만 metadata overload로 간다.
+        switch (change.writesPayload, change.writesMetadata ? metadata : nil) {
+        case (true, let metadata?):
+            return try await useCase.update(
+                id: id, patch: effectivePatch, payload: payload, metadata: metadata, projectIDs: projectIDs
+            )
+        case (true, nil):
+            return try await useCase.update(
+                id: id, patch: effectivePatch, payload: payload, projectIDs: projectIDs
+            )
+        case (false, let metadata?):
+            return try await useCase.update(
+                id: id, patch: effectivePatch, metadata: metadata, projectIDs: projectIDs
+            )
+        case (false, nil):
+            return try await useCase.update(id: id, patch: effectivePatch, projectIDs: projectIDs)
+        }
+    }
+
+    /// metadata 스키마 자체가 없는 타입용(envSet · custom).
+    func write<Payload: SecretPayloadData>(_ payload: Payload) async throws -> Secret {
+        guard change.writesPayload else {
+            return try await useCase.update(id: id, patch: effectivePatch, projectIDs: projectIDs)
+        }
+        return try await useCase.update(
+            id: id, patch: effectivePatch, payload: payload, projectIDs: projectIDs
+        )
+    }
+
+    // 다시 쓸 내용이 없으면 공통 필드·프로젝트 연결만 반영한다(metadata 삭제 포함).
+    guard let content = change.content else {
+        return try await useCase.update(id: id, patch: effectivePatch, projectIDs: projectIDs)
+    }
+
+    switch content {
+    case .apiKey(let payload, let metadata),
+         .accessToken(let payload, let metadata),
+         .webhookSecret(let payload, let metadata):
+        return try await write(payload, metadata)
+
+    case .oauthClient(let payload, let metadata):
+        return try await write(payload, metadata)
+
+    case .serviceAccount(let payload, let metadata):
+        return try await write(payload, metadata)
+
+    case .database(let payload, let metadata):
+        return try await write(payload, metadata)
+
+    case .sshKey(let payload, let metadata):
+        return try await write(payload, metadata)
+
+    case .sslTlsCertificate(let payload, let metadata):
+        return try await write(payload, metadata)
+
+    case .licenseKey(let payload, let metadata):
+        return try await write(payload, metadata)
+
+    case .environmentVariableSet(let payload):
+        return try await write(payload)
+
+    case .custom(let payload):
+        return try await write(payload)
+    }
 }
 
 // MARK: - Payload Dispatch
