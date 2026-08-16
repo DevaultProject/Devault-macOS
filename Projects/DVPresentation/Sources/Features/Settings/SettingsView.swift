@@ -12,21 +12,14 @@ struct SettingsView: View {
   // MARK: - Properties
 
   @Bindable var store: StoreOf<SettingsFeature>
+  @State private var isBackToAppHovered = false
 
   // MARK: - Body
 
   var body: some View {
-    NavigationSplitView {
-      sidebarColumn
-    } detail: {
-      detailColumn
-    }
-    .navigationSplitViewStyle(.balanced)
-    .toolbar {
-      ToolbarItem(placement: .cancellationAction) {
-        closeButton
-      }
-    }
+    content
+      .navigationSplitViewStyle(.balanced)
+      .tint(Color.dv(.vaultGreen))
   }
 }
 
@@ -34,25 +27,84 @@ struct SettingsView: View {
 
 extension SettingsView {
 
+  private var content: some View {
+    NavigationSplitView {
+      sidebarColumn
+    } detail: {
+      detailColumn
+    }
+  }
+
   private var sidebarColumn: some View {
     List(
-      SettingsCategory.allCases,
-      id: \.self,
-      selection: Binding(
+      selection: Binding<SettingsCategory?>(
         get: { store.selectedCategory },
         set: { newValue in
-          if let newValue { store.send(.didSelectCategory(newValue)) }
+          if let newValue {
+            store.send(.binding(.set(\.selectedCategory, newValue)))
+          }
         }
       )
-    ) { category in
-      Label(category.title, systemImage: category.icon)
+    ) {
+      backToAppRow
+
+      Text(.module("Settings"))
+        .dvFont(.headingLG)
+        .foregroundStyle(Color.dv(.gray900))
+        .listRowSeparator(.hidden)
+
+      ForEach(SettingsCategory.allCases, id: \.self) { category in
+        Label {
+          Text(category.title)
+            .dvFont(.bodyLG)
+        } icon: {
+          Image(systemName: category.icon)
+            .font(.system(size: 15, weight: .medium))
+            .frame(width: 20, height: 20)
+        }
+        .padding(.vertical, 5)
+        .tag(category)
+      }
     }
-    .navigationTitle(String.module("Settings"))
-    .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 240)
+    .listStyle(.sidebar)
+    .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 320)
+  }
+
+  private var backToAppRow: some View {
+    Button {
+      store.send(.didTapClose)
+    } label: {
+      HStack(spacing: 8) {
+        Image(systemName: "arrow.left")
+          .frame(width: 16, height: 16)
+          .fontWeight(.medium)
+        Text(.module("Back to App"))
+          .dvFont(.bodyLG)
+      }
+      .padding(8)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(
+        isBackToAppHovered ? Color.dv(.gray200) : Color.clear,
+        in: RoundedRectangle(cornerRadius: 8)
+      )
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .foregroundStyle(isBackToAppHovered ? Color.dv(.gray900) : Color.dv(.gray700))
+    .listRowSeparator(.hidden)
+    .onHover { isBackToAppHovered = $0 }
+    .animation(.easeOut(duration: 0.12), value: isBackToAppHovered)
+  }
+
+  private var detailColumn: some View {
+    detailContent
+      .frame(maxWidth: 656, maxHeight: .infinity, alignment: .topLeading)
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+      .dvScreenBackground()
   }
 
   @ViewBuilder
-  private var detailColumn: some View {
+  private var detailContent: some View {
     switch store.selectedCategory {
     case .general:
       GeneralSettingsView(store: store.scope(state: \.general, action: \.general))
@@ -62,22 +114,13 @@ extension SettingsView {
       ICloudSettingsView(store: store.scope(state: \.icloud, action: \.icloud))
     case .notifications:
       NotificationsSettingsView(store: store.scope(state: \.notifications, action: \.notifications))
-    case .shortcuts:     ShortcutsSettingsView()
+    case .shortcuts:
+      ShortcutsSettingsView()
     case .data:
       DataSettingsView(store: store.scope(state: \.data, action: \.data))
-    case .about:         AboutSettingsView()
+    case .about:
+      AboutSettingsView(store: store.scope(state: \.about, action: \.about))
     }
-  }
-
-  private var closeButton: some View {
-    Button {
-      store.send(.didTapClose)
-    } label: {
-      Image(systemName: "xmark.circle.fill")
-        .foregroundStyle(Color.dv(.gray500))
-    }
-    .buttonStyle(.plain)
-    .accessibilityLabel(String.module("Close Settings"))
   }
 }
 
@@ -87,7 +130,14 @@ extension SettingsView {
   SettingsView(
     store: Store(initialState: SettingsFeature.State()) {
       SettingsFeature()
+    } withDependencies: {
+      $0.generalSettingsClient = .previewValue
+      $0.securitySettingsClient = .previewValue
+      $0.iCloudSettingsClient = .previewValue
+      $0.notificationSettingsClient = .previewValue
+      $0.dataSettingsClient = .previewValue
+      $0.aboutSettingsClient = .previewValue
     }
   )
-  .frame(width: 720, height: 480)
+  .frame(width: 1024, height: 680)
 }

@@ -202,11 +202,9 @@ extension SidebarView {
       circleIconButton(icon: "gearshape") {
         store.send(.didTapSettings)
       }
-      .keyboardShortcut(",", modifiers: .command)
       .accessibilityLabel(String.module("Settings"))
       Spacer()
       circleIconButton(icon: "plus") { store.send(.didTapAddButton) }
-        .keyboardShortcut("n", modifiers: .command)
         .accessibilityLabel(String.module("Add Secret"))
     }
   }

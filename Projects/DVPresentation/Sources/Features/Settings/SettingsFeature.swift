@@ -17,17 +17,18 @@ public struct SettingsFeature {
     var icloud = ICloudSettingsFeature.State()
     var notifications = NotificationSettingsFeature.State()
     var data = DataSettingsFeature.State()
+    var about = AboutSettingsFeature.State()
 
     public init() {}
   }
 
   // MARK: - Action
 
-  public enum Action: Equatable {
+  public enum Action: BindableAction, Equatable {
 
     // MARK: - View
 
-    case didSelectCategory(SettingsCategory)
+    case binding(BindingAction<State>)
     case didTapClose
 
     // MARK: - Child
@@ -37,6 +38,7 @@ public struct SettingsFeature {
     case icloud(ICloudSettingsFeature.Action)
     case notifications(NotificationSettingsFeature.Action)
     case data(DataSettingsFeature.Action)
+    case about(AboutSettingsFeature.Action)
 
     // MARK: - Delegate
 
@@ -54,6 +56,7 @@ public struct SettingsFeature {
   // MARK: - Body
 
   public var body: some ReducerOf<Self> {
+    BindingReducer()
     Scope(state: \.general, action: \.general) {
       GeneralSettingsFeature()
     }
@@ -69,10 +72,12 @@ public struct SettingsFeature {
     Scope(state: \.data, action: \.data) {
       DataSettingsFeature()
     }
+    Scope(state: \.about, action: \.about) {
+      AboutSettingsFeature()
+    }
     Reduce { state, action in
       switch action {
-      case .didSelectCategory(let category):
-        state.selectedCategory = category
+      case .binding:
         return .none
 
       case .didTapClose:
@@ -91,6 +96,9 @@ public struct SettingsFeature {
         return .none
 
       case .data:
+        return .none
+
+      case .about:
         return .none
 
       case .delegate:
