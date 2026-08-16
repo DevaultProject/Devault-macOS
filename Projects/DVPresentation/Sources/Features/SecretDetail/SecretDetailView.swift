@@ -50,7 +50,7 @@ public struct SecretDetailView: View {
             }
             // 모드 전환만 애니메이션한다. `value`를 좁히지 않으면 편집 중 타이핑 한 글자마다
             // 폼 전체가 다시 애니메이션된다.
-            .animation(.smooth(duration: 0.25), value: store.mode)
+            .animation(MotionMetrics.layout, value: store.mode)
             // 프레임 상한. header/footer는 본문과 분리된 채 각자 이 프레임을 따라간다.
             .formMaxWidth()
             .formLayout(layout)

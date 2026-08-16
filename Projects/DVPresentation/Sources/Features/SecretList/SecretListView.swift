@@ -11,15 +11,6 @@ import DVDomain
 
 struct SecretListView: View {
 
-  // MARK: - Metrics
-
-  private enum Metrics {
-    /// 정렬 변경으로 행이 자리를 바꾸거나, 새로 읽은 목록이 들어올 때 쓰는 전환.
-    static let reorder: Animation = .smooth(duration: 0.28)
-    /// 목록·빈 상태·오류가 갈릴 때, 그리고 필터가 바뀌어 내용이 통째로 갈릴 때 쓰는 겹침.
-    static let contentFade: Animation = .easeInOut(duration: 0.25)
-  }
-
   // MARK: - Properties
 
   @Bindable var store: StoreOf<SecretListFeature>
@@ -61,7 +52,7 @@ extension SecretListView {
           list.transition(.opacity)
         }
       }
-      .animation(Metrics.contentFade, value: store.secretsState)
+      .animation(MotionMetrics.transition, value: store.secretsState)
     }
   }
 
@@ -78,12 +69,12 @@ extension SecretListView {
     .listStyle(.sidebar)
     .scrollContentBackground(.hidden)
     .tint(Color(nsColor: .controlAccentColor).opacity(0.6))
-    .animation(Metrics.reorder, value: secrets)
+    .animation(MotionMetrics.layout, value: secrets)
     // 필터가 바뀌면 행이 통째로 갈린다. 같은 목록으로 두면 무관한 행을 하나씩 지우고 넣는
     // 것으로 그려 어수선해지므로 새 내용으로 본다.
     .id(store.collection)
     .transition(.opacity)
-    .animation(Metrics.contentFade, value: store.collection)
+    .animation(MotionMetrics.transition, value: store.collection)
   }
 
   /// "이미 지남"과 "N일 이내 예정"을 섹션으로 나눠 보여준다. 쿼리가 이미 `expiringSoon` 순으로 정렬해 와서

@@ -98,7 +98,7 @@ extension SettingsView {
     .foregroundStyle(isBackToAppHovered ? Color.dv(.gray900) : Color.dv(.gray700))
     .listRowSeparator(.hidden)
     .onHover { isBackToAppHovered = $0 }
-    .animation(.easeOut(duration: 0.12), value: isBackToAppHovered)
+    .animation(MotionMetrics.hover, value: isBackToAppHovered)
   }
 
   private var detailColumn: some View {

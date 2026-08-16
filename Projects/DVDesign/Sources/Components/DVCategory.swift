@@ -43,8 +43,8 @@ public struct DVCategory: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(DVCategoryButtonStyle(isHovered: isHovered, isSelected: isSelected))
-        .animation(.easeOut(duration: 0.12), value: isHovered)
-        .animation(.easeOut(duration: 0.12), value: isSelected)
+        .animation(MotionMetrics.hover, value: isHovered)
+        .animation(MotionMetrics.hover, value: isSelected)
         .onHover { isHovered = $0 }
     }
 }
