@@ -69,8 +69,17 @@ private final class TrackingView: NSView {
         super.removeFromSuperview()
     }
 
+    // hover 전용이라 히트테스트에서 빠진다 — 안 그러면 배지 클릭이 행 선택을 막을 수 있다.
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    deinit {
+        hideTooltip()
+    }
+
     private func showTooltip() {
         guard let text, let window, !text.isEmpty else { return }
+        // mouseExited 없이 mouseEntered가 다시 올 수 있어(트래킹 재등록 시) 먼저 정리한다.
+        hideTooltip()
 
         let hosting = NSHostingView(rootView: TooltipBubble(text: text))
         let size = hosting.fittingSize
@@ -87,6 +96,7 @@ private final class TrackingView: NSView {
         panel.hasShadow = true
         panel.level = .popUpMenu
         panel.ignoresMouseEvents = true
+        panel.isReleasedWhenClosed = false
         panel.contentView = hosting
 
         let boundsInWindow = convert(bounds, to: nil)
