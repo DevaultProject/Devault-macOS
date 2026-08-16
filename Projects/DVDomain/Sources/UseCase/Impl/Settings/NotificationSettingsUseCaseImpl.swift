@@ -5,25 +5,32 @@ import Foundation
 public struct NotificationSettingsUseCaseImpl: NotificationSettingsUseCase {
 
   private let repository: any SettingsRepository
+  private let expiryNotificationScheduler: any ScheduleSecretExpiryNotificationsUseCase
 
-  public init(repository: any SettingsRepository) {
+  public init(
+    repository: any SettingsRepository,
+    expiryNotificationScheduler: any ScheduleSecretExpiryNotificationsUseCase
+  ) {
     self.repository = repository
+    self.expiryNotificationScheduler = expiryNotificationScheduler
   }
 
   public func isExpiryAlertsEnabled() -> Bool {
     repository.isExpiryAlertsEnabled()
   }
 
-  public func setExpiryAlertsEnabled(_ enabled: Bool) {
+  public func setExpiryAlertsEnabled(_ enabled: Bool) async throws {
     repository.setExpiryAlertsEnabled(enabled)
+    try await expiryNotificationScheduler.syncAll()
   }
 
   public func expiryAlertDaysBefore() -> [Int] {
     repository.expiryAlertDaysBefore()
   }
 
-  public func setExpiryAlertDaysBefore(_ days: [Int]) {
+  public func setExpiryAlertDaysBefore(_ days: [Int]) async throws {
     repository.setExpiryAlertDaysBefore(days)
+    try await expiryNotificationScheduler.syncAll()
   }
 
   public func isAuthFailureAlertEnabled() -> Bool {

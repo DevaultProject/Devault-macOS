@@ -63,6 +63,30 @@ struct NotificationSettingsFeatureTests {
     #expect(saved.value == [7, 1, 0])
   }
 
+  @Test("만료 알림 재예약에 실패하면 설정 저장 결과와 재시도 안내를 표시한다")
+  func expiryNotificationReschedulingFailureShowsAlert() async {
+    let store = TestStore(initialState: NotificationSettingsFeature.State()) {
+      NotificationSettingsFeature()
+    } withDependencies: {
+      $0.notificationSettingsClient.setExpiryAlertsEnabled = { _ in
+        throw CancellationError()
+      }
+    }
+
+    await store.send(.binding(.set(\.isExpiryAlertsEnabled, false))) {
+      $0.isExpiryAlertsEnabled = false
+    }
+    await store.receive(.expiryNotificationsUpdateFailed) {
+      $0.alert = AlertState {
+        TextState("Couldn't update expiration alerts")
+      } actions: {
+        ButtonState(role: .cancel) { TextState("OK") }
+      } message: {
+        TextState("The setting was saved, but existing notifications couldn't be updated. Please try again.")
+      }
+    }
+  }
+
   @Test("반복 인증 실패 알림 토글을 저장한다")
   func authFailureAlertTogglePersists() async {
     let saved = LockIsolated<Bool?>(nil)

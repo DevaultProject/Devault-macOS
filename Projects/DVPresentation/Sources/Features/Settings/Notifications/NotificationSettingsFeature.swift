@@ -16,6 +16,7 @@ public struct NotificationSettingsFeature {
     var isAuthFailureAlertEnabled = true
     var isClipboardAbnormalAccessAlertEnabled = true
     var isNotificationPermissionGranted = true
+    @Presents var alert: AlertState<Action.Alert>?
 
     public init() {}
   }
@@ -34,6 +35,13 @@ public struct NotificationSettingsFeature {
     // MARK: - Internal
 
     case permissionResponse(Bool)
+    case expiryNotificationsUpdateFailed
+
+    // MARK: - Child
+
+    case alert(PresentationAction<Alert>)
+
+    public enum Alert: Equatable {}
   }
 
   // MARK: - Dependencies
@@ -64,7 +72,13 @@ public struct NotificationSettingsFeature {
 
       case .binding(\.isExpiryAlertsEnabled):
         let enabled = state.isExpiryAlertsEnabled
-        return .run { _ in notificationSettingsClient.setExpiryAlertsEnabled(enabled) }
+        return .run { send in
+          do {
+            try await notificationSettingsClient.setExpiryAlertsEnabled(enabled)
+          } catch {
+            await send(.expiryNotificationsUpdateFailed)
+          }
+        }
 
       case .binding(\.isAuthFailureAlertEnabled):
         let enabled = state.isAuthFailureAlertEnabled
@@ -77,6 +91,16 @@ public struct NotificationSettingsFeature {
       case .binding:
         return .none
 
+      case .expiryNotificationsUpdateFailed:
+        state.alert = AlertState {
+          TextState(String.module("Couldn't update expiration alerts"))
+        } actions: {
+          ButtonState(role: .cancel) { TextState(String.module("OK")) }
+        } message: {
+          TextState(String.module("The setting was saved, but existing notifications couldn't be updated. Please try again."))
+        }
+        return .none
+
       case .didTapExpiryAlertDay(let day):
         if state.expiryAlertDaysBefore.contains(day) {
           state.expiryAlertDaysBefore.remove(day)
@@ -84,11 +108,21 @@ public struct NotificationSettingsFeature {
           state.expiryAlertDaysBefore.insert(day)
         }
         let days = state.expiryAlertDaysBefore.map(\.rawValue).sorted(by: >)
-        return .run { _ in notificationSettingsClient.setExpiryAlertDaysBefore(days) }
+        return .run { send in
+          do {
+            try await notificationSettingsClient.setExpiryAlertDaysBefore(days)
+          } catch {
+            await send(.expiryNotificationsUpdateFailed)
+          }
+        }
 
       case .didTapOpenNotificationSettings:
         return .run { _ in notificationSettingsClient.openSystemSettings() }
+
+      case .alert:
+        return .none
       }
     }
+    .ifLet(\.$alert, action: \.alert)
   }
 }

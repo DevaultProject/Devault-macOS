@@ -12,6 +12,7 @@ struct NotificationsSettingsView: View {
   var body: some View {
     content
       .task { await store.send(.task).finish() }
+      .alert($store.scope(state: \.alert, action: \.alert))
   }
 }
 
