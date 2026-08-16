@@ -59,19 +59,15 @@ public struct SecretClient: Sendable {
   /// payload를 들고 있는데 인증 창만 만료된 경우, 다시 복호화할 이유가 없어 이 액션이 필요하다.
   public var authenticate: @Sendable (_ reason: String) async throws -> Void
 
-  /// 민감 값을 클립보드에 복사한다. 설정에 따른 인증, 일정 시간 뒤 자동 정리와 짧은 간격
-  /// 반복 복사 감지가 함께 수행된다.
+  /// 민감 값을 클립보드에 복사한다(`ClipboardCopyPolicy.sensitive`). 설정에 따른 인증,
+  /// 설정된 시간 뒤 자동 정리, 반복 복사 감지가 함께 수행된다.
   public var copySensitiveValue: @Sendable (_ value: String) async throws -> Void
 
-  /// 평문 값을 클립보드에 복사한다. 자동 정리도 반복 복사 감지도 하지 않는다.
+  /// 평문 값을 클립보드에 복사한다(`ClipboardCopyPolicy.plain`). 인증도 자동 정리도 반복 감지도 없다.
   ///
-  /// metadata에서 오는 평문(Redirect URL·Public Key·Host 등)은 비밀이 아니라 `copySensitiveValue`의
-  /// 정책을 적용할 대상이 아니다. 30초 뒤 클립보드가 비면 붙여넣으려던 값이 사라지고, 반복 복사가
-  /// 비정상 접근 카운터에 쌓이면 하지도 않은 일로 보안 경고가 뜬다.
-  ///
-  /// **임시 경로다.** `CopySensitiveValueUseCase`는 두 정책이 한 덩어리라 평문만 떼어낼 수 없고,
-  /// 떼어내려면 도메인 계약을 바꿔야 한다. 합의 후 별도 이슈로 정리할 때까지 `ClipboardService`를
-  /// 직접 쓴다 — UseCase를 건너뛰는 유일한 자리이므로 그때 반드시 걷어낸다.
+  /// metadata에서 오는 평문(Redirect URL·Public Key·Host 등)은 비밀이 아니라 민감 값 정책을
+  /// 적용할 대상이 아니다. 클립보드가 비면 붙여넣으려던 값이 사라지고, 반복 복사가 비정상 접근
+  /// 카운터에 쌓이면 하지도 않은 일로 보안 경고가 뜬다.
   public var copyPlainValue: @Sendable (_ value: String) async throws -> Void
 
   // MARK: - Project

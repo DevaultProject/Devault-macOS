@@ -12,12 +12,17 @@ enum LiveUseCases {
         settingsRepository: LiveRepositories.settings
     )
 
-    /// `CopySensitiveValueUseCase`는 반복 복사 감지의 `AbnormalAccessMonitor`가 화면마다 따로 생기면 카운터가 갈라진다.
-    static let copySensitiveValue: any CopySensitiveValueUseCase = CopySensitiveValueUseCaseImpl(
+    /// `CopyToClipboardUseCase`는 반복 복사 감지의 `AbnormalAccessMonitor`가 화면마다 따로 생기면 카운터가 갈라진다.
+    ///
+    /// 반복 감지의 윈도·임계값은 여기서 정한다. 자동 정리의 시간·활성 여부는 설정 화면이 소유하므로
+    /// 그쪽은 UseCase가 `SettingsRepository`에서 읽는다.
+    static let copyToClipboard: any CopyToClipboardUseCase = CopyToClipboardUseCaseImpl(
         clipboardService: ClipboardServiceImpl(),
         notificationService: LiveServices.securityNotification,
         authenticateUseCase: authenticate,
-        settingsRepository: LiveRepositories.settings
+        settingsRepository: LiveRepositories.settings,
+        abnormalAccessWindow: .seconds(60),
+        abnormalAccessThreshold: 5
     )
 
     /// `ScheduleSecretExpiryNotificationsUseCase`는 상태가 없어 공유가 필수는 아니지만,

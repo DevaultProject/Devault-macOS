@@ -56,7 +56,7 @@ public struct SecretDetailFeature {
 
         /// 이 복호화가 성공했을 때 **열람 인증 창을 열어도 되는지**.
         ///
-        /// 복사만 예외다. 복사는 자체 인증 정책을 따로 갖고(`CopySensitiveValueUseCase`가 설정을
+        /// 복사만 예외다. 복사는 자체 인증 정책을 따로 갖고(`CopyToClipboardUseCase`가 설정을
         /// 읽어 결정한다), 여기서 창을 열면 복사 한 번에 누르지도 않은 열람 권한이 따라붙는다.
         /// 나머지는 전부 `revealPayload`로 인증을 통과한 것이므로 창을 여는 것이 맞다.
         var opensRevealWindow: Bool {
@@ -297,7 +297,7 @@ public struct SecretDetailFeature {
             // 복호화는 인증을 통과해야만 성공하므로, 도착 자체가 인증 성공을 뜻한다.
             //
             // 다만 **복사가 유발한 복호화는 열람 인증 창을 열지 않는다.** 복사는 자체 정책을
-            // 따로 갖고(`CopySensitiveValueUseCase`가 설정을 읽어 결정한다), 여기서 창을 열면
+            // 따로 갖고(`CopyToClipboardUseCase`가 설정을 읽어 결정한다), 여기서 창을 열면
             // 복사 한 번에 누르지도 않은 열람 권한이 따라붙는다.
             case .payloadResponse(.success(let payload), let continuation):
                 state.payloadState = .loaded(payload)
@@ -379,7 +379,7 @@ public struct SecretDetailFeature {
                 }
                 return reauthenticateEffect(revealing: field)
 
-            // Copy 인증 여부는 `CopySensitiveValueUseCase`가 설정을 읽어 결정한다.
+            // Copy 인증 여부는 `CopyToClipboardUseCase`가 설정을 읽어 결정한다.
             case .didTapCopy(let field):
                 guard case .loaded(let payload) = state.payloadState else {
                     state.payloadState = .loading
@@ -801,7 +801,7 @@ public struct SecretDetailFeature {
         }
     }
 
-    /// 평문 복사. 자동 정리도 반복 감지도 붙지 않는다 — 비밀이 아닌 값에 그 정책을 씌우면
+    /// 평문 복사. 인증도 자동 정리도 반복 감지도 붙지 않는다 — 비밀이 아닌 값에 그 정책을 씌우면
     /// 붙여넣기 전에 클립보드가 비고, 오탐 보안 경고가 뜬다 (`SecretClient.copyPlainValue` 참조).
     private func copyPlainEffect(value: String) -> Effect<Action> {
         .run { send in
