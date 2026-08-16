@@ -5,82 +5,77 @@ import ComposableArchitecture
 // MARK: - DataSettingsFeature
 
 @Reducer
-struct DataSettingsFeature {
+public struct DataSettingsFeature {
 
   // MARK: - State
 
   @ObservableState
-  struct State: Equatable {
+  public struct State: Equatable {
+    var isICloudSyncEnabled = false
     var isDeleting = false
     @Presents var alert: AlertState<Action.Alert>?
+
+    public init() {}
   }
 
   // MARK: - Action
 
-  enum Action: Equatable {
+  public enum Action: Equatable {
+
+    // MARK: - View
+
+    case task
     case didTapDeleteAllData
-    case deleteResponse(Result<Void, DeleteAllDataError>)
+
+    // MARK: - Internal
+
+    case deleteSucceeded
+    case deleteFailed
+
+    // MARK: - Child
+
     case alert(PresentationAction<Alert>)
 
-    enum Alert: Equatable {
+    public enum Alert: Equatable {
       case confirmDelete
     }
   }
 
-  /// alert가 Equatable을 요구하는데 실제 Error 타입은 그렇지 않으므로, "삭제 실패"라는
-  /// 사실만 구분하면 되는 이 화면에서는 케이스가 없는 얇은 래퍼로 충분하다.
-  enum DeleteAllDataError: Equatable {
-    case failed
-  }
-
   // MARK: - Dependencies
 
-  @Dependency(\.settingsClient) var settingsClient
+  @Dependency(\.dataSettingsClient) var dataSettingsClient
 
   // MARK: - Body
 
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
+      case .task:
+        state.isICloudSyncEnabled = dataSettingsClient.isICloudSyncEnabled()
+        return .none
+
       case .didTapDeleteAllData:
-        state.alert = AlertState {
-          TextState(String.module("Delete All Data"))
-        } actions: {
-          ButtonState(role: .destructive, action: .confirmDelete) {
-            TextState(String.module("Delete"))
-          }
-          ButtonState(role: .cancel) {
-            TextState(String.module("Cancel"))
-          }
-        } message: {
-          TextState(String.module("This will permanently delete all secrets and projects. This action cannot be undone."))
-        }
+        state.alert = deleteConfirmationAlert
         return .none
 
       case .alert(.presented(.confirmDelete)):
         state.isDeleting = true
         return .run { send in
           do {
-            try await settingsClient.deleteAllData()
-            await send(.deleteResponse(.success(())))
+            try await dataSettingsClient.deleteAllData()
+            await send(.deleteSucceeded)
           } catch {
-            await send(.deleteResponse(.failure(.failed)))
+            await send(.deleteFailed)
           }
         }
 
-      case .deleteResponse(.success):
+      case .deleteSucceeded:
         state.isDeleting = false
         return .none
 
-      case .deleteResponse(.failure):
+      case .deleteFailed:
         state.isDeleting = false
-        state.alert = AlertState {
-          TextState(String.module("Couldn't delete data"))
-        } actions: {
-          ButtonState(role: .cancel) { TextState(String.module("OK")) }
-        } message: {
-          TextState(String.module("Please try again."))
-        }
+        state.alert = deleteFailureAlert
         return .none
 
       case .alert:
@@ -88,5 +83,37 @@ struct DataSettingsFeature {
       }
     }
     .ifLet(\.$alert, action: \.alert)
+  }
+}
+
+// MARK: - Private
+
+extension DataSettingsFeature {
+
+  private var deleteConfirmationAlert: AlertState<Action.Alert> {
+    AlertState {
+      TextState(String.module("Delete All Data"))
+    } actions: {
+      ButtonState(role: .destructive, action: .confirmDelete) {
+        TextState(String.module("Delete"))
+      }
+      ButtonState(role: .cancel) {
+        TextState(String.module("Cancel"))
+      }
+    } message: {
+      TextState(String.module("This will permanently delete all secrets and projects. This action cannot be undone."))
+    }
+  }
+
+  private var deleteFailureAlert: AlertState<Action.Alert> {
+    AlertState {
+      TextState(String.module("Couldn't delete data"))
+    } actions: {
+      ButtonState(role: .cancel) {
+        TextState(String.module("OK"))
+      }
+    } message: {
+      TextState(String.module("Please try again."))
+    }
   }
 }
