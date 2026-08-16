@@ -86,7 +86,7 @@ extension SecretClient: @retroactive DependencyKey {
                 )
                 // 만료일이 바뀌었을 수 있다. `schedule`은 예약 전에 이전 마크를 먼저 취소하므로
                 // 만료일을 지운 경우의 정리까지 같은 호출이 처리한다.
-                await expiryUseCase.schedule(secret: updated)
+                await LiveUseCases.expirySchedule.schedule(secret: updated)
                 return updated
             },
             fetchLinkedProjects: { secretID in
