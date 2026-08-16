@@ -106,6 +106,7 @@ public struct CreateSecretFeature {
     @Dependency(\.secretManagementClient) var secretManagementClient
     @Dependency(\.projectClient) var projectClient
     @Dependency(\.detectionClient) var detectionClient
+    @Dependency(\.generalSettingsClient) var generalSettingsClient
     @Dependency(\.date.now) var now
 
     // MARK: - Init
@@ -121,6 +122,14 @@ public struct CreateSecretFeature {
             // MARK: View
 
             case .task:
+                // 설정의 기본 환경을 폼 초기값으로 얹는다. 이 화면은 열 때마다 State가 새로
+                // 만들어지므로(`MainFeature`) 사용자가 고른 값을 덮어쓸 창이 없다.
+                //
+                // 저장된 문자열이 폼 enum에 없으면 `.dev`로 떨어뜨린다 — 설정 화면이 읽을 때와
+                // 같은 규칙이다(`GeneralSettingsFeature.task`).
+                state.meta.environment = SecretEnvironment(
+                    rawValue: generalSettingsClient.defaultEnvironment()
+                ) ?? .dev
                 state.isLoadingProjects = true
                 return .run { send in
                     do {
