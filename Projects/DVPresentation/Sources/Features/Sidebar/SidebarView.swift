@@ -126,7 +126,14 @@ extension SidebarView {
         .padding(.top, 8)
       Spacer(minLength: 0)
     } else if store.projects.isEmpty {
-      // 아직 못 받았거나 정말로 비어 있다. 둘 다 보여줄 것이 없으므로 자리만 잡아 둔다.
+      // 다 받아 놓고 정말 없을 때만 안내한다 — 로딩 중에 "없다"고 하면 잘못 알린 셈이 된다.
+      if case .loaded = store.projectsState {
+        Text(.module("No projects yet"))
+          .dvFont(.bodyMD)
+          .foregroundStyle(Color.dv(.gray500))
+          .frame(maxWidth: .infinity)
+          .padding(.top, 8)
+      }
       Spacer(minLength: 0)
     } else {
       projectList
