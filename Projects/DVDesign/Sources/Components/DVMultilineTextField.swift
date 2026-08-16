@@ -93,6 +93,9 @@ public struct DVMultilineTextField: View {
         }
         .padding(Metrics.contentPadding)
         .dvComponentWidth(size, height: height, alignment: .topLeading)
+        // 마스킹 표시가 높이를 넘겨도 잘라내기만 한다. 자르지 않으면 컨테이너 밖으로 흘러
+        // 아래 필드를 덮는다 (`maskedText`가 높이 제약을 일부러 받지 않는다).
+        .clipped()
         .background {
             RoundedRectangle(cornerRadius: Metrics.cornerRadius)
                 .stroke(Color.dv(.gray300), lineWidth: Metrics.borderWidth)
@@ -148,7 +151,11 @@ extension DVMultilineTextField {
             .foregroundStyle(Color.dv(.gray900))
             .lineSpacing(DVFont.bodyLG.lineSpacing)
             .padding(.leading, Metrics.textLeadingInset)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            // 높이 제약을 받으면 마지막 줄이 "…"로 잘린다. 아래 에디터는 스크롤로 넘치는데
+            // 겹쳐 그리는 마스킹만 말줄임표가 붙어 실제로 없는 생략 표시가 생긴다.
+            // 전체를 그리게 두고 컨테이너(`body`의 `clipped()`)가 잘라낸다.
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
             .allowsHitTesting(false)
     }
 
