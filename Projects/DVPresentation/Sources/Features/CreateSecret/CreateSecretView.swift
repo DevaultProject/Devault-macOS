@@ -69,16 +69,7 @@ extension CreateSecretView {
         }
         .scrollIndicators(.hidden)
         .disabled(store.isSaving)
-        .overlay {
-            if store.isSaving {
-                ZStack {
-                    Color.black.opacity(0.08)
-                    ProgressView()
-                        .controlSize(.regular)
-                }
-                .allowsHitTesting(true)
-            }
-        }
+        .windowBusy(store.isSaving)
     }
 
     /// FIXED BOTTOM. Cancel + Save 액션 바.
