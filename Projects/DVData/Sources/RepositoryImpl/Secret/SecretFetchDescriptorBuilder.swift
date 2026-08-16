@@ -68,7 +68,7 @@ enum SecretFetchDescriptorBuilder {
                 (!hasService || secret.service == service) &&
                 (!hasEnvironment || secret.environment == environment)
             }
-        case .expired, .deleted, .project:
+        case .notice, .expired, .deleted, .project:
             return predicate(from: query)
         }
     }
@@ -93,6 +93,21 @@ enum SecretFetchDescriptorBuilder {
             return #Predicate<SwiftDataModel.Secret> { secret in
                 secret.deletedAt == nil &&
                 secret.liked &&
+                (!hasSecretType || secret.secretType == secretType) &&
+                (!hasService || secret.service == service) &&
+                (!hasEnvironment || secret.environment == environment)
+            }
+        case let .notice(referenceDate):
+            // 이미 지났거나(≤ referenceDate) window를 벗어난(> windowEnd) 것은 제외한다.
+            // 만료일이 없는 Secret은 `.distantFuture`로 치환되어 두 조건 다 자연히 걸러진다.
+            let neverExpires = Date.distantFuture
+            let windowEnd = referenceDate.addingTimeInterval(
+                TimeInterval(SecretQuery.Collection.noticeWindowDays) * 86_400
+            )
+            return #Predicate<SwiftDataModel.Secret> { secret in
+                secret.deletedAt == nil &&
+                (secret.expiresAt ?? neverExpires) > referenceDate &&
+                (secret.expiresAt ?? neverExpires) <= windowEnd &&
                 (!hasSecretType || secret.secretType == secretType) &&
                 (!hasService || secret.service == service) &&
                 (!hasEnvironment || secret.environment == environment)

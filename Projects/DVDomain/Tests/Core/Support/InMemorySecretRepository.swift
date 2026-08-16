@@ -178,6 +178,11 @@ private extension InMemorySecretRepository {
             return secret.deletedAt == nil && expiresAt >= .now
         case .liked:
             return secret.deletedAt == nil && secret.liked && expiresAt >= .now
+        case let .notice(referenceDate):
+            let windowEnd = referenceDate.addingTimeInterval(
+                TimeInterval(SecretQuery.Collection.noticeWindowDays) * 86_400
+            )
+            return secret.deletedAt == nil && expiresAt > referenceDate && expiresAt <= windowEnd
         case let .expired(referenceDate):
             return secret.deletedAt == nil && expiresAt < referenceDate
         case .deleted:

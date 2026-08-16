@@ -141,7 +141,7 @@ extension SecretListView {
         store.send(.didTapDeleteForever(id: secret.id))
       }
 
-    case .all, .liked, .expired, .project:
+    case .all, .liked, .notice, .expired, .project:
       Button("Add to Project") {
         store.send(.didTapAddToProject(id: secret.id))
       }
@@ -213,18 +213,20 @@ extension SecretListView {
     switch store.collection {
     case .all: return "All"
     case .liked: return "Star"
+    case .notice: return "Notice"
     case .expired: return "Expired"
     case .deleted: return "Deleted"
     case .project: return store.projectName ?? "Project"
     }
   }
 
-  /// Expired/Deleted는 정렬이 필요 없는 화면이라 정렬 UI 자체를 숨긴다.
+  /// Notice/Expired/Deleted는 정렬이 필요 없는 화면이라 정렬 UI 자체를 숨긴다.
+  /// Notice는 항상 만료 임박 순으로 고정되므로(`SecretListFeature.State.query`) 사용자가 바꿀 이유가 없다.
   private var showsSort: Bool {
     switch store.collection {
     case .all, .liked:
       return true
-    case .expired, .deleted, .project:
+    case .notice, .expired, .deleted, .project:
       return false
     }
   }
@@ -320,6 +322,17 @@ private enum ExpiryBucket: CaseIterable, Identifiable {
 #Preview("All - 정렬 있음") {
   SecretListView(
     store: Store(initialState: SecretListFeature.State(collection: .all)) {
+      SecretListFeature()
+    } withDependencies: {
+      $0.secretClient = .previewValue
+    }
+  )
+  .frame(width: 300, height: 500)
+}
+
+#Preview("Notice - 정렬 없음, 만료 임박 뱃지만") {
+  SecretListView(
+    store: Store(initialState: SecretListFeature.State(collection: .notice(referenceDate: .now))) {
       SecretListFeature()
     } withDependencies: {
       $0.secretClient = .previewValue

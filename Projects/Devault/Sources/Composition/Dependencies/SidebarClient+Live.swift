@@ -102,8 +102,7 @@ private extension SidebarFilter {
     case .starred:
       return .liked
     case .notice:
-      // TODO: 도메인 레이어에 .notice collection 추가 후 연결 (MainFeature도 동일하게 .all로 매핑 중)
-      return .all
+      return .notice(referenceDate: referenceDate)
     case .expired:
       // 목록의 Expired 탭과 같은 window 계산을 공유한다.
       return .expiringWindow(from: referenceDate)
