@@ -10,9 +10,11 @@ public protocol RevealSecretPayloadUseCase: Sendable {
     /// - Parameters:
     ///   - id: 복호화할 Secret의 ID
     ///   - type: 복호화 결과로 변환할 payload 타입
+    ///   - reason: 시스템 인증 시트에 표시할 문구. ``AuthenticationReason``의 상수를 쓴다.
     /// - Returns: 복호화된 payload
     func revealPayload<Payload: SecretPayloadData>(
         id: UUID,
-        as type: Payload.Type
+        as type: Payload.Type,
+        reason: String
     ) async throws -> Payload
 }

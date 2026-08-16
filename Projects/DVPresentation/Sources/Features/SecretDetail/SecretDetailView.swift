@@ -23,35 +23,40 @@ public struct SecretDetailView: View {
     // MARK: - Body
 
     public var body: some View {
-        // 필드 폭은 컨테이너 폭에서 파생된다. detail 컬럼은 기본적으로 가변 폭 1열(.detailFluid)이고,
-        // 컬럼이 2열 임계값(816)을 넘으면 CreateSecret과 같은 .dual 배열로 전환된다.
+        /// 필드 폭은 컨테이너 폭에서 파생된다. detail 컬럼은 기본적으로 가변 폭 1열(.detailFluid)이고,
+        /// 컬럼이 2열 임계값(816)을 넘으면 CreateSecret과 같은 .dual 배열로 전환된다.
         GeometryReader { proxy in
             let layout = DetailColumnFormLayout.layout(for: proxy.size.width)
             VStack(spacing: 0) {
-                Group {
-                    if store.mode == .viewing {
-                        viewingBody
-                    } else {
-                        editingBody
+                ScrollView {
+                    bodyStack {
+                        // 헤더는 두 모드가 사실상 같으므로 교체 대상에서 빼둔다
+                        Group {
+                            if store.mode == .viewing {
+                                viewingSection.transition(.opacity)
+                            } else {
+                                editingSection.transition(.opacity)
+                            }
+                        }
                     }
                 }
+                .scrollIndicators(.hidden)
+
                 if store.mode == .editing {
-                    Divider()
+                    /// 생성 화면과 마찬가지로 구분선을 두지 않는다 — footer 자체가 여백으로 분리된다.
                     footer
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            // 프레임 상한. header/footer는 본문과 분리된 채 각자 이 프레임을 따라간다.
+            /// 모드 전환만 애니메이션한다. `value`를 좁히지 않으면 편집 중 타이핑 한 글자마다 폼 전체가 다시 애니메이션된다.
+            .animation(.smooth(duration: 0.25), value: store.mode)
+            /// 프레임 상한. header/footer는 본문과 분리된 채 각자 이 프레임을 따라간다.
             .formMaxWidth()
             .formLayout(layout)
         }
-        // `id:`가 필수다. 다른 리스트 셀을 선택하면 MainFeature가 `secretDetail`에 **새 State**를
-        // 할당하지만, 뷰의 타입·위치가 그대로라 SwiftUI는 뷰를 재생성하지 않는다.
-        // 그러면 평범한 `.task`는 다시 실행되지 않아 `linkedProjects` / `payloadState`가 빈 채로 남는다
-        // (`store.secret`을 직접 읽는 헤더·Name만 갱신되어 더 헷갈린다).
-        //
-        // `finish()`를 await해야 secret이 바뀔 때 이전 secret의 lifecycle 구독과 프로젝트 조회가
-        // 함께 끝난다. 눈·복사는 이 task의 자식이 아니므로 여기서 취소되지 않는다 —
-        // 그쪽은 `State.id`를 보고 `ifLet`이 취소한다.
+        /// `id:`가 필수다. 다른 리스트 셀을 선택하면 MainFeature가 `secretDetail`에 새 State를 할당하지만, 뷰의 타입·위치가 그대로라 SwiftUI는 뷰를 재생성하지 않는다. 그러면 평범한 `.task`는 다시 실행되지 않아 `linkedProjects` / `payloadState`가 빈 채로 남는다 (`store.secret`을 직접 읽는 헤더·Name만 갱신되어 더 헷갈린다).
+        ///
+        /// `finish()`를 await해야 secret이 바뀔 때 이전 secret의 lifecycle 구독과 프로젝트 조회가 함께 끝난다. 눈·복사는 이 task의 자식이 아니므로 여기서 취소되지 않는다 — 그쪽은 `State.id`를 보고 `ifLet`이 취소한다.
         .task(id: store.secret.id) {
             await store.send(.task).finish()
         }
@@ -68,21 +73,15 @@ extension SecretDetailView {
 
     // MARK: Viewing
 
-    /// 복호화 여부와 무관하게 항상 같은 섹션을 렌더한다. payload 필드는 값이 있든 없든 마스킹되므로
-    /// 복호화 전후로 화면 구성이 달라지지 않고, 로딩·실패 전용 화면도 필요 없다(실패는 alert로 알린다).
+    /// 복호화 여부와 무관하게 항상 같은 섹션을 렌더한다. payload 필드는 값이 있든 없든 마스킹되므로 복호화 전후로 화면 구성이 달라지지 않고, 로딩·실패 전용 화면도 필요 없다(실패는 alert로 알린다).
     ///
-    /// 눈·복사 동작은 Environment로 내려보낸다 — 필드가 9개 섹션 안쪽에 흩어져 있어
-    /// 파라미터로 넘기면 중간 섹션들이 쓰지도 않는 값을 계속 실어 나른다.
-    private var viewingBody: some View {
-        ScrollView {
-            bodyStack {
-                DetailPayloadSectionView(
-                    secret: store.secret,
-                    linkedProjects: store.linkedProjects,
-                    payload: displayedPayload
-                )
-            }
-        }
+    /// secure·copy 동작은 Environment로 내려보낸다 — 필드가 9개 섹션 안쪽에 흩어져 있어 파라미터로 넘기면 중간 섹션들이 쓰지도 않는 값을 계속 실어 나른다.
+    private var viewingSection: some View {
+        DetailPayloadSectionView(
+            secret: store.secret,
+            linkedProjects: store.linkedProjects,
+            payload: displayedPayload
+        )
         .environment(
             \.detailFieldActions,
             DetailFieldActions(
@@ -94,8 +93,7 @@ extension SecretDetailView {
         )
     }
 
-    /// reveal 전에는 payload만 빈 껍데기를 넘긴다. 민감 필드는 어차피 마스킹되어 화면이 같고,
-    /// metadata는 평문이라 `Secret`에서 그대로 채워지므로 평문 필드가 처음부터 보인다.
+    /// reveal 전에는 payload만 빈 껍데기를 넘긴다. 민감 필드는 어차피 마스킹되어 화면이 같고, metadata는 평문이라 `Secret`에서 그대로 채워지므로 평문 필드가 처음부터 보인다.
     private var displayedPayload: CreateSecretPayload {
         if case .loaded(let payload) = store.payloadState {
             return payload
@@ -145,36 +143,31 @@ extension SecretDetailView {
     /// `editFields`가 `nil`인 채로 `mode == .editing`인 조합은 reducer가 만들지 않지만,
     /// `if let`이 그 조합을 아예 렌더 불가능하게 만든다.
     @ViewBuilder
-    private var editingBody: some View {
-        if let fields = Binding($store.editFields) {
-            ScrollView {
-                bodyStack {
-                    SecretFormSectionsView(
-                        secretType: store.secret.secretType.creatableType,
-                        subType: store.secret.secretType.creatableType
-                            .resolvedSubType(store.secret.subType),
-                        meta: fields,
-                        availableProjects: store.availableProjects,
-                        // 감지 힌트는 생성 화면 전용이다. 이미 저장된 값을 고치는 중에
-                        // "이 서비스로 보입니다"를 띄우면 사용자가 고른 service를 되묻는 꼴이 된다.
-                        serviceCandidates: [],
-                        validationErrors: store.validationErrors,
-                        detectedServices: [:],
-                        onCreateProject: { store.send(.didTapCreateProject) }
-                    )
-                }
-            }
-            .scrollIndicators(.hidden)
+    private var editingSection: some View {
+        // `Binding($store.editFields)`를 쓰면 안 된다. 그 이니셜라이저는 **생성 시점에만** nil을
+        // 걸러내고, 만들어진 바인딩은 읽을 때마다 강제 언래핑한다. 취소·저장이 `editFields`를
+        // 비우는 순간 전환 애니메이션 때문에 사라지는 쪽 뷰가 아직 살아 있어 한 번 더 읽히고,
+        // 그때 크래시한다. 마지막 값으로 대신 읽게 해 둔다 — 그 프레임은 어차피 페이드 아웃 중이다.
+        if let snapshot = store.editFields {
+            let fields = Binding(
+                get: { $store.editFields.wrappedValue ?? snapshot },
+                set: { $store.editFields.wrappedValue = $0 }
+            )
+            SecretFormSectionsView(
+                secretType: store.secret.secretType.creatableType,
+                subType: store.secret.secretType.creatableType
+                    .resolvedSubType(store.secret.subType),
+                meta: fields,
+                availableProjects: store.availableProjects,
+                /// 감지 힌트는 생성 화면 전용이다. 이미 저장된 값을 고치는 중에 서비스 제안 필요 없음.
+                serviceCandidates: [],
+                validationErrors: store.validationErrors,
+                detectedServices: [:],
+                onCreateProject: { store.send(.didTapCreateProject) }
+            )
+            /// 진행 표시는 창 루트가 그린다 (`.omc/GUIDELINES.md`).
             .disabled(store.isSaving)
-            .overlay {
-                if store.isSaving {
-                    ZStack {
-                        Color.black.opacity(0.08)
-                        ProgressView().controlSize(.regular)
-                    }
-                    .allowsHitTesting(true)
-                }
-            }
+            .windowBusy(store.isSaving)
             .environment(\.isProjectLoading, store.isLoadingProjects)
         }
     }
@@ -183,8 +176,7 @@ extension SecretDetailView {
     private var footer: some View {
         FooterActionsView(
             saveTitle: .module("Save"),
-            // 필수 필드 검증은 `didTapSave`가 수행해 인라인 경고를 세운다 — 여기서 미리 막으면
-            // 경고가 영영 뜨지 않는다. 생성 화면과 같은 규칙이다.
+            /// 필수 필드 검증은 `didTapSave`가 수행해 인라인 경고를 세운다 — 여기서 미리 막으면 경고가 영영 뜨지 않는다. 생성 화면과 같은 규칙.
             isSaveEnabled: !store.isSaving,
             onCancel: { store.send(.didTapCancelEdit) },
             onSave: { store.send(.didTapSave) }
@@ -248,7 +240,7 @@ private let _previewSecret = [Secret].previewSubTypeMatrix[0]
         ) {
             SecretDetailFeature()
         } withDependencies: {
-            $0.secretClient.revealPayload = { _ in
+            $0.secretClient.revealPayload = { _, _ in
                 throw SecretUseCaseError.authenticationFailure(.cancelled)
             }
         }

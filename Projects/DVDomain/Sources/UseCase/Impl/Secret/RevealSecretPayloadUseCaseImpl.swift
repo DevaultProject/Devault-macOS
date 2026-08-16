@@ -16,10 +16,13 @@ public struct RevealSecretPayloadUseCaseImpl: RevealSecretPayloadUseCase {
 
     public func revealPayload<Payload: SecretPayloadData>(
         id: UUID,
-        as type: Payload.Type
+        as type: Payload.Type,
+        reason: String
     ) async throws -> Payload {
         do {
-            try await authenticateUseCase.authenticate(reason: AuthenticationReason.revealSecret)
+            // 문구는 호출자가 정한다 — 열람과 수정 진입이 같은 복호화를 타지만 사용자가 누른
+            // 버튼이 달라서다. 기본값을 두지 않아 호출부가 고르는 것을 잊을 수 없다.
+            try await authenticateUseCase.authenticate(reason: reason)
             return try await decryptPayloadUseCase.decryptPayload(id: id, as: type)
         } catch {
             throw SecretUseCaseError.map(error)

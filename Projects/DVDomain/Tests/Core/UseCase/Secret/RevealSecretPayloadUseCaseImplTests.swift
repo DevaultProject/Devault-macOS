@@ -23,7 +23,7 @@ struct RevealSecretPayloadUseCaseImplTests {
         repo.seed(secret)
         let sut = makeSUT(repository: repo, cryptoService: crypto, authenticationService: auth)
 
-        let revealed: APIKeyPayload = try await sut.revealPayload(id: secret.id, as: APIKeyPayload.self)
+        let revealed: APIKeyPayload = try await sut.revealPayload(id: secret.id, as: APIKeyPayload.self, reason: AuthenticationReason.revealSecret)
 
         #expect(revealed == payload)
         #expect(auth.authenticateCount == 1)
@@ -40,7 +40,7 @@ struct RevealSecretPayloadUseCaseImplTests {
         let sut = makeSUT(repository: repo, cryptoService: crypto, authenticationService: auth)
 
         await #expect(throws: SecretUseCaseError.authenticationFailure(.cancelled)) {
-            _ = try await sut.revealPayload(id: UUID(), as: APIKeyPayload.self)
+            _ = try await sut.revealPayload(id: UUID(), as: APIKeyPayload.self, reason: AuthenticationReason.revealSecret)
         }
         #expect(repo.fetchByIDCount == 0)
         #expect(crypto.decryptCount == 0)
@@ -54,7 +54,7 @@ struct RevealSecretPayloadUseCaseImplTests {
         let sut = makeSUT(repository: repo, cryptoService: crypto, authenticationService: StubUserAuthenticationService())
 
         await #expect(throws: SecretUseCaseError.secretNotFound(id: missingID)) {
-            _ = try await sut.revealPayload(id: missingID, as: APIKeyPayload.self)
+            _ = try await sut.revealPayload(id: missingID, as: APIKeyPayload.self, reason: AuthenticationReason.revealSecret)
         }
         #expect(crypto.decryptCount == 0)
     }
@@ -69,7 +69,7 @@ struct RevealSecretPayloadUseCaseImplTests {
         let sut = makeSUT(repository: repo, cryptoService: crypto, authenticationService: StubUserAuthenticationService())
 
         await #expect(throws: SecretUseCaseError.cryptoFailure(.decryptionFailed)) {
-            _ = try await sut.revealPayload(id: secret.id, as: APIKeyPayload.self)
+            _ = try await sut.revealPayload(id: secret.id, as: APIKeyPayload.self, reason: AuthenticationReason.revealSecret)
         }
     }
 

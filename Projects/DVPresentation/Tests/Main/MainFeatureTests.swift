@@ -368,7 +368,7 @@ struct MainFeatureTests {
     let store = TestStore(initialState: initial) {
       MainFeature()
     } withDependencies: {
-      $0.secretClient.revealPayload = { _ in
+      $0.secretClient.revealPayload = { _, _ in
         try await clock.sleep(for: .seconds(1))
         return .apiKey(APIKeyPayload(value: "A의 평문"), nil)
       }
