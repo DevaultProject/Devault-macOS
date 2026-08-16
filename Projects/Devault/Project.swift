@@ -86,6 +86,9 @@ let project = Project.project(
                 // 쓰므로 둘 다 지정한다(기본값이 "Devault"라 안 바꾸면 남는다).
                 "CFBundleDisplayName": .string("DeVault"),
                 "CFBundleName": .string("DeVault"),
+                // Mac App Store 필수. 여기엔 주 카테고리(생산성)만 들어가고,
+                // 보조 카테고리(유틸리티)는 App Store Connect 메타데이터에서 지정한다.
+                "LSApplicationCategoryType": .string("public.app-category.productivity"),
                 // 마케팅 버전(기본값 "1.0"을 덮어쓴다).
                 "CFBundleShortVersionString": .string("1.0.0"),
                 "CFBundleVersion": .string(buildNumber),
