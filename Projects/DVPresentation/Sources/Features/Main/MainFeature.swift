@@ -23,6 +23,9 @@ public struct MainFeature {
     /// 별도 Window가 아니라 콘텐츠 스위칭으로 처리하므로 @Presents 미사용
     var settings: SettingsFeature.State?
 
+    /// 생성 폼의 취소 확인을 기다리는 동안 보관하는 이동 목적지.
+    var pendingSelection: SidebarSelection?
+
     /// 지금 무엇을 그릴지. **화면 분기는 이 값 하나만 본다.**
     /// 뷰에서 optional을 직접 조합하면 같은 판정이 렌더 지점마다 흩어진다.
     var screen: Screen {
@@ -198,9 +201,20 @@ public struct MainFeature {
       case .createSecret(.delegate(.projectsChanged)):
         return .send(.sidebar(.refresh))
 
+      // 사이드바가 시작한 취소면 목록으로, 폼의 Cancel이면 타입 그리드로 — 목적지가 다르다.
       case .createSecret(.delegate(.cancelled)):
-        state.createSecret = nil
-        state.selectSecretType = .init()
+        guard let pending = state.pendingSelection else {
+          state.createSecret = nil
+          state.selectSecretType = .init()
+          return .none
+        }
+        state.pendingSelection = nil
+        applySelection(pending, &state)
+        return .send(.sidebar(.setCreatingSecret(false)))
+
+      // 목적지를 버리지 않으면 다음에 폼의 Cancel을 눌렀을 때 엉뚱하게 목록으로 나간다.
+      case .createSecret(.alert(.dismiss)):
+        state.pendingSelection = nil
         return .none
 
       case .createSecret:
@@ -249,10 +263,14 @@ extension MainFeature {
     delegate: SidebarFeature.Action.Delegate
   ) -> Effect<Action> {
     switch delegate {
+    // 폼이 열려 있으면 입력이 있을 수 있으므로 자식의 기존 취소 alert를 거친다.
+    // 타입 선택 단계는 입력이 없어 확인 없이 나간다.
     case .selectionChanged(let selection):
-      exitCreating(&state)
-      state.secretDetail = nil
-      state.secretList = makeSecretListState(selection: selection, projects: state.sidebar.projects)
+      guard state.createSecret == nil else {
+        state.pendingSelection = selection
+        return .send(.createSecret(.didTapCancel))
+      }
+      applySelection(selection, &state)
       return .send(.sidebar(.setCreatingSecret(false)))
 
     case .addButtonTapped:
@@ -273,6 +291,13 @@ extension MainFeature {
       }
       return .none
     }
+  }
+
+  /// 사이드바에서 고른 곳으로 이동한다. 생성 중이었다면 그 플로우를 접는다.
+  private func applySelection(_ selection: SidebarSelection, _ state: inout State) {
+    exitCreating(&state)
+    state.secretDetail = nil
+    state.secretList = makeSecretListState(selection: selection, projects: state.sidebar.projects)
   }
 
   /// 생성 플로우로 들어간다. 조회 중이던 시크릿을 함께 놓는다 — 상세 State가 살아남으면
