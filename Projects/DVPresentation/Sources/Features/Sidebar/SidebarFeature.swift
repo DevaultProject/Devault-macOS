@@ -181,9 +181,8 @@ public struct SidebarFeature {
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      // `.task`는 최초 진입이 아니라 **화면이 다시 만들어질 때마다** 실행된다 — `MainView`가
-      // 2컬럼 ↔ 3컬럼을 오가면 `NavigationSplitView` 타입이 달라져 사이드바까지 새로 만들어진다.
-      // 그때 `.loading`으로 되돌리면 목록과 숫자가 사라졌다 나타난다.
+      // `.task`는 화면이 다시 만들어질 때마다 실행된다. 그때 `.loading`으로 되돌리면
+      // 이미 받아둔 목록과 숫자가 사라졌다 나타난다.
       case .task:
         if case .loaded = state.projectsState {
           state.isRefreshingProjects = true

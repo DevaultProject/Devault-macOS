@@ -125,8 +125,8 @@ extension SidebarView {
     .animation(MotionMetrics.layout, value: store.isProjectSectionExpanded)
   }
 
-  /// 스피너 대신 자리를 유지한 채 opacity만 움직인다. 갱신이 잦은 화면이라(시크릿 생성, 프로젝트
-  /// 추가·이름 변경·삭제) 스피너로 갈아끼우면 목록이 사라졌다 나타나는 것으로 보인다.
+  /// 스피너 대신 자리를 유지한 채 opacity만 움직인다. 갱신이 잦아 스피너로 갈아끼우면
+  /// 목록이 사라졌다 나타나는 것으로 보인다.
   @ViewBuilder
   private var projectSectionBody: some View {
     if case .failed = store.projectsState {
@@ -209,8 +209,6 @@ extension SidebarView {
       }
     }
     .listStyle(.sidebar)
-    // 프로젝트가 추가·삭제·이름 변경될 때 행이 뚝 나타나지 않게 한다. `refresh` 경로가 목록을
-    // 비우지 않으므로 실제로 바뀐 행만 움직인다.
     .animation(MotionMetrics.layout, value: store.projects)
     .scrollContentBackground(.hidden)
     .padding(.horizontal, -12)
@@ -257,6 +255,7 @@ extension SidebarView {
   private func count(for filter: SidebarFilter) -> Int? {
     store.counts?.count(for: filter)
   }
+
 
   /// macOS 26부터는 Liquid Glass 버튼으로 그린다.
   ///

@@ -45,8 +45,7 @@ struct SidebarFeatureTests {
     }
   }
 
-  /// 2컬럼 ↔ 3컬럼 전환으로 사이드바가 다시 만들어지면 `.task`가 한 번 더 실행된다.
-  /// 여기서 `.loading`으로 되돌리면 생성 화면을 드나들 때마다 사이드바가 깜빡인다.
+  /// 화면이 다시 만들어지면 `.task`가 한 번 더 실행된다. 여기서 `.loading`으로 되돌리면 깜빡인다.
   @Test("이미 로드된 상태에서 task가 다시 실행돼도 값을 비우지 않는다")
   func taskAfterReloadKeepsLoadedValues() async {
     let projects = [ProjectItem(id: UUID(), name: "Backend")]
@@ -167,8 +166,6 @@ struct SidebarFeatureTests {
     await store.receive(.delegate(.selectionChanged(.project(id: id))))
   }
 
-  /// delegate가 나가면 MainFeature가 목록 State를 새로 만드는데, collection 값은 그대로라
-  /// `.task(id:)`가 재조회를 걸지 않아 목록이 빈 채로 남았다. 발신 자체를 막아야 한다.
   /// `selection`으로 판정하면 "같은 선택"으로 삼켜져 All에서 생성에 들어가면 돌아오지 못했다.
   @Test("생성 중에는 같은 항목을 다시 눌러도 delegate가 나간다")
   func didSelectSameItemWhileCreatingStillNotifies() async {
@@ -201,6 +198,34 @@ struct SidebarFeatureTests {
     #expect(store.state.highlighted == .filter(.starred))
   }
 
+  /// 대상 ID가 남으면 다음 삭제가 엉뚱한 프로젝트를 지울 수 있다.
+  @Test("삭제 alert를 확인 없이 닫으면 대상이 지워진다")
+  func dismissingDeleteAlertClearsTarget() async {
+    let item = ProjectItem(id: UUID(), name: "Backend")
+    var state = SidebarFeature.State()
+    state.projectsState = .loaded([item])
+
+    let store = TestStore(initialState: state) { SidebarFeature() }
+
+    await store.send(.didTapDelete(id: item.id)) {
+      $0.deletingProjectID = item.id
+      $0.alert = AlertState {
+        TextState("'\(item.name)' 프로젝트를 삭제할까요?")
+      } actions: {
+        ButtonState(role: .destructive, action: .confirmDelete) { TextState("삭제") }
+        ButtonState(role: .cancel) { TextState("취소") }
+      } message: {
+        TextState("프로젝트에 속한 Secret과의 연결이 해제됩니다. Secret 자체는 삭제되지 않습니다.")
+      }
+    }
+    await store.send(.alert(.dismiss)) {
+      $0.deletingProjectID = nil
+      $0.alert = nil
+    }
+  }
+
+  /// 흘려보내면 MainFeature가 목록 State를 새로 만드는데, `collection`이 그대로라
+  /// `.task(id:)`가 재조회를 걸지 않아 목록이 빈 채로 남는다.
   @Test("이미 선택된 항목을 다시 눌러도 delegate를 보내지 않는다")
   func didSelectSameSelectionSendsNothing() async {
     // 기본 selection이 .filter(.all)이므로 그대로 다시 누른다.
@@ -347,32 +372,6 @@ struct SidebarFeatureTests {
       } message: {
         TextState("프로젝트에 속한 Secret과의 연결이 해제됩니다. Secret 자체는 삭제되지 않습니다.")
       }
-    }
-  }
-
-  /// 대상 ID가 남으면 다음 삭제가 엉뚱한 프로젝트를 지울 수 있다.
-  @Test("삭제 alert를 확인 없이 닫으면 대상이 지워진다")
-  func dismissingDeleteAlertClearsTarget() async {
-    let item = ProjectItem(id: UUID(), name: "Backend")
-    var state = SidebarFeature.State()
-    state.projectsState = .loaded([item])
-
-    let store = TestStore(initialState: state) { SidebarFeature() }
-
-    await store.send(.didTapDelete(id: item.id)) {
-      $0.deletingProjectID = item.id
-      $0.alert = AlertState {
-        TextState("'\(item.name)' 프로젝트를 삭제할까요?")
-      } actions: {
-        ButtonState(role: .destructive, action: .confirmDelete) { TextState("삭제") }
-        ButtonState(role: .cancel) { TextState("취소") }
-      } message: {
-        TextState("프로젝트에 속한 Secret과의 연결이 해제됩니다. Secret 자체는 삭제되지 않습니다.")
-      }
-    }
-    await store.send(.alert(.dismiss)) {
-      $0.deletingProjectID = nil
-      $0.alert = nil
     }
   }
 

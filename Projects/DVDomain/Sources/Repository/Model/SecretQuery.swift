@@ -29,7 +29,9 @@ public struct SecretQuery: Equatable, Sendable {
 }
 
 extension SecretQuery {
-    /// `Hashable`인 것은 목록 뷰가 "무엇을 보고 있는지"의 정체성(`.id(_:)`)으로 쓰기 때문이다.
+    /// `Hashable`인 것은 화면이 "무엇을 보고 있는지"의 정체성으로 쓰기 때문이다 —
+    /// 목록 뷰가 컬렉션이 바뀔 때 내용을 새로 그리는 기준(`.id(_:)`)으로 삼는다.
+    /// 연관값이 `Date`·`UUID`뿐이라 자동 합성으로 충분하다.
     public enum Collection: Equatable, Hashable, Sendable {
         case all
         case liked
