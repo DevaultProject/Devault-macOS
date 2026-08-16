@@ -111,6 +111,52 @@ struct MainFeatureTests {
     await store.receive(.sidebar(.setCreatingSecret(false)))
   }
 
+  /// State를 새로 만들면 `secretsState`가 비는데 `.task(id: collection)`은 다시 돌지 않아
+  /// 개수는 0이 아닌데 목록만 빈 화면이 남는다.
+  @Test("같은 대상으로 돌아오면 이미 불러온 목록을 버리지 않는다")
+  func returningToSameCollectionKeepsLoadedSecrets() async {
+    let secret = Self.makeSecret()
+
+    var initial = MainFeature.State()
+    initial.selectSecretType = .init()
+    initial.sidebar.mode = .creating(previous: .filter(.all))
+    initial.secretList.secretsState = .loaded([secret])
+    initial.secretList.selectedSecretID = secret.id
+
+    let store = TestStore(initialState: initial) { MainFeature() }
+
+    await store.send(.sidebar(.didSelect(.filter(.all))))
+    await store.receive(.sidebar(.delegate(.selectionChanged(.filter(.all))))) {
+      $0.selectSecretType = nil
+      // `secretsState`를 단언하지 않는 것 자체가 검증이다.
+      $0.secretList.selectedSecretID = nil
+    }
+    await store.receive(.sidebar(.setCreatingSecret(false))) {
+      $0.sidebar.mode = .browsing(.filter(.all))
+    }
+    #expect(store.state.secretList.secretsState == .loaded([secret]))
+  }
+
+  /// State를 갈아끼우면 목록이 버려지는데 `collection`이 같아 다시 읽지도 않는다.
+  @Test("프로젝트 이름 변경은 목록을 버리지 않고 이름만 갈아끼운다")
+  func projectRenameKeepsLoadedSecrets() async {
+    let projectID = UUID()
+    let secret = Self.makeSecret()
+    let renamed = ProjectItem(id: projectID, name: "Backend V2")
+
+    var initial = MainFeature.State()
+    initial.sidebar.mode = .browsing(.project(id: projectID))
+    initial.secretList = .init(collection: .project(id: projectID), projectName: "Backend")
+    initial.secretList.secretsState = .loaded([secret])
+
+    let store = TestStore(initialState: initial) { MainFeature() }
+
+    await store.send(.sidebar(.delegate(.projectRenamed(renamed)))) {
+      $0.secretList.projectName = "Backend V2"
+    }
+    #expect(store.state.secretList.secretsState == .loaded([secret]))
+  }
+
   @Test("selectionChanged는 selectSecretType을 닫고 생성 모드를 벗어난다")
   func selectionChangedClosesSecretTypeSelection() async {
     var initial = MainFeature.State()

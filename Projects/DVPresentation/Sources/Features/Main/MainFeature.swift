@@ -1,6 +1,7 @@
 // Copyright © 2026 Devault. All rights reserved
 
 import ComposableArchitecture
+import DVDomain
 
 // MARK: - MainFeature
 
@@ -225,7 +226,7 @@ public struct MainFeature {
         // 생성 중이면 목록을 옮기지 않는다 — 마치고 엉뚱한 목록으로 돌아오게 된다.
         if case .browsing = state.sidebar.mode {
           state.sidebar.selection = .project(id: item.id)
-          state.secretList = .init(collection: .project(id: item.id), projectName: item.name)
+          state.secretList.retarget(to: .project(id: item.id), projectName: item.name)
         }
         return .send(.sidebar(.refresh))
 
@@ -285,19 +286,22 @@ extension MainFeature {
       state.settings = .init()
       return .none
 
+    // State를 갈아끼우면 목록이 버려지는데 `collection`이 같아 다시 읽지도 않는다.
     case .projectRenamed(let item):
       if case .project(id: item.id) = state.sidebar.selection {
-        state.secretList = .init(collection: .project(id: item.id), projectName: item.name)
+        state.secretList.projectName = item.name
       }
       return .none
     }
   }
 
   /// 사이드바에서 고른 곳으로 이동한다. 생성 중이었다면 그 플로우를 접는다.
+  /// 고른 곳이 이미 보고 있던 곳일 수 있어(생성 중 같은 필터 재선택) `retarget`을 거친다.
   private func applySelection(_ selection: SidebarSelection, _ state: inout State) {
     exitCreating(&state)
     state.secretDetail = nil
-    state.secretList = makeSecretListState(selection: selection, projects: state.sidebar.projects)
+    let target = makeCollection(selection: selection, projects: state.sidebar.projects)
+    state.secretList.retarget(to: target.collection, projectName: target.projectName)
   }
 
   /// 생성 플로우로 들어간다. 조회 중이던 시크릿을 함께 놓는다 — 상세 State가 살아남으면
@@ -315,24 +319,24 @@ extension MainFeature {
     state.selectSecretType = nil
   }
 
-  private func makeSecretListState(
+  /// 교체 여부는 `SecretListFeature.State.retarget(to:projectName:)`이 정하므로 값만 돌려준다.
+  private func makeCollection(
     selection: SidebarSelection,
     projects: IdentifiedArrayOf<ProjectItem>
-  ) -> SecretListFeature.State {
+  ) -> (collection: SecretQuery.Collection, projectName: String?) {
     switch selection {
     case .filter(.all):
-      return .init(collection: .all)
+      return (.all, nil)
     case .filter(.starred):
-      return .init(collection: .liked)
+      return (.liked, nil)
     case .filter(.notice):
-      return .init(collection: .notice(referenceDate: now))
+      return (.notice(referenceDate: now), nil)
     case .filter(.expired):
-      return .init(collection: .expired(referenceDate: now))
+      return (.expired(referenceDate: now), nil)
     case .filter(.deleted):
-      return .init(collection: .deleted)
+      return (.deleted, nil)
     case .project(id: let id):
-      let projectName = projects[id: id]?.name
-      return .init(collection: .project(id: id), projectName: projectName)
+      return (.project(id: id), projects[id: id]?.name)
     }
   }
 
