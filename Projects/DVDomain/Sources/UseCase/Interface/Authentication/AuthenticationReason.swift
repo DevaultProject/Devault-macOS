@@ -13,4 +13,7 @@ public enum AuthenticationReason {
 
     /// 시크릿 값 열람. 첫 복호화와 재인증이 같은 문구를 쓴다.
     public static let revealSecret = "시크릿 값을 확인하려면 인증이 필요합니다"
+
+    /// 시크릿 값 복사. 복사 시 인증 설정이 켜진 경우에만 사용한다.
+    public static let copySecret = "시크릿 값을 복사하려면 인증이 필요합니다"
 }

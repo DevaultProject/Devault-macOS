@@ -72,8 +72,8 @@ public struct SecretDetailFeature {
         case didTapRetryReveal
         /// 필드의 눈 버튼. 여는 경우에만 인증이 필요할 수 있고, 닫는 것은 언제나 즉시 처리된다.
         case didTapToggleReveal(SecretFieldID)
-        /// 필드의 복사 버튼. 복사 자체는 인증하지 않지만, 값이 아직 복호화되지 않았다면
-        /// 복호화 때문에 인증이 필요할 수 있다.
+        /// 필드의 복사 버튼. 복사 자체의 인증 여부는 Copy UseCase가 설정에 따라 판단한다.
+        /// 값이 아직 복호화되지 않았다면 기존 Reveal 경로로 먼저 읽는다.
         case didTapCopy(SecretFieldID)
         /// 평문 필드의 복사 버튼. 값이 이미 화면에 있으므로 복호화도 인증도 거치지 않고,
         /// 비밀이 아니므로 민감 값 복사 정책(자동 정리·반복 감지)도 타지 않는다.
@@ -246,11 +246,9 @@ public struct SecretDetailFeature {
                 }
                 return reauthenticateEffect(revealing: field)
 
-            // 복사는 인증하지 않는다. 다만 값이 없으면 복호화가 필요하고, 그 경로가 인증을 탄다.
-            //
-            // 인증 창이 만료된 뒤에도 복사는 통과한다. 눈 버튼(재인증 요구)보다 느슨한 셈이지만
-            // 의도한 정책이다 — 복사는 값을 화면에 드러내지 않고, 클립보드로 나간 값은
-            // `CopySensitiveValueUseCase`가 30초 뒤 정리하고 반복 복사를 감시한다.
+            // Copy 인증 여부는 `CopySensitiveValueUseCase`가 설정을 읽어 결정한다.
+            // TODO: payload가 없을 때 Reveal 인증과 Copy 인증이 중복될 수 있으므로,
+            // Copy 전용 payload 조회 경로가 준비되면 아래 Reveal 경로를 교체한다.
             case .didTapCopy(let field):
                 guard case .loaded(let payload) = state.payloadState else {
                     state.payloadState = .loading
@@ -365,7 +363,7 @@ public struct SecretDetailFeature {
         .cancellable(id: CancelID.reveal, cancelInFlight: true)
     }
 
-    /// 민감 값 복사. 클립보드 쓰기·30초 자동 정리·반복 복사 감지는 UseCase가 수행한다.
+    /// 민감 값 복사. 설정에 따른 인증, 클립보드 쓰기·자동 정리·반복 복사 감지는 UseCase가 수행한다.
     private func copyEffect(value: String) -> Effect<Action> {
         .run { send in
             do {

@@ -16,6 +16,7 @@ enum LiveUseCases {
     static let copySensitiveValue: any CopySensitiveValueUseCase = CopySensitiveValueUseCaseImpl(
         clipboardService: ClipboardServiceImpl(),
         notificationService: LiveServices.securityNotification,
+        authenticateUseCase: authenticate,
         settingsRepository: LiveRepositories.settings
     )
 

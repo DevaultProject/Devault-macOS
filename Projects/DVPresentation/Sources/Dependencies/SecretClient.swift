@@ -33,8 +33,8 @@ public struct SecretClient: Sendable {
   /// payload를 들고 있는데 인증 창만 만료된 경우, 다시 복호화할 이유가 없어 이 액션이 필요하다.
   public var authenticate: @Sendable (_ reason: String) async throws -> Void
 
-  /// 민감 값을 클립보드에 복사한다. 일정 시간 뒤 자동 정리와 짧은 간격 반복 복사 감지가 함께 수행된다.
-  /// **인증하지 않는다** — 복사 시 인증은 정책상 요구하지 않는다.
+  /// 민감 값을 클립보드에 복사한다. 설정에 따른 인증, 일정 시간 뒤 자동 정리와 짧은 간격
+  /// 반복 복사 감지가 함께 수행된다.
   public var copySensitiveValue: @Sendable (_ value: String) async throws -> Void
 
   /// 평문 값을 클립보드에 복사한다. 자동 정리도 반복 복사 감지도 하지 않는다.

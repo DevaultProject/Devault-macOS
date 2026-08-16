@@ -9,12 +9,69 @@ import Testing
 struct CopySensitiveValueUseCaseImplTests {
     private let fixedInstant = ContinuousClock.now
 
+    @Test("복사 인증 설정이 켜져 있으면 인증 후 값을 쓴다")
+    func executeAuthenticatesWhenRequired() async throws {
+        let clipboardService = FakeClipboardService()
+        let authenticateUseCase = StubAuthenticateUseCase()
+        let sut = CopySensitiveValueUseCaseImpl(
+            clipboardService: clipboardService,
+            notificationService: FakeSecurityNotificationService(),
+            authenticateUseCase: authenticateUseCase,
+            settingsRepository: makeSettingsRepository(isRequireAuthToCopyEnabled: true),
+            now: { self.fixedInstant }
+        )
+
+        try await sut.execute("secret-value")
+
+        #expect(authenticateUseCase.authenticateCount == 1)
+        #expect(authenticateUseCase.lastReason == AuthenticationReason.copySecret)
+        #expect(clipboardService.writtenValues == ["secret-value"])
+    }
+
+    @Test("복사 인증 설정이 꺼져 있으면 인증 없이 값을 쓴다")
+    func executeSkipsAuthenticationWhenDisabled() async throws {
+        let clipboardService = FakeClipboardService()
+        let authenticateUseCase = StubAuthenticateUseCase()
+        let sut = CopySensitiveValueUseCaseImpl(
+            clipboardService: clipboardService,
+            notificationService: FakeSecurityNotificationService(),
+            authenticateUseCase: authenticateUseCase,
+            settingsRepository: makeSettingsRepository(isRequireAuthToCopyEnabled: false),
+            now: { self.fixedInstant }
+        )
+
+        try await sut.execute("secret-value")
+
+        #expect(authenticateUseCase.authenticateCount == 0)
+        #expect(clipboardService.writtenValues == ["secret-value"])
+    }
+
+    @Test("복사 인증에 실패하면 클립보드에 값을 쓰지 않는다")
+    func executeDoesNotWriteWhenAuthenticationFails() async {
+        let clipboardService = FakeClipboardService()
+        let authenticateUseCase = StubAuthenticateUseCase()
+        authenticateUseCase.error = .cancelled
+        let sut = CopySensitiveValueUseCaseImpl(
+            clipboardService: clipboardService,
+            notificationService: FakeSecurityNotificationService(),
+            authenticateUseCase: authenticateUseCase,
+            settingsRepository: makeSettingsRepository(isRequireAuthToCopyEnabled: true),
+            now: { self.fixedInstant }
+        )
+
+        await #expect(throws: UserAuthenticationError.cancelled) {
+            try await sut.execute("secret-value")
+        }
+        #expect(clipboardService.writtenValues.isEmpty)
+    }
+
     @Test("값을 ClipboardService에 그대로 쓴다")
     func executeWritesValue() async throws {
         let clipboardService = FakeClipboardService()
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: FakeSecurityNotificationService(),
+            authenticateUseCase: StubAuthenticateUseCase(),
             settingsRepository: makeSettingsRepository(),
             now: { self.fixedInstant }
         )
@@ -31,6 +88,7 @@ struct CopySensitiveValueUseCaseImplTests {
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: FakeSecurityNotificationService(),
+            authenticateUseCase: StubAuthenticateUseCase(),
             settingsRepository: makeSettingsRepository(),
             now: { self.fixedInstant }
         )
@@ -47,6 +105,7 @@ struct CopySensitiveValueUseCaseImplTests {
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: notificationService,
+            authenticateUseCase: StubAuthenticateUseCase(),
             settingsRepository: makeSettingsRepository(),
             now: { self.fixedInstant }
         )
@@ -69,6 +128,7 @@ struct CopySensitiveValueUseCaseImplTests {
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: notificationService,
+            authenticateUseCase: StubAuthenticateUseCase(),
             settingsRepository: makeSettingsRepository(
                 isClipboardAbnormalAccessAlertEnabled: false
             ),
@@ -93,6 +153,7 @@ struct CopySensitiveValueUseCaseImplTests {
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: notificationService,
+            authenticateUseCase: StubAuthenticateUseCase(),
             settingsRepository: makeSettingsRepository(
                 isAutoClearClipboardEnabled: true,
                 autoClearClipboardDelaySeconds: 15
@@ -115,6 +176,7 @@ struct CopySensitiveValueUseCaseImplTests {
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: notificationService,
+            authenticateUseCase: StubAuthenticateUseCase(),
             settingsRepository: makeSettingsRepository(
                 isAutoClearClipboardEnabled: false
             ),
@@ -136,6 +198,7 @@ struct CopySensitiveValueUseCaseImplTests {
         let sut = CopySensitiveValueUseCaseImpl(
             clipboardService: clipboardService,
             notificationService: notificationService,
+            authenticateUseCase: StubAuthenticateUseCase(),
             settingsRepository: makeSettingsRepository(
                 isAutoClearClipboardEnabled: true,
                 autoClearClipboardDelaySeconds: 15
@@ -153,14 +216,28 @@ struct CopySensitiveValueUseCaseImplTests {
 
 extension CopySensitiveValueUseCaseImplTests {
     private func makeSettingsRepository(
+        isRequireAuthToCopyEnabled: Bool = false,
         isAutoClearClipboardEnabled: Bool = false,
         autoClearClipboardDelaySeconds: Int = 30,
         isClipboardAbnormalAccessAlertEnabled: Bool = true
     ) -> FakeSettingsRepository {
         let repository = FakeSettingsRepository()
+        repository.isRequireAuthToCopyEnabledValue = isRequireAuthToCopyEnabled
         repository.isAutoClearClipboardEnabledValue = isAutoClearClipboardEnabled
         repository.autoClearClipboardDelaySecondsValue = autoClearClipboardDelaySeconds
         repository.isClipboardAbnormalAccessAlertEnabledValue = isClipboardAbnormalAccessAlertEnabled
         return repository
+    }
+}
+
+private final class StubAuthenticateUseCase: AuthenticateUseCase, @unchecked Sendable {
+    var error: UserAuthenticationError?
+    private(set) var authenticateCount = 0
+    private(set) var lastReason: String?
+
+    func authenticate(reason: String) async throws {
+        authenticateCount += 1
+        lastReason = reason
+        if let error { throw error }
     }
 }
