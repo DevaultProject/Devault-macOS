@@ -20,8 +20,9 @@ protocol FormLayoutContext {
 
 /// 폼이 창 전체를 쓰는 **단일 화면** 맥락 — CreateSecret.
 ///
-/// 사이즈는 항상 고정(`DVComponentSize` 그대로)이다. 좁아지면 2열 폼이 1열로 접히고
-/// full-width 필드가 `.lg` → `.md`로 줄어든다.
+/// 두 배열 모두 폭은 컨테이너를 따른다. 좁아지면 2열 폼이 1열로 접히고, 접힌 뒤에는
+/// 다시 컨테이너를 따라 연속으로 줄어든다. 하한만 다르다 — `.dual`은 `slotFloor`,
+/// `.single`은 한 칸이 창 전체를 쓰므로 `standaloneSlotFloor`.
 enum StandaloneFormLayout: FormLayoutContext {
 
     static func layout(for containerWidth: CGFloat) -> FormLayout {
@@ -34,7 +35,7 @@ enum StandaloneFormLayout: FormLayoutContext {
 /// NavigationSplitView **detail 컬럼**에 놓이는 폼 맥락 — SecretDetail (2분할 화면).
 ///
 /// 단일 화면과 다른 점은 **임계값 아래에서의 배열**이다:
-/// - 단일 화면은 고정 `.md` + 페어를 세로로 접음
+/// - 단일 화면은 페어를 세로로 접음
 /// - detail 컬럼은 컨테이너를 채우고 페어를 절반씩 가로 유지 (Figma `1768:30806`)
 ///
 /// detail 컬럼은 폭 상한이 없다(`navigationSplitViewColumnWidth(min: 420, ideal: 480)`).
