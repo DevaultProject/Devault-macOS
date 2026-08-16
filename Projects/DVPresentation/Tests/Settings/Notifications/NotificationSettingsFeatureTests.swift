@@ -3,6 +3,7 @@
 import Foundation
 
 import ComposableArchitecture
+import DVDomain
 import Testing
 
 @testable import DVPresentation
@@ -16,7 +17,7 @@ struct NotificationSettingsFeatureTests {
       NotificationSettingsFeature()
     } withDependencies: {
       $0.notificationSettingsClient.isExpiryAlertsEnabled = { false }
-      $0.notificationSettingsClient.expiryAlertDaysBefore = { [7, 1] }
+      $0.notificationSettingsClient.expiryAlertDaysBefore = { [.sevenDaysBefore, .threeDaysBefore] }
       $0.notificationSettingsClient.isAuthFailureAlertEnabled = { false }
       $0.notificationSettingsClient.isClipboardAbnormalAccessAlertEnabled = { false }
       $0.notificationSettingsClient.isPermissionGranted = { false }
@@ -24,7 +25,7 @@ struct NotificationSettingsFeatureTests {
 
     await store.send(.task) {
       $0.isExpiryAlertsEnabled = false
-      $0.expiryAlertDaysBefore = [.sevenDaysBefore, .oneDayBefore]
+      $0.expiryAlertDaysBefore = [.sevenDaysBefore, .threeDaysBefore]
       $0.isAuthFailureAlertEnabled = false
       $0.isClipboardAbnormalAccessAlertEnabled = false
     }
@@ -50,7 +51,7 @@ struct NotificationSettingsFeatureTests {
 
   @Test("만료 알림 타이밍 선택을 저장한다")
   func expiryAlertDaysBeforePersists() async {
-    let saved = LockIsolated<[Int]?>(nil)
+    let saved = LockIsolated<[ExpiryAlertDay]?>(nil)
     let store = TestStore(initialState: NotificationSettingsFeature.State()) {
       NotificationSettingsFeature()
     } withDependencies: {
@@ -58,9 +59,9 @@ struct NotificationSettingsFeatureTests {
     }
 
     await store.send(.didTapExpiryAlertDay(.thirtyDaysBefore)) {
-      $0.expiryAlertDaysBefore = [.sevenDaysBefore, .oneDayBefore, .expirationDay]
+      $0.expiryAlertDaysBefore = [.sevenDaysBefore, .threeDaysBefore, .expirationDay]
     }
-    #expect(saved.value == [7, 1, 0])
+    #expect(saved.value == [.sevenDaysBefore, .threeDaysBefore, .expirationDay])
   }
 
   @Test("만료 알림 재예약에 실패하면 설정 저장 결과와 재시도 안내를 표시한다")

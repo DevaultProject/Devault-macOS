@@ -9,7 +9,7 @@ public enum SecurityNotification: Equatable, Sendable {
     /// 클립보드에 민감 값이 30초 이상 남아 있어 정리함
     case clipboardExceeded(seconds: Int)
     /// Secret이 곧 만료됨. 인증 없이 노출될 수 있어 name은 포함하지 않음.
-    case secretExpiresSoon(secretID: UUID, daysBefore: Int)
+    case secretExpiresSoon(secretID: UUID, timing: ExpiryAlertDay)
 }
 
 /// `abnormalAccess`를 유발한 반복 행위의 종류입니다. 문구는 소비처가 만들고, 여기선 분기 값만 제공합니다.

@@ -11,12 +11,12 @@ public protocol NotificationSettingsUseCase: Sendable {
   /// - Parameter enabled: 만료 알림 사용 여부
   func setExpiryAlertsEnabled(_ enabled: Bool) async throws
 
-  /// 만료 며칠 전에 알림을 보낼지(예: [30, 7, 1, 0], 0은 당일).
-  /// - Returns: 만료 전 알림 발송 일수 목록
-  func expiryAlertDaysBefore() -> [Int]
+  /// 만료 알림을 보낼 시점을 반환한다.
+  /// - Returns: 만료 알림 발송 시점 목록
+  func expiryAlertDaysBefore() -> [ExpiryAlertDay]
   /// 만료 알림 발송 일수 목록을 저장하고 기존 만료 알림 예약을 즉시 동기화한다.
-  /// - Parameter days: 저장할 만료 전 알림 발송 일수 목록
-  func setExpiryAlertDaysBefore(_ days: [Int]) async throws
+  /// - Parameter days: 저장할 만료 알림 발송 시점 목록
+  func setExpiryAlertDaysBefore(_ days: [ExpiryAlertDay]) async throws
 
   /// 반복 인증 실패 알림 사용 여부를 확인한다.
   /// - Returns: 반복 인증 실패 알림 사용 여부

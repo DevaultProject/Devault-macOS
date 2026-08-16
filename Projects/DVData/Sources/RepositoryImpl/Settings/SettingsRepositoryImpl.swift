@@ -32,7 +32,7 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
       UserDefaultsKey.autoClearClipboardDelaySeconds.rawValue: 30,
       UserDefaultsKey.isWindowCaptureProtectionEnabled.rawValue: true,
       UserDefaultsKey.isExpiryAlertsEnabled.rawValue: true,
-      UserDefaultsKey.expiryAlertDaysBefore.rawValue: [30, 7, 1, 0],
+      UserDefaultsKey.expiryAlertDaysBefore.rawValue: ExpiryAlertDay.defaultSelection.map(\.rawValue),
       UserDefaultsKey.isAuthFailureAlertEnabled.rawValue: true,
       UserDefaultsKey.isClipboardAbnormalAccessAlertEnabled.rawValue: true,
     ])
@@ -188,12 +188,14 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
     defaults.set(enabled, forKey: .isExpiryAlertsEnabled)
   }
 
-  public func expiryAlertDaysBefore() -> [Int] {
-    defaults.integerArray(forKey: .expiryAlertDaysBefore) ?? [30, 7, 1, 0]
+  public func expiryAlertDaysBefore() -> [ExpiryAlertDay] {
+    let rawValues = defaults.integerArray(forKey: .expiryAlertDaysBefore)
+      ?? ExpiryAlertDay.defaultSelection.map(\.rawValue)
+    return rawValues.compactMap(ExpiryAlertDay.init(rawValue:))
   }
 
-  public func setExpiryAlertDaysBefore(_ days: [Int]) {
-    defaults.set(days, forKey: .expiryAlertDaysBefore)
+  public func setExpiryAlertDaysBefore(_ days: [ExpiryAlertDay]) {
+    defaults.set(days.map(\.rawValue), forKey: .expiryAlertDaysBefore)
   }
 
   public func isAuthFailureAlertEnabled() -> Bool {

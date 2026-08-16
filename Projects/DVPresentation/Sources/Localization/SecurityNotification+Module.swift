@@ -23,8 +23,8 @@ extension SecurityNotification {
         String.module("The copied value was cleared after being on the clipboard for over \(seconds) seconds.")
       )
 
-    case .secretExpiresSoon(_, let daysBefore):
-      if daysBefore == 0 {
+    case .secretExpiresSoon(_, let timing):
+      if timing == .expirationDay {
         return (
           String.module("A secret expires today"),
           String.module("A saved secret expires today.")
@@ -32,7 +32,7 @@ extension SecurityNotification {
       }
       return (
         String.module("A secret is expiring soon"),
-        String.module("A saved secret will expire in \(daysBefore) days.")
+        String.module("A saved secret will expire in \(timing.rawValue) days.")
       )
     }
   }

@@ -6,9 +6,6 @@ import DVCore
 
 public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiryNotificationsUseCase {
 
-    /// 지금까지 설정 화면이 제공한 모든 가능한 옵션 — 설정이 바뀌어도 예전에 예약된 마크를
-    /// 확실히 취소하기 위해 schedule()이 아니라 cancel()에서만 이 고정 목록을 쓴다.
-    private static let allPossibleDaysBeforeExpiry = [30, 7, 1, 0]
     private static let expiryNotificationHour = 9
 
     private let repository: any SecretRepository
@@ -53,10 +50,10 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
 
         let now = dateProvider()
         guard expiresAt > now else { return }
-        for daysBefore in settingsRepository.expiryAlertDaysBefore() {
+        for timing in settingsRepository.expiryAlertDaysBefore() {
             guard let dayMark = Self.notificationDate(
                 expiresAt: expiresAt,
-                daysBefore: daysBefore
+                timing: timing
             ) else {
                 continue
             }
@@ -64,39 +61,42 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
             guard dayMark > now else { continue }
 
             let notification = SecurityNotification.secretExpiresSoon(
-                secretID: secret.id, daysBefore: daysBefore
+                secretID: secret.id,
+                timing: timing
             )
 
             do {
-                // identifier가 secretID+daysBefore로 고정돼 있어 반복 호출돼도 덮어쓸 뿐 중복 안됨
+                // identifier가 secretID+timing으로 고정돼 있어 반복 호출돼도 덮어쓸 뿐 중복 안됨
                 try await notificationService.schedule(
                     ScheduledSecurityNotification(
-                        identifier: Self.notificationID(secretID: secret.id, daysBefore: daysBefore),
+                        identifier: Self.notificationID(secretID: secret.id, timing: timing),
                         notification: notification,
                         fireDate: dayMark
                     )
                 )
             } catch {
-                Log.warn("만료 알림 예약 실패(\(secret.id), \(daysBefore)일 전): \(error)", category: .notification)
+                Log.warn("만료 알림 예약 실패(\(secret.id), \(timing.rawValue)일 전): \(error)", category: .notification)
             }
         }
     }
 
     public func cancel(secretID: UUID) async {
-        // 현재 설정이 아니라 "가능했던 모든" daysBefore를 취소 — 이미 소비된 것도 무시되니 존재 확인 안함
-        let identifiers = Self.allPossibleDaysBeforeExpiry.map { Self.notificationID(secretID: secretID, daysBefore: $0) }
+        // 현재 선택과 관계없이 Domain이 정의한 모든 알림 시점을 취소해 이전 예약이 남지 않게 한다.
+        let identifiers = ExpiryAlertDay.allCases.map {
+            Self.notificationID(secretID: secretID, timing: $0)
+        }
         await notificationService.cancel(identifiers: identifiers)
     }
 
-    private static func notificationID(secretID: UUID, daysBefore: Int) -> String {
-        "secret-expiry-\(secretID.uuidString)-\(daysBefore)d"
+    private static func notificationID(secretID: UUID, timing: ExpiryAlertDay) -> String {
+        "secret-expiry-\(secretID.uuidString)-\(timing.rawValue)d"
     }
 
-    private static func notificationDate(expiresAt: Date, daysBefore: Int) -> Date? {
+    private static func notificationDate(expiresAt: Date, timing: ExpiryAlertDay) -> Date? {
         let calendar = Calendar.current
         guard let notificationDay = calendar.date(
             byAdding: .day,
-            value: -daysBefore,
+            value: -timing.rawValue,
             to: expiresAt
         ) else { return nil }
 
