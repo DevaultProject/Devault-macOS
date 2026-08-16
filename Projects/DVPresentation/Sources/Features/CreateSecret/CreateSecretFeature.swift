@@ -95,6 +95,9 @@ public struct CreateSecretFeature {
         public enum Delegate: Equatable {
             case secretCreated(Secret.ID)
             case cancelled
+            /// 폼 안에서 프로젝트를 새로 만들었다. **시크릿 저장 여부와 무관하게** 프로젝트는 이미
+            /// 만들어졌으므로 사이드바가 곧바로 반영해야 한다 — 취소하고 나가도 프로젝트는 남는다.
+            case projectsChanged
         }
     }
 
@@ -203,7 +206,7 @@ public struct CreateSecretFeature {
                 state.availableProjects.append(
                     Project(id: projectItem.id, name: projectItem.name, createdAt: now, updatedAt: now)
                 )
-                return .none
+                return .send(.delegate(.projectsChanged))
 
             case .createProject:
                 return .none

@@ -35,9 +35,7 @@ struct MainFeatureTests {
     }
 
     await store.send(.secretList(.delegate(.secretsChanged)))
-    await store.receive(.sidebar(.countsRefreshRequested)) {
-      $0.sidebar.countsState = .loading
-    }
+    await store.receive(.sidebar(.countsRefreshRequested))
     await store.receive(.sidebar(.countsResponse(.success(counts)))) {
       $0.sidebar.countsState = .loaded(counts)
     }
@@ -176,9 +174,7 @@ struct MainFeatureTests {
     await store.receive(.sidebar(.setCreatingSecret(false))) {
       $0.sidebar.isCreatingSecret = false
     }
-    await store.receive(.sidebar(.countsRefreshRequested)) {
-      $0.sidebar.countsState = .loading
-    }
+    await store.receive(.sidebar(.countsRefreshRequested))
     await store.receive(.sidebar(.countsResponse(.success(counts)))) {
       $0.sidebar.countsState = .loaded(counts)
     }
@@ -238,10 +234,7 @@ struct MainFeatureTests {
         projectName: "Backend"
       )
     }
-    await store.receive(.sidebar(.task)) {
-      $0.sidebar.projectsState = .loading
-      $0.sidebar.countsState = .loading
-    }
+    await store.receive(.sidebar(.refresh))
     await store.receive(.sidebar(.projectsResponse(.success([item])))) {
       $0.sidebar.projectsState = .loaded([item])
     }
@@ -270,10 +263,7 @@ struct MainFeatureTests {
       $0.createProject = nil
       // selection 및 secretList 변경 없음
     }
-    await store.receive(.sidebar(.task)) {
-      $0.sidebar.projectsState = .loading
-      $0.sidebar.countsState = .loading
-    }
+    await store.receive(.sidebar(.refresh))
     await store.receive(.sidebar(.projectsResponse(.success([item])))) {
       $0.sidebar.projectsState = .loaded([item])
     }
@@ -427,6 +417,68 @@ struct MainFeatureTests {
     }
   }
 
+  @Test("수정 화면에서 만든 프로젝트는 사이드바에 즉시 반영된다")
+  func projectsChangedFromDetailRefreshesSidebar() async {
+    let secret = Secret(
+      id: UUID(),
+      name: "Test Token",
+      secretType: .apiKeyToken,
+      createdAt: Date(),
+      updatedAt: Date(),
+      payload: SecretPayload(encryptedData: Data(), keyTag: "test", schemaVersion: 1)
+    )
+    let created = [ProjectItem(id: UUID(), name: "새 프로젝트")]
+
+    var initial = MainFeature.State()
+    initial.secretDetail = SecretDetailFeature.State(secret: secret)
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    } withDependencies: {
+      $0.sidebarClient.fetchProjects = { created }
+      $0.sidebarClient.fetchCounts = { _, _ in SecretCounts() }
+      $0.date = .constant(Self.referenceDate)
+    }
+
+    await store.send(.secretDetail(.delegate(.projectsChanged)))
+    await store.receive(.sidebar(.refresh))
+    await store.receive(.sidebar(.projectsResponse(.success(created)))) {
+      $0.sidebar.projectsState = .loaded(IdentifiedArray(uniqueElements: created))
+    }
+    await store.receive(.sidebar(.countsResponse(.success(SecretCounts())))) {
+      $0.sidebar.countsState = .loaded(SecretCounts())
+    }
+    // 편집 중인 화면은 유지된다 — 프로젝트를 만들었다고 폼이 닫히면 안 된다.
+    #expect(store.state.secretDetail != nil)
+  }
+
+  @Test("생성 화면에서 만든 프로젝트도 사이드바에 즉시 반영된다")
+  func projectsChangedFromCreateRefreshesSidebar() async {
+    let created = [ProjectItem(id: UUID(), name: "새 프로젝트")]
+
+    var initial = MainFeature.State()
+    initial.createSecret = CreateSecretFeature.State(secretType: .apiKeyToken)
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    } withDependencies: {
+      $0.sidebarClient.fetchProjects = { created }
+      $0.sidebarClient.fetchCounts = { _, _ in SecretCounts() }
+      $0.date = .constant(Self.referenceDate)
+    }
+
+    await store.send(.createSecret(.delegate(.projectsChanged)))
+    await store.receive(.sidebar(.refresh))
+    await store.receive(.sidebar(.projectsResponse(.success(created)))) {
+      $0.sidebar.projectsState = .loaded(IdentifiedArray(uniqueElements: created))
+    }
+    await store.receive(.sidebar(.countsResponse(.success(SecretCounts())))) {
+      $0.sidebar.countsState = .loaded(SecretCounts())
+    }
+    // 생성 폼은 유지된다 — 프로젝트만 만들고 시크릿 작성은 이어가야 한다.
+    #expect(store.state.createSecret != nil)
+  }
+
   @Test("secretUpdated delegate는 목록을 재조회한다")
   func secretUpdatedRefreshesList() async {
     let secret = Secret(
@@ -455,9 +507,7 @@ struct MainFeatureTests {
     // refresh는 .loading으로 바꾸지 않는다 — 목록이 깜빡이지 않아야 한다.
     await store.receive(.secretList(.refresh))
     // 즐겨찾기는 Starred 개수를 바꾸므로 사이드바 개수도 갱신되어야 한다.
-    await store.receive(.sidebar(.countsRefreshRequested)) {
-      $0.sidebar.countsState = .loading
-    }
+    await store.receive(.sidebar(.countsRefreshRequested))
     await store.receive(.secretList(.secretsResponse(.success([secret])))) {
       $0.secretList.secretsState = .loaded(IdentifiedArray(uniqueElements: [secret]))
     }
@@ -497,9 +547,7 @@ struct MainFeatureTests {
     }
     await store.receive(.secretList(.refresh))
     // 삭제는 All·Deleted 개수를 바꾸므로 사이드바 개수도 갱신되어야 한다.
-    await store.receive(.sidebar(.countsRefreshRequested)) {
-      $0.sidebar.countsState = .loading
-    }
+    await store.receive(.sidebar(.countsRefreshRequested))
     await store.receive(.secretList(.secretsResponse(.success([])))) {
       $0.secretList.secretsState = .loaded([])
     }
@@ -540,10 +588,7 @@ struct MainFeatureTests {
       )
     }
     // 이후 refetch로 목록도 동기화
-    await store.receive(.sidebar(.task)) {
-      $0.sidebar.projectsState = .loading
-      $0.sidebar.countsState = .loading
-    }
+    await store.receive(.sidebar(.refresh))
     await store.receive(.sidebar(.projectsResponse(.success([renamed])))) {
       $0.sidebar.projectsState = .loaded([renamed])
     }
