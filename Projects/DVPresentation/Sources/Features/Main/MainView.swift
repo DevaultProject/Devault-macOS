@@ -75,9 +75,15 @@ extension MainView {
     }
   }
 
+  /// 폭을 고정한다(min == ideal == max). 범위를 주면 `.balanced`가 남는 폭을 컬럼끼리 나눠 가져,
+  /// 가운데가 접힐 때 사이드바 폭이 흔들린다.
   private var sidebarColumn: some View {
     SidebarView(store: store.scope(state: \.sidebar, action: \.sidebar))
-      .navigationSplitViewColumnWidth(min: 200, ideal: 250, max: 270)
+      .navigationSplitViewColumnWidth(
+        min: WindowLayoutMetrics.sidebarWidth,
+        ideal: WindowLayoutMetrics.sidebarWidth,
+        max: WindowLayoutMetrics.sidebarWidth
+      )
   }
 
   /// 생성 중에는 폭 0으로 접혀 2컬럼처럼 보인다.
@@ -91,11 +97,11 @@ extension MainView {
       .opacity(isCollapsed ? 0 : 1)
       // 드래그 하한은 컬럼이 아니라 콘텐츠가 갖는다. 컬럼 `min`으로 주면 접힐 때
       // `width >= 300`과 `MaxSize <= 0`이 공존해 AppKit이 제약 충돌을 뱉는다.
-      .frame(minWidth: isCollapsed ? 0 : 300)
+      .frame(minWidth: isCollapsed ? 0 : WindowLayoutMetrics.listMinWidth)
       .navigationSplitViewColumnWidth(
         min: 0,
-        ideal: isCollapsed ? 0 : 320,
-        max: isCollapsed ? 0 : 350
+        ideal: isCollapsed ? 0 : WindowLayoutMetrics.listIdealWidth,
+        max: isCollapsed ? 0 : WindowLayoutMetrics.listMaxWidth
       )
   }
 
@@ -113,7 +119,10 @@ extension MainView {
     .navigationTitle("")
     // max는 주지 않는다 — 컬럼이 창을 채우지 못하면 윈도우 배경이 양옆에 드러난다.
     // 폼 폭 상한은 컬럼이 아니라 `SecretDetailView` 안의 `formMaxWidth()`가 담당한다.
-    .navigationSplitViewColumnWidth(min: 420, ideal: 480)
+    .navigationSplitViewColumnWidth(
+      min: WindowLayoutMetrics.detailMinWidth,
+      ideal: WindowLayoutMetrics.detailIdealWidth
+    )
   }
 
   private var lockButton: some View {
