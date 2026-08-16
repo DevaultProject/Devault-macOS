@@ -29,12 +29,9 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
         do {
             let secrets = try await repository.fetch(SecretQuery(collection: .all))
             for secret in secrets {
-                if secret.expiresAt != nil {
-                    await schedule(secret: secret)
-                } else {
-                    // expiresAt이 나중에 제거됐을 수 있으므로 이전 예약을 명시적으로 취소한다.
-                    await cancel(secretID: secret.id)
-                }
+                // schedule이 만료일 유무와 무관하게 이전 예약을 먼저 취소하므로 분기가 필요 없다 —
+                // 만료일이 나중에 제거된 Secret의 정리도 같은 호출이 처리한다.
+                await schedule(secret: secret)
             }
         } catch {
             throw SecretUseCaseError.map(error)
@@ -42,10 +39,12 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
     }
 
     public func schedule(secret: Secret) async {
-        guard let expiresAt = secret.expiresAt else { return }
-
-        // expiresAt이 바뀌었을 수 있어 이전 마크가 stale하게 남지 않도록 먼저 전부 취소한다.
+        // 취소가 guard보다 **앞에** 있어야 한다. expiresAt이 바뀌었으면 옛 마크가 남지 않아야 하고,
+        // 지워졌으면 예약을 전부 걷어야 한다 — guard 뒤에 두면 만료일을 지운 Secret에 대해
+        // 이 함수가 곧바로 리턴해 이전 알림이 그대로 살아남는다.
         await cancel(secretID: secret.id)
+
+        guard let expiresAt = secret.expiresAt else { return }
         guard settingsRepository.isExpiryAlertsEnabled() else { return }
 
         let now = dateProvider()
