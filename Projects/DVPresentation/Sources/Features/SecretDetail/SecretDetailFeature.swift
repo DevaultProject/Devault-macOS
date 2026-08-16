@@ -157,9 +157,10 @@ public struct SecretDetailFeature {
         case task
         case binding(BindingAction<State>)
         case didTapClose
-        /// payload 복호화 재시도. 인증 취소로 `.failed`가 된 뒤 다시 시도할 유일한 경로다.
-        case didTapRetryReveal
         /// 필드의 눈 버튼. 여는 경우에만 인증이 필요할 수 있고, 닫는 것은 언제나 즉시 처리된다.
+        ///
+        /// **복호화 실패 후의 재시도 경로이기도 하다.** `.failed`에서 다시 누르면 그 필드를
+        /// continuation에 실은 채로 복호화를 새로 걸므로, 성공하면 누른 필드가 실제로 열린다.
         case didTapToggleReveal(SecretFieldID)
         /// 필드의 복사 버튼. Copy UseCase가 설정에 따라 인증하고, payload가 없으면 화면에
         /// 공개하지 않는 Copy 전용 경로로 먼저 복호화한다.
@@ -271,11 +272,6 @@ public struct SecretDetailFeature {
                         }
                     }
                 )
-
-            // 복호화 실패 후 재시도. 어떤 필드가 유발했는지는 이미 잃었으므로 값만 다시 받아온다.
-            case .didTapRetryReveal:
-                state.payloadState = .loading
-                return revealEffect(secret: state.secret, then: .none)
 
             // 디자인에서 close(×) 버튼을 제거했으므로 현재 이 액션을 발생시키는 UI 경로가 없다.
             // detail은 사이드바 전환·리스트 선택 해제(`secretSelected(nil)`)로 닫힌다.
