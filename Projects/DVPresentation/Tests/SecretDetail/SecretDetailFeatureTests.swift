@@ -1340,7 +1340,6 @@ extension SecretDetailFeatureTests {
         .apiKey(APIKeyPayload(value: "ghp_x"), APIKeyMetadata(scope: "repo:read"))
     }
 
-    /// 편집 진입을 마친 상태. `beginEditing`이 세우는 것과 같은 조합이어야 한다.
     /// 수정 버튼을 누를 수 있는 조회 상태. 연결 목록을 읽어 오기 전에는 수정 진입이 막히므로,
     /// 진입 자체가 관심사가 아닌 테스트도 이 상태에서 출발해야 한다.
     fileprivate static func readyToEditState(
@@ -1354,6 +1353,7 @@ extension SecretDetailFeatureTests {
         return state
     }
 
+    /// 편집 진입을 마친 상태. `beginEditing`이 세우는 것과 같은 조합이어야 한다.
     fileprivate static func editingState(
         secret: Secret = makeSecret(name: "GitHub Token"),
         projectIds: [Project.ID] = []
