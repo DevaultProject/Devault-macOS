@@ -351,6 +351,32 @@ struct SidebarFeatureTests {
     }
   }
 
+  /// 대상 ID가 남으면 다음 삭제가 엉뚱한 프로젝트를 지울 수 있다.
+  @Test("삭제 alert를 확인 없이 닫으면 대상이 지워진다")
+  func dismissingDeleteAlertClearsTarget() async {
+    let item = ProjectItem(id: UUID(), name: "Backend")
+    var state = SidebarFeature.State()
+    state.projectsState = .loaded([item])
+
+    let store = TestStore(initialState: state) { SidebarFeature() }
+
+    await store.send(.didTapDelete(id: item.id)) {
+      $0.deletingProjectID = item.id
+      $0.alert = AlertState {
+        TextState("'\(item.name)' 프로젝트를 삭제할까요?")
+      } actions: {
+        ButtonState(role: .destructive, action: .confirmDelete) { TextState("삭제") }
+        ButtonState(role: .cancel) { TextState("취소") }
+      } message: {
+        TextState("프로젝트에 속한 Secret과의 연결이 해제됩니다. Secret 자체는 삭제되지 않습니다.")
+      }
+    }
+    await store.send(.alert(.dismiss)) {
+      $0.deletingProjectID = nil
+      $0.alert = nil
+    }
+  }
+
   @Test("삭제 확인 후 선택 중이던 프로젝트면 selection이 .all로 초기화되고 refetch한다")
   func deleteResetsSelectionAndRefetches() async {
     let item = ProjectItem(id: UUID(), name: "Backend")

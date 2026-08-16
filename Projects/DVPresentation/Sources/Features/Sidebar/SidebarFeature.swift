@@ -337,6 +337,11 @@ public struct SidebarFeature {
           }
         }
 
+      // 대상 ID를 남겨두면 다음 삭제가 엉뚱한 프로젝트를 지울 여지가 생긴다.
+      case .alert(.dismiss):
+        state.deletingProjectID = nil
+        return .none
+
       case .alert:
         return .none
 
