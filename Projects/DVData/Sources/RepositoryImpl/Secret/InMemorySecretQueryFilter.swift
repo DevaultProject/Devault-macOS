@@ -16,7 +16,7 @@ enum InMemorySecretQueryFilter {
         let filtered = secrets
             .filter { matchesSearchText(query.searchText, secret: $0) }
             .filter { matchesExpiry(query.collection, secret: $0, referenceDate: referenceDate) }
-        return sortedByNameIfNeeded(filtered, sort: query.sort)
+        return applySortIfNeeded(filtered, sort: query.sort)
     }
 
     /// `.all`/`.liked`(Star)는 이미 만료된 Secret을 보여주지 않는다 — 만료된 항목은 Expired 탭에서만 보인다.
@@ -38,22 +38,58 @@ enum InMemorySecretQueryFilter {
         return expiresAt >= referenceDate
     }
 
-    /// SwiftData `SortDescriptor(\.name)`는 Unicode 코드포인트 순서(대소문자 구분)로만 비교해
-    /// 한국어·영어가 섞인 이름을 사람이 기대하는 순서로 정렬하지 못한다.
-    /// `localizedStandardCompare`로 대소문자 무시·로케일 인식 비교를 적용한다.
-    /// `Array.sorted`는 안정 정렬이라, SwiftData 단계의 updatedAt tie-break 순서는 이름이 같을 때 그대로 유지된다.
-    private static func sortedByNameIfNeeded(
+    /// `Array.sorted`는 안정 정렬이라, SwiftData 단계의 updatedAt tie-break 순서가
+    /// 동률(같은 이름, 같은 만료일 없음)일 때 그대로 유지된다.
+    private static func applySortIfNeeded(
         _ secrets: [DVDomain.Secret],
         sort: SecretQuery.Sort
     ) -> [DVDomain.Secret] {
-        switch sort {
-        case .nameAscending:
-            return secrets.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-        case .nameDescending:
-            return secrets.sorted { $0.name.localizedStandardCompare($1.name) == .orderedDescending }
-        case .recentlyAdded, .oldestFirst, .expiringSoon:
+        switch sort.key {
+        case .name:
+            return sortedByName(secrets, direction: sort.direction)
+        case .expiry:
+            return sortedByExpiry(secrets, direction: sort.direction)
+        case .time:
+            // SwiftData `SortDescriptor(\.updatedAt)`로 이미 원하는 순서로 왔다.
             return secrets
         }
+    }
+
+    /// SwiftData `SortDescriptor(\.name)`는 Unicode 코드포인트 순서(대소문자 구분)로만 비교해
+    /// 한국어·영어가 섞인 이름을 사람이 기대하는 순서로 정렬하지 못한다.
+    /// `localizedStandardCompare`로 대소문자 무시·로케일 인식 비교를 적용한다.
+    private static func sortedByName(
+        _ secrets: [DVDomain.Secret],
+        direction: SecretQuery.Sort.Direction
+    ) -> [DVDomain.Secret] {
+        secrets.sorted {
+            let order = $0.name.localizedStandardCompare($1.name)
+            switch direction {
+            case .ascending: return order == .orderedAscending
+            case .descending: return order == .orderedDescending
+            }
+        }
+    }
+
+    /// SwiftData `SortDescriptor`는 옵셔널을 `nil < .some`으로만 비교해, 오름차순에서
+    /// 만료일 없는 Secret이 맨 앞에 온다. 방향과 무관하게 항상 뒤로 보내려면 SwiftData가
+    /// 만들어준 순서를 무시하고 여기서 다시 정렬해야 한다.
+    private static func sortedByExpiry(
+        _ secrets: [DVDomain.Secret],
+        direction: SecretQuery.Sort.Direction
+    ) -> [DVDomain.Secret] {
+        let withExpiry = secrets.filter { $0.expiresAt != nil }
+        let withoutExpiry = secrets.filter { $0.expiresAt == nil }
+        let sorted = withExpiry.sorted { lhs, rhs in
+            guard let lhsExpiresAt = lhs.expiresAt, let rhsExpiresAt = rhs.expiresAt else {
+                return false
+            }
+            switch direction {
+            case .ascending: return lhsExpiresAt < rhsExpiresAt
+            case .descending: return lhsExpiresAt > rhsExpiresAt
+            }
+        }
+        return sorted + withoutExpiry
     }
 
     private static func matchesSearchText(_ searchText: String?, secret: DVDomain.Secret) -> Bool {

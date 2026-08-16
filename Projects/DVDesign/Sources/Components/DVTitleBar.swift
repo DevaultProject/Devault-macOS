@@ -9,21 +9,22 @@ public struct DVTitleBar: View {
     public let titleText: String
     public let searchText: Binding<String>
     public let searchPromptText: String
-    public let onSortTapped: (() -> Void)?
+    /// 정렬 버튼을 누르면 펼쳐질 메뉴 내용. `nil`이면 정렬 버튼 자체를 그리지 않는다.
+    /// 클로저가 반환하는 뷰가 시스템 `Menu` 안에 들어가므로, 바깥 클릭·ESC·포커스 상실 처리는 시스템이 담당한다.
+    public let sortMenuContent: (() -> AnyView)?
 
     // MARK: - Init
 
-    /// - Parameter onSortTapped: 정렬 버튼 탭 핸들러. `nil`이면 정렬 버튼 자체를 그리지 않는다.
     public init(
         titleText: String,
         searchText: Binding<String>,
         searchPromptText: String = "Search",
-        onSortTapped: (() -> Void)? = nil
+        sortMenuContent: (() -> AnyView)? = nil
     ) {
         self.titleText = titleText
         self.searchText = searchText
         self.searchPromptText = searchPromptText
-        self.onSortTapped = onSortTapped
+        self.sortMenuContent = sortMenuContent
     }
 
     // MARK: - Body
@@ -47,20 +48,24 @@ extension DVTitleBar {
                 .dvFont(.headingXL)
                 .foregroundStyle(Color.dv(.gray900))
             Spacer()
-            if let onSortTapped {
-                sortButton(action: onSortTapped)
+            if let sortMenuContent {
+                sortMenu(content: sortMenuContent)
             }
         }
         .padding(.vertical, 4)
     }
 
-    private func sortButton(action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+    private func sortMenu(content: () -> AnyView) -> some View {
+        Menu {
+            content()
+        } label: {
             Image(systemName: "arrow.up.arrow.down")
                 .dvFont(.bodyXL)
                 .foregroundStyle(Color.dv(.gray800))
         }
-        .buttonStyle(.plain)
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
     }
 
     private var searchField: some View {

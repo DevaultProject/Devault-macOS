@@ -80,4 +80,36 @@ struct SecretQueryTests {
         #expect(today.addingTimeInterval((windowDays - 1) * 86_400) < windowEnd)
         #expect(today.addingTimeInterval((windowDays + 1) * 86_400) > windowEnd)
     }
+
+    // MARK: - Sort
+
+    @Test("recentlyAdded는 time 기준 내림차순과 동일하다")
+    func recentlyAddedIsTimeDescending() {
+        #expect(SecretQuery.Sort.recentlyAdded == SecretQuery.Sort(key: .time, direction: .descending))
+    }
+
+    @Test("key와 direction이 하나라도 다르면 다른 Sort다")
+    func sortDistinguishesByKeyAndDirection() {
+        let timeAscending = SecretQuery.Sort(key: .time, direction: .ascending)
+        let timeDescending = SecretQuery.Sort(key: .time, direction: .descending)
+        let expiryAscending = SecretQuery.Sort(key: .expiry, direction: .ascending)
+
+        #expect(timeAscending != timeDescending)
+        #expect(timeAscending != expiryAscending)
+    }
+
+    @Test("3기준 × 2방향의 6개 조합을 모두 표현할 수 있다 — 기존 5케이스 enum이 못 만들던 만료 내림차순도 포함")
+    func allSixCombinationsAreExpressible() {
+        let keys: [SecretQuery.Sort.Key] = [.time, .expiry, .name]
+        let directions: [SecretQuery.Sort.Direction] = [.ascending, .descending]
+
+        let combinations = keys.flatMap { key in
+            directions.map { direction in SecretQuery.Sort(key: key, direction: direction) }
+        }
+
+        #expect(combinations.count == 6)
+        #expect(Set(combinations.map { "\($0.key)-\($0.direction)" }).count == 6)
+        // 기존 enum에서 표현 불가능했던 조합: 만료 내림차순(만료 늦은 순).
+        #expect(combinations.contains(SecretQuery.Sort(key: .expiry, direction: .descending)))
+    }
 }

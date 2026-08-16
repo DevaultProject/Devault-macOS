@@ -195,17 +195,29 @@ private extension SecretClient {
   }
 
   static func sorted(_ secrets: [Secret], by sort: SecretQuery.Sort) -> [Secret] {
-    switch sort {
-    case .recentlyAdded:
-      return secrets.sorted { $0.createdAt > $1.createdAt }
-    case .oldestFirst:
-      return secrets.sorted { $0.createdAt < $1.createdAt }
-    case .expiringSoon:
-      return secrets.sorted { ($0.expiresAt ?? .distantFuture) < ($1.expiresAt ?? .distantFuture) }
-    case .nameAscending:
-      return secrets.sorted { $0.name < $1.name }
-    case .nameDescending:
-      return secrets.sorted { $0.name > $1.name }
+    switch sort.key {
+    case .time:
+      switch sort.direction {
+      case .ascending: return secrets.sorted { $0.updatedAt < $1.updatedAt }
+      case .descending: return secrets.sorted { $0.updatedAt > $1.updatedAt }
+      }
+    case .expiry:
+      // 만료일 없는 항목은 방향과 무관하게 맨 뒤로 — 실제 InMemorySecretQueryFilter와 같은 규칙.
+      let withExpiry = secrets.filter { $0.expiresAt != nil }
+      let withoutExpiry = secrets.filter { $0.expiresAt == nil }
+      let sortedByExpiry = withExpiry.sorted { lhs, rhs in
+        guard let lhsExpiresAt = lhs.expiresAt, let rhsExpiresAt = rhs.expiresAt else { return false }
+        switch sort.direction {
+        case .ascending: return lhsExpiresAt < rhsExpiresAt
+        case .descending: return lhsExpiresAt > rhsExpiresAt
+        }
+      }
+      return sortedByExpiry + withoutExpiry
+    case .name:
+      switch sort.direction {
+      case .ascending: return secrets.sorted { $0.name < $1.name }
+      case .descending: return secrets.sorted { $0.name > $1.name }
+      }
     }
   }
 }

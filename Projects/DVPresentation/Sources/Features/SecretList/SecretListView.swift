@@ -14,7 +14,6 @@ struct SecretListView: View {
   // MARK: - Properties
 
   @Bindable var store: StoreOf<SecretListFeature>
-  @State private var isSortMenuPresented = false
 
   // MARK: - Body
 
@@ -35,37 +34,21 @@ struct SecretListView: View {
 extension SecretListView {
 
   private var content: some View {
-    ZStack(alignment: .topTrailing) {
-      VStack(alignment: .leading, spacing: 12) {
-        DVTitleBar(
-          titleText: titleText,
-          searchText: searchTextBinding,
-          onSortTapped: showsSort ? { isSortMenuPresented.toggle() } : nil
-        )
-        .padding(.horizontal, 12)
+    VStack(alignment: .leading, spacing: 12) {
+      DVTitleBar(
+        titleText: titleText,
+        searchText: searchTextBinding,
+        sortMenuContent: showsSort ? { AnyView(sortMenuContent) } : nil
+      )
+      .padding(.horizontal, 12)
 
-        switch store.secretsState {
-        case .failed:
-          errorView
-        case .loaded(let secrets) where secrets.isEmpty:
-          emptyView
-        default:
-          list
-        }
-      }
-
-      if isSortMenuPresented {
-        Color.clear
-          .contentShape(Rectangle())
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
-          .onTapGesture { isSortMenuPresented = false }
-
-        sortMenu
-          .background(.regularMaterial)
-          .clipShape(RoundedRectangle(cornerRadius: 12))
-          .shadow(color: Color(nsColor: .shadowColor).opacity(0.15), radius: 16, y: 6)
-          .padding(.top, 56)
-          .padding(.trailing, 24)
+      switch store.secretsState {
+      case .failed:
+        errorView
+      case .loaded(let secrets) where secrets.isEmpty:
+        emptyView
+      default:
+        list
       }
     }
   }
@@ -151,27 +134,38 @@ extension SecretListView {
     }
   }
 
-  private var sortMenu: some View {
-    VStack(alignment: .leading, spacing: 2) {
-      sortMenuRow(.recentlyAdded, title: "Recently Added")
-      sortMenuRow(.oldestFirst, title: "Oldest First")
-      sortMenuRow(.expiringSoon, title: "Expiring Soon")
-
-      Divider()
-        .padding(.vertical, 4)
-
-      sortMenuRow(.nameAscending, title: "Name (A to Z)")
-      sortMenuRow(.nameDescending, title: "Name (Z to A)")
+  /// divider 위: 정렬 기준(시간/만료/이름). divider 아래: 방향(오름/내림차순).
+  /// `Menu`가 바깥 클릭·ESC·포커스 상실 처리를 대신하므로 이 화면은 두 축의 값만 계산하면 된다.
+  @ViewBuilder
+  private var sortMenuContent: some View {
+    Picker("Sort by", selection: sortKeyBinding) {
+      Text("Time").tag(SecretQuery.Sort.Key.time)
+      Text("Expiry").tag(SecretQuery.Sort.Key.expiry)
+      Text("Name").tag(SecretQuery.Sort.Key.name)
     }
-    .padding(6)
-    .frame(width: 220)
+    .pickerStyle(.inline)
+
+    Divider()
+
+    Picker("Direction", selection: sortDirectionBinding) {
+      Text("Ascending").tag(SecretQuery.Sort.Direction.ascending)
+      Text("Descending").tag(SecretQuery.Sort.Direction.descending)
+    }
+    .pickerStyle(.inline)
   }
 
-  private func sortMenuRow(_ value: SecretQuery.Sort, title: String) -> some View {
-    SortMenuRow(title: title, isSelected: store.sort == value) {
-      store.send(.didSelectSort(value))
-      isSortMenuPresented = false
-    }
+  private var sortKeyBinding: Binding<SecretQuery.Sort.Key> {
+    Binding(
+      get: { store.sort.key },
+      set: { store.send(.didSelectSort(SecretQuery.Sort(key: $0, direction: store.sort.direction))) }
+    )
+  }
+
+  private var sortDirectionBinding: Binding<SecretQuery.Sort.Direction> {
+    Binding(
+      get: { store.sort.direction },
+      set: { store.send(.didSelectSort(SecretQuery.Sort(key: store.sort.key, direction: $0))) }
+    )
   }
 
   private var errorView: some View {
@@ -243,40 +237,6 @@ extension SecretListView {
       get: { store.searchText },
       set: { store.send(.didChangeSearchText($0)) }
     )
-  }
-
-  /// 체크마크 + 호버 하이라이트를 갖는 네이티브 메뉴 스타일 행. 이 화면 전용 — 재사용 필요해지면 DVDesign으로 승격.
-  private struct SortMenuRow: View {
-
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    @State private var isHovered = false
-
-    var body: some View {
-      Button(action: action) {
-        HStack(spacing: 6) {
-          Image(systemName: "checkmark")
-            .dvFont(.bodyMD)
-            .opacity(isSelected ? 1 : 0)
-          Text(title)
-            .dvFont(.bodyMD)
-          Spacer(minLength: 8)
-        }
-        .foregroundStyle(isHovered ? Color(nsColor: .alternateSelectedControlTextColor) : Color.dv(.gray900))
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-          RoundedRectangle(cornerRadius: 8)
-            .fill(isHovered ? Color(nsColor: .selectedContentBackgroundColor) : Color.clear)
-        }
-        .contentShape(Rectangle())
-      }
-      .buttonStyle(.plain)
-      .onHover { isHovered = $0 }
-    }
   }
 }
 
