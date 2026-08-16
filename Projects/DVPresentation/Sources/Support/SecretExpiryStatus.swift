@@ -25,11 +25,12 @@ enum SecretExpiryStatus: Equatable {
     private static let secondsPerDay: TimeInterval = 86_400
 
     /// 남은 기간이 이 값 이하(이미 지나 음수인 경우 포함)면 ``critical``.
-    static let criticalWindow: TimeInterval = 3 * secondsPerDay
+    /// 값 자체는 `SecretExpiryPolicy`가 소유한다 — 알림 스케줄·Expired 섹션 분류와 같은 기준을 쓴다.
+    static let criticalWindow: TimeInterval = TimeInterval(SecretExpiryPolicy.criticalWindowDays) * secondsPerDay
 
     /// 남은 기간이 ``criticalWindow`` 초과이면서 이 값 이하면 ``upcoming``.
-    /// Notice 탭과 같은 "7일" 기준을 쓰기 위해 `noticeWindowDays`에서 파생시킨다.
-    static let upcomingWindow = TimeInterval(SecretQuery.Collection.noticeWindowDays) * secondsPerDay
+    /// Notice 탭(`SecretQuery.Collection.noticeWindowDays`)도 같은 값을 파생시켜 쓴다.
+    static let upcomingWindow: TimeInterval = TimeInterval(SecretExpiryPolicy.upcomingWindowDays) * secondsPerDay
 
     /// 만료일로부터 상태를 산출한다. 만료일이 없거나 ``upcomingWindow``보다 멀면 `nil` — 아무 표시도 하지 않는다.
     ///

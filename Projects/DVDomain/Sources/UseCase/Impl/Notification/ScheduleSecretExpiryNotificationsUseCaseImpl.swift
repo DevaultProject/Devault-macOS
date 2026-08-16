@@ -5,7 +5,10 @@ import Foundation
 import DVCore
 
 public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiryNotificationsUseCase {
-    private static let daysBeforeExpiry = [7, 3]
+    private static let daysBeforeExpiry = [
+        SecretExpiryPolicy.upcomingWindowDays,
+        SecretExpiryPolicy.criticalWindowDays,
+    ]
 
     private let repository: any SecretRepository
     private let notificationService: any SecurityNotificationService
