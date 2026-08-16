@@ -37,8 +37,12 @@ import SwiftUI
 ///
 /// ## 텍스트 선택·복사
 ///
-/// 본문을 마우스로 드래그해 선택하고 ⌘+C로 클립보드에 복사할 수 있습니다.
-/// ``init(copyable:size:onCopy:)`` 편의 init과 별도로 동작하므로 둘 다 함께 활용 가능합니다.
+/// 기본은 **선택 불가**입니다. 값을 꺼내는 경로를 액세서리 버튼 하나로 모아두기 위한 기본값으로,
+/// 드래그 선택과 ⌘+C를 열려면 ``SwiftUI/View/dvTextSelection(_:)``으로 호출부가 명시해야 합니다.
+///
+/// 안전한 쪽을 기본으로 둔 이유는 새 호출부가 깜빡했을 때 떨어지는 자리가 달라서입니다.
+/// 열린 것이 기본이면 깜빡한 필드가 조용히 복사 우회로가 되지만, 닫힌 것이 기본이면
+/// 선택이 안 된다는 눈에 보이는 불편으로 끝납니다.
 ///
 /// ## 액세서리
 ///
@@ -340,9 +344,33 @@ extension DVTextContainer where Accessories == AnyView {
     }
 }
 
+// MARK: - Text selection
+
+private struct DVTextSelectionEnabledKey: EnvironmentKey {
+    /// 선택 불가가 기본. 근거는 ``DVTextContainer``의 "텍스트 선택·복사"에 있다.
+    static let defaultValue = false
+}
+
+public extension EnvironmentValues {
+
+    /// ``DVTextContainer`` 본문의 드래그 선택·⌘C 허용 여부.
+    var dvTextSelectionEnabled: Bool {
+        get { self[DVTextSelectionEnabledKey.self] }
+        set { self[DVTextSelectionEnabledKey.self] = newValue }
+    }
+}
+
+public extension View {
+
+    /// 이 하위 트리의 ``DVTextContainer``에서 드래그 선택과 ⌘C를 허용할지 지정합니다.
+    func dvTextSelection(_ enabled: Bool) -> some View {
+        environment(\.dvTextSelectionEnabled, enabled)
+    }
+}
+
 // MARK: - Character wrapping
 
-/// 본문을 **글자 단위로** 접어 그리는 텍스트. 선택·복사는 그대로 된다.
+/// 본문을 **글자 단위로** 접어 그리는 텍스트.
 ///
 /// AppKit으로 내려오는 이유는 SwiftUI `Text`가 단어 단위로만 접히고 wrap 모드를 여는 API가 없기
 /// 때문이다. 글자 단위로 접는 이유 자체는 ``DVTextContainer``의 "높이와 줄바꿈"에 있다.
@@ -379,7 +407,7 @@ private struct CharacterWrappingText: NSViewRepresentable {
     func makeNSView(context: Context) -> NSTextView {
         let view = NSTextView()
         view.isEditable = false
-        view.isSelectable = true
+        view.isSelectable = context.environment.dvTextSelectionEnabled
         view.drawsBackground = false
         view.isRichText = false
         // 인셋을 0으로 둬야 측정한 높이와 그리는 높이가 같다.
@@ -391,8 +419,17 @@ private struct CharacterWrappingText: NSViewRepresentable {
         return view
     }
 
+    /// 뷰가 재사용되면 `makeNSView`가 다시 불리지 않으므로 선택 허용 여부도 여기서 맞춘다.
+    /// 끄는 경우 남아 있던 선택을 함께 지운다 — `isSelectable`만 내리면 하이라이트가 그대로 남는다.
     func updateNSView(_ view: NSTextView, context: Context) {
         Self.syncIfNeeded(view, to: attributed)
+
+        let isSelectable = context.environment.dvTextSelectionEnabled
+        guard view.isSelectable != isSelectable else { return }
+        if !isSelectable {
+            view.setSelectedRange(NSRange(location: 0, length: 0))
+        }
+        view.isSelectable = isSelectable
     }
 
     /// 내용이 그대로면 손대지 않는다. `setAttributedString`은 text storage를 통째로 갈아치워
@@ -462,6 +499,16 @@ private struct CharacterWrappingText: NSViewRepresentable {
 #Preview("Interactive (manual state lift)") {
     DVTextContainerInteractivePreview()
         .padding()
+}
+
+/// 위는 기본(선택 불가), 아래는 opt-in. 위 상자는 드래그해도 하이라이트가 생기지 않아야 한다.
+#Preview("Text selection") {
+    VStack(alignment: .leading, spacing: 12) {
+        DVTextContainer("드래그해도 선택되지 않는다", size: .md)
+        DVTextContainer("드래그해서 선택하고 ⌘C 할 수 있다", size: .md)
+            .dvTextSelection(true)
+    }
+    .padding()
 }
 
 #Preview("Character wrapping") {
