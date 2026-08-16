@@ -4,13 +4,9 @@ import SwiftUI
 
 /// hover 시 커스텀 말풍선을 띄우는 툴팁 modifier.
 ///
-/// SwiftUI `.help(_:)`와 AppKit `NSView.toolTip` 둘 다 이 프로젝트의 `List` 행 컨텍스트에서
-/// 확인해보니 동작하지 않았다 — 마우스 트래킹 이벤트는 정상 도달하는데 시스템 tooltip 렌더링만 안 됐다.
-///
-/// SwiftUI `.overlay`로 직접 말풍선을 그리는 것도 시도했지만, `List`가 자기 폭 밖으로 나가는
-/// 콘텐츠를 잘라내서 긴 텍스트가 잘렸다. 그래서 별도의 borderless `NSWindow`를 화면 절대 좌표에
-/// 띄우는 방식으로 간다 — macOS 시스템 tooltip이 실제로 동작하는 방식과 같다. `List`/부모 뷰의
-/// 경계와 무관하게 항상 온전히 그려진다.
+/// `.help(_:)`와 `NSView.toolTip` 둘 다 `List` 행 안에서 안 떴다(마우스 이벤트는 도달하는데
+/// 시스템 tooltip 렌더링만 안 됨). `.overlay`로 직접 그리면 `List`가 폭 밖 콘텐츠를 잘라서,
+/// 화면 절대 좌표의 별도 `NSWindow`로 띄운다 — 실제 시스템 tooltip과 같은 방식.
 extension View {
     /// `text`가 `nil`이면 아무것도 붙이지 않는다.
     public func hoverTooltip(_ text: String?) -> some View {
@@ -36,8 +32,7 @@ private struct HoverTooltipHost: NSViewRepresentable {
     }
 }
 
-/// hover를 감지해 별도 `NSPanel`에 말풍선을 띄우는 뷰. `List`의 clipping과 무관하게
-/// 화면 절대 좌표에 그려지므로 항상 온전한 크기로 보인다.
+/// hover를 감지해 별도 `NSPanel`에 말풍선을 띄우는 뷰.
 private final class TrackingView: NSView {
     var text: String?
 

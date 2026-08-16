@@ -28,17 +28,17 @@ struct SecretExpiryStatusTests {
         #expect(SecretExpiryStatus(expiresAt: nil, now: Self.now) == nil)
     }
 
-    // MARK: - 이미 만료됨 (표시 없음)
+    // MARK: - expired (이미 지남)
 
-    @Test("이미 만료된 경우 nil — Expired 탭이 전담하므로 배지로 중복 표시하지 않는다")
-    func alreadyExpiredIsNil() {
-        #expect(Self.status(daysFromNow: -30) == nil)
-        #expect(Self.status(daysFromNow: -1) == nil)
+    @Test("이미 만료된 경우 expired")
+    func alreadyExpiredIsExpired() {
+        #expect(Self.status(daysFromNow: -30) == .expired)
+        #expect(Self.status(daysFromNow: -1) == .expired)
     }
 
-    @Test("정확히 지금 만료되는 경우 nil — 이미 지난 것으로 취급한다")
-    func expiringExactlyNowIsNil() {
-        #expect(Self.status(daysFromNow: 0) == nil)
+    @Test("정확히 지금 만료되는 경우 expired")
+    func expiringExactlyNowIsExpired() {
+        #expect(Self.status(daysFromNow: 0) == .expired)
     }
 
     // MARK: - critical (아직 안 지났고 3일 이내)
@@ -83,8 +83,9 @@ struct SecretExpiryStatusTests {
 
     // MARK: - 표현 매핑
 
-    @Test("critical은 danger, upcoming은 warning으로 강조된다")
+    @Test("expired·critical은 danger, upcoming은 warning으로 강조된다")
     func emphasisMapping() {
+        #expect(SecretExpiryStatus.expired.emphasis == DVExpiryEmphasis.danger)
         #expect(SecretExpiryStatus.critical.emphasis == DVExpiryEmphasis.danger)
         #expect(SecretExpiryStatus.upcoming.emphasis == DVExpiryEmphasis.warning)
     }
@@ -108,8 +109,9 @@ struct SecretExpiryStatusTests {
 
     // MARK: - tooltip 문구
 
-    @Test("critical은 3일, upcoming은 7일 문구를 갖는다")
+    @Test("expired는 고정 문구, critical은 3일, upcoming은 7일 문구를 갖는다")
     func tooltipTextReflectsWindowDays() {
+        #expect(SecretExpiryStatus.expired.tooltipText == "Expired")
         #expect(SecretExpiryStatus.critical.tooltipText.contains("3"))
         #expect(SecretExpiryStatus.upcoming.tooltipText.contains("7"))
     }

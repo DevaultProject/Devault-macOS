@@ -89,15 +89,16 @@ extension SecretListView {
   }
 
   private func row(for secret: Secret) -> some View {
-    let expiryStatus = expiryStatus(for: secret)
+    // 이미 지난 건 배지로 안 보여준다 — Expired 탭이 전담한다.
+    let badgeStatus = expiryStatus(for: secret).flatMap { $0 == .expired ? nil : $0 }
 
     return DVVaultContainer(
       name: secret.name,
       date: SecretDateFormatter.string(from: secret.updatedAt),
       service: secret.service,
       typeIcon: secret.secretType.icon,
-      trailingIcon: expiryStatus?.emphasis,
-      trailingIconTooltip: expiryStatus?.tooltipText,
+      trailingIcon: badgeStatus?.emphasis,
+      trailingIconTooltip: badgeStatus?.tooltipText,
       isSelected: secret.id == store.selectedSecretID
     )
     .tag(secret.id)
@@ -110,7 +111,7 @@ extension SecretListView {
   }
 
   /// All/Star/Expired/Deleted 어디서든 만료 상태를 알려준다.
-  /// 임계값은 `SecretExpiryStatus`가 소유한다 — 조회 화면 Expire Date 필드와 같은 정책을 써야 한다.
+  /// 임계값은 `SecretExpiryPolicy`가 소유한다 — 조회 화면 Expire Date 필드와 같은 정책을 써야 한다.
   private func expiryStatus(for secret: Secret) -> SecretExpiryStatus? {
     SecretExpiryStatus(expiresAt: secret.expiresAt)
   }
@@ -256,9 +257,12 @@ private enum ExpiryBucket: CaseIterable, Identifiable {
 
   var title: String {
     switch self {
-    case .expired: return "Expired"
-    case .within7Days: return "Expires in 7 days"
-    case .within30Days: return "Expires in 30 days"
+    case .expired:
+      return String.module("Expired")
+    case .within7Days:
+      return String.module("Expires in \(SecretExpiryPolicy.upcomingWindowDays) days")
+    case .within30Days:
+      return String.module("Expires in \(SecretExpiryPolicy.listingWindowDays) days")
     }
   }
 

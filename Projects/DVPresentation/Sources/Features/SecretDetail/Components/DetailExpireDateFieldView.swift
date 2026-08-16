@@ -55,8 +55,8 @@ private func _secret(expiresAt: Date?) -> Secret {
     )
 }
 
-/// 이미 지난 만료일(-5일)은 강조 없음 — Expired 탭이 "이미 지남"을 전담하므로 여기선 중복 표시하지 않는다.
-#Preview("만료 임박 3단계 · paired") {
+/// 이미 지난 만료일(-5일)도 강조된다 — 목록 배지와 달리 필터링하지 않는다.
+#Preview("만료 임박 4단계 · paired") {
     VStack(alignment: .leading, spacing: 16) {
         DetailExpireDateFieldView(secret: _secret(expiresAt: .now.addingTimeInterval(-5 * 86_400)))
         DetailExpireDateFieldView(secret: _secret(expiresAt: .now.addingTimeInterval(2 * 86_400)))
