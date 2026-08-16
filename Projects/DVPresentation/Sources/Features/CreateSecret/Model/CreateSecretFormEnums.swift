@@ -3,7 +3,7 @@
 import Foundation
 
 /// `SecretDraft.environment`(String?)에 `rawValue`로 저장되는 Presentation VO.
-enum SecretEnvironment: String, CaseIterable, Hashable {
+public enum SecretEnvironment: String, CaseIterable, Hashable {
     case dev
     case staging
     case prod

@@ -5,59 +5,71 @@ import ComposableArchitecture
 // MARK: - GeneralSettingsFeature
 
 @Reducer
-struct GeneralSettingsFeature {
+public struct GeneralSettingsFeature {
 
   // MARK: - State
 
   @ObservableState
-  struct State: Equatable {
+  public struct State: Equatable {
     var isLaunchAtLoginEnabled = false
-    var defaultEnvironment: SecretEnvironment?
+    var defaultEnvironment: SecretEnvironment = .dev
+
+    public init() {}
   }
 
   // MARK: - Action
 
-  enum Action: Equatable {
+  public enum Action: BindableAction, Equatable {
+
+    // MARK: - View
+
+    case binding(BindingAction<State>)
     case task
-    case didToggleLaunchAtLogin(Bool)
+
+    // MARK: - Internal
+
     case launchAtLoginFailed(previousValue: Bool)
-    case didSelectDefaultEnvironment(SecretEnvironment?)
   }
 
   // MARK: - Dependencies
 
-  @Dependency(\.settingsClient) var settingsClient
+  @Dependency(\.generalSettingsClient) var generalSettingsClient
 
   // MARK: - Body
 
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
+    BindingReducer()
     Reduce { state, action in
       switch action {
       case .task:
-        state.isLaunchAtLoginEnabled = settingsClient.isLaunchAtLoginEnabled()
-        state.defaultEnvironment = settingsClient.defaultEnvironment()
-          .flatMap(SecretEnvironment.init(rawValue:))
+        state.isLaunchAtLoginEnabled = generalSettingsClient.isLaunchAtLoginEnabled()
+        state.defaultEnvironment = SecretEnvironment(
+          rawValue: generalSettingsClient.defaultEnvironment()
+        ) ?? .dev
         return .none
 
-      case .didToggleLaunchAtLogin(let enabled):
-        let previous = state.isLaunchAtLoginEnabled
-        state.isLaunchAtLoginEnabled = enabled
+      case .binding(\.isLaunchAtLoginEnabled):
+        let enabled = state.isLaunchAtLoginEnabled
         return .run { send in
           do {
-            try settingsClient.setLaunchAtLoginEnabled(enabled)
+            try generalSettingsClient.setLaunchAtLoginEnabled(enabled)
           } catch {
-            await send(.launchAtLoginFailed(previousValue: previous))
+            await send(.launchAtLoginFailed(previousValue: !enabled))
           }
         }
 
+      case .binding(\.defaultEnvironment):
+        let environment = state.defaultEnvironment
+        return .run { _ in generalSettingsClient.setDefaultEnvironment(environment.rawValue) }
+
+      case .binding:
+        return .none
+
       case .launchAtLoginFailed(let previousValue):
-        // 로그인 항목 등록/해제(SMAppService)가 실패하면 표시값을 실제 상태로 되돌린다.
+        // 시스템 로그인 항목 변경에 실패하면 표시값을 이전 상태로 되돌린다.
         state.isLaunchAtLoginEnabled = previousValue
         return .none
 
-      case .didSelectDefaultEnvironment(let environment):
-        state.defaultEnvironment = environment
-        return .run { _ in settingsClient.setDefaultEnvironment(environment?.rawValue) }
       }
     }
   }
