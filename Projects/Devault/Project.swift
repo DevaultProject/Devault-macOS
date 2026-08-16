@@ -12,6 +12,13 @@ import ProjectDescriptionHelpers
 /// TODO: 팀 시트를 전원에게 발급하면 이 분기와 아래 두 설정 딕셔너리를 제거한다. (#64)
 let isLocalSigning = Environment.localSigning.getBoolean(default: false)
 
+/// CI에서 App Store 배포 아카이브를 만들 때 켠다. `ci_post_clone.sh`가 `TUIST_CI_SIGNING=1`로 설정한다.
+let isCISigning = Environment.ciSigning.getBoolean(default: false)
+
+/// 아카이브 빌드 번호(CFBundleVersion). App Store는 업로드마다 고유·증가값을 요구하므로
+/// CI에선 `$CI_BUILD_NUMBER`를 주입하고, 로컬은 기본값 "1"을 쓴다.
+let buildNumber = Environment.buildNumber.getString(default: "1")
+
 let teamSigningSettings: SettingsDictionary = [
     "ASSETCATALOG_COMPILER_APPICON_NAME": "Devault_IC",
     "DEVELOPMENT_TEAM": "UKY6HK6U6Y",
@@ -19,6 +26,15 @@ let teamSigningSettings: SettingsDictionary = [
     // iCloud entitlement는 프로비저닝 프로파일을 요구하므로 그대로 두면 서명 단계에서 빌드가 실패한다.
     "CODE_SIGN_STYLE": "Automatic",
     "CODE_SIGN_IDENTITY": "Apple Development",
+]
+
+/// CI 배포용. team 설정은 로컬 개발 탓에 서명 아이덴티티를 "Apple Development"로 고정하는데,
+/// 그대로 아카이브하면 개발 인증서로 서명돼 App Store 업로드가 거부된다. 그래서 "Apple Distribution"으로 둔다.
+let ciSigningSettings: SettingsDictionary = [
+    "ASSETCATALOG_COMPILER_APPICON_NAME": "Devault_IC",
+    "DEVELOPMENT_TEAM": "UKY6HK6U6Y",
+    "CODE_SIGN_STYLE": "Automatic",
+    "CODE_SIGN_IDENTITY": "Apple Distribution",
 ]
 
 let localSigningSettings: SettingsDictionary = [
@@ -48,8 +64,10 @@ let manualSigningSettings: SettingsDictionary = [
 ]
 
 /// 로컬 서명이 가장 우선한다 — 자산을 받아둔 뒤에도 `generate-local`로 되돌릴 수 있어야 한다.
+/// CI 서명은 그다음 — CI에서만 `TUIST_CI_SIGNING`이 켜진다.
 let signingSettings: SettingsDictionary = {
     if isLocalSigning { return localSigningSettings }
+    if isCISigning { return ciSigningSettings }
     if isManualSigning { return manualSigningSettings }
     return teamSigningSettings
 }()
@@ -64,7 +82,16 @@ let project = Project.project(
             product: .app,
             bundleId: "com.devault.app",
             infoPlist: .extendingDefault(with: [
-                "CFBundleDisplayName": .string("Devault"),
+                // 사용자에게 보이는 이름. 메뉴바는 CFBundleName, Finder·Launchpad는 CFBundleDisplayName을
+                // 쓰므로 둘 다 지정한다(기본값이 "Devault"라 안 바꾸면 남는다).
+                "CFBundleDisplayName": .string("DeVault"),
+                "CFBundleName": .string("DeVault"),
+                // 마케팅 버전(기본값 "1.0"을 덮어쓴다).
+                "CFBundleShortVersionString": .string("1.0.0"),
+                "CFBundleVersion": .string(buildNumber),
+                // 수출 규정 선언. AES-GCM으로 시크릿을 직접 암호화하므로 '면제 안 되는 암호화' → true.
+                // (표준 알고리즘이라 CCATS 불필요, 연 1회 자가분류 보고서 제출 대상)
+                "ITSAppUsesNonExemptEncryption": .boolean(true),
                 "NSFaceIDUsageDescription": .string("저장된 시크릿을 안전하게 보호하기 위해 Touch ID를 사용합니다."),
             ]),
             sources: .sources,
