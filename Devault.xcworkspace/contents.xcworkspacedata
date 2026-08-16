@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <Group
+      location = "group:Projects"
+      name = "Projects">
+      <FileRef
+         location = "group:DVCore/DVCore.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:DVData/DVData.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:DVDesign/DVDesign.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:DVDomain/DVDomain.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:DVNetwork/DVNetwork.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:DVPresentation/DVPresentation.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:DVStorage/DVStorage.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:Devault/Devault.xcodeproj">
+      </FileRef>
+   </Group>
+   <Group
+      location = "container:"
+      name = "Dependencies">
+      <FileRef
+         location = "group:Tuist/.build/tuist-derived/Projects/Lottie/Lottie.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:Tuist/.build/tuist-derived/Projects/combine-schedulers/combine-schedulers.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:Tuist/.build/tuist-derived/Projects/swift-case-paths/swift-case-paths.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:Tuist/.build/tuist-derived/Projects/swift-clocks/swift-clocks.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:Tuist/.build/tuist-derived/Projects/swift-collections/swift-collections.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:Tuist/.build/tuist-derived/Projects/swift-composable-architecture/swift-composable-architecture.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:Tuist/.build/tuist-derived/Projects/swift-concurrency-extras/swift-concurrency-extras.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:Tuist/.build/tuist-derived/Projects/swift-custom-dump/swift-custom-dump.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:Tuist/.build/tuist-derived/Projects/swift-dependencies/swift-dependencies.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:Tuist/.build/tuist-derived/Projects/swift-identified-collections/swift-identified-collections.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:Tuist/.build/tuist-derived/Projects/swift-navigation/swift-navigation.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:Tuist/.build/tuist-derived/Projects/swift-perception/swift-perception.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:Tuist/.build/tuist-derived/Projects/swift-sharing/swift-sharing.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:Tuist/.build/tuist-derived/Projects/swift-syntax/swift-syntax.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:Tuist/.build/tuist-derived/Projects/xctest-dynamic-overlay/xctest-dynamic-overlay.xcodeproj">
+      </FileRef>
+   </Group>
+</Workspace>
