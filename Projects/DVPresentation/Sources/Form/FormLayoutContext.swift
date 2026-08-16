@@ -42,7 +42,16 @@ enum StandaloneFormLayout: FormLayoutContext {
 /// 넓은 디스플레이에서는 2열 폼 임계값(816)을 넘는다 — 그때는 단일 화면과 같은 `.dual` 배열을 쓴다.
 enum DetailColumnFormLayout: FormLayoutContext {
 
+    /// 폭이 줄어드는 순서가 세 단계다.
+    ///
+    /// 1. 2열(`dual`) — 페어를 나란히, 프레임 상한까지 채운다
+    /// 2. 가변 1열(`detailFluid`) — 페어를 절반씩 유지하며 컨테이너를 따라 **연속으로** 줄어든다
+    /// 3. 접힌 1열(`detailCompact`) — 페어를 세로로 접고, 다시 컨테이너를 따라 연속으로 줄어든다
+    ///
+    /// 단계 사이는 불연속이지만 **단계 안에서는 컨테이너를 따라 연속으로 줄어든다.**
     static func layout(for containerWidth: CGFloat) -> FormLayout {
-        containerWidth >= FormLayoutMetrics.dualThreshold ? .dual : .detailFluid
+        if containerWidth >= FormLayoutMetrics.dualThreshold { return .dual }
+        if containerWidth >= FormLayoutMetrics.detailPairThreshold { return .detailFluid }
+        return .detailCompact
     }
 }

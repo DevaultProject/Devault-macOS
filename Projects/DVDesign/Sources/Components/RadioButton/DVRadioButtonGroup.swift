@@ -6,7 +6,7 @@ import SwiftUI
 ///
 /// `DVRadioButtonGroup`은 하나의 선택 값을 `Binding`으로 받아 ``Item``마다
 /// 한 개의 ``DVRadioButton``을 렌더링하고, 선택된 ``Size`` 변형에 따라
-/// 간격과 최소 너비를 적용합니다. 사용자가 클릭, 탭, 또는 키보드로 어떤
+/// 간격을 적용합니다. 사용자가 클릭, 탭, 또는 키보드로 어떤
 /// 라디오를 활성화하면 그 값이 바인딩에 기록됩니다.
 ///
 /// ## 선택 바인딩
@@ -44,12 +44,13 @@ import SwiftUI
 ///
 /// 주변 레이아웃의 시각적 리듬에 맞춰 변형을 선택하세요.
 ///
-/// - ``Size/xs`` — 좁은 밀도 (간격 8pt, 최소 너비 180pt)
-/// - ``Size/sm`` — 기본 (간격 20pt, 최소 너비 330pt)
-/// - ``Size/md`` — 넓은 밀도 (간격 56pt, 최소 너비 380pt)
+/// - ``Size/xs`` — 좁은 밀도 (간격 8pt)
+/// - ``Size/sm`` — 기본 (간격 20pt)
+/// - ``Size/md`` — 넓은 밀도 (간격 56pt)
 ///
-/// `minWidth`는 윈도우 크기가 변할 때 그룹이 디자인 footprint 아래로
-/// 줄어들지 않도록 보장하는 하한선입니다.
+/// 그룹 폭은 고정하지 않습니다. 컨테이너가 좁아 한 줄에 다 들어가지 않으면
+/// 압축하는 대신 **줄을 바꿉니다** — 라벨은 고유 폭 아래로 줄어들 수 없어
+/// 폭을 고정하면 잘리기 때문입니다.
 ///
 /// ## 키보드 네비게이션 (macOS)
 ///
@@ -77,7 +78,7 @@ public struct DVRadioButtonGroup<Value: Hashable>: View {
     ///     `Value`는 중복되어선 안 됩니다.
     ///   - selection: 현재 선택된 값에 대한 양방향 바인딩. 사용자가 어떤
     ///     라디오를 활성화하면 그룹이 이 바인딩에 쓰기를 수행합니다.
-    ///   - size: 간격과 최소 너비 변형. 기본값은 ``Size/sm``.
+    ///   - size: 라디오 사이 간격 변형. 기본값은 ``Size/sm``.
     public init(
         items: [Item],
         selection: Binding<Value>,
@@ -89,7 +90,10 @@ public struct DVRadioButtonGroup<Value: Hashable>: View {
     }
 
     public var body: some View {
-        HStack(spacing: size.spacing) {
+        // 한 줄에 다 들어가지 않으면 **줄을 바꾼다.** `HStack`은 라벨의 고유 폭 때문에 그 아래로
+        // 압축되지 않아, 좁은 컨테이너에서는 줄어드는 대신 잘렸다 — 선택지가 몇 개인지조차
+        // 보이지 않게 된다. 넓을 때의 모습은 한 줄 그대로다.
+        DVFlowLayout(hSpacing: size.spacing, vSpacing: size.spacing) {
             ForEach(items) { item in
                 DVRadioButton(item.title, isSelected: selection == item.id) {
                     selection = item.id
@@ -98,7 +102,7 @@ public struct DVRadioButtonGroup<Value: Hashable>: View {
                 .focused($focusedValue, equals: item.id)
             }
         }
-        .frame(minWidth: size.minWidth, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .onKeyPress(.leftArrow) { moveSelection(by: -1) }
         .onKeyPress(.rightArrow) { moveSelection(by: +1) }
     }
@@ -151,17 +155,15 @@ extension DVRadioButtonGroup {
 
     /// ``DVRadioButtonGroup``의 레이아웃 사이즈 변형.
     ///
-    /// 각 케이스는 라디오 사이의 가로 간격(``spacing``)과 그룹 HStack의
-    /// 최소 너비 하한선(``minWidth``)을 Devault Figma 스펙에 맞춰 함께
-    /// 고정합니다.
+    /// 각 케이스는 라디오 사이의 가로 간격(``spacing``)을 Devault Figma 스펙에 맞춰 고정합니다.
     public enum Size {
-        /// 좁은 밀도: 간격 8pt, 최소 너비 180pt.
+        /// 좁은 밀도: 간격 8pt.
         case xs
 
-        /// 기본 밀도: 간격 20pt, 최소 너비 330pt.
+        /// 기본 밀도: 간격 20pt.
         case sm
 
-        /// 넓은 밀도: 간격 56pt, 최소 너비 380pt.
+        /// 넓은 밀도: 간격 56pt.
         case md
 
         /// 인접한 라디오 버튼 사이에 삽입되는 가로 간격 (포인트 단위).
@@ -170,16 +172,6 @@ extension DVRadioButtonGroup {
             case .xs: return 8
             case .sm: return 20
             case .md: return 56
-            }
-        }
-
-        /// 그룹 HStack에 적용되는 최소 너비 (포인트 단위). 윈도우 크기가
-        /// 줄어들 때 그룹이 디자인 footprint 아래로 압축되지 않도록 합니다.
-        public var minWidth: CGFloat {
-            switch self {
-            case .xs: return 180
-            case .sm: return 330
-            case .md: return 380
             }
         }
     }

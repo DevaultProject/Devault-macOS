@@ -19,8 +19,7 @@ struct EnvironmentFieldView: View {
                 items: SecretEnvironment.allCases.map {
                     .init($0, title: String(localized: $0.displayName))
                 },
-                selection: $environment,
-                size: .sm
+                selection: $environment
             )
         }
     }

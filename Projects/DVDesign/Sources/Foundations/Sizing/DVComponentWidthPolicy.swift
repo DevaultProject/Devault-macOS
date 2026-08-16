@@ -14,19 +14,18 @@ import SwiftUI
 /// ```swift
 /// // 디테일 컬럼처럼 폭이 가변인 화면에서
 /// formBody
-///     .environment(\.dvComponentWidthPolicy, .fill)
+///     .environment(\.dvComponentWidthPolicy, .fill(minimum: .xs))
 /// ```
-///
-/// > Note: ``fill``에서 ``DVComponentSize``는 **최소 폭**으로 동작합니다.
-/// > 따라서 컨테이너가 토큰 폭보다 좁아지면 컴포넌트가 컨테이너를 넘칩니다 —
-/// > 호출부가 최소 폭을 보장해야 합니다.
 public enum DVComponentWidthPolicy: Equatable, Sendable {
 
     /// ``DVComponentSize/width`` 고정. 기본값.
     case fixed
 
-    /// 컨테이너를 채우고 ``DVComponentSize/width``를 최소 폭으로 보장.
-    case fill
+    /// 컨테이너를 채우되 `minimum`보다 좁아지지 않습니다.
+    ///
+    /// 컨테이너가 좁아지면 컴포넌트도 **1pt 단위로 따라 줄어듭니다** — 토큰 사이를 뛰어넘지 않습니다.
+    /// 하한에 닿은 뒤에야 넘치기 시작하므로, 화면은 그 하한만 보장하면 됩니다.
+    case fill(minimum: DVComponentSize)
 }
 
 extension EnvironmentValues {
@@ -43,7 +42,8 @@ extension View {
     /// 사용하면, 호출부가 정책만 주입해 고정 폭 / 가변 폭을 전환할 수 있습니다.
     ///
     /// - Parameters:
-    ///   - size: 폭 토큰. `.fixed`에서는 고정 폭, `.fill`에서는 최소 폭으로 쓰입니다.
+    ///   - size: 폭 토큰. `.fixed`에서만 쓰입니다 — `.fill(minimum:)`에서는 컨테이너 폭을 따르므로
+    ///     이 값이 결과에 영향을 주지 않습니다.
     ///   - height: 고정 높이. `nil`이면 높이를 제약하지 않습니다.
     ///   - minHeight: 최소 높이. 내용이 많으면 그만큼 **자랍니다**. `height`와 함께 쓰지 않습니다 —
     ///     한쪽은 높이를 묶고 다른 쪽은 풀어주므로 의도가 상충합니다.
@@ -87,13 +87,12 @@ private struct DVComponentWidthModifier: ViewModifier {
                     alignment: alignment
                 )
                 .frame(minHeight: minHeight, alignment: alignment)
-        case .fill:
-            // minWidth == 토큰 폭으로 하한을 지키고, maxWidth로 컨테이너를 채운다.
+        case .fill(let minimum):
             // 고정 높이는 min/max를 같은 값으로 줘서 표현한다 —
             // `frame(minWidth:maxWidth:height:)` 오버로드는 존재하지 않는다.
             content
                 .frame(
-                    minWidth: size.width,
+                    minWidth: minimum.width,
                     maxWidth: .infinity,
                     minHeight: minHeight ?? height,
                     maxHeight: height,

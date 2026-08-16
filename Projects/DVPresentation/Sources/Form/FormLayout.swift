@@ -35,6 +35,25 @@ enum FormLayoutMetrics {
     /// Detail 가변 폼에서 페어 슬롯 사이 간격 (Figma `1768:30828` 실측 — `x=0`, `x=200`, 폭 180).
     static let detailPairSpacing: CGFloat = 20
 
+    /// detail 컬럼(조회·수정) 슬롯의 하한.
+    ///
+    /// 3컬럼의 한 칸이라 단독 창보다 훨씬 좁아질 수 있어 하한을 낮게 잡는다.
+    /// 이보다 좁아지면 라벨·chevron이 겹치기 시작하므로 여기서 멈추고, 그 아래로는 넘친다.
+    static let slotFloor: DVComponentSize = .xs
+
+    /// 단독 창(생성) 슬롯의 하한.
+    ///
+    /// 창 자체가 `minWidth 520` 아래로 내려가지 않으므로 detail만큼 좁아질 일이 없다.
+    /// 낮출 이유가 없어 디자인 기본 폭을 그대로 하한으로 쓴다.
+    static let standaloneSlotFloor: DVComponentSize = .md
+
+    /// 페어 두 칸을 가로로 유지할 수 있는 컨테이너 폭 하한.
+    ///
+    /// 계산: `2 × xs(180) + detailPairSpacing(20) + horizontalPadding × 2` = **420**.
+    /// 이보다 좁으면 페어가 하한 아래로 밀리므로 세로로 접는다(`FormLayout/detailCompact`).
+    static let detailPairThreshold: CGFloat =
+        2 * slotFloor.width + detailPairSpacing + horizontalPadding * 2
+
     /// 2열 폼으로 전환하는 컨테이너 폭 하한.
     ///
     /// 계산: `2 × md(380) + dualPairSpacing(16) + horizontalPadding × 2` = **816**.
@@ -116,16 +135,19 @@ extension FormLayout {
         pairedSize: .md,
         pairAxis: .horizontal(spacing: FormLayoutMetrics.dualPairSpacing),
         rowSpacing: FormLayoutMetrics.rowSpacing,
-        widthPolicy: .fill
+        widthPolicy: .fill(minimum: FormLayoutMetrics.slotFloor)
     )
 
-    /// 1열 폼 — full-width `.md`, 페어는 세로로 접힘. CreateSecret의 좁은 폭 배열.
+    /// 1열 폼 — 페어를 세로로 접고 컨테이너를 채운다. CreateSecret의 좁은 폭 배열.
+    ///
+    /// 생성 화면은 단독 창이라 detail 컬럼만큼 좁아지지 않는다. 하한을 `.md`로 두어
+    /// 그 아래로는 줄지 않게 하고, 그보다 넓어지면 창을 따라 함께 늘어난다.
     static let single = FormLayout(
         fullWidthSize: .md,
         pairedSize: .md,
         pairAxis: .vertical(spacing: FormLayoutMetrics.rowSpacing),
         rowSpacing: FormLayoutMetrics.rowSpacing,
-        widthPolicy: .fixed
+        widthPolicy: .fill(minimum: FormLayoutMetrics.standaloneSlotFloor)
     )
 
     /// 가변 폭 1열 폼 — 컨테이너를 채우고 페어는 절반씩 나눈다. Detail 컬럼의 기본 배열.
@@ -137,7 +159,20 @@ extension FormLayout {
         pairedSize: .xs,
         pairAxis: .horizontal(spacing: FormLayoutMetrics.detailPairSpacing),
         rowSpacing: FormLayoutMetrics.rowSpacing,
-        widthPolicy: .fill
+        widthPolicy: .fill(minimum: FormLayoutMetrics.slotFloor)
+    )
+
+    /// 페어를 세로로 접은 가변 폭 1열 폼. detail 컬럼이 페어 두 칸을 나란히 놓을 수 없을 만큼
+    /// 좁아졌을 때 쓴다.
+    ///
+    /// 접는 것은 불연속이지만(반쯤 접을 수 없다) **그 뒤로는 다시 연속이다** — 모든 슬롯이
+    /// 컨테이너를 채우며 `slotFloor`까지 1pt 단위로 줄어든다.
+    static let detailCompact = FormLayout(
+        fullWidthSize: .md,
+        pairedSize: .md,
+        pairAxis: .vertical(spacing: FormLayoutMetrics.rowSpacing),
+        rowSpacing: FormLayoutMetrics.rowSpacing,
+        widthPolicy: .fill(minimum: FormLayoutMetrics.slotFloor)
     )
 }
 

@@ -20,8 +20,7 @@ struct LicenseTierFieldView: View {
                 items: LicenseTier.allCases.map {
                     .init($0, title: String(localized: $0.displayName))
                 },
-                selection: $tier,
-                size: .sm
+                selection: $tier
             )
         }
     }
