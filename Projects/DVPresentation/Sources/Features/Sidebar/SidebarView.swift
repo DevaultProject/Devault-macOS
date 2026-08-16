@@ -71,7 +71,7 @@ extension SidebarView {
         title: SidebarFilter.all.title,
         count: count(for: .all),
         systemImage: SidebarFilter.all.icon,
-        isSelected: !store.isCreatingSecret && store.selection == .filter(.all)
+        isSelected: store.highlighted == .filter(.all)
       ) {
         store.send(.didSelect(.filter(.all)))
       }
@@ -88,7 +88,7 @@ extension SidebarView {
             count: count(for: filter),
             systemImage: filter.icon,
             iconColor: filter.iconColor,
-            isSelected: !store.isCreatingSecret && store.selection == .filter(filter)
+            isSelected: store.highlighted == .filter(filter)
           ) {
             store.send(.didSelect(.filter(filter)))
           }
@@ -156,8 +156,7 @@ extension SidebarView {
     List(
       selection: Binding<ProjectItem.ID?>(
         get: {
-          guard !store.isCreatingSecret else { return nil }
-          if case .project(id: let id) = store.selection { return id }
+          if case .project(id: let id) = store.highlighted { return id }
           return nil
         },
         set: { id in

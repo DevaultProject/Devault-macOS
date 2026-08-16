@@ -50,9 +50,37 @@ public struct SidebarFeature {
 
   @ObservableState
   public struct State: Equatable {
-    public internal(set) var selection: SidebarSelection = .filter(.all)
+    /// 사이드바가 지금 무엇을 하고 있는지. **강조 판정은 여기서만 파생된다.**
+    /// 선택과 생성 여부를 두 필드로 나눠 두면 조합 규칙이 뷰와 리듀서에 따로 생겨 어긋난다.
+    public internal(set) var mode: Mode = .browsing(.filter(.all))
     public internal(set) var isProjectSectionExpanded: Bool = true
-    public internal(set) var isCreatingSecret: Bool = false
+
+    public enum Mode: Equatable {
+      case browsing(SidebarSelection)
+      /// 생성 중에는 어떤 항목도 강조하지 않으며, 끝나면 `previous`로 돌아간다.
+      case creating(previous: SidebarSelection)
+    }
+
+    /// 지금 강조할 항목. **뷰와 리듀서가 함께 보는 단일 기준이다.**
+    public var highlighted: SidebarSelection? {
+      guard case .browsing(let selection) = mode else { return nil }
+      return selection
+    }
+
+    /// 강조 여부와 무관한 "돌아갈 곳".
+    public internal(set) var selection: SidebarSelection {
+      get {
+        switch mode {
+        case .browsing(let selection), .creating(previous: let selection): return selection
+        }
+      }
+      set {
+        switch mode {
+        case .browsing:  mode = .browsing(newValue)
+        case .creating:  mode = .creating(previous: newValue)
+        }
+      }
+    }
     var projectsState: LoadingState<IdentifiedArrayOf<ProjectItem>, SidebarError> = .idle
     /// "아직 안 불러옴"과 "0건"을 구분하기 위해 LoadingState로 감싼다 (TCA_GUIDELINES 2.4).
     var countsState: LoadingState<SecretCounts, SidebarError> = .idle
@@ -198,14 +226,21 @@ public struct SidebarFeature {
         state.countsState = .failed(error)
         return .none
 
-      // 이미 선택된 항목을 다시 눌러도 macOS List는 선택 이벤트를 보낸다. 그대로 흘리면
-      // MainFeature가 목록 State를 새로 만들어 이미 불러온 항목이 버려지는데,
-      // `collection` 값은 그대로라 `.task(id:)`가 재조회를 걸지 않아 목록이 빈 채로 남는다.
-      case .didSelect(let selection) where selection == state.selection:
+      // 이미 강조된 항목을 다시 눌러도 macOS List는 선택 이벤트를 보낸다. 흘려보내면
+      // 목록 State가 새로 만들어져 버려진다.
+      //
+      // `selection`이 아니라 `highlighted`를 본다 — 생성 중에는 강조가 없어야 같은 필터를
+      // 다시 눌러 목록으로 돌아갈 수 있다.
+      case .didSelect(let selection) where state.highlighted == selection:
         return .none
 
+      // 생성 중이면 강조를 켜지 않고 목적지만 갈아둔다 — 확인을 취소했을 때 생성 화면인데
+      // 항목이 선택된 것처럼 보이기 때문이다. 강조는 `setCreatingSecret(false)`가 켠다.
       case .didSelect(let selection):
-        state.selection = selection
+        switch state.mode {
+        case .browsing:  state.mode = .browsing(selection)
+        case .creating:  state.mode = .creating(previous: selection)
+        }
         return .send(.delegate(.selectionChanged(selection)))
 
       case .didTapAddButton:
@@ -231,8 +266,16 @@ public struct SidebarFeature {
         state.renameText = text
         return .none
 
+      // 강조만 끄고 켠다. "돌아갈 곳"은 유지해야 생성을 마치고 보던 목록으로 돌아간다.
       case .setCreatingSecret(let value):
-        state.isCreatingSecret = value
+        switch (value, state.mode) {
+        case (true, .browsing(let selection)):
+          state.mode = .creating(previous: selection)
+        case (false, .creating(previous: let selection)):
+          state.mode = .browsing(selection)
+        case (true, .creating), (false, .browsing):
+          break
+        }
         return .none
 
       case .didConfirmRename:
