@@ -2,6 +2,7 @@
 
 import Foundation
 
+/// Secret 만료 알림의 예약 상태를 동기화합니다.
 public protocol ScheduleSecretExpiryNotificationsUseCase: Sendable {
     /// 만료일이 있는 모든 Secret의 알림을 다시 계산해 예약한다. 앱 시작 시 1회 호출.
     func syncAll() async throws
