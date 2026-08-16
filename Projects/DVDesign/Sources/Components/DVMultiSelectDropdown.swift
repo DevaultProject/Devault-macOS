@@ -93,10 +93,6 @@ public struct DVMultiSelectDropdown<Item: Identifiable>: View {
 
     @State private var isOpen: Bool = false
 
-    /// 팝오버가 열린 순간의 selection 스냅샷. 세션 동안 섹션 배치의 기준으로만
-    /// 사용되며, 세션 중 새 선택/해제로는 재정렬되지 않는다. 닫혔다 다시 열면 재-스냅샷.
-    @State private var openSessionSnapshot: Set<Item.ID> = []
-
     // MARK: - Init
 
     /// 다중 선택 드롭다운을 생성합니다.
@@ -157,14 +153,11 @@ public struct DVMultiSelectDropdown<Item: Identifiable>: View {
             triggerContent
         }
         .buttonStyle(.plain)
-        .onChange(of: isOpen) { _, open in
-            if open { openSessionSnapshot = selection }
-        }
         .popover(isPresented: $isOpen, arrowEdge: .bottom) {
             PopoverContentView(
                 items: items,
-                selection: $selection,
-                groupingSnapshot: openSessionSnapshot,
+                initialSelection: selection,
+                onSelectionChange: { selection = $0 },
                 label: label,
                 width: size.width,
                 searchText: searchText,
@@ -173,8 +166,11 @@ public struct DVMultiSelectDropdown<Item: Identifiable>: View {
                 createLabel: createLabel,
                 emptyMessage: emptyMessage,
                 noResultsMessage: noResultsMessage,
-                useSectioning: useSectioning
+                groupsSelectedAtTop: groupsSelectedAtTop
             )
+            // 항목이 추가·삭제되면(예: "+ Add new"로 만든 프로젝트) 팝오버를 새 정체성으로 다시 만들어
+            // 아래 `@State`가 현재 selection으로 다시 시드되게 한다.
+            .id(items.map(\.id))
         }
     }
 }
@@ -237,23 +233,19 @@ private extension DVMultiSelectDropdown {
     var selectedItems: [Item] {
         items.filter { selection.contains($0.id) }
     }
-
-    /// 섹션 분리 조건: 명시 활성 or (open 시점 스냅샷) 선택 2개+ && 전체 4개+.
-    /// 세션 도중 selection이 바뀌어도 재-분리되지 않도록 스냅샷 기준으로 판정.
-    var useSectioning: Bool {
-        if groupsSelectedAtTop { return true }
-        return openSessionSnapshot.count >= 2 && items.count >= 4
-    }
 }
 
 // MARK: - PopoverContent
 
+/// 팝오버 본문. **선택 상태를 직접 소유하고** 바깥에는 `onSelectionChange`로 알린다.
+///
+/// 부모가 소유하면 항목을 연속으로 누를 때 **방금 누른 행만 갱신되고 이전에 누른 행들은 옛 체크
+/// 상태로 남는다.** 팝오버가 별도 윈도우에 호스팅되어 부모의 상태 변경이 이 서브트리까지 내려오지
+/// 않기 때문이며, `@Binding`으로 넘기든 값 + 콜백으로 넘기든 똑같이 재현된다. 전달 방식이 아니라
+/// 갱신 도달 여부의 문제라, 소유권을 안으로 옮겨 갱신이 이 서브트리 안에서 끝나게 해야 한다.
 private struct PopoverContentView<Item: Identifiable>: View {
 
     let items: [Item]
-    @Binding var selection: Set<Item.ID>
-    /// open 시점의 selection 스냅샷 — 섹션 배치 기준 (checkbox 상태는 여전히 live `selection`).
-    let groupingSnapshot: Set<Item.ID>
     let label: (Item) -> String
     let width: CGFloat
 
@@ -266,7 +258,42 @@ private struct PopoverContentView<Item: Identifiable>: View {
     let emptyMessage: String
     let noResultsMessage: ((String) -> String)?
 
-    let useSectioning: Bool
+    let groupsSelectedAtTop: Bool
+    let onSelectionChange: (Set<Item.ID>) -> Void
+
+    @State private var selection: Set<Item.ID>
+
+    /// 섹션 배치 기준 — 열린 순간의 선택으로 고정되어 세션 중 재정렬되지 않는다.
+    @State private var groupingSnapshot: Set<Item.ID>
+
+    init(
+        items: [Item],
+        initialSelection: Set<Item.ID>,
+        onSelectionChange: @escaping (Set<Item.ID>) -> Void,
+        label: @escaping (Item) -> String,
+        width: CGFloat,
+        searchText: Binding<String>?,
+        searchPlaceholder: String,
+        onCreate: (() -> Void)?,
+        createLabel: String,
+        emptyMessage: String,
+        noResultsMessage: ((String) -> String)?,
+        groupsSelectedAtTop: Bool
+    ) {
+        self.items = items
+        self.onSelectionChange = onSelectionChange
+        self.label = label
+        self.width = width
+        self.searchText = searchText
+        self.searchPlaceholder = searchPlaceholder
+        self.onCreate = onCreate
+        self.createLabel = createLabel
+        self.emptyMessage = emptyMessage
+        self.noResultsMessage = noResultsMessage
+        self.groupsSelectedAtTop = groupsSelectedAtTop
+        _selection = State(initialValue: initialSelection)
+        _groupingSnapshot = State(initialValue: initialSelection)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -280,7 +307,8 @@ private struct PopoverContentView<Item: Identifiable>: View {
             } else if useSectioning {
                 SectionedListView(
                     items: items,
-                    selection: $selection,
+                    selection: selection,
+                    onToggle: toggle(_:),
                     groupingSnapshot: groupingSnapshot,
                     label: label,
                     query: searchText?.wrappedValue ?? ""
@@ -288,7 +316,8 @@ private struct PopoverContentView<Item: Identifiable>: View {
             } else {
                 FlatListView(
                     items: items,
-                    selection: $selection,
+                    selection: selection,
+                    onToggle: toggle(_:),
                     label: label,
                     query: searchText?.wrappedValue ?? ""
                 )
@@ -300,6 +329,20 @@ private struct PopoverContentView<Item: Identifiable>: View {
             }
         }
         .frame(width: width)
+        .onChange(of: selection) { _, new in onSelectionChange(new) }
+    }
+
+    private func toggle(_ id: Item.ID) {
+        if selection.contains(id) {
+            selection.remove(id)
+        } else {
+            selection.insert(id)
+        }
+    }
+
+    private var useSectioning: Bool {
+        if groupsSelectedAtTop { return true }
+        return groupingSnapshot.count >= 2 && items.count >= 4
     }
 
     /// 빈 상태 문구: 검색 중이면 no-results, 아니면 empty.
@@ -338,7 +381,8 @@ private struct SearchHeaderView: View {
 
 private struct FlatListView<Item: Identifiable>: View {
     let items: [Item]
-    @Binding var selection: Set<Item.ID>
+    let selection: Set<Item.ID>
+    let onToggle: (Item.ID) -> Void
     let label: (Item) -> String
     let query: String
 
@@ -351,7 +395,7 @@ private struct FlatListView<Item: Identifiable>: View {
                         isSelected: selection.contains(item.id),
                         query: query
                     ) {
-                        toggle(item.id)
+                        onToggle(item.id)
                     }
                 }
             }
@@ -359,19 +403,12 @@ private struct FlatListView<Item: Identifiable>: View {
         }
         .frame(maxHeight: DropdownMetrics.listMaxHeight)
     }
-
-    private func toggle(_ id: Item.ID) {
-        if selection.contains(id) {
-            selection.remove(id)
-        } else {
-            selection.insert(id)
-        }
-    }
 }
 
 private struct SectionedListView<Item: Identifiable>: View {
     let items: [Item]
-    @Binding var selection: Set<Item.ID>
+    let selection: Set<Item.ID>
+    let onToggle: (Item.ID) -> Void
     /// 섹션 배치는 이 스냅샷 기준으로 고정 — 세션 중 selection 변경으로 재정렬되지 않음.
     let groupingSnapshot: Set<Item.ID>
     let label: (Item) -> String
@@ -388,7 +425,7 @@ private struct SectionedListView<Item: Identifiable>: View {
                             isSelected: selection.contains(item.id),
                             query: query
                         ) {
-                            toggle(item.id)
+                            onToggle(item.id)
                         }
                     }
                 }
@@ -400,7 +437,7 @@ private struct SectionedListView<Item: Identifiable>: View {
                             isSelected: selection.contains(item.id),
                             query: query
                         ) {
-                            toggle(item.id)
+                            onToggle(item.id)
                         }
                     }
                 }
@@ -415,14 +452,6 @@ private struct SectionedListView<Item: Identifiable>: View {
     }
     private var snapshotUnselected: [Item] {
         items.filter { !groupingSnapshot.contains($0.id) }
-    }
-
-    private func toggle(_ id: Item.ID) {
-        if selection.contains(id) {
-            selection.remove(id)
-        } else {
-            selection.insert(id)
-        }
     }
 }
 
