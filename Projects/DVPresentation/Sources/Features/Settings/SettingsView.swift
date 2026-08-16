@@ -67,7 +67,12 @@ extension SettingsView {
       }
     }
     .listStyle(.sidebar)
-    .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 320)
+    // 메인 화면 사이드바와 같은 값으로 고정한다. 설정을 드나들 때 폭이 달라지지 않는다.
+    .navigationSplitViewColumnWidth(
+      min: WindowLayoutMetrics.sidebarWidth,
+      ideal: WindowLayoutMetrics.sidebarWidth,
+      max: WindowLayoutMetrics.sidebarWidth
+    )
   }
 
   private var backToAppRow: some View {
