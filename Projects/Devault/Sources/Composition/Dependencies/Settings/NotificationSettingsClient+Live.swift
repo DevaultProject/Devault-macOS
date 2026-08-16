@@ -10,7 +10,8 @@ import DVPresentation
 extension NotificationSettingsClient: @retroactive DependencyKey {
   public static let liveValue: NotificationSettingsClient = {
     let useCase: any NotificationSettingsUseCase = NotificationSettingsUseCaseImpl(
-      repository: LiveRepositories.settings
+      repository: LiveRepositories.settings,
+      expiryNotificationScheduler: LiveUseCases.expirySchedule
     )
 
     return NotificationSettingsClient(
@@ -18,13 +19,13 @@ extension NotificationSettingsClient: @retroactive DependencyKey {
         useCase.isExpiryAlertsEnabled()
       },
       setExpiryAlertsEnabled: { enabled in
-        useCase.setExpiryAlertsEnabled(enabled)
+        try await useCase.setExpiryAlertsEnabled(enabled)
       },
       expiryAlertDaysBefore: {
         useCase.expiryAlertDaysBefore()
       },
       setExpiryAlertDaysBefore: { days in
-        useCase.setExpiryAlertDaysBefore(days)
+        try await useCase.setExpiryAlertDaysBefore(days)
       },
       isAuthFailureAlertEnabled: {
         useCase.isAuthFailureAlertEnabled()

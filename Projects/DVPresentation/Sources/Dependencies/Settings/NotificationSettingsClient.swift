@@ -5,11 +5,11 @@ import ComposableArchitecture
 @DependencyClient
 public struct NotificationSettingsClient: Sendable {
   public var isExpiryAlertsEnabled: @Sendable () -> Bool = { true }
-  public var setExpiryAlertsEnabled: @Sendable (Bool) -> Void
+  public var setExpiryAlertsEnabled: @Sendable (Bool) async throws -> Void
 
   /// 만료 며칠 전에 알림을 보낼지(예: [30, 7, 1, 0], 0은 당일).
   public var expiryAlertDaysBefore: @Sendable () -> [Int] = { [30, 7, 1, 0] }
-  public var setExpiryAlertDaysBefore: @Sendable ([Int]) -> Void
+  public var setExpiryAlertDaysBefore: @Sendable ([Int]) async throws -> Void
 
   public var isAuthFailureAlertEnabled: @Sendable () -> Bool = { true }
   public var setAuthFailureAlertEnabled: @Sendable (Bool) -> Void
