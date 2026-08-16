@@ -402,8 +402,7 @@ struct SecretDetailFeatureTests {
         #expect(copied.value == "ghp_secret")
     }
 
-    /// 복사가 인증을 유발하는 것이 아니라, 값이 없어 복호화가 필요한 것이 유발한다.
-    @Test("값이 없으면 복호화한 뒤 이어서 복사한다")
+    @Test("값이 없으면 복호화한 뒤 Copy 정책을 적용한다")
     func copy_withoutPayload_decryptsThenCopies() async {
         let secret = Self.makeSecret()
         let payload = CreateSecretPayload.apiKey(APIKeyPayload(value: "ghp_secret"), nil)

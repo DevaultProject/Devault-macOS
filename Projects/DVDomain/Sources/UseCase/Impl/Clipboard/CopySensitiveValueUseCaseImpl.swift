@@ -5,7 +5,7 @@ import Foundation
 import DVCore
 
 /// `ClipboardService`(pasteboard I/O)와 `SecurityNotificationService`(알림)를 조합해
-/// 설정된 시간 후 자동 정리, 반복 복사 시 비정상 접근 알림 정책을 구현한다.
+/// 설정에 따른 복사 인증, 설정된 시간 후 자동 정리, 반복 복사 시 비정상 접근 알림 정책을 구현한다.
 /// 반복 판단 로직 자체는 `AbnormalAccessMonitor`(순수·테스트 가능)에 위임한다.
 ///
 /// 알림 발송 실패는 복사 자체를 실패시키지 않는다 — 로깅만 하고 삼킨다.
@@ -15,6 +15,7 @@ public actor CopySensitiveValueUseCaseImpl: CopySensitiveValueUseCase {
 
     private let clipboardService: any ClipboardService
     private let notificationService: any SecurityNotificationService
+    private let authenticateUseCase: any AuthenticateUseCase
     private let settingsRepository: any SettingsRepository
     private let now: @Sendable () -> ContinuousClock.Instant
     private let sleep: @Sendable (Duration) async throws -> Void
@@ -26,6 +27,7 @@ public actor CopySensitiveValueUseCaseImpl: CopySensitiveValueUseCase {
     public init(
         clipboardService: any ClipboardService,
         notificationService: any SecurityNotificationService,
+        authenticateUseCase: any AuthenticateUseCase,
         settingsRepository: any SettingsRepository,
         now: @escaping @Sendable () -> ContinuousClock.Instant = { ContinuousClock.now },
         sleep: @escaping @Sendable (Duration) async throws -> Void = {
@@ -34,12 +36,17 @@ public actor CopySensitiveValueUseCaseImpl: CopySensitiveValueUseCase {
     ) {
         self.clipboardService = clipboardService
         self.notificationService = notificationService
+        self.authenticateUseCase = authenticateUseCase
         self.settingsRepository = settingsRepository
         self.now = now
         self.sleep = sleep
     }
 
     public func execute(_ value: String) async throws {
+        if settingsRepository.isRequireAuthToCopyEnabled() {
+            try await authenticateUseCase.authenticate(reason: AuthenticationReason.copySecret)
+        }
+
         // 이 changeCount를 기준점 삼아, 아래 백그라운드 Task에서 "그 사이 다른 값이 복사됐는지" 판단
         let changeCount = try clipboardService.write(value)
 
