@@ -169,6 +169,9 @@ extension SidebarView {
       }
     }
     .listStyle(.sidebar)
+    // 프로젝트가 추가·삭제·이름 변경될 때 행이 뚝 나타나지 않게 한다. `refresh` 경로가 목록을
+    // 비우지 않으므로 실제로 바뀐 행만 움직인다.
+    .animation(.smooth(duration: 0.25), value: store.projects)
     .scrollContentBackground(.hidden)
     .padding(.horizontal, -12)
     .onKeyPress(.return) {

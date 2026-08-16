@@ -381,6 +381,7 @@ struct CreateSecretFeatureTests {
                 Project(id: newItem.id, name: newItem.name, createdAt: fixedDate, updatedAt: fixedDate)
             ]
         }
+        await store.receive(.delegate(.projectsChanged))
     }
 
     // MARK: - isSaveEnabled

@@ -83,6 +83,10 @@ public struct SidebarFeature {
     // MARK: - View
 
     case task
+    /// 이미 불러온 목록을 다시 읽는다. `task`와 달리 `.loading`으로 되돌리지 않아
+    /// 화면에서 목록이 사라졌다 나타나지 않는다 — 프로젝트 추가·이름 변경처럼 이미 보고 있는
+    /// 목록이 조금 달라지는 경우에 쓴다.
+    case refresh
     case didSelect(SidebarSelection)
     case didTapAddButton
     case didTapAddProject
@@ -148,19 +152,13 @@ public struct SidebarFeature {
     Reduce { state, action in
       switch action {
       case .task:
+        // 최초 진입에만 스피너를 보인다 — 보여줄 이전 값이 정말로 없는 유일한 경우다.
         state.projectsState = .loading
         state.countsState = .loading
-        return .run { send in
-          do {
-            let projects = try await sidebarClient.fetchProjects()
-            await send(.projectsResponse(.success(projects)))
-          } catch let error as SidebarError {
-            await send(.projectsResponse(.failure(error)))
-          } catch {
-            await send(.projectsResponse(.failure(.fetchFailed)))
-          }
-        }
-        .cancellable(id: CancelID.fetch, cancelInFlight: true)
+        return fetchProjectsEffect()
+
+      case .refresh:
+        return fetchProjectsEffect()
 
       case .projectsResponse(.success(let projects)):
         let sorted = projects.sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
@@ -173,8 +171,10 @@ public struct SidebarFeature {
         // 프로젝트 목록이 실패해도 필터 카드 개수는 독립적으로 유효하므로 집계는 계속 시도한다.
         return countsEffect(projectIDs: [])
 
+      // `.loading`으로 되돌리지 않는다. 되돌리면 `counts`가 nil이 되어 모든 행의 숫자가
+      // 사라졌다 다시 나타난다 — 시크릿을 하나 만들 때마다 사이드바 전체가 깜빡였다.
+      // 이전 값을 그대로 두고 새 값이 오면 숫자만 바뀐다.
       case .countsRefreshRequested:
-        state.countsState = .loading
         return countsEffect(projectIDs: state.projects.map(\.id))
 
       case .countsResponse(.success(let counts)):
@@ -250,7 +250,7 @@ public struct SidebarFeature {
       case .renameResponse(.success(let updated)):
         return .concatenate(
           .send(.delegate(.projectRenamed(updated))),
-          .send(.task)
+          .send(.refresh)
         )
 
       case .renameResponse(.failure(.nameTaken)):
@@ -289,10 +289,10 @@ public struct SidebarFeature {
           state.selection = .filter(.all)
           return .concatenate(
             .send(.delegate(.selectionChanged(.filter(.all)))),
-            .send(.task)
+            .send(.refresh)
           )
         }
-        return .send(.task)
+        return .send(.refresh)
 
       case .deleteResponse(.failure):
         state.alert = makeDeleteFailedAlert()
@@ -309,6 +309,22 @@ public struct SidebarFeature {
 // MARK: - Private
 
 private extension SidebarFeature {
+
+  /// 프로젝트 목록 조회. `task`(최초)와 `refresh`(재조회)가 공유하며, 다른 것은 호출 전에
+  /// `.loading`으로 되돌리는지 여부뿐이다.
+  func fetchProjectsEffect() -> Effect<Action> {
+    .run { send in
+      do {
+        let projects = try await sidebarClient.fetchProjects()
+        await send(.projectsResponse(.success(projects)))
+      } catch let error as SidebarError {
+        await send(.projectsResponse(.failure(error)))
+      } catch {
+        await send(.projectsResponse(.failure(.fetchFailed)))
+      }
+    }
+    .cancellable(id: CancelID.fetch, cancelInFlight: true)
+  }
 
   /// 필터·프로젝트 개수 집계. 생성/삭제가 연달아 일어나면 직전 집계는 취소한다 (E3).
   func countsEffect(projectIDs: [ProjectItem.ID]) -> Effect<Action> {

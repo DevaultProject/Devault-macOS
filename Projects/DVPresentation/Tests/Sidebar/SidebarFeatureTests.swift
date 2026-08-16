@@ -97,9 +97,7 @@ struct SidebarFeatureTests {
       $0.date = .constant(Self.referenceDate)
     }
 
-    await store.send(.countsRefreshRequested) {
-      $0.countsState = .loading
-    }
+    await store.send(.countsRefreshRequested)
     await store.receive(.countsResponse(.success(counts))) {
       $0.countsState = .loaded(counts)
       #expect($0.counts?.count(for: .all) == 7)
@@ -116,9 +114,7 @@ struct SidebarFeatureTests {
       $0.date = .constant(Self.referenceDate)
     }
 
-    await store.send(.countsRefreshRequested) {
-      $0.countsState = .loading
-    }
+    await store.send(.countsRefreshRequested)
     await store.receive(.countsResponse(.failure(.fetchFailed))) {
       $0.countsState = .failed(.fetchFailed)
       #expect($0.counts == nil)
@@ -212,10 +208,7 @@ struct SidebarFeatureTests {
     }
     await store.receive(.renameResponse(.success(renamed)))
     await store.receive(.delegate(.projectRenamed(renamed)))
-    await store.receive(.task) {
-      $0.projectsState = .loading
-      $0.countsState = .loading
-    }
+    await store.receive(.refresh)
     await store.receive(.projectsResponse(.success([renamed]))) {
       $0.projectsState = .loaded([renamed])
     }
@@ -328,10 +321,7 @@ struct SidebarFeatureTests {
       $0.selection = .filter(.all)
     }
     await store.receive(.delegate(.selectionChanged(.filter(.all))))
-    await store.receive(.task) {
-      $0.projectsState = .loading
-      $0.countsState = .loading
-    }
+    await store.receive(.refresh)
     await store.receive(.projectsResponse(.success([]))) {
       $0.projectsState = .loaded([])
     }
