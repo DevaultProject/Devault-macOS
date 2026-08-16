@@ -158,10 +158,22 @@ extension SidebarView {
         .dvFont(.captionMDSemibold)
         .foregroundStyle(Color.dv(.vaultGreen))
       Spacer()
-      projectHeaderButton(icon: "plus.circle") { store.send(.didTapAddProject) }
-        .accessibilityLabel(String.module("Add Project"))
+      DVIconButton(
+        systemName: "plus.circle",
+        idle: .gray500,
+        hovered: .gray700,
+        pressed: .gray800
+      ) {
+        store.send(.didTapAddProject)
+      }
+      .accessibilityLabel(String.module("Add Project"))
       // 아이콘을 갈아끼우면 서로 다른 뷰라 툭 바뀐다. 하나를 돌려야 각도가 이어진다.
-      projectHeaderButton(icon: "chevron.down") {
+      DVIconButton(
+        systemName: "chevron.down",
+        idle: .gray500,
+        hovered: .gray700,
+        pressed: .gray800
+      ) {
         store.send(.didToggleProjectSection)
       }
       .rotationEffect(.degrees(store.isProjectSectionExpanded ? 0 : 180))
@@ -244,15 +256,6 @@ extension SidebarView {
   /// 숫자 자리를 비운다 — 0으로 대체하면 "시크릿 없음"과 구분되지 않는다.
   private func count(for filter: SidebarFilter) -> Int? {
     store.counts?.count(for: filter)
-  }
-
-  private func projectHeaderButton(icon: String, action: @escaping () -> Void) -> some View {
-    Button(action: action) {
-      Image(systemName: icon)
-        .dvFont(.captionLG)
-        .foregroundStyle(Color.dv(.gray500))
-    }
-    .buttonStyle(.plain)
   }
 
   /// macOS 26부터는 Liquid Glass 버튼으로 그린다.
