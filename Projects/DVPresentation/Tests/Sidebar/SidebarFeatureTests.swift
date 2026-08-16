@@ -169,6 +169,38 @@ struct SidebarFeatureTests {
 
   /// delegate가 나가면 MainFeature가 목록 State를 새로 만드는데, collection 값은 그대로라
   /// `.task(id:)`가 재조회를 걸지 않아 목록이 빈 채로 남았다. 발신 자체를 막아야 한다.
+  /// `selection`으로 판정하면 "같은 선택"으로 삼켜져 All에서 생성에 들어가면 돌아오지 못했다.
+  @Test("생성 중에는 같은 항목을 다시 눌러도 delegate가 나간다")
+  func didSelectSameItemWhileCreatingStillNotifies() async {
+    var state = SidebarFeature.State()
+    state.mode = .creating(previous: .filter(.all))
+
+    let store = TestStore(initialState: state) { SidebarFeature() }
+
+    await store.send(.didSelect(.filter(.all)))
+    await store.receive(.delegate(.selectionChanged(.filter(.all))))
+    #expect(store.state.highlighted == nil)
+  }
+
+  @Test("setCreatingSecret은 강조만 끄고 돌아갈 곳은 유지한다")
+  func setCreatingSecretKeepsReturnDestination() async {
+    var state = SidebarFeature.State()
+    state.mode = .browsing(.filter(.starred))
+
+    let store = TestStore(initialState: state) { SidebarFeature() }
+
+    await store.send(.setCreatingSecret(true)) {
+      $0.mode = .creating(previous: .filter(.starred))
+    }
+    #expect(store.state.highlighted == nil)
+    #expect(store.state.selection == .filter(.starred))
+
+    await store.send(.setCreatingSecret(false)) {
+      $0.mode = .browsing(.filter(.starred))
+    }
+    #expect(store.state.highlighted == .filter(.starred))
+  }
+
   @Test("이미 선택된 항목을 다시 눌러도 delegate를 보내지 않는다")
   func didSelectSameSelectionSendsNothing() async {
     // 기본 selection이 .filter(.all)이므로 그대로 다시 누른다.

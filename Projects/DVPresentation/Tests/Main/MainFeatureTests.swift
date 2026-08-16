@@ -111,11 +111,11 @@ struct MainFeatureTests {
     await store.receive(.sidebar(.setCreatingSecret(false)))
   }
 
-  @Test("selectionChanged는 selectSecretType을 닫고 isCreatingSecret을 false로 만든다")
+  @Test("selectionChanged는 selectSecretType을 닫고 생성 모드를 벗어난다")
   func selectionChangedClosesSecretTypeSelection() async {
     var initial = MainFeature.State()
     initial.selectSecretType = .init()
-    initial.sidebar.isCreatingSecret = true
+    initial.sidebar.mode = .creating(previous: initial.sidebar.selection)
     initial.sidebar.selection = .filter(.starred)
 
     let store = TestStore(initialState: initial) {
@@ -129,11 +129,11 @@ struct MainFeatureTests {
       $0.selectSecretType = nil
     }
     await store.receive(.sidebar(.setCreatingSecret(false))) {
-      $0.sidebar.isCreatingSecret = false
+      $0.sidebar.mode = .browsing($0.sidebar.selection)
     }
   }
 
-  @Test("addButtonTapped은 selectSecretType을 열고 isCreatingSecret을 true로 만든다")
+  @Test("addButtonTapped은 selectSecretType을 열고 생성 모드로 들어간다")
   func addButtonTappedOpensSecretTypeSelection() async {
     let store = TestStore(initialState: MainFeature.State()) {
       MainFeature()
@@ -144,7 +144,7 @@ struct MainFeatureTests {
       $0.selectSecretType = .init()
     }
     await store.receive(.sidebar(.setCreatingSecret(true))) {
-      $0.sidebar.isCreatingSecret = true
+      $0.sidebar.mode = .creating(previous: $0.sidebar.selection)
     }
   }
 
@@ -176,7 +176,7 @@ struct MainFeatureTests {
       $0.secretList.selectedSecretID = nil
     }
     await store.receive(.sidebar(.setCreatingSecret(true))) {
-      $0.sidebar.isCreatingSecret = true
+      $0.sidebar.mode = .creating(previous: $0.sidebar.selection)
     }
   }
 
@@ -203,7 +203,7 @@ struct MainFeatureTests {
     var initial = MainFeature.State()
     initial.selectSecretType = .init()
     initial.createSecret = CreateSecretFeature.State(secretType: .apiKeyToken)
-    initial.sidebar.isCreatingSecret = true
+    initial.sidebar.mode = .creating(previous: initial.sidebar.selection)
 
     let store = TestStore(initialState: initial) {
       MainFeature()
@@ -217,7 +217,7 @@ struct MainFeatureTests {
       $0.selectSecretType = nil
     }
     await store.receive(.sidebar(.setCreatingSecret(false))) {
-      $0.sidebar.isCreatingSecret = false
+      $0.sidebar.mode = .browsing($0.sidebar.selection)
     }
     await store.receive(.sidebar(.countsRefreshRequested))
     await store.receive(.sidebar(.countsResponse(.success(counts)))) {
@@ -255,13 +255,13 @@ struct MainFeatureTests {
 
   // MARK: - CreateProject Delegate
 
-  @Test("projectCreated는 isCreatingSecret이 false일 때 selection을 새 프로젝트로 설정하고 refetch한다")
+  @Test("projectCreated는 생성 중이 아닐 때 selection을 새 프로젝트로 설정하고 refetch한다")
   func projectCreatedSelectsNewProject() async {
     let item = ProjectItem(id: UUID(), name: "Backend")
 
     var initial = MainFeature.State()
     initial.createProject = .init()
-    initial.sidebar.isCreatingSecret = false
+    initial.sidebar.mode = .browsing(initial.sidebar.selection)
 
     let store = TestStore(initialState: initial) {
       MainFeature()
@@ -291,13 +291,13 @@ struct MainFeatureTests {
     }
   }
 
-  @Test("projectCreated는 isCreatingSecret이 true일 때 selection을 변경하지 않는다")
+  @Test("projectCreated는 생성 중일 때 selection을 변경하지 않는다")
   func projectCreatedDoesNotSelectWhenCreatingSecret() async {
     let item = ProjectItem(id: UUID(), name: "Backend")
 
     var initial = MainFeature.State()
     initial.createProject = .init()
-    initial.sidebar.isCreatingSecret = true
+    initial.sidebar.mode = .creating(previous: initial.sidebar.selection)
 
     let store = TestStore(initialState: initial) {
       MainFeature()
@@ -707,7 +707,7 @@ struct MainFeatureTests {
     initial.createProject = .init()
     initial.createSecret = .init(secretType: .apiKeyToken)
     initial.sidebar.selection = .project(id: projectID)
-    initial.sidebar.isCreatingSecret = true
+    initial.sidebar.mode = .creating(previous: initial.sidebar.selection)
     initial.secretList = .init(collection: .project(id: projectID), projectName: "Old")
 
     let store = TestStore(initialState: initial) {
@@ -725,7 +725,7 @@ struct MainFeatureTests {
       $0.createProject = nil
       $0.createSecret = nil
       $0.sidebar.selection = .filter(.all)
-      $0.sidebar.isCreatingSecret = false
+      $0.sidebar.mode = .browsing($0.sidebar.selection)
       $0.secretList = .init(collection: .all)
     }
   }

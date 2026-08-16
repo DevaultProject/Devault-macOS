@@ -208,7 +208,8 @@ public struct MainFeature {
 
       case .createProject(.presented(.delegate(.projectCreated(let item)))):
         state.createProject = nil
-        if !state.sidebar.isCreatingSecret {
+        // 생성 중이면 목록을 옮기지 않는다 — 마치고 엉뚱한 목록으로 돌아오게 된다.
+        if case .browsing = state.sidebar.mode {
           state.sidebar.selection = .project(id: item.id)
           state.secretList = .init(collection: .project(id: item.id), projectName: item.name)
         }
@@ -316,8 +317,7 @@ extension MainFeature {
     state.createProject = nil
     state.createSecret = nil
     state.secretDetail = nil
-    state.sidebar.isCreatingSecret = false
-    state.sidebar.selection = .filter(.all)
+    state.sidebar.mode = .browsing(.filter(.all))
     state.secretList = .init(collection: .all)
   }
 }
