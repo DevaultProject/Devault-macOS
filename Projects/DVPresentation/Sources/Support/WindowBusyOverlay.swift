@@ -44,6 +44,11 @@ extension View {
                 // 아래로 클릭이 새지 않게 막는다. 진행 중에는 창 전체가 잠긴 것이 맞다.
                 .allowsHitTesting(true)
                 .ignoresSafeArea()
+                // 잠갔다는 사실을 보조 기술에도 알린다. `ProgressView`만으로는 읽어 주지 않아
+                // VoiceOver 사용자에게는 창이 그냥 반응하지 않는 것으로만 보인다.
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(String.module("In progress"))
+                .accessibilityAddTraits(.updatesFrequently)
             }
         }
     }
