@@ -15,9 +15,9 @@ let project = Project.project(
         ),
         .tests(
             name: "DVDataTests",
+            sources: ["Tests/**"],
             dependencies: [
                 .data(),
-                .domain(),
             ]
         ),
     ]

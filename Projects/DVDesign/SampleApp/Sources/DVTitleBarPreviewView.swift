@@ -18,16 +18,15 @@ struct DVTitleBarPreviewView: View {
                     DVTitleBar(
                         titleText: "All",
                         searchText: $searchText,
-                        onSortTapped: {}
+                        sortMenuContent: { AnyView(Text("Sort menu content")) }
                     )
                     .frame(width: 280)
                     .background(Color.white)
                 }
-                previewSection("Expired") {
+                previewSection("정렬 없음") {
                     DVTitleBar(
                         titleText: "Expired",
-                        searchText: .constant(""),
-                        onSortTapped: {}
+                        searchText: .constant("")
                     )
                     .frame(width: 280)
                     .background(Color.white)

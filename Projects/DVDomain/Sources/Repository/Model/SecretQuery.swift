@@ -65,11 +65,34 @@ extension SecretQuery {
         }
     }
 
-    public enum Sort: Equatable, Sendable {
-        case recentlyAdded
-        case oldestFirst
-        case expiringSoon
-        case nameAscending
-        case nameDescending
+    /// 정렬 기준(`key`)과 방향(`direction`)을 독립된 축으로 표현한다.
+    ///
+    /// 이전엔 `recentlyAdded`/`oldestFirst`/`expiringSoon`/`nameAscending`/`nameDescending`처럼
+    /// 기준과 방향을 한 케이스에 묶어뒀다. 3기준 × 2방향 = 6개 조합 중 5개만 존재했고,
+    /// 특히 "만료 내림차순(만료 늦은 순)"을 표현할 방법이 없었다.
+    public struct Sort: Equatable, Sendable {
+        public enum Key: Equatable, Sendable {
+            /// `updatedAt` 기준. 목록 행에 표시되는 날짜와 같은 필드를 써야 사용자가 보는 순서와 정렬 기준이 일치한다.
+            case time
+            /// `expiresAt` 기준. 만료일이 없는 Secret은 방향과 무관하게 항상 뒤로 보낸다 — 소비처(정렬 구현부)의 책임.
+            case expiry
+            case name
+        }
+
+        public enum Direction: Equatable, Sendable {
+            case ascending
+            case descending
+        }
+
+        public var key: Key
+        public var direction: Direction
+
+        public init(key: Key, direction: Direction) {
+            self.key = key
+            self.direction = direction
+        }
+
+        /// 기존 `recentlyAdded`와 동일한 기본 정렬 — 최근 수정 순.
+        public static let recentlyAdded = Sort(key: .time, direction: .descending)
     }
 }

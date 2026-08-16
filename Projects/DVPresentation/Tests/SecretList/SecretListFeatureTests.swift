@@ -107,16 +107,17 @@ struct SecretListFeatureTests {
     @Test("didSelectSort는 디바운스 없이 즉시 재조회한다")
     func sortRefetchesImmediately() async {
         let secret = makeSecret(name: "GitHub API Key")
+        let nameAscending = SecretQuery.Sort(key: .name, direction: .ascending)
         let store = TestStore(initialState: SecretListFeature.State()) {
             SecretListFeature()
         } withDependencies: {
             $0.secretClient.fetchByQuery = { query in
-                query.sort == .nameAscending ? [secret] : []
+                query.sort == nameAscending ? [secret] : []
             }
         }
 
-        await store.send(.didSelectSort(.nameAscending)) {
-            $0.sort = .nameAscending
+        await store.send(.didSelectSort(nameAscending)) {
+            $0.sort = nameAscending
         }
         await store.receive(.secretsResponse(.success([secret]))) {
             $0.secretsState = .loaded([secret])
@@ -131,7 +132,7 @@ struct SecretListFeatureTests {
         #expect(state.secretsState != .loaded([]))
     }
 
-    @Test("expired collection의 query는 referenceDate를 확장 창만큼 밀고 expiringSoon 정렬을 강제한다")
+    @Test("expired collection의 query는 referenceDate를 확장 창만큼 밀고 만료 오름차순 정렬을 강제한다")
     func expiredQueryWidensWindow() {
         let today = Date(timeIntervalSince1970: 0)
         let state = SecretListFeature.State(collection: .expired(referenceDate: today))
@@ -146,7 +147,7 @@ struct SecretListFeatureTests {
             TimeInterval(SecretQuery.Collection.expiringSoonWindowDays) * 86_400
         )
         #expect(windowEnd == expectedWindowEnd)
-        #expect(query.sort == .expiringSoon)
+        #expect(query.sort == SecretQuery.Sort(key: .expiry, direction: .ascending))
     }
 
     @Test("notice collection의 query는 collection을 그대로 쓰고 expiringSoon 정렬을 강제한다")

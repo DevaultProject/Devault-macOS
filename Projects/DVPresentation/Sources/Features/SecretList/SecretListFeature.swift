@@ -40,7 +40,7 @@ public struct SecretListFeature {
         return SecretQuery(
           collection: .expiringWindow(from: referenceDate),
           searchText: normalizedSearchText,
-          sort: .expiringSoon
+          sort: SecretQuery.Sort(key: .expiry, direction: .ascending)
         )
       case .notice:
         // predicate가 이미 "지나지 않음 + window 이내"를 전부 검사하므로 window 변환이 필요 없다.

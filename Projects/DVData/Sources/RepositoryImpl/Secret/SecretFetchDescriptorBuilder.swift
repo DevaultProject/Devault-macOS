@@ -141,33 +141,25 @@ enum SecretFetchDescriptorBuilder {
         }
     }
 
+    /// 만료일(`.expiry`) 정렬에서 `nil`이 방향과 무관하게 뒤로 가야 하는 요구사항은
+    /// SwiftData `SortDescriptor`(옵셔널을 `nil < .some`으로만 비교) 하나로는 표현할 수 없다.
+    /// 여기서는 SwiftData가 다룰 수 있는 만큼만 정렬하고, `InMemorySecretQueryFilter`가
+    /// nil을 뒤로 보내는 후처리를 맡는다.
     private static func sortDescriptors(
         from sort: SecretQuery.Sort
     ) -> [SortDescriptor<SwiftDataModel.Secret>] {
-        switch sort {
-        case .recentlyAdded:
+        let order: SortOrder = sort.direction == .ascending ? .forward : .reverse
+        switch sort.key {
+        case .time:
+            return [SortDescriptor(\.updatedAt, order: order)]
+        case .expiry:
             return [
-                SortDescriptor(\.createdAt, order: .reverse),
+                SortDescriptor(\.expiresAt, order: order),
                 SortDescriptor(\.updatedAt, order: .reverse),
             ]
-        case .oldestFirst:
+        case .name:
             return [
-                SortDescriptor(\.createdAt, order: .forward),
-                SortDescriptor(\.updatedAt, order: .forward),
-            ]
-        case .expiringSoon:
-            return [
-                SortDescriptor(\.expiresAt, order: .forward),
-                SortDescriptor(\.updatedAt, order: .reverse),
-            ]
-        case .nameAscending:
-            return [
-                SortDescriptor(\.name, order: .forward),
-                SortDescriptor(\.updatedAt, order: .reverse),
-            ]
-        case .nameDescending:
-            return [
-                SortDescriptor(\.name, order: .reverse),
+                SortDescriptor(\.name, order: order),
                 SortDescriptor(\.updatedAt, order: .reverse),
             ]
         }
