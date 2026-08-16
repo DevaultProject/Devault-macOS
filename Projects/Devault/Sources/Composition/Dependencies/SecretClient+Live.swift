@@ -96,12 +96,10 @@ extension SecretClient: @retroactive DependencyKey {
                 try await authenticateUseCase.authenticate(reason: reason)
             },
             copySensitiveValue: { value in
-                try await LiveUseCases.copySensitiveValue.execute(value)
+                try await LiveUseCases.copyToClipboard.execute(value, policy: .sensitive)
             },
-            // UseCase를 거치지 않는 유일한 자리다. 평문에 민감 값 정책을 씌우지 않으려는 임시 조치로,
-            // 도메인 계약 정리 후 걷어낸다 (`SecretClient.copyPlainValue` 참조).
             copyPlainValue: { value in
-                _ = try ClipboardServiceImpl().write(value)
+                try await LiveUseCases.copyToClipboard.execute(value, policy: .plain)
             },
             fetchProjects: {
                 try await fetchProjectUseCase.fetchAll()
