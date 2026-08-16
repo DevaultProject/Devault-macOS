@@ -130,8 +130,8 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
         })
     }
 
-    @Test("만료일이 없으면 아무 알림도 예약하지 않는다")
-    func scheduleDoesNothingWithoutExpiresAt() async {
+    @Test("만료일이 없으면 예약하지 않고, 이전 예약은 취소한다")
+    func scheduleCancelsAndSchedulesNothingWithoutExpiresAt() async {
         let notificationService = FakeSecurityNotificationService()
         let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
             repository: InMemorySecretRepository(),
@@ -139,11 +139,52 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             settingsRepository: FakeSettingsRepository(),
             dateProvider: { self.now }
         )
-        let secret = SecretFixture.make(expiresAt: nil)
+        let secretID = UUID(uuidString: "00000000-0000-0000-0000-0000000000CC")!
+        let secret = SecretFixture.make(id: secretID, expiresAt: nil)
 
         await sut.schedule(secret: secret)
 
         #expect(notificationService.scheduled.isEmpty)
+        // 수정 화면에서 만료일을 지우는 경로가 이 취소에 의존한다. 취소가 만료일 guard보다
+        // 뒤에 있으면 이 함수가 곧바로 리턴해 이전 알림이 그대로 남는다.
+        #expect(notificationService.cancelledIdentifiers == [[
+            "secret-expiry-\(secretID.uuidString)-30d",
+            "secret-expiry-\(secretID.uuidString)-7d",
+            "secret-expiry-\(secretID.uuidString)-3d",
+            "secret-expiry-\(secretID.uuidString)-0d",
+        ]])
+    }
+
+    @Test("만료일을 지운 Secret으로 다시 예약을 맞추면 이전 알림이 사라진다")
+    func scheduleClearsPreviousMarksWhenExpiryRemoved() async {
+        let notificationService = FakeSecurityNotificationService()
+        let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
+            repository: InMemorySecretRepository(),
+            notificationService: notificationService,
+            settingsRepository: FakeSettingsRepository(),
+            dateProvider: { self.now }
+        )
+        let secretID = UUID(uuidString: "00000000-0000-0000-0000-0000000000DD")!
+        let scheduled = SecretFixture.make(id: secretID, expiresAt: now.addingTimeInterval(10 * day))
+
+        // 30일 전 마크는 이미 지났고 7일 전·3일 전·당일이 남는다.
+        await sut.schedule(secret: scheduled)
+        #expect(notificationService.scheduled.count == 3)
+
+        // 사용자가 만료일을 지우고 저장한 상황.
+        var cleared = scheduled
+        cleared.expiresAt = nil
+        await sut.schedule(secret: cleared)
+
+        // 두 번째 호출은 새로 예약하지 않고 취소만 한다.
+        #expect(notificationService.scheduled.count == 3)
+        #expect(notificationService.cancelledIdentifiers.count == 2)
+        #expect(notificationService.cancelledIdentifiers.last == [
+            "secret-expiry-\(secretID.uuidString)-30d",
+            "secret-expiry-\(secretID.uuidString)-7d",
+            "secret-expiry-\(secretID.uuidString)-3d",
+            "secret-expiry-\(secretID.uuidString)-0d",
+        ])
     }
 
     @Test("만료 알림 사용이 꺼져 있으면 기존 예약만 취소하고 새로 만들지 않는다")
