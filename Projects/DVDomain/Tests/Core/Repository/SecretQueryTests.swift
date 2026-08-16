@@ -35,9 +35,9 @@ struct SecretQueryTests {
         #expect(a != b)
     }
 
-    @Test("noticeWindowDays는 7일이다")
+    @Test("noticeWindowDays는 배지의 upcoming window와 같은 7일이다")
     func noticeWindowDaysIsSevenDays() {
-        // upcomingWindow와의 일치 여부는 DVPresentation쪽 SecretExpiryStatusTests가 검증한다.
+        #expect(SecretQuery.Collection.noticeWindowDays == SecretExpiryPolicy.upcomingWindowDays)
         #expect(SecretQuery.Collection.noticeWindowDays == 7)
     }
 
@@ -53,14 +53,14 @@ struct SecretQueryTests {
         #expect(windowEnd == expected)
     }
 
-    @Test("expiringWindow는 기준일을 expiringSoonWindowDays만큼 민 expired 컬렉션을 만든다")
+    @Test("expiringWindow는 기준일을 listingWindowDays만큼 민 expired 컬렉션을 만든다")
     func expiringWindowShiftsReferenceDate() {
         let today = Date(timeIntervalSince1970: 0)
 
         let collection = SecretQuery.Collection.expiringWindow(from: today)
 
         let expected = today.addingTimeInterval(
-            TimeInterval(SecretQuery.Collection.expiringSoonWindowDays) * 86_400
+            TimeInterval(SecretExpiryPolicy.listingWindowDays) * 86_400
         )
         #expect(collection == .expired(referenceDate: expected))
     }
@@ -68,7 +68,7 @@ struct SecretQueryTests {
     @Test("expiringWindow는 이미 만료된 것과 window 이내 예정을 함께 담는다")
     func expiringWindowCoversPastAndUpcoming() {
         let today = Date(timeIntervalSince1970: 0)
-        let windowDays = TimeInterval(SecretQuery.Collection.expiringSoonWindowDays)
+        let windowDays = TimeInterval(SecretExpiryPolicy.listingWindowDays)
 
         guard case let .expired(windowEnd) = SecretQuery.Collection.expiringWindow(from: today) else {
             Issue.record("collection이 .expired가 아님")

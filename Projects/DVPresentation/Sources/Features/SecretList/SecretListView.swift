@@ -242,7 +242,7 @@ extension SecretListView {
 
 // MARK: - ExpiryBucket
 
-/// Expired 탭의 섹션 구분. 경계는 오늘 기준 7일/30일로 고정.
+/// Expired 탭의 섹션 구분. 경계는 `SecretExpiryPolicy`의 upcoming/listing window를 그대로 쓴다.
 
 private enum ExpiryBucket: CaseIterable, Identifiable {
   case expired
@@ -261,9 +261,13 @@ private enum ExpiryBucket: CaseIterable, Identifiable {
 
   func contains(_ expiresAt: Date?, referenceDate: Date) -> Bool {
     guard let expiresAt else { return false }
-    // Notice 탭과 같은 "7일" 기준을 쓴다.
-    let sevenDaysOut = SecretQuery.Collection.noticeWindowEnd(from: referenceDate)
-    let thirtyDaysOut = referenceDate.addingTimeInterval(30 * 86_400)
+    // Notice 탭(`noticeWindowDays`)과 같은 값에서 파생된다.
+    let sevenDaysOut = referenceDate.addingTimeInterval(
+      TimeInterval(SecretExpiryPolicy.upcomingWindowDays) * 86_400
+    )
+    let thirtyDaysOut = referenceDate.addingTimeInterval(
+      TimeInterval(SecretExpiryPolicy.listingWindowDays) * 86_400
+    )
 
     switch self {
     case .expired:
