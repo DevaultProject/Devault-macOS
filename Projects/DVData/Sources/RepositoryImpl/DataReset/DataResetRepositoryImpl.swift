@@ -2,9 +2,12 @@
 
 import SwiftData
 
+import DVCore
 import DVDomain
 
-/// 현재 ModelContainer의 Vault 데이터를 삭제한다.
+/// 현재 ModelContainer의 Secret·Project와 동기화 모델만 삭제한다.
+/// `BackupRecord`는 로컬 백업 파일을 계속 찾고 복구할 수 있도록 의도적으로 유지한다.
+/// Keychain 암호화 키는 저장소 범위 밖이며 같은 이유로 이 초기화에 포함하지 않는다.
 @ModelActor
 public actor DataResetRepositoryImpl: DataResetRepository {
     public func deleteAll() async throws {
@@ -28,6 +31,7 @@ public actor DataResetRepositoryImpl: DataResetRepository {
             try modelContext.save()
         } catch {
             modelContext.rollback()
+            Log.error("Vault 데이터 초기화 실패: \(error)", category: .storage)
             throw DataResetRepositoryError.resetFailed
         }
     }

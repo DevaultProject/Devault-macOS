@@ -9,7 +9,7 @@ import Testing
 @MainActor
 @Suite("DataResetRepositoryImpl")
 struct DataResetRepositoryImplTests {
-    @Test("현재 ModelContainer의 Vault 데이터만 모두 삭제한다")
+    @Test("Vault 항목을 모두 삭제하고 로컬 BackupRecord는 유지한다")
     func deleteAllRemovesVaultDataFromCurrentContainer() async throws {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(
@@ -80,6 +80,7 @@ struct DataResetRepositoryImplTests {
         #expect(linkCount == 0)
         #expect(secretAuditLogCount == 0)
         #expect(appAuditLogCount == 0)
+        // 백업 파일과 Keychain 키는 초기화 범위가 아니므로 복구에 필요한 로컬 기록을 유지한다.
         #expect(backupRecordCount == 1)
     }
 }
