@@ -14,6 +14,12 @@ public struct AppLaunchClient: Sendable {
     public var requestNotificationAuthorization: @Sendable () async -> Bool = { false }
     /// 만료일이 있는 모든 Secret의 알림을 다시 계산해 예약한다.
     public var syncExpiryNotifications: @Sendable () async -> Void
+    /// CloudKit 원격 변경이 감지될 때마다 값을 방출한다.
+    public var iCloudRemoteChangeStream: @Sendable () -> AsyncStream<Void> = {
+        AsyncStream { $0.finish() }
+    }
+    /// 마지막 CloudKit 원격 변경 감지 시각을 저장한다.
+    public var setICloudLastSyncedAt: @Sendable (Date) -> Void
 }
 
 extension AppLaunchClient: TestDependencyKey {
@@ -23,7 +29,9 @@ extension AppLaunchClient: TestDependencyKey {
         hasCompletedOnboarding: { false },
         setOnboardingCompleted: {},
         requestNotificationAuthorization: { true },
-        syncExpiryNotifications: {}
+        syncExpiryNotifications: {},
+        iCloudRemoteChangeStream: { AsyncStream { $0.finish() } },
+        setICloudLastSyncedAt: { _ in }
     )
 }
 

@@ -36,6 +36,10 @@ public struct MainFeature {
     case task
     case didTapLock
 
+    // MARK: - Internal
+
+    case iCloudRemoteChangeDetected
+
     // MARK: - Child
 
     case sidebar(SidebarFeature.Action)
@@ -80,6 +84,12 @@ public struct MainFeature {
 
       case .task:
         return .none
+
+      case .iCloudRemoteChangeDetected:
+        return .concatenate(
+          .send(.secretList(.refresh)),
+          .send(.sidebar(.task))
+        )
 
       case .didTapLock:
         return .send(.delegate(.lockRequested))

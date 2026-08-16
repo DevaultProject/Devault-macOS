@@ -11,6 +11,15 @@ extension AppLaunchClient: @retroactive DependencyKey {
     let onboardingStatusUseCase: any OnboardingStatusUseCase = OnboardingStatusUseCaseImpl(
       repository: LiveRepositories.settings
     )
+    let iCloudSettingsUseCase: any ICloudSettingsUseCase = ICloudSettingsUseCaseImpl(
+      repository: LiveRepositories.settings,
+      iCloudService: ICloudServiceImpl(
+        containerIdentifier: ICloudContainer.identifier,
+        storageConfigurator: { enabled in
+          try await LiveRepositories.storage.configure(iCloudSyncEnabled: enabled)
+        }
+      )
+    )
 
     return AppLaunchClient(
       hasCompletedOnboarding: {
@@ -33,6 +42,12 @@ extension AppLaunchClient: @retroactive DependencyKey {
         } catch {
           Log.warn("만료 알림 동기화 실패: \(error)", category: .notification)
         }
+      },
+      iCloudRemoteChangeStream: {
+        iCloudSettingsUseCase.remoteChangeStream()
+      },
+      setICloudLastSyncedAt: { date in
+        iCloudSettingsUseCase.setLastSyncedAt(date)
       }
     )
   }()
