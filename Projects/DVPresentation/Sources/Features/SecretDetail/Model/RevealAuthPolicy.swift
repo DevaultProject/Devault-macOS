@@ -40,7 +40,10 @@ struct RevealAuthPolicy: Equatable, Sendable {
     ///   - now: 현재 시각.
     func isAuthorized(since authorizedAt: Date?, now: Date) -> Bool {
         guard let authorizedAt else { return false }
-        return now.timeIntervalSince(authorizedAt) < ttl
+        // 하한도 함께 본다. 시스템 시각이 뒤로 가면 간격이 음수가 되는데, 음수는 언제나 `ttl`보다
+        // 작아 창이 영원히 열린 것으로 판정된다. 시계를 되돌리는 것으로 만료를 무력화할 수 없어야 한다.
+        let elapsed = now.timeIntervalSince(authorizedAt)
+        return elapsed >= 0 && elapsed < ttl
     }
 
     /// 이 이벤트가 창을 닫아야 하는지.
