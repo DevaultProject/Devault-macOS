@@ -27,18 +27,32 @@ extension DevaultApp {
 
   private var mainWindow: some Scene {
     WindowGroup {
-      AppView(store: store)
-        // minWidth: 사이드바(200) + SelectSecretType 그리드 요구 너비(약 700)를 담을 수 있는 하한.
-        // 이보다 좁아지면 그리드 열이 찌그러져 카드가 겹친다.
-        .frame(
-          minWidth: 920,
-          maxWidth: .infinity,
-          minHeight: 600,
-          maxHeight: .infinity
-        )
-        .background(WindowCaptureBlocker())
+      DevaultRootView(store: store)
     }
     .windowStyle(.hiddenTitleBar)
     .defaultSize(width: 960, height: 700)
+  }
+}
+
+// MARK: - Root View
+
+private struct DevaultRootView: View {
+  let store: StoreOf<AppFeature>
+
+  var body: some View {
+    AppView(store: store)
+      // minWidth: 사이드바(200) + SelectSecretType 그리드 요구 너비(약 700)를 담을 수 있는 하한.
+      // 이보다 좁아지면 그리드 열이 찌그러져 카드가 겹친다.
+      .frame(
+        minWidth: 920,
+        maxWidth: .infinity,
+        minHeight: 600,
+        maxHeight: .infinity
+      )
+      .background(
+        WindowCaptureBlocker(
+          isEnabled: store.isWindowCaptureBlockingEnabled
+        )
+      )
   }
 }
