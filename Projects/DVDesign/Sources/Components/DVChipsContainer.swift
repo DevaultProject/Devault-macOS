@@ -15,8 +15,9 @@ import SwiftUI
 /// }
 /// ```
 ///
-/// 값이 비면 chip 없이 박스만 남는다 — ``DVTextContainer``의 Empty 상태와 같은 취급이며,
-/// 이때도 높이는 다른 읽기 전용 필드와 맞도록 32pt를 유지한다.
+/// 값이 비면 `placeholder`를 표시한다. 박스만 남겨두면 "아직 안 불러온 것"과 "고른 것이 없는 것"이
+/// 구분되지 않는다. `placeholder`가 `nil`이면 빈 박스로 둔다.
+/// 어느 쪽이든 높이는 다른 읽기 전용 필드와 맞도록 32pt를 유지한다.
 ///
 /// > Note: chip은 ``DVChip``(내부적으로 `Button`)이라 그대로 두면 포커스를 받는다.
 /// > 컨테이너 전체에 `allowsHitTesting(false)`를 걸어 인터랙션을 차단한다.
@@ -40,37 +41,55 @@ public struct DVChipsContainer: View {
     // MARK: - Properties
 
     private let labels: [String]
+    private let placeholder: String?
     private let size: DVComponentSize
 
     // MARK: - Init
 
     /// - Parameters:
-    ///   - labels: chip으로 표시할 텍스트 목록. 빈 배열이면 박스만 표시된다.
+    ///   - labels: chip으로 표시할 텍스트 목록.
+    ///   - placeholder: `labels`가 비었을 때 대신 표시할 문구. `nil`이면 빈 박스.
     ///   - size: 너비 변형. 기본값 ``DVComponentSize/md``.
     public init(
         _ labels: [String],
+        placeholder: String? = nil,
         size: DVComponentSize = .md
     ) {
         self.labels = labels
+        self.placeholder = placeholder
         self.size = size
     }
 
     // MARK: - Body
 
     public var body: some View {
-        DVFlowLayout(hSpacing: Metrics.chipsSpacing, vSpacing: Metrics.chipsSpacing) {
-            // 라벨이 중복될 수 있으므로 값이 아니라 위치를 id로 쓴다.
-            ForEach(Array(labels.enumerated()), id: \.offset) { _, label in
-                DVChip(label)
+        content
+            .allowsHitTesting(false)
+            .padding(Metrics.chipsPadding)
+            .frame(minHeight: Metrics.minHeight)
+            .dvComponentWidth(size, alignment: .leading)
+            .background {
+                RoundedRectangle(cornerRadius: Metrics.cornerRadius)
+                    .fill(Color.dv(.gray300))
             }
-        }
-        .allowsHitTesting(false)
-        .padding(Metrics.chipsPadding)
-        .frame(minHeight: Metrics.minHeight)
-        .dvComponentWidth(size, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                .fill(Color.dv(.gray300))
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if labels.isEmpty, let placeholder {
+            // 값 텍스트(gray900)가 아니라 안내 문구로 읽혀야 하므로 placeholder 색을 쓴다 —
+            // `DVTextField`·`DVMultilineTextField`의 placeholder와 같은 취급이다.
+            Text(placeholder)
+                .dvFont(.bodyLG)
+                .foregroundStyle(Color.dv(.gray400))
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            DVFlowLayout(hSpacing: Metrics.chipsSpacing, vSpacing: Metrics.chipsSpacing) {
+                // 라벨이 중복될 수 있으므로 값이 아니라 위치를 id로 쓴다.
+                ForEach(Array(labels.enumerated()), id: \.offset) { _, label in
+                    DVChip(label)
+                }
+            }
         }
     }
 }
