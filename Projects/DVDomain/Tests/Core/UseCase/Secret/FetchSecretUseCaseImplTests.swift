@@ -86,6 +86,25 @@ struct FetchSecretUseCaseImplTests {
         #expect(try await sut.count(query: SecretQuery(collection: .expired(referenceDate: now))) == 1)
     }
 
+    @Test("count(query:)는 .notice에서 이미 지난 것과 window(7일)를 벗어난 것을 제외한다")
+    func countSeparatesNotice() async throws {
+        let repo = InMemorySecretRepository()
+        let now = Date.now
+        let alreadyExpired = SecretFixture.make(id: UUID(), expiresAt: now.addingTimeInterval(-3600))
+        let withinWindow = SecretFixture.make(id: UUID(), expiresAt: now.addingTimeInterval(3 * 86_400))
+        let exactlyAtBoundary = SecretFixture.make(
+            id: UUID(),
+            expiresAt: now.addingTimeInterval(TimeInterval(SecretQuery.Collection.noticeWindowDays) * 86_400)
+        )
+        let beyondWindow = SecretFixture.make(id: UUID(), expiresAt: now.addingTimeInterval(30 * 86_400))
+        let neverExpires = SecretFixture.make(id: UUID(), expiresAt: nil)
+        [alreadyExpired, withinWindow, exactlyAtBoundary, beyondWindow, neverExpires].forEach(repo.seed)
+        let sut = makeSUT(repository: repo)
+
+        // 이미 지남 · window 밖 · 만료일 없음은 제외되고, window 이내(경계 포함) 2건만 남는다.
+        #expect(try await sut.count(query: SecretQuery(collection: .notice(referenceDate: now))) == 2)
+    }
+
     @Test("count(query:)는 Repository 에러를 SecretUseCaseError로 매핑한다")
     func countMapsRepositoryError() async {
         let repo = InMemorySecretRepository()

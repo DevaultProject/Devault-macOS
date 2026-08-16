@@ -66,6 +66,14 @@ private extension SecretClient {
       fetchByQuery: { query in
         let filtered: [Secret]
         switch query.collection {
+        case .notice(let referenceDate):
+          let windowEnd = referenceDate.addingTimeInterval(
+            TimeInterval(SecretQuery.Collection.noticeWindowDays) * 86_400
+          )
+          filtered = [Secret].preview.filter {
+            guard let expiresAt = $0.expiresAt else { return false }
+            return $0.deletedAt == nil && expiresAt > referenceDate && expiresAt <= windowEnd
+          }
         case .expired(let referenceDate):
           filtered = [Secret].preview.filter {
             $0.deletedAt == nil && ($0.expiresAt.map { $0 < referenceDate } ?? false)

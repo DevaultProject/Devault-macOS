@@ -28,7 +28,8 @@ enum InMemorySecretQueryFilter {
         switch collection {
         case .all, .liked:
             break
-        case .expired, .deleted, .project:
+        case .notice, .expired, .deleted, .project:
+            // `.notice`는 SwiftData predicate가 이미 "지나지 않음 + window 이내"를 전부 검사했다.
             return true
         }
         guard let expiresAt = secret.expiresAt else {

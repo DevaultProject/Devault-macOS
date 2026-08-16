@@ -27,6 +27,19 @@ struct SecretQueryTests {
         #expect(a != b)
     }
 
+    @Test("Collection.notice는 referenceDate가 다르면 다르다")
+    func collectionNoticeDistinguishesByReferenceDate() {
+        let a = SecretQuery.Collection.notice(referenceDate: Date(timeIntervalSince1970: 0))
+        let b = SecretQuery.Collection.notice(referenceDate: Date(timeIntervalSince1970: 1))
+
+        #expect(a != b)
+    }
+
+    @Test("noticeWindowDays는 7일이다 — 목록 행 배지의 upcoming window와 같은 기준")
+    func noticeWindowDaysMatchesUpcomingWindow() {
+        #expect(SecretQuery.Collection.noticeWindowDays == 7)
+    }
+
     @Test("expiringWindow는 기준일을 expiringSoonWindowDays만큼 민 expired 컬렉션을 만든다")
     func expiringWindowShiftsReferenceDate() {
         let today = Date(timeIntervalSince1970: 0)

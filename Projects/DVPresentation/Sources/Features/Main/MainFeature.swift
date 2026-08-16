@@ -233,8 +233,7 @@ extension MainFeature {
     case .filter(.starred):
       return .init(collection: .liked)
     case .filter(.notice):
-      // TODO: 도메인 레이어에 .notice collection 추가 후 연결
-      return .init(collection: .all)
+      return .init(collection: .notice(referenceDate: now))
     case .filter(.expired):
       return .init(collection: .expired(referenceDate: now))
     case .filter(.deleted):
