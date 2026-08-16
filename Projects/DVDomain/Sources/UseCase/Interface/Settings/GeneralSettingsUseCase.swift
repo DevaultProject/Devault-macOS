@@ -4,8 +4,8 @@ import Foundation
 
 public protocol GeneralSettingsUseCase: Sendable {
   func isLaunchAtLoginEnabled() -> Bool
-  func setLaunchAtLoginEnabled(_ enabled: Bool)
+  func setLaunchAtLoginEnabled(_ enabled: Bool) throws
 
-  func defaultEnvironment() -> String?
-  func setDefaultEnvironment(_ rawValue: String?)
+  func defaultEnvironment() -> String
+  func setDefaultEnvironment(_ rawValue: String)
 }
