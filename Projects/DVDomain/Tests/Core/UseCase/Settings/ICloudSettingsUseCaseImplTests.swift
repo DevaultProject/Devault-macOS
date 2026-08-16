@@ -8,7 +8,7 @@ import Testing
 @Suite("ICloudSettingsUseCaseImpl")
 struct ICloudSettingsUseCaseImplTests {
 
-    @Test("iCloud 동기화 설정과 마지막 동기화 시각을 읽고 쓴다")
+    @Test("iCloud 동기화 설정과 마지막 update 감지 시각을 읽고 쓴다")
     func settingsRoundTrip() async throws {
         let repository = FakeSettingsRepository()
         let sut = ICloudSettingsUseCaseImpl(
@@ -18,10 +18,10 @@ struct ICloudSettingsUseCaseImplTests {
         let date = Date(timeIntervalSince1970: 1_700_000_000)
 
         try await sut.setEnabled(true)
-        sut.setLastSyncedAt(date)
+        sut.setLastUpdateDetectedAt(date)
 
         #expect(sut.isEnabled() == true)
-        #expect(sut.lastSyncedAt() == date)
+        #expect(sut.lastUpdateDetectedAt() == date)
     }
 
     @Test("iCloud 계정 상태 확인을 Service에 위임한다")
@@ -64,7 +64,7 @@ struct ICloudSettingsUseCaseImplTests {
         )
 
         var iterator = sut.remoteChangeStream().makeAsyncIterator()
-        let value = await iterator.next()
+        let value: Void? = await iterator.next()
 
         #expect(value != nil)
     }

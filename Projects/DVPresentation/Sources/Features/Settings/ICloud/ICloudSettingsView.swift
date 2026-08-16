@@ -4,6 +4,7 @@ import SwiftUI
 
 import ComposableArchitecture
 import DVDesign
+import DVDomain
 
 struct ICloudSettingsView: View {
 
@@ -25,7 +26,9 @@ extension ICloudSettingsView {
       SettingsSection(title: String.module("iCloud Sync")) {
         SettingsToggleRow(
           title: String.module("Use iCloud Sync"),
-          description: String.module("Sync your secrets across your Apple devices, end-to-end encrypted."),
+          description: String.module(
+            "When enabled, data on this Mac is merged with iCloud. Turning it off keeps data in both places and stops future sync."
+          ),
           isOn: $store.isSyncEnabled
         )
         .disabled(store.isTogglingSync)
@@ -42,13 +45,14 @@ extension ICloudSettingsView {
   private var statusRows: some View {
     if store.isSyncEnabled {
       SettingsButtonRow(
-        title: String.module("Connected"),
-        buttonTitle: String.module("Sync Now"),
-        systemImage: "checkmark.icloud",
-        iconColor: Color.dv(.vaultGreen)
+        title: connectionStatusTitle,
+        buttonTitle: String.module("Refresh Status"),
+        systemImage: connectionStatusSystemImage,
+        iconColor: connectionStatusColor
       ) {
-        store.send(.didTapSyncNow)
+        store.send(.didTapRefreshStatus)
       }
+      .disabled(store.isRefreshingStatus)
     } else {
       SettingsValueRow(
         title: String.module("Not Connected"),
@@ -59,22 +63,53 @@ extension ICloudSettingsView {
 
     if store.isSyncEnabled {
       SettingsValueRow(
-        title: String.module("Last synced"),
-        value: store.lastSyncedAt?.formatted(date: .abbreviated, time: .shortened) ?? "—"
-      )
-      SettingsValueRow(
-        title: String.module("Synced secrets"),
-        value: store.syncedSecretCount.map { String($0) } ?? "—"
-      )
-      SettingsValueRow(
-        title: String.module("Synced projects"),
-        value: store.syncedProjectCount.map { String($0) } ?? "—"
+        title: String.module("Last update detected"),
+        value: store.lastUpdateDetectedAt?.formatted(date: .abbreviated, time: .shortened) ?? "—"
       )
     } else {
       Text(.module("Turn on iCloud Sync to sync secrets across devices."))
         .dvFont(.captionMDRegular)
         .foregroundStyle(Color.dv(.gray600))
         .settingsRowLayout()
+    }
+  }
+
+  private var connectionStatusTitle: String {
+    switch store.accountStatus {
+    case .some(.available):
+      String.module("Connected")
+    case .none where store.isRefreshingStatus:
+      String.module("Checking Status…")
+    case .none:
+      String.module("Status Unavailable")
+    case .some(.noAccount):
+      String.module("No iCloud Account")
+    case .some(.restricted):
+      String.module("iCloud Restricted")
+    case .some(.temporarilyUnavailable):
+      String.module("iCloud Temporarily Unavailable")
+    case .some(.networkUnavailable):
+      String.module("Network Unavailable")
+    case .some(.configurationUnavailable):
+      String.module("Storage Configuration Failed")
+    case .some(.couldNotDetermine):
+      String.module("Status Unavailable")
+    }
+  }
+
+  private var connectionStatusSystemImage: String {
+    switch store.accountStatus {
+    case .some(.available): "checkmark.icloud"
+    case .none where store.isRefreshingStatus: "icloud"
+    case .none, .some(_): "exclamationmark.icloud"
+    }
+  }
+
+  private var connectionStatusColor: Color {
+    switch store.accountStatus {
+    case .some(.available): Color.dv(.vaultGreen)
+    case .none where store.isRefreshingStatus: Color.dv(.gray500)
+    case .none, .some(_): Color.dv(.warning)
     }
   }
 }
@@ -89,11 +124,9 @@ extension ICloudSettingsView {
       } withDependencies: {
         $0.iCloudSettingsClient = .previewValue
         $0.iCloudSettingsClient.isEnabled = { true }
-        $0.iCloudSettingsClient.lastSyncedAt = {
+        $0.iCloudSettingsClient.lastUpdateDetectedAt = {
           Date(timeIntervalSince1970: 1_723_745_800)
         }
-        $0.iCloudSettingsClient.syncedSecretCount = { 24 }
-        $0.iCloudSettingsClient.syncedProjectCount = { 3 }
       }
     )
   }

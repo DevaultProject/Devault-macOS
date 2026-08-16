@@ -206,7 +206,7 @@ struct AppFeatureTests {
             $0.continuousClock = clock
             $0.date = .constant(date)
             $0.appLaunchClient.syncExpiryNotifications = { synced.setValue(true) }
-            $0.appLaunchClient.setICloudLastSyncedAt = { savedDate.setValue($0) }
+            $0.appLaunchClient.setICloudLastUpdateDetectedAt = { savedDate.setValue($0) }
         }
 
         await store.send(.iCloudRemoteChangeDetected)

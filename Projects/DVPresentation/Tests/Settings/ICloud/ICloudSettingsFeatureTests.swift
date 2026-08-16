@@ -11,24 +11,26 @@ import Testing
 @MainActor
 @Suite("ICloudSettingsFeature")
 struct ICloudSettingsFeatureTests {
-  @Test("task는 현재 설정값을 읽고 카운트를 조회한다")
+  @Test("task는 현재 설정값과 마지막 update 감지 시각을 읽고 계정 상태를 확인한다")
   func taskLoadsCurrentSettings() async {
+    let date = Date(timeIntervalSince1970: 1_700_000_000)
     let store = TestStore(initialState: ICloudSettingsFeature.State()) {
       ICloudSettingsFeature()
     } withDependencies: {
       $0.iCloudSettingsClient.isEnabled = { true }
-      $0.iCloudSettingsClient.lastSyncedAt = { nil }
-      $0.iCloudSettingsClient.syncedSecretCount = { 3 }
-      $0.iCloudSettingsClient.syncedProjectCount = { 1 }
+      $0.iCloudSettingsClient.lastUpdateDetectedAt = { date }
+      $0.iCloudSettingsClient.accountStatus = { .available }
       $0.iCloudSettingsClient.remoteChangeStream = { AsyncStream { $0.finish() } }
     }
 
     await store.send(.task) {
       $0.isSyncEnabled = true
+      $0.isRefreshingStatus = true
+      $0.lastUpdateDetectedAt = date
     }
-    await store.receive(.countsResponse(secretCount: 3, projectCount: 1)) {
-      $0.syncedSecretCount = 3
-      $0.syncedProjectCount = 1
+    await store.receive(.refreshStatusResponse(.available)) {
+      $0.isRefreshingStatus = false
+      $0.accountStatus = .available
     }
   }
 
@@ -49,7 +51,9 @@ struct ICloudSettingsFeatureTests {
     await store.receive(.syncSettingResponse(enabled: true, succeeded: true)) {
       $0.isTogglingSync = false
       $0.isSyncEnabled = true
+      $0.accountStatus = .available
     }
+    await store.receive(.delegate(.storageDidSwitch))
   }
 
   @Test("동기화 켜기가 실패하면 alert를 띄운다")
@@ -69,15 +73,15 @@ struct ICloudSettingsFeatureTests {
       $0.isSyncEnabled = false
       $0.alert = makeICloudSyncUnavailableAlert(
         .noAccount,
-        retry: .retry,
+        retry: .retryEnable,
         continueWithoutSync: .continueWithoutSync,
         openSystemSettings: .openSystemSettings
       )
     }
   }
 
-  @Test("동기화 끄기는 계정 확인 없이 저장소 구성을 적용한다")
-  func disableSyncSkipsAccountCheck() async {
+  @Test("동기화 끄기는 데이터 보존 정책을 안내한 뒤 저장소 구성을 적용한다")
+  func disableSyncConfirmsDataPolicyBeforeApplying() async {
     let saved = LockIsolated<Bool?>(nil)
     var initial = ICloudSettingsFeature.State()
     initial.isSyncEnabled = true
@@ -89,12 +93,31 @@ struct ICloudSettingsFeatureTests {
     }
 
     await store.send(.binding(.set(\.isSyncEnabled, false))) {
+      $0.isSyncEnabled = true
+      $0.alert = AlertState {
+        TextState("Turn Off iCloud Sync?")
+      } actions: {
+        ButtonState(role: .destructive, action: .confirmDisableSync) {
+          TextState("Turn Off")
+        }
+        ButtonState(role: .cancel) {
+          TextState("Cancel")
+        }
+      } message: {
+        TextState(
+          "Data on this Mac and in iCloud won't be deleted. Future changes on this Mac won't sync until iCloud Sync is turned on again."
+        )
+      }
+    }
+    await store.send(.alert(.presented(.confirmDisableSync))) {
+      $0.alert = nil
       $0.isSyncEnabled = false
       $0.isTogglingSync = true
     }
     await store.receive(.syncSettingResponse(enabled: false, succeeded: true)) {
       $0.isTogglingSync = false
     }
+    await store.receive(.delegate(.storageDidSwitch))
     #expect(saved.value == false)
   }
 
@@ -115,60 +138,57 @@ struct ICloudSettingsFeatureTests {
     await store.receive(.syncSettingResponse(enabled: true, succeeded: false)) {
       $0.isSyncEnabled = false
       $0.isTogglingSync = false
+      $0.accountStatus = .configurationUnavailable
       $0.alert = makeICloudSyncUnavailableAlert(
         .configurationUnavailable,
-        retry: .retry,
+        retry: .retryEnable,
         continueWithoutSync: .continueWithoutSync,
         openSystemSettings: .openSystemSettings
       )
     }
   }
 
-  @Test("원격 변경이 감지되면 마지막 동기화 시각을 저장하고 카운트를 다시 조회한다")
-  func remoteChangeUpdatesLastSyncedAtAndCounts() async {
+  @Test("원격 변경이 감지되면 마지막 update 감지 시각을 저장한다")
+  func remoteChangeUpdatesLastUpdateDetectedAt() async {
     let fixedDate = Date(timeIntervalSince1970: 1_700_000_000)
     let savedDate = LockIsolated<Date?>(nil)
     let store = TestStore(initialState: ICloudSettingsFeature.State()) {
       ICloudSettingsFeature()
     } withDependencies: {
       $0.date = .constant(fixedDate)
-      $0.iCloudSettingsClient.setLastSyncedAt = { savedDate.setValue($0) }
-      $0.iCloudSettingsClient.syncedSecretCount = { 5 }
-      $0.iCloudSettingsClient.syncedProjectCount = { 2 }
+      $0.iCloudSettingsClient.setLastUpdateDetectedAt = { savedDate.setValue($0) }
     }
 
     await store.send(.remoteChangeDetected) {
-      $0.lastSyncedAt = fixedDate
-    }
-    await store.receive(.countsResponse(secretCount: 5, projectCount: 2)) {
-      $0.syncedSecretCount = 5
-      $0.syncedProjectCount = 2
+      $0.lastUpdateDetectedAt = fixedDate
     }
     #expect(savedDate.value == fixedDate)
   }
 
-  @Test("카운트 조회가 실패하면 기존 카운트를 비운다")
-  func countFailureClearsCounts() async {
-    var initial = ICloudSettingsFeature.State()
-    initial.syncedSecretCount = 5
-    initial.syncedProjectCount = 2
-
-    let store = TestStore(initialState: initial) {
+  @Test("상태 새로고침에서 계정 오류가 확인되면 상태와 alert를 갱신한다")
+  func refreshStatusFailureShowsAlert() async {
+    var initialState = ICloudSettingsFeature.State()
+    initialState.isSyncEnabled = true
+    initialState.accountStatus = .available
+    let store = TestStore(initialState: initialState) {
       ICloudSettingsFeature()
     } withDependencies: {
-      $0.iCloudSettingsClient.syncedSecretCount = { throw CountError.failed }
-      $0.iCloudSettingsClient.syncedProjectCount = { 2 }
+      $0.iCloudSettingsClient.accountStatus = { .networkUnavailable }
     }
 
-    await store.send(.didTapSyncNow)
-    await store.receive(.countsFailed) {
-      $0.syncedSecretCount = nil
-      $0.syncedProjectCount = nil
+    await store.send(.didTapRefreshStatus) {
+      $0.isRefreshingStatus = true
     }
-  }
-
-  private enum CountError: Error {
-    case failed
+    await store.receive(.refreshStatusResponse(.networkUnavailable)) {
+      $0.isRefreshingStatus = false
+      $0.accountStatus = .networkUnavailable
+      $0.alert = makeICloudSyncUnavailableAlert(
+        .networkUnavailable,
+        retry: .retryRefreshStatus,
+        continueWithoutSync: nil,
+        openSystemSettings: .openSystemSettings
+      )
+    }
   }
 
   private enum ConfigurationError: Error {

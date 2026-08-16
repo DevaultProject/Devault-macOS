@@ -21,8 +21,8 @@ public protocol ICloudSettingsUseCase: Sendable {
 
   /// 마지막으로 CloudKit 원격 변경이 감지된 시각. 한 번도 없었으면 nil.
   /// - Returns: 마지막 원격 변경 감지 시각. 기록이 없으면 nil
-  func lastSyncedAt() -> Date?
+  func lastUpdateDetectedAt() -> Date?
   /// 마지막 CloudKit 원격 변경 감지 시각을 저장한다.
   /// - Parameter date: 저장할 원격 변경 감지 시각
-  func setLastSyncedAt(_ date: Date)
+  func setLastUpdateDetectedAt(_ date: Date)
 }

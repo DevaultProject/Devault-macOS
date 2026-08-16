@@ -46,8 +46,8 @@ extension AppLaunchClient: @retroactive DependencyKey {
       iCloudRemoteChangeStream: {
         iCloudSettingsUseCase.remoteChangeStream()
       },
-      setICloudLastSyncedAt: { date in
-        iCloudSettingsUseCase.setLastSyncedAt(date)
+      setICloudLastUpdateDetectedAt: { date in
+        iCloudSettingsUseCase.setLastUpdateDetectedAt(date)
       }
     )
   }()

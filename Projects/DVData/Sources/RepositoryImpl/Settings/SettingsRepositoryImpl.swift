@@ -60,12 +60,12 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
     defaults.set(enabled, forKey: .isICloudSyncEnabled)
   }
 
-  public func iCloudLastSyncedAt() -> Date? {
-    defaults.date(forKey: .iCloudLastSyncedAt)
+  public func iCloudLastUpdateDetectedAt() -> Date? {
+    defaults.date(forKey: .iCloudLastUpdateDetectedAt)
   }
 
-  public func setICloudLastSyncedAt(_ date: Date) {
-    defaults.set(date, forKey: .iCloudLastSyncedAt)
+  public func setICloudLastUpdateDetectedAt(_ date: Date) {
+    defaults.set(date, forKey: .iCloudLastUpdateDetectedAt)
   }
 
   // MARK: - General

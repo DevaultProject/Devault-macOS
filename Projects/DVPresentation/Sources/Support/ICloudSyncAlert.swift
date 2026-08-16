@@ -13,7 +13,7 @@ import DVDomain
 func makeICloudSyncUnavailableAlert<Alert: Equatable>(
   _ status: ICloudAccountStatus,
   retry: Alert,
-  continueWithoutSync: Alert,
+  continueWithoutSync: Alert?,
   openSystemSettings: Alert
 ) -> AlertState<Alert> {
   if status == .available {
@@ -45,7 +45,9 @@ func makeICloudSyncUnavailableAlert<Alert: Equatable>(
     if canOpenSettings {
       ButtonState(action: openSystemSettings) { TextState(String.module("Open System Settings")) }
     }
-    ButtonState(action: continueWithoutSync) { TextState(String.module("Continue Without iCloud")) }
+    if let continueWithoutSync {
+      ButtonState(action: continueWithoutSync) { TextState(String.module("Continue Without iCloud")) }
+    }
     ButtonState(role: .cancel) { TextState(String.module("OK")) }
   } message: {
     TextState(message)

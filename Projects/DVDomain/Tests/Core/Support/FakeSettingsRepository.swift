@@ -8,7 +8,7 @@ import Foundation
 public final class FakeSettingsRepository: SettingsRepository, @unchecked Sendable {
     public var hasCompletedOnboardingValue = false
     public var isICloudSyncEnabledValue = false
-    public var iCloudLastSyncedAtValue: Date?
+    public var iCloudLastUpdateDetectedAtValue: Date?
 
     public var isLaunchAtLoginEnabledValue = false
     public var defaultEnvironmentValue = "dev"
@@ -35,8 +35,8 @@ public final class FakeSettingsRepository: SettingsRepository, @unchecked Sendab
     public func isICloudSyncEnabled() -> Bool { isICloudSyncEnabledValue }
     public func setICloudSyncEnabled(_ enabled: Bool) { isICloudSyncEnabledValue = enabled }
 
-    public func iCloudLastSyncedAt() -> Date? { iCloudLastSyncedAtValue }
-    public func setICloudLastSyncedAt(_ date: Date) { iCloudLastSyncedAtValue = date }
+    public func iCloudLastUpdateDetectedAt() -> Date? { iCloudLastUpdateDetectedAtValue }
+    public func setICloudLastUpdateDetectedAt(_ date: Date) { iCloudLastUpdateDetectedAtValue = date }
 
     public func isLaunchAtLoginEnabled() -> Bool { isLaunchAtLoginEnabledValue }
     public func setLaunchAtLoginEnabled(_ enabled: Bool) { isLaunchAtLoginEnabledValue = enabled }

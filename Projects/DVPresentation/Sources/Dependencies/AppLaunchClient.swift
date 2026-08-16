@@ -19,7 +19,7 @@ public struct AppLaunchClient: Sendable {
         AsyncStream { $0.finish() }
     }
     /// 마지막 CloudKit 원격 변경 감지 시각을 저장한다.
-    public var setICloudLastSyncedAt: @Sendable (Date) -> Void
+    public var setICloudLastUpdateDetectedAt: @Sendable (Date) -> Void
 }
 
 extension AppLaunchClient: TestDependencyKey {
@@ -31,7 +31,7 @@ extension AppLaunchClient: TestDependencyKey {
         requestNotificationAuthorization: { true },
         syncExpiryNotifications: {},
         iCloudRemoteChangeStream: { AsyncStream { $0.finish() } },
-        setICloudLastSyncedAt: { _ in }
+        setICloudLastUpdateDetectedAt: { _ in }
     )
 }
 
