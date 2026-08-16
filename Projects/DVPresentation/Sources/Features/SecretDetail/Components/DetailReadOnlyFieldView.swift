@@ -72,10 +72,12 @@ struct DetailReadOnlyFieldView: View {
     /// 실제 길이로 바뀌면 마스킹이 값의 크기를 흘린다. 항상 같은 개수라 유출 경로가 없다.
     private static let maskedPlaceholder = String(repeating: "•", count: 12)
 
-    /// 복사 버튼 노출. 민감 필드는 복호화 전이라 비었는지 알 수 없어 빈 값 예외를 적용할 수 없다.
-    private var showsCopyButton: Bool {
-        isCopyable && (isSensitive || !value.isEmpty)
+    /// 복사 버튼 노출과 텍스트 선택 허용은 한 규칙의 양면이다 (`DetailFieldCopyAffordance`).
+    private var copyAffordance: DetailFieldCopyAffordance {
+        DetailFieldCopyAffordance(isSensitive: isSensitive, isCopyable: isCopyable, value: value)
     }
+
+    private var showsCopyButton: Bool { copyAffordance.showsCopyButton }
 
     /// 눈 토글 노출. 민감 필드면 항상 — 가려진 값이 비어 있는지도 알려주지 않는다.
     private var showsRevealToggle: Bool { isSensitive }
@@ -103,13 +105,18 @@ extension DetailReadOnlyFieldView {
         isSensitive && !actions.isRevealed(field) ? Self.maskedPlaceholder : value
     }
 
+    /// 복사 버튼이 붙은 필드는 드래그 선택과 ⌘C를 막는다 — 열어두면 그 경로로 나간 값이
+    /// `ClipboardCopyPolicy`를 타지 않아 인증·자동 정리·반복 감지가 통째로 우회된다.
     @ViewBuilder
     private var valueContainer: some View {
-        if hasAccessories {
-            DVTextContainer(displayedValue, size: size) { accessoryButtons }
-        } else {
-            DVTextContainer(displayedValue, size: size)
+        Group {
+            if hasAccessories {
+                DVTextContainer(displayedValue, size: size) { accessoryButtons }
+            } else {
+                DVTextContainer(displayedValue, size: size)
+            }
         }
+        .dvTextSelection(copyAffordance.allowsTextSelection)
     }
 
     /// 클립보드에 넣을 원문을 Feature로 넘긴다. 민감 필드는 원문이 뷰에 없으므로 식별자로,
