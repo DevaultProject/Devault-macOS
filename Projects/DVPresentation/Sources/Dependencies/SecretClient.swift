@@ -34,8 +34,9 @@ public struct SecretClient: Sendable {
   /// `@DependencyClient`의 저장 프로퍼티에 담기지 않기 때문이다. 생성 경로가 `dispatchCreateSecret`으로
   /// 같은 문제를 푼 것과 같은 형태로, Live가 `change`를 보고 overload를 고른다.
   ///
-  /// **인증을 타지 않는다.** payload를 다시 쓰더라도 암호화만 하고 복호화는 하지 않기 때문이다 —
-  /// 평문은 이미 수정 진입 시점의 `revealPayload`가 인증을 통과해 받아온 것이다.
+  /// **이 호출 자체는 인증을 타지 않는다** — 암호화만 하고 복호화는 하지 않기 때문이다.
+  /// 다만 진입 시점의 인증이 저장 시점까지 열려 있다는 보장은 없으므로, 창이 닫혀 있으면
+  /// 화면이 직전에 `authenticate`를 먼저 부른다 (`SecretDetailFeature.handleSave`).
   ///
   /// - Parameter patch: 공통 필드. 바뀐 것만 `.set`, 나머지는 `.unchanged`. 이름 trim과
   ///   만료일 23:59:59 고정은 도메인(`PatchSecretUseCase`)이 수행하므로 화면에서 맞출 필요가 없다.

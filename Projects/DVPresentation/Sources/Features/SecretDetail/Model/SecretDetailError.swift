@@ -80,7 +80,8 @@ extension AlertState where Action == SecretDetailFeature.Action.Alert {
         }
     }
 
-    /// 프로젝트 목록 조회 실패. 연결 프로젝트와 선택 가능한 프로젝트 모두 이 alert를 쓴다.
+    /// 편집 폼의 **선택 가능한** 프로젝트 조회 실패. 프로젝트 연결만 못 바꿀 뿐
+    /// 나머지 필드는 계속 고칠 수 있으므로 편집을 이어가게 둔다.
     static var projectsLoadFailed: Self {
         Self {
             TextState("Failed to load projects", bundle: .module)
@@ -89,6 +90,39 @@ extension AlertState where Action == SecretDetailFeature.Action.Alert {
         } message: {
             TextState(
                 "Project information could not be loaded. Other details are unaffected.",
+                bundle: .module
+            )
+        }
+    }
+
+    /// 이 시크릿에 **연결된** 프로젝트 조회 실패. 재시도를 제공하는 유일한 alert다.
+    ///
+    /// 연결을 모르는 채로 수정에 들어가면 편집 baseline이 빈 목록이 되어 저장할 때
+    /// **실제 연결이 조용히 끊긴다.** 읽을 때까지 수정을 막으므로 복구 경로가 필요하다.
+    static var linkedProjectsLoadFailed: Self {
+        Self {
+            TextState("Failed to load linked projects", bundle: .module)
+        } actions: {
+            ButtonState(action: .retryLinkedProjects) { TextState("Retry", bundle: .module) }
+            ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
+        } message: {
+            TextState(
+                "Editing is unavailable until the linked projects load. Other details are unaffected.",
+                bundle: .module
+            )
+        }
+    }
+
+    /// 저장 직전 재인증 실패·취소. ``updateFailed``와 나누는 이유는 사용자가 할 일이 달라서다 —
+    /// 이쪽은 다시 눌러 인증하면 되고, 저쪽은 다시 눌러도 같은 오류가 날 수 있다.
+    static var updateAuthRequired: Self {
+        Self {
+            TextState("Authentication required", bundle: .module)
+        } actions: {
+            ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
+        } message: {
+            TextState(
+                "Please authenticate to save your changes. Your changes are still here.",
                 bundle: .module
             )
         }

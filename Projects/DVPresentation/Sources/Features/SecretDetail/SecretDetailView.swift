@@ -23,8 +23,8 @@ public struct SecretDetailView: View {
     // MARK: - Body
 
     public var body: some View {
-        /// 필드 폭은 컨테이너 폭에서 파생된다. detail 컬럼은 기본적으로 가변 폭 1열(.detailFluid)이고,
-        /// 컬럼이 2열 임계값(816)을 넘으면 CreateSecret과 같은 .dual 배열로 전환된다.
+        // 필드 폭은 컨테이너 폭에서 파생된다. detail 컬럼은 기본적으로 가변 폭 1열(.detailFluid)이고,
+        // 컬럼이 2열 임계값(816)을 넘으면 CreateSecret과 같은 .dual 배열로 전환된다.
         GeometryReader { proxy in
             let layout = DetailColumnFormLayout.layout(for: proxy.size.width)
             VStack(spacing: 0) {
@@ -43,20 +43,26 @@ public struct SecretDetailView: View {
                 .scrollIndicators(.hidden)
 
                 if store.mode == .editing {
-                    /// 생성 화면과 마찬가지로 구분선을 두지 않는다 — footer 자체가 여백으로 분리된다.
+                    // 생성 화면과 마찬가지로 구분선을 두지 않는다 — footer 자체가 여백으로 분리된다.
                     footer
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            /// 모드 전환만 애니메이션한다. `value`를 좁히지 않으면 편집 중 타이핑 한 글자마다 폼 전체가 다시 애니메이션된다.
+            // 모드 전환만 애니메이션한다. `value`를 좁히지 않으면 편집 중 타이핑 한 글자마다
+            // 폼 전체가 다시 애니메이션된다.
             .animation(.smooth(duration: 0.25), value: store.mode)
-            /// 프레임 상한. header/footer는 본문과 분리된 채 각자 이 프레임을 따라간다.
+            // 프레임 상한. header/footer는 본문과 분리된 채 각자 이 프레임을 따라간다.
             .formMaxWidth()
             .formLayout(layout)
         }
-        /// `id:`가 필수다. 다른 리스트 셀을 선택하면 MainFeature가 `secretDetail`에 새 State를 할당하지만, 뷰의 타입·위치가 그대로라 SwiftUI는 뷰를 재생성하지 않는다. 그러면 평범한 `.task`는 다시 실행되지 않아 `linkedProjects` / `payloadState`가 빈 채로 남는다 (`store.secret`을 직접 읽는 헤더·Name만 갱신되어 더 헷갈린다).
-        ///
-        /// `finish()`를 await해야 secret이 바뀔 때 이전 secret의 lifecycle 구독과 프로젝트 조회가 함께 끝난다. 눈·복사는 이 task의 자식이 아니므로 여기서 취소되지 않는다 — 그쪽은 `State.id`를 보고 `ifLet`이 취소한다.
+        // `id:`가 필수다. 다른 리스트 셀을 선택하면 MainFeature가 `secretDetail`에 새 State를
+        // 할당하지만, 뷰의 타입·위치가 그대로라 SwiftUI는 뷰를 재생성하지 않는다. 그러면 평범한
+        // `.task`는 다시 실행되지 않아 `linkedProjects` / `payloadState`가 빈 채로 남는다
+        // (`store.secret`을 직접 읽는 헤더·Name만 갱신되어 더 헷갈린다).
+        //
+        // `finish()`를 await해야 secret이 바뀔 때 이전 secret의 lifecycle 구독과 프로젝트 조회가
+        // 함께 끝난다. 눈·복사는 이 task의 자식이 아니므로 여기서 취소되지 않는다 —
+        // 그쪽은 `State.id`를 보고 `ifLet`이 취소한다.
         .task(id: store.secret.id) {
             await store.send(.task).finish()
         }
@@ -128,10 +134,14 @@ extension SecretDetailView {
         .disabled(store.isDeleting)
     }
 
-    /// 복호화가 진행 중일 때만 수정 진입을 막는다. `.idle`에서 누르면 그때 복호화가 시작되고,
+    /// 복호화는 **진행 중일 때만** 막는다. `.idle`에서 누르면 그때 복호화가 시작되고,
     /// `.failed`에서 누르면 재시도가 된다 — 실패했다고 수정을 영영 막을 이유가 없다.
+    ///
+    /// 연결된 프로젝트는 다르다. 빈 목록을 baseline으로 삼으면 저장할 때 실제 연결이 끊기므로
+    /// `.loaded`가 아니면 잠근다 — 복구는 `linkedProjectsLoadFailed` alert의 Retry가 맡는다.
     private var isEditEnabled: Bool {
         if case .loading = store.payloadState { return false }
+        guard case .loaded = store.linkedProjectsState else { return false }
         return true
     }
 
@@ -159,13 +169,13 @@ extension SecretDetailView {
                     .resolvedSubType(store.secret.subType),
                 meta: fields,
                 availableProjects: store.availableProjects,
-                /// 감지 힌트는 생성 화면 전용이다. 이미 저장된 값을 고치는 중에 서비스 제안 필요 없음.
+                // 감지 힌트는 생성 화면 전용이다. 이미 저장된 값을 고치는 중에 서비스 제안 필요 없음.
                 serviceCandidates: [],
                 validationErrors: store.validationErrors,
                 detectedServices: [:],
                 onCreateProject: { store.send(.didTapCreateProject) }
             )
-            /// 진행 표시는 창 루트가 그린다 (`.omc/GUIDELINES.md`).
+            // 진행 표시는 창 루트가 그린다 (`.omc/GUIDELINES.md`).
             .disabled(store.isSaving)
             .windowBusy(store.isSaving)
             .environment(\.isProjectLoading, store.isLoadingProjects)
@@ -176,7 +186,8 @@ extension SecretDetailView {
     private var footer: some View {
         FooterActionsView(
             saveTitle: .module("Save"),
-            /// 필수 필드 검증은 `didTapSave`가 수행해 인라인 경고를 세운다 — 여기서 미리 막으면 경고가 영영 뜨지 않는다. 생성 화면과 같은 규칙.
+            // 필수 필드 검증은 `didTapSave`가 수행해 인라인 경고를 세운다 — 여기서 미리 막으면
+            // 경고가 영영 뜨지 않는다. 생성 화면과 같은 규칙.
             isSaveEnabled: !store.isSaving,
             onCancel: { store.send(.didTapCancelEdit) },
             onSave: { store.send(.didTapSave) }
@@ -263,7 +274,7 @@ private func _editingPreviewState(
     let projects = [Project].preview
     var state = SecretDetailFeature.State(secret: _previewSecret)
     state.payloadState = .loaded(payload)
-    state.linkedProjects = Array(projects.prefix(1))
+    state.linkedProjectsState = .loaded(Array(projects.prefix(1)))
     state.availableProjects = projects
     let fields = SecretMetaFields(
         secret: _previewSecret,

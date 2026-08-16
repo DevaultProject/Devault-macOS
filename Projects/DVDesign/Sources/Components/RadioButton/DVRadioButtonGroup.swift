@@ -93,7 +93,7 @@ public struct DVRadioButtonGroup<Value: Hashable>: View {
         // 한 줄에 다 들어가지 않으면 **줄을 바꾼다.** `HStack`은 라벨의 고유 폭 때문에 그 아래로
         // 압축되지 않아, 좁은 컨테이너에서는 줄어드는 대신 잘렸다 — 선택지가 몇 개인지조차
         // 보이지 않게 된다. 넓을 때의 모습은 한 줄 그대로다.
-        DVFlowLayout(hSpacing: size.spacing, vSpacing: size.spacing) {
+        DVFlowLayout(hSpacing: size.spacing, vSpacing: Size.wrappedLineSpacing) {
             ForEach(items) { item in
                 DVRadioButton(item.title, isSelected: selection == item.id) {
                     selection = item.id
@@ -174,6 +174,12 @@ extension DVRadioButtonGroup {
             case .md: return 56
             }
         }
+
+        /// 줄이 바뀔 때 두 줄 사이 간격 (포인트 단위). 사이즈와 무관하게 고정이다.
+        ///
+        /// ``spacing``은 **한 줄 안에서 선택지를 갈라놓는** 간격이라 `.md`가 56pt다. 그대로 세로에 쓰면
+        /// 접힌 줄이 폼의 행 간격(16pt)보다 멀어져 한 필드가 아니라 깨진 레이아웃으로 읽힌다.
+        static var wrappedLineSpacing: CGFloat { 8 }
     }
 }
 

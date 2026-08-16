@@ -65,6 +65,15 @@ public struct SecretDetailFeature {
             case .none, .reveal, .edit: return true
             }
         }
+
+        /// 이 복호화가 속한 취소 그룹. **취소는 같은 그룹 안에서만 일어난다** — 눈·복사는 서로를
+        /// 대체하는 것이 맞지만, 수정 진입까지 그 규칙에 밀려 사라지면 안 되기 때문이다.
+        var cancelID: CancelID {
+            switch self {
+            case .none, .reveal, .copy: return .reveal
+            case .edit:                 return .editReveal
+            }
+        }
     }
 
     // MARK: - State
@@ -95,9 +104,19 @@ public struct SecretDetailFeature {
         /// payload 밖에 있는 변경을 취소 확인에서 놓친다.
         /// `payloadState`와도 분리한다 — 편집 중 다른 필드를 reveal해도 병합 기준이 흔들리면 안 된다.
         var editPayloadBaseline: CreateSecretPayload?
-        /// 이 Secret에 연결된 Project. `Secret` 엔티티에 프로젝트 정보가 없어 별도 조회한다.
+        /// 이 Secret에 연결된 Project의 조회 상태. `Secret` 엔티티에 프로젝트 정보가 없어 별도 조회한다.
         /// 조회 화면의 Project 필드 표시와, 수정 진입 시 `projectIds` 초기값에 함께 쓰인다.
-        public var linkedProjects: [Project] = []
+        ///
+        /// 배열이 아니라 `LoadingState`인 이유는 **"연결 없음"과 "아직 모름"을 구분해야 하기 때문**이다.
+        /// 모르는 채로 수정에 들어가면 편집 baseline이 빈 목록이 되어 저장할 때 실제 연결이 끊긴다.
+        public var linkedProjectsState: LoadingState<[Project], SecretUseCaseError> = .idle
+
+        /// 화면에 그릴 연결 목록. 아직 못 읽었으면 빈 배열이고,
+        /// 구분이 필요한 곳은 ``linkedProjectsState``를 직접 본다.
+        public var linkedProjects: [Project] {
+            guard case .loaded(let projects) = linkedProjectsState else { return [] }
+            return projects
+        }
         /// 프로젝트 선택 드롭다운의 옵션. **편집 진입 시에만 로드한다** —
         /// 조회만 하는 사용자에게 전체 프로젝트 목록을 읽힐 이유가 없다.
         public var availableProjects: [Project] = []
@@ -183,6 +202,8 @@ public struct SecretDetailFeature {
         public enum Alert: Equatable {
             case confirmDiscard
             case confirmDelete
+            /// 연결 프로젝트 조회 재시도. 읽지 못하면 수정에 들어갈 수 없으므로 재시도 경로가 필요하다.
+            case retryLinkedProjects
         }
 
         public enum Delegate: Equatable {
@@ -197,11 +218,21 @@ public struct SecretDetailFeature {
 
     // MARK: - Cancellation
 
-    private enum CancelID {
+    // `RevealContinuation.cancelID`가 노출하므로 `private`으로 둘 수 없다.
+    enum CancelID {
         /// 즐겨찾기 연타 시 이전 요청을 취소해 응답 순서가 뒤바뀌는 것을 막는다.
         case like
-        /// 재시도 연타 시 생체인증 프롬프트 요청이 겹쳐 쌓이는 것을 막는다.
+        /// 눈·복사가 유발한 복호화. 재시도 연타 시 생체인증 프롬프트가 겹쳐 쌓이는 것을 막는다.
+        /// 나중 요청이 앞 요청을 취소하므로 **대기 중이던 복사도 함께 사라진다** — 눈 버튼을 눌렀는데
+        /// 다른 필드가 클립보드에 들어가면 사용자가 알 방법이 없기 때문이다.
         case reveal
+        /// 수정 진입이 유발한 복호화. ``reveal``과 나누지 않으면 인증 시트가 뜬 사이 눈 버튼 한 번에
+        /// 수정 진입이 사라져, 인증만 두 번 뜨고 편집 모드는 열리지 않는다.
+        case editReveal
+        /// 연결 프로젝트 조회. 재시도가 겹쳐 쌓이지 않게 한다.
+        case linkedProjects
+        /// 편집 폼의 프로젝트 선택 옵션 조회. 겹치면 늦게 도착한 실패가 먼저 도착한 성공을 덮어쓴다.
+        case projects
     }
 
     // MARK: - Dependencies
@@ -224,16 +255,9 @@ public struct SecretDetailFeature {
             // 진입 시에는 복호화하지 않는다. payload 필드는 값과 무관하게 항상 마스킹되므로
             // 미리 풀어둘 이유가 없고, 화면을 여는 것만으로 인증을 요구하지 않기 위해서다.
             case .task:
+                state.linkedProjectsState = .loading
                 return .merge(
-                    .run { [id = state.secret.id] send in
-                        do {
-                            let projects = try await secretClient.fetchLinkedProjects(id)
-                            await send(.linkedProjectsResponse(.success(projects)))
-                        } catch is CancellationError {
-                        } catch {
-                            await send(.linkedProjectsResponse(.failure(SecretUseCaseError.map(error))))
-                        }
-                    },
+                    linkedProjectsEffect(id: state.secret.id),
                     .run { send in
                         for await event in appLifecycleClient.events() {
                             await send(.lifecycleEvent(event))
@@ -253,14 +277,19 @@ public struct SecretDetailFeature {
                 return .send(.delegate(.closed))
 
             case .linkedProjectsResponse(.success(let projects)):
-                state.linkedProjects = projects
+                state.linkedProjectsState = .loaded(projects)
                 return .none
 
-            // 진입 시 복호화를 하지 않게 되면서 복호화 실패 alert와 겹칠 일이 없어졌다.
-            // 필드는 빈 값으로 남고, 나머지 정보는 영향받지 않는다는 것을 문구로 알린다.
-            case .linkedProjectsResponse(.failure):
-                state.alert = .projectsLoadFailed
+            // 필드는 빈 값으로 남고 나머지 정보는 영향받지 않는다. 다만 연결을 모르는 채로
+            // 수정에 들어가면 저장할 때 실제 연결이 끊기므로, 수정 버튼은 잠기고 Retry가 복구 경로다.
+            case .linkedProjectsResponse(.failure(let error)):
+                state.linkedProjectsState = .failed(error)
+                state.alert = .linkedProjectsLoadFailed
                 return .none
+
+            case .alert(.presented(.retryLinkedProjects)):
+                state.linkedProjectsState = .loading
+                return linkedProjectsEffect(id: state.secret.id)
 
             // 복호화는 인증을 통과해야만 성공하므로, 도착 자체가 인증 성공을 뜻한다.
             //
@@ -394,6 +423,9 @@ public struct SecretDetailFeature {
                 // 헤더에서 수정 버튼이 사라지므로 편집 중에는 도달하지 않지만,
                 // 상태 전이를 한곳에서 막아 두는 편이 안전하다.
                 guard state.mode == .viewing else { return .none }
+                // 연결을 모르면 편집 baseline을 세울 수 없다. 빈 목록을 기준으로 삼으면 저장할 때
+                // 실제 연결이 끊긴다. 헤더의 수정 버튼도 같은 조건으로 잠겨 있다.
+                guard case .loaded = state.linkedProjectsState else { return .none }
                 state.isLoadingProjects = true
                 let projects = availableProjectsEffect()
 
@@ -409,16 +441,15 @@ public struct SecretDetailFeature {
             // 건드린 것이 없으면 확인 없이 나간다. 물어보는 것 자체가 성가신 확인이 된다.
             case .didTapCancelEdit:
                 guard state.mode == .editing else { return .none }
-                guard state.editFields == state.editFieldsBaseline else {
-                    state.alert = .confirmDiscard
-                    return .none
-                }
-                endEditing(&state)
+                guard let fields = state.editFields,
+                      let baseline = state.editFieldsBaseline,
+                      Self.isDirty(fields, from: baseline)
+                else { return endEditing(&state) }
+                state.alert = .confirmDiscard
                 return .none
 
             case .alert(.presented(.confirmDiscard)):
-                endEditing(&state)
-                return .none
+                return endEditing(&state)
 
             case .availableProjectsResponse(.success(let projects)):
                 state.isLoadingProjects = false
@@ -460,15 +491,22 @@ public struct SecretDetailFeature {
                 if let fields = state.editFields,
                    Set(fields.projectIds) != Set(state.editFieldsBaseline?.projectIds ?? []) {
                     let selected = Set(fields.projectIds)
-                    state.linkedProjects = state.availableProjects.filter { selected.contains($0.id) }
+                    state.linkedProjectsState = .loaded(
+                        state.availableProjects.filter { selected.contains($0.id) }
+                    )
                 }
-                endEditing(&state)
-                return .send(.delegate(.secretUpdated(updated)))
+                return .merge(
+                    endEditing(&state),
+                    .send(.delegate(.secretUpdated(updated)))
+                )
 
             // 편집 모드를 유지한다 — 조회로 되돌리면 사용자가 입력한 내용이 통째로 사라진다.
-            case .saveResponse(.failure, _):
+            case .saveResponse(.failure(let error), _):
                 state.isSaving = false
-                state.alert = .updateFailed
+                // 인증 취소는 다시 눌러 인증하면 되고, 쓰기 실패는 다시 눌러도 같은 오류가 날 수 있다.
+                state.alert = SecretDetailError.map(error) == .authRequired
+                    ? .updateAuthRequired
+                    : .updateFailed
                 return .none
 
             case .binding, .alert, .delegate, .createProject:
@@ -500,12 +538,18 @@ public struct SecretDetailFeature {
 
     /// 편집 종료. 편집 전용 상태를 한 번에 비운다 —
     /// 하나라도 남으면 다음 진입의 dirty 판정 기준이 어긋난다.
-    private func endEditing(_ state: inout State) {
+    ///
+    /// 진행 중인 프로젝트 조회도 함께 끊는다. 남겨두면 늦게 도착한 응답이 방금 비운 목록을
+    /// 조회 모드에 되살린다.
+    private func endEditing(_ state: inout State) -> Effect<Action> {
         state.mode = .viewing
         state.editFields = nil
         state.editFieldsBaseline = nil
         state.editPayloadBaseline = nil
         state.validationErrors = [:]
+        state.availableProjects = []
+        state.isLoadingProjects = false
+        return .cancel(id: CancelID.projects)
     }
 
     /// 저장. 변경 없음 판정 → 필수 필드 검증 → 다시 쓸 대상 결정 순이다.
@@ -518,9 +562,8 @@ public struct SecretDetailFeature {
 
         // 아무것도 바뀌지 않았으면 도메인을 부르지 않는다. 부르면 updatedAt만 갱신되어
         // 목록의 "최근 추가" 정렬이 이유 없이 흔들린다. 목록 재조회도 필요 없으니 delegate도 없다.
-        guard fields != baselineFields else {
-            endEditing(&state)
-            return .none
+        guard Self.isDirty(fields, from: baselineFields) else {
+            return endEditing(&state)
         }
 
         // 서브타입은 수정 화면에서 바꿀 수 없으므로 저장된 값을 그대로 쓴다.
@@ -541,8 +584,18 @@ public struct SecretDetailFeature {
             let patch = Self.patch(from: fields, baseline: baselineFields, secretType: secretType, subType: subType)
             let projectIds = Self.projectIDs(from: fields, baseline: baselineFields)
 
+            // `lifecycleEvent`는 인증 창을 닫으면서도 편집 중인 입력은 일부러 남겨 둔다. 그래서
+            // 창이 닫힌 채로 저장이 나갈 수 있어, 닫혀 있으면 직전에 다시 인증받는다.
+            let needsAuthentication = !revealAuthPolicy.isAuthorized(
+                since: state.revealAuthorizedAt,
+                now: now
+            )
+
             return .run { [id = state.secret.id] send in
                 do {
+                    if needsAuthentication {
+                        try await secretClient.authenticate(AuthenticationReason.editSecret)
+                    }
                     let updated = try await secretClient.updateSecret(id, patch, change, projectIds)
                     await send(.saveResponse(.success(updated), saved: payload))
                 } catch is CancellationError {
@@ -560,9 +613,32 @@ public struct SecretDetailFeature {
             return .none
 
         // (secretType, subType)이 저장된 시크릿에서 오고 수정 화면이 바꾸지 않으므로 도달할 수 없다.
+        // 그래도 조용히 삼키지 않는다 — 여기로 떨어지면 Save가 아무 반응 없는 버튼이 된다.
         case .failure(.invalidTypeCombination):
+            assertionFailure(
+                "수정 저장에서 타입 조합이 어긋났다: \(secretType) / \(String(describing: subType))"
+            )
+            state.alert = .updateFailed
             return .none
         }
+    }
+
+    /// 폼이 편집 진입 시점과 **의미상** 달라졌는지.
+    ///
+    /// 그대로 비교하지 않는 이유는 `projectIds`의 순서가 임의이기 때문이다 — 드롭다운이 선택을
+    /// Set으로 다루고 `Array(Set)`으로 되돌리므로(`ProjectFieldView.setBinding`), 같은 프로젝트를
+    /// 껐다 켜기만 해도 순서가 달라진다. 그것을 변경으로 세면 물어볼 이유가 없는 확인 alert가 뜨고,
+    /// 저장은 `updatedAt`만 바꾸는 write를 내보내 목록 정렬을 흔든다.
+    private static func isDirty(_ fields: SecretMetaFields, from baseline: SecretMetaFields) -> Bool {
+        sortedProjectIds(fields) != sortedProjectIds(baseline)
+    }
+
+    /// 순서만 다른 것을 같게 보이도록 맞춘 사본. `Project.ID`(`UUID`)가 `Comparable`이 아니라
+    /// `uuidString`으로 정렬한다 — 비교에만 쓰이므로 기준의 의미는 상관없다.
+    private static func sortedProjectIds(_ fields: SecretMetaFields) -> SecretMetaFields {
+        var normalized = fields
+        normalized.projectIds.sort { $0.uuidString < $1.uuidString }
+        return normalized
     }
 
     /// 바뀐 공통 필드만 `.set`으로 싣는다. 안 바뀐 것은 `.unchanged`로 두어 불필요한 write를 만들지 않는다.
@@ -599,6 +675,20 @@ public struct SecretDetailFeature {
 
     // MARK: - Effects
 
+    /// 이 시크릿에 연결된 프로젝트를 읽어 온다. 진입(`task`)과 실패 후 재시도가 함께 쓴다.
+    private func linkedProjectsEffect(id: Secret.ID) -> Effect<Action> {
+        .run { send in
+            do {
+                let projects = try await secretClient.fetchLinkedProjects(id)
+                await send(.linkedProjectsResponse(.success(projects)))
+            } catch is CancellationError {
+            } catch {
+                await send(.linkedProjectsResponse(.failure(SecretUseCaseError.map(error))))
+            }
+        }
+        .cancellable(id: CancelID.linkedProjects, cancelInFlight: true)
+    }
+
     /// 편집 폼의 프로젝트 선택 옵션을 읽어 온다.
     private func availableProjectsEffect() -> Effect<Action> {
         .run { send in
@@ -610,9 +700,12 @@ public struct SecretDetailFeature {
                 await send(.availableProjectsResponse(.failure(ProjectUseCaseError.map(error))))
             }
         }
+        .cancellable(id: CancelID.projects, cancelInFlight: true)
     }
 
     /// 인증 + 복호화. `revealPayload`가 둘을 함께 하므로 값이 아직 없을 때만 쓴다.
+    /// 취소 ID는 이어서 할 일의 종류를 따른다 (``RevealContinuation/cancelID``).
+    ///
     /// - Parameter then: 복호화가 끝나면 이어서 할 일 (``RevealContinuation``).
     private func revealEffect(
         secret: Secret,
@@ -628,7 +721,7 @@ public struct SecretDetailFeature {
                 await send(.payloadResponse(.failure(SecretUseCaseError.map(error)), then: continuation))
             }
         }
-        .cancellable(id: CancelID.reveal, cancelInFlight: true)
+        .cancellable(id: continuation.cancelID, cancelInFlight: true)
     }
 
     /// Copy에 필요한 payload만 복호화한다. 인증은 이어지는 `copySensitiveValue`가 설정을 읽어
