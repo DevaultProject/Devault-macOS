@@ -255,6 +255,7 @@ struct MainFeatureTests {
       MainFeature()
     } withDependencies: {
       $0.sidebarClient.fetchCounts = { _, _ in counts }
+      $0.secretClient.fetchByQuery = { _ in [] }
       $0.date = .constant(Self.referenceDate)
     }
 
@@ -265,9 +266,14 @@ struct MainFeatureTests {
     await store.receive(.sidebar(.setCreatingSecret(false))) {
       $0.sidebar.mode = .browsing($0.sidebar.selection)
     }
+    // 지시가 먼저 다 나가고 비동기 응답이 뒤따른다.
+    await store.receive(.secretList(.refresh))
     await store.receive(.sidebar(.countsRefreshRequested))
     await store.receive(.sidebar(.countsResponse(.success(counts)))) {
       $0.sidebar.countsState = .loaded(counts)
+    }
+    await store.receive(.secretList(.secretsResponse(.success([])))) {
+      $0.secretList.secretsState = .loaded([])
     }
   }
 

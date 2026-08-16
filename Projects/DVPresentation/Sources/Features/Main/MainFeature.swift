@@ -190,11 +190,14 @@ public struct MainFeature {
       case .selectSecretType:
         return .none
 
+      // 목록도 함께 다시 읽는다. 컬럼만 접히고 뷰는 살아 있어 `.task`가 다시 돌지 않으므로,
+      // 이게 없으면 방금 만든 시크릿이 목록에 나타나지 않는다.
       case .createSecret(.delegate(.secretCreated(_))):
         exitCreating(&state)
         // `.merge`는 도착 순서를 보장하지 않아 테스트가 깨지기 쉬우므로 순차 실행한다.
         return .concatenate(
           .send(.sidebar(.setCreatingSecret(false))),
+          .send(.secretList(.refresh)),
           .send(.sidebar(.countsRefreshRequested))
         )
 
