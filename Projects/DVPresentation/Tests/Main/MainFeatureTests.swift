@@ -241,6 +241,83 @@ struct MainFeatureTests {
     }
   }
 
+  /// 문구를 복제하지 않으려고 자식의 기존 취소 alert를 그대로 띄운다.
+  @Test("생성 폼에서 사이드바를 누르면 바로 나가지 않고 취소 확인을 띄운다")
+  func sidebarSelectionWhileFormOpenAsksForConfirmation() async {
+    var initial = MainFeature.State()
+    initial.selectSecretType = .init()
+    initial.createSecret = CreateSecretFeature.State(secretType: .apiKeyToken)
+    initial.sidebar.mode = .creating(previous: .filter(.all))
+
+    let store = TestStore(initialState: initial) { MainFeature() }
+
+    await store.send(.sidebar(.didSelect(.filter(.starred)))) {
+      $0.sidebar.mode = .creating(previous: .filter(.starred))
+    }
+    await store.receive(.sidebar(.delegate(.selectionChanged(.filter(.starred))))) {
+      $0.pendingSelection = .filter(.starred)
+    }
+    await store.receive(.createSecret(.didTapCancel)) {
+      $0.createSecret?.alert = AlertState {
+        TextState("Discard changes?", bundle: .module)
+      } actions: {
+        ButtonState(role: .destructive, action: .confirmCancel) {
+          TextState("Discard", bundle: .module)
+        }
+        ButtonState(role: .cancel) {
+          TextState("Keep editing", bundle: .module)
+        }
+      }
+    }
+  }
+
+  /// 폼의 Cancel과 문구는 같지만 목적지가 다르다.
+  @Test("확인하면 타입 선택이 아니라 누른 목록으로 나간다")
+  func confirmingLeavesToSelectedList() async {
+    var initial = MainFeature.State()
+    initial.selectSecretType = .init()
+    initial.createSecret = CreateSecretFeature.State(secretType: .apiKeyToken)
+    initial.sidebar.mode = .creating(previous: .filter(.starred))
+    initial.pendingSelection = .filter(.starred)
+
+    let store = TestStore(initialState: initial) { MainFeature() }
+
+    await store.send(.createSecret(.delegate(.cancelled))) {
+      $0.pendingSelection = nil
+      $0.createSecret = nil
+      $0.selectSecretType = nil
+      $0.secretList = SecretListFeature.State(collection: .liked)
+    }
+    await store.receive(.sidebar(.setCreatingSecret(false))) {
+      $0.sidebar.mode = .browsing(.filter(.starred))
+    }
+  }
+
+  /// 목적지를 버리지 않으면 나중에 폼의 Cancel이 엉뚱하게 목록으로 나간다.
+  @Test("확인 없이 alert를 닫으면 기억해 둔 목적지를 버린다")
+  func dismissingConfirmationDropsPendingSelection() async {
+    var initial = MainFeature.State()
+    initial.createSecret = CreateSecretFeature.State(secretType: .apiKeyToken)
+    initial.createSecret?.alert = AlertState {
+      TextState("Discard changes?", bundle: .module)
+    } actions: {
+      ButtonState(role: .destructive, action: .confirmCancel) {
+        TextState("Discard", bundle: .module)
+      }
+      ButtonState(role: .cancel) {
+        TextState("Keep editing", bundle: .module)
+      }
+    }
+    initial.pendingSelection = .filter(.starred)
+
+    let store = TestStore(initialState: initial) { MainFeature() }
+
+    await store.send(.createSecret(.alert(.dismiss))) {
+      $0.createSecret?.alert = nil
+      $0.pendingSelection = nil
+    }
+  }
+
   @Test("addProjectTapped은 createProject sheet를 연다")
   func addProjectTappedOpensSheet() async {
     let store = TestStore(initialState: MainFeature.State()) {
