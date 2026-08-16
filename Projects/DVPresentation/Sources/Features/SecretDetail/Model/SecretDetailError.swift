@@ -153,6 +153,20 @@ extension AlertState where Action == SecretDetailFeature.Action.Alert {
         }
     }
 
+    /// 수정 저장 실패. 편집 모드는 유지되므로 입력한 내용이 남아 있다는 것을 문구로 알린다.
+    static var updateFailed: Self {
+        Self {
+            TextState("Failed to save changes", bundle: .module)
+        } actions: {
+            ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
+        } message: {
+            TextState(
+                "An unexpected error occurred. Your changes were not saved and are still here.",
+                bundle: .module
+            )
+        }
+    }
+
     static var confirmDiscard: Self {
         Self {
             TextState("Discard changes?", bundle: .module)

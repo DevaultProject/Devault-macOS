@@ -143,6 +143,9 @@ public struct SecretDetailFeature {
         /// 클립보드 복사 결과. 실패도 사용자에게 알린다 — 값이 복사된 줄 알고 붙여넣으면 더 혼란스럽다.
         case copyResponse(Result<Bool, Never>)
         case likeResponse(Result<Secret, SecretUseCaseError>)
+        /// 저장 응답. 방금 저장한 payload를 함께 싣는다 — 성공 시 `payloadState`를 그 값으로 바꿔야
+        /// 조회로 돌아갔을 때 눈 버튼이 저장 전 값을 보여주지 않는다.
+        case saveResponse(Result<Secret, SecretUseCaseError>, saved: CreateSecretPayload)
         /// 앱 수준 사건. 정책이 무효화 대상으로 보면 인증 창과 열린 필드를 모두 닫는다.
         case lifecycleEvent(AppLifecycleEvent)
         case deleteResponse(Result<Secret, SecretUseCaseError>)
@@ -414,8 +417,30 @@ public struct SecretDetailFeature {
                 )
                 return .none
 
-            // 저장은 후속 커밋 범위다.
             case .didTapSave:
+                return handleSave(&state)
+
+            case .saveResponse(.success(let updated), let saved):
+                state.isSaving = false
+                state.secret = updated
+                // 저장한 평문을 그대로 들고 있으므로 조회로 돌아가 눈 버튼을 눌러도 재복호화가 필요 없다.
+                state.payloadState = .loaded(saved)
+                // 조회 모드의 기본 상태는 전부 마스킹이다. 편집을 마치고 돌아왔는데 열려 있으면 어긋난다.
+                state.revealedFields.removeAll()
+                // 조회 화면의 Project chip은 `linkedProjects`를 읽는다. 갱신하지 않으면 저장 직후
+                // 이전 프로젝트가 그대로 남는다. 방금 저장한 목록은 손에 있으므로 재조회하지 않는다.
+                if let fields = state.editFields,
+                   Set(fields.projectIds) != Set(state.editFieldsBaseline?.projectIds ?? []) {
+                    let selected = Set(fields.projectIds)
+                    state.linkedProjects = state.availableProjects.filter { selected.contains($0.id) }
+                }
+                endEditing(&state)
+                return .send(.delegate(.secretUpdated(updated)))
+
+            // 편집 모드를 유지한다 — 조회로 되돌리면 사용자가 입력한 내용이 통째로 사라진다.
+            case .saveResponse(.failure, _):
+                state.isSaving = false
+                state.alert = .updateFailed
                 return .none
 
             case .binding, .alert, .delegate, .createProject:
@@ -453,6 +478,95 @@ public struct SecretDetailFeature {
         state.editFieldsBaseline = nil
         state.editPayloadBaseline = nil
         state.validationErrors = [:]
+    }
+
+    /// 저장. 변경 없음 판정 → 필수 필드 검증 → 다시 쓸 대상 결정 순이다.
+    private func handleSave(_ state: inout State) -> Effect<Action> {
+        guard state.mode == .editing,
+              let fields = state.editFields,
+              let baselineFields = state.editFieldsBaseline,
+              let baselinePayload = state.editPayloadBaseline
+        else { return .none }
+
+        // 아무것도 바뀌지 않았으면 도메인을 부르지 않는다. 부르면 updatedAt만 갱신되어
+        // 목록의 "최근 추가" 정렬이 이유 없이 흔들린다. 목록 재조회도 필요 없으니 delegate도 없다.
+        guard fields != baselineFields else {
+            endEditing(&state)
+            return .none
+        }
+
+        // 서브타입은 수정 화면에서 바꿀 수 없으므로 저장된 값을 그대로 쓴다.
+        // `resolvedSubType`을 거치는 이유는 `Secret.subType`이 optional이라서다 — 그대로 넘기면
+        // 예전 데이터에서 `invalidTypeCombination`으로 떨어져 저장이 조용히 실패한다.
+        let secretType = state.secret.secretType.creatableType
+        let subType = secretType.resolvedSubType(state.secret.subType)
+
+        switch fields.toCreateSecretPayload(
+            secretType: secretType,
+            subType: subType,
+            preserving: baselinePayload
+        ) {
+        case .success(let payload):
+            state.validationErrors = [:]
+            state.isSaving = true
+            let change = payload.contentChange(comparedTo: baselinePayload)
+            let patch = Self.patch(from: fields, baseline: baselineFields, secretType: secretType, subType: subType)
+            let projectIds = Self.projectIDs(from: fields, baseline: baselineFields)
+
+            return .run { [id = state.secret.id] send in
+                do {
+                    let updated = try await secretClient.updateSecret(id, patch, change, projectIds)
+                    await send(.saveResponse(.success(updated), saved: payload))
+                } catch is CancellationError {
+                } catch {
+                    await send(.saveResponse(.failure(SecretUseCaseError.map(error)), saved: payload))
+                }
+            }
+
+        case .failure(.missingRequired(let fieldIDs)):
+            // 이전 시도의 잔존 경고를 지우고 이번 결과만 세운다. 생성 화면과 같은 규칙이다.
+            state.validationErrors = [:]
+            for fieldID in fieldIDs {
+                state.validationErrors[fieldID] = .module("Required")
+            }
+            return .none
+
+        // (secretType, subType)이 저장된 시크릿에서 오고 수정 화면이 바꾸지 않으므로 도달할 수 없다.
+        case .failure(.invalidTypeCombination):
+            return .none
+        }
+    }
+
+    /// 바뀐 공통 필드만 `.set`으로 싣는다. 안 바뀐 것은 `.unchanged`로 두어 불필요한 write를 만들지 않는다.
+    ///
+    /// 비교를 폼 값이 아니라 `toSecretDraft` 결과로 하는 이유는 `""` → `nil` 접힘 같은 매핑 규칙을
+    /// 여기서 한 벌 더 알지 않기 위해서다. 이름 trim과 만료일 23:59:59 고정은 도메인이 하므로
+    /// 화면에서 맞추지 않는다.
+    private static func patch(
+        from fields: SecretMetaFields,
+        baseline: SecretMetaFields,
+        secretType: CreatableSecretType,
+        subType: CreatableSecretSubType?
+    ) -> SecretPatch {
+        let draft = fields.toSecretDraft(secretType: secretType, subType: subType)
+        let old = baseline.toSecretDraft(secretType: secretType, subType: subType)
+
+        return SecretPatch(
+            name: draft.name == old.name ? .unchanged : .set(draft.name),
+            service: draft.service == old.service ? .unchanged : .set(draft.service),
+            environment: draft.environment == old.environment ? .unchanged : .set(draft.environment),
+            expiresAt: draft.expiresAt == old.expiresAt ? .unchanged : .set(draft.expiresAt),
+            memo: draft.memo == old.memo ? .unchanged : .set(draft.memo)
+        )
+    }
+
+    /// 연결이 바뀐 경우에만 `.set`으로 최종 목록을 싣는다. `.set`은 목록이 같아도 연결을 다시 조정한다.
+    /// 순서만 다른 것은 변경이 아니다 — 드롭다운에서 고른 순서가 저장 여부를 바꾸면 안 된다.
+    private static func projectIDs(
+        from fields: SecretMetaFields,
+        baseline: SecretMetaFields
+    ) -> PatchField<[Project.ID]> {
+        Set(fields.projectIds) == Set(baseline.projectIds) ? .unchanged : .set(fields.projectIds)
     }
 
     // MARK: - Effects

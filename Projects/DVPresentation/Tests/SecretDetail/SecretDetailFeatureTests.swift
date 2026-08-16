@@ -905,7 +905,176 @@ struct SecretDetailFeatureTests {
             ]
         }
     }
+
+    // MARK: - 저장
+
+    /// 아무것도 안 바꾸고 Save를 누르면 도메인을 부르지 않는다. 부르면 updatedAt만 갱신되어
+    /// 목록의 "최근 추가" 정렬이 이유 없이 흔들린다. `updateSecret`을 스텁하지 않아, 불리면 실패한다.
+    @Test("저장: 변경이 없으면 write 없이 조회로 돌아간다")
+    func didTapSave_withoutChanges_skipsWrite() async {
+        let store = TestStore(initialState: Self.editingState()) { SecretDetailFeature() }
+
+        await store.send(.didTapSave) {
+            $0.mode = .viewing
+            $0.editFields = nil
+            $0.editFieldsBaseline = nil
+            $0.editPayloadBaseline = nil
+        }
+    }
+
+    @Test("저장: 필수 필드가 비면 인라인 경고만 세우고 저장하지 않는다")
+    func didTapSave_missingRequired_setsValidationErrors() async {
+        var initial = Self.editingState()
+        initial.editFields?.content = .apiKeyToken(APIKeyTokenFields(value: "", authorityScope: "repo:read"))
+
+        let store = TestStore(initialState: initial) { SecretDetailFeature() }
+
+        await store.send(.didTapSave) {
+            $0.validationErrors = [.value: .module("Required")]
+        }
+    }
+
+    @Test("저장 성공: secret·payloadState 교체 + 열린 필드 정리 + delegate")
+    func didTapSave_success() async {
+        let secret = Self.makeSecret(name: "GitHub Token")
+        var initial = Self.editingState(secret: secret)
+        // payload 자체를 고쳐야 payloadState 교체 단언에 의미가 생긴다 —
+        // 공통 필드만 바꾸면 저장된 payload가 baseline과 같아 갱신 여부를 구분할 수 없다.
+        initial.editFields?.content = .apiKeyToken(
+            APIKeyTokenFields(value: "ghp_new", authorityScope: "repo:read")
+        )
+        initial.revealedFields = [.value]
+        let saved = CreateSecretPayload.apiKey(
+            APIKeyPayload(value: "ghp_new"),
+            APIKeyMetadata(scope: "repo:read")
+        )
+        let updated = Self.makeSecret(name: "GitHub Token")
+
+        let store = TestStore(initialState: initial) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.updateSecret = { _, _, _, _ in updated }
+        }
+
+        await store.send(.didTapSave) {
+            $0.isSaving = true
+        }
+        await store.receive(.saveResponse(.success(updated), saved: saved)) {
+            $0.isSaving = false
+            $0.secret = updated
+            $0.payloadState = .loaded(saved)
+            $0.revealedFields = []
+            $0.mode = .viewing
+            $0.editFields = nil
+            $0.editFieldsBaseline = nil
+            $0.editPayloadBaseline = nil
+        }
+        await store.receive(.delegate(.secretUpdated(updated)))
+    }
+
+    /// 조회로 되돌리면 사용자가 입력한 내용이 통째로 사라진다.
+    @Test("저장 실패: alert를 띄우되 편집 모드와 입력을 유지한다")
+    func didTapSave_failure_keepsEditing() async {
+        var initial = Self.editingState()
+        initial.editFields?.memo = "고친 메모"
+
+        let store = TestStore(initialState: initial) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.updateSecret = { _, _, _, _ in throw SecretUseCaseError.unexpected }
+        }
+
+        await store.send(.didTapSave) {
+            $0.isSaving = true
+        }
+        await store.receive(.saveResponse(.failure(.unexpected), saved: Self.editablePayload)) {
+            $0.isSaving = false
+            $0.alert = .updateFailed
+        }
+    }
+
+    /// 바뀐 필드만 `.set`으로 실어야 불필요한 write가 생기지 않는다.
+    @Test("저장: 바뀐 공통 필드만 patch에 실린다")
+    func didTapSave_patchesOnlyChangedFields() async {
+        var initial = Self.editingState()
+        initial.editFields?.memo = "고친 메모"
+
+        let recorded = LockIsolated<SecretPatch?>(nil)
+        let store = TestStore(initialState: initial) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.updateSecret = { _, patch, _, _ in
+                recorded.setValue(patch)
+                return Self.makeSecret()
+            }
+        }
+
+        // 관심은 Client에 무엇이 전달됐는지 하나뿐이다. 상태 전이는 위 저장 성공 테스트가 본다.
+        store.exhaustivity = .off
+        await store.send(.didTapSave)
+        await store.finish()
+
+        let patch = try? #require(recorded.value)
+        #expect(patch?.memo == .set("고친 메모"))
+        #expect(patch?.name == .unchanged)
+        #expect(patch?.service == .unchanged)
+        #expect(patch?.expiresAt == .unchanged)
+        // 서브타입과 즐겨찾기는 수정 화면이 건드리지 않는다.
+        #expect(patch?.subType == .unchanged)
+        #expect(patch?.liked == .unchanged)
+    }
+
+    /// 목록이 같으면 `.set`으로 보내지 않는다 — `.set`은 같은 목록이어도 연결을 다시 조정한다.
+    @Test("저장: 프로젝트 연결이 그대로면 unchanged로 보낸다")
+    func didTapSave_unchangedProjects_sendsUnchanged() async {
+        let projectID = UUID()
+        var initial = Self.editingState(projectIds: [projectID])
+        initial.editFields?.memo = "고친 메모"
+
+        let recorded = LockIsolated<PatchField<[Project.ID]>?>(nil)
+        let store = TestStore(initialState: initial) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.updateSecret = { _, _, _, projectIds in
+                recorded.setValue(projectIds)
+                return Self.makeSecret()
+            }
+        }
+
+        // 관심은 Client에 무엇이 전달됐는지 하나뿐이다. 상태 전이는 위 저장 성공 테스트가 본다.
+        store.exhaustivity = .off
+        await store.send(.didTapSave)
+        await store.finish()
+
+        #expect(recorded.value == .unchanged)
+    }
+
+    @Test("저장: 프로젝트 연결이 바뀌면 최종 목록을 set으로 보낸다")
+    func didTapSave_changedProjects_sendsSet() async {
+        let kept = UUID()
+        let added = UUID()
+        var initial = Self.editingState(projectIds: [kept])
+        initial.editFields?.projectIds = [kept, added]
+
+        let recorded = LockIsolated<PatchField<[Project.ID]>?>(nil)
+        let store = TestStore(initialState: initial) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.updateSecret = { _, _, _, projectIds in
+                recorded.setValue(projectIds)
+                return Self.makeSecret()
+            }
+        }
+
+        // 관심은 Client에 무엇이 전달됐는지 하나뿐이다. 상태 전이는 위 저장 성공 테스트가 본다.
+        store.exhaustivity = .off
+        await store.send(.didTapSave)
+        await store.finish()
+
+        #expect(recorded.value == .set([kept, added]))
+    }
 }
+
 
 // MARK: - 편집 Fixtures
 

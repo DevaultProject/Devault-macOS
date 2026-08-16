@@ -51,10 +51,10 @@ struct SecretDetailHeaderView: View {
         secretType.creatableType.availableSubTypes
     }
 
-    /// `subType`이 nil이면 첫 서브타입으로 간주한다 —
-    /// live `dispatchRevealPayload`가 `(.apiKeyToken, nil)`을 `.apiKey`로 처리하는 것과 동일한 규칙.
+    /// `subType`이 nil일 때의 폴백은 `resolvedSubType`이 정의한다 — 저장 경로와 같은 규칙을 써야
+    /// 화면에 보이는 서브타입과 저장되는 서브타입이 갈리지 않는다.
     private var selectedSubType: CreatableSecretSubType? {
-        subType?.creatableSubType ?? subTypes.first
+        secretType.creatableType.resolvedSubType(subType)
     }
 
     var body: some View {
