@@ -15,9 +15,12 @@ extension SecretClient: @retroactive DependencyKey {
         let fetchSecretUseCase: any FetchSecretUseCase = FetchSecretUseCaseImpl(
             repository: secretRepo
         )
-        let revealSecretPayloadUseCase: any RevealSecretPayloadUseCase = RevealSecretPayloadUseCaseImpl(
+        let decryptSecretPayloadUseCase: any DecryptSecretPayloadUseCase = DecryptSecretPayloadUseCaseImpl(
             repository: secretRepo,
-            cryptoService: cryptoService,
+            cryptoService: cryptoService
+        )
+        let revealSecretPayloadUseCase: any RevealSecretPayloadUseCase = RevealSecretPayloadUseCaseImpl(
+            decryptPayloadUseCase: decryptSecretPayloadUseCase,
             authenticateUseCase: authenticateUseCase
         )
         let deleteSecretUseCase: any DeleteSecretUseCase = DeleteSecretUseCaseImpl(
@@ -56,7 +59,16 @@ extension SecretClient: @retroactive DependencyKey {
                 await LiveUseCases.expirySchedule.cancel(secretID: id)
             },
             revealPayload: { secret in
-                try await dispatchRevealPayload(secret: secret, useCase: revealSecretPayloadUseCase)
+                try await dispatchPayload(
+                    secret: secret,
+                    access: .reveal(revealSecretPayloadUseCase)
+                )
+            },
+            loadPayloadForCopy: { secret in
+                try await dispatchPayload(
+                    secret: secret,
+                    access: .copy(decryptSecretPayloadUseCase)
+                )
             },
             setLiked: { id, liked in
                 try await patchSecretUseCase.updateSimple(
@@ -93,9 +105,26 @@ extension SecretClient: @retroactive DependencyKey {
 
 // MARK: - Payload Dispatch
 
-private func dispatchRevealPayload(
+private enum PayloadAccess {
+    case reveal(any RevealSecretPayloadUseCase)
+    case copy(any DecryptSecretPayloadUseCase)
+
+    func load<Payload: SecretPayloadData>(
+        id: UUID,
+        as type: Payload.Type
+    ) async throws -> Payload {
+        switch self {
+        case .reveal(let useCase):
+            return try await useCase.revealPayload(id: id, as: type)
+        case .copy(let useCase):
+            return try await useCase.decryptPayload(id: id, as: type)
+        }
+    }
+}
+
+private func dispatchPayload(
     secret: Secret,
-    useCase: any RevealSecretPayloadUseCase
+    access: PayloadAccess
 ) async throws -> CreateSecretPayload {
     func decodeMeta<M: SecretMetadataContent>(_ type: M.Type) -> M? {
         secret.decodedMetadata(type)
@@ -103,37 +132,37 @@ private func dispatchRevealPayload(
 
     switch (secret.secretType, secret.subType) {
     case (.apiKeyToken, .apiKey), (.apiKeyToken, nil):
-        let p = try await useCase.revealPayload(id: secret.id, as: APIKeyPayload.self)
+        let p = try await access.load(id: secret.id, as: APIKeyPayload.self)
         return .apiKey(p, decodeMeta(APIKeyMetadata.self))
     case (.apiKeyToken, .accessToken):
-        let p = try await useCase.revealPayload(id: secret.id, as: APIKeyPayload.self)
+        let p = try await access.load(id: secret.id, as: APIKeyPayload.self)
         return .accessToken(p, decodeMeta(APIKeyMetadata.self))
     case (.apiKeyToken, .webhookSecret):
-        let p = try await useCase.revealPayload(id: secret.id, as: APIKeyPayload.self)
+        let p = try await access.load(id: secret.id, as: APIKeyPayload.self)
         return .webhookSecret(p, decodeMeta(APIKeyMetadata.self))
     case (.oauth, .oauthClient), (.oauth, nil):
-        let p = try await useCase.revealPayload(id: secret.id, as: OAuthClientPayload.self)
+        let p = try await access.load(id: secret.id, as: OAuthClientPayload.self)
         return .oauthClient(p, decodeMeta(OAuthClientMetadata.self))
     case (.oauth, .serviceAccount):
-        let p = try await useCase.revealPayload(id: secret.id, as: ServiceAccountPayload.self)
+        let p = try await access.load(id: secret.id, as: ServiceAccountPayload.self)
         return .serviceAccount(p, decodeMeta(ServiceAccountMetadata.self))
     case (.database, _):
-        let p = try await useCase.revealPayload(id: secret.id, as: DatabasePayload.self)
+        let p = try await access.load(id: secret.id, as: DatabasePayload.self)
         return .database(p, decodeMeta(DatabaseMetadata.self))
     case (.sshAndCredentials, .sshKey), (.sshAndCredentials, nil):
-        let p = try await useCase.revealPayload(id: secret.id, as: SSHKeyPayload.self)
+        let p = try await access.load(id: secret.id, as: SSHKeyPayload.self)
         return .sshKey(p, decodeMeta(SSHKeyMetadata.self))
     case (.sshAndCredentials, .sslTlsCertificate):
-        let p = try await useCase.revealPayload(id: secret.id, as: SSLCertPayload.self)
+        let p = try await access.load(id: secret.id, as: SSLCertPayload.self)
         return .sslTlsCertificate(p, decodeMeta(SSLCertMetadata.self))
     case (.environmentVariableSet, _):
-        let p = try await useCase.revealPayload(id: secret.id, as: EnvSetPayload.self)
+        let p = try await access.load(id: secret.id, as: EnvSetPayload.self)
         return .environmentVariableSet(p)
     case (.etc, .licenseKey), (.etc, nil):
-        let p = try await useCase.revealPayload(id: secret.id, as: LicenseKeyPayload.self)
+        let p = try await access.load(id: secret.id, as: LicenseKeyPayload.self)
         return .licenseKey(p, decodeMeta(LicenseKeyMetadata.self))
     case (.etc, .custom):
-        let p = try await useCase.revealPayload(id: secret.id, as: CustomPayload.self)
+        let p = try await access.load(id: secret.id, as: CustomPayload.self)
         return .custom(p)
     default:
         assertionFailure("Unexpected (secretType, subType) combination: \(secret.secretType), \(String(describing: secret.subType))")

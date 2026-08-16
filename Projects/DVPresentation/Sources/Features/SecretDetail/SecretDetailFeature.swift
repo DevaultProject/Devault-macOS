@@ -72,8 +72,8 @@ public struct SecretDetailFeature {
         case didTapRetryReveal
         /// 필드의 눈 버튼. 여는 경우에만 인증이 필요할 수 있고, 닫는 것은 언제나 즉시 처리된다.
         case didTapToggleReveal(SecretFieldID)
-        /// 필드의 복사 버튼. 복사 자체의 인증 여부는 Copy UseCase가 설정에 따라 판단한다.
-        /// 값이 아직 복호화되지 않았다면 기존 Reveal 경로로 먼저 읽는다.
+        /// 필드의 복사 버튼. Copy UseCase가 설정에 따라 인증하고, payload가 없으면 화면에
+        /// 공개하지 않는 Copy 전용 경로로 먼저 복호화한다.
         case didTapCopy(SecretFieldID)
         /// 평문 필드의 복사 버튼. 값이 이미 화면에 있으므로 복호화도 인증도 거치지 않고,
         /// 비밀이 아니므로 민감 값 복사 정책(자동 정리·반복 감지)도 타지 않는다.
@@ -191,10 +191,13 @@ public struct SecretDetailFeature {
                 state.alert = .projectsLoadFailed
                 return .none
 
-            // 복호화는 인증을 통과해야만 성공하므로, 도착 자체가 인증 성공을 뜻한다.
+            // Reveal이 유발한 복호화만 인증 성공 시각을 갱신한다.
+            // Copy 전용 경로는 이어지는 Copy UseCase가 별도로 인증 정책을 적용한다.
             case .payloadResponse(.success(let payload), let revealing, let thenCopy):
                 state.payloadState = .loaded(payload)
-                state.revealAuthorizedAt = now
+                if thenCopy == nil {
+                    state.revealAuthorizedAt = now
+                }
                 if let revealing {
                     state.revealedFields.insert(revealing)
                 }
@@ -247,12 +250,10 @@ public struct SecretDetailFeature {
                 return reauthenticateEffect(revealing: field)
 
             // Copy 인증 여부는 `CopySensitiveValueUseCase`가 설정을 읽어 결정한다.
-            // TODO: payload가 없을 때 Reveal 인증과 Copy 인증이 중복될 수 있으므로,
-            // Copy 전용 payload 조회 경로가 준비되면 아래 Reveal 경로를 교체한다.
             case .didTapCopy(let field):
                 guard case .loaded(let payload) = state.payloadState else {
                     state.payloadState = .loading
-                    return revealEffect(secret: state.secret, revealing: nil, thenCopy: field)
+                    return loadPayloadForCopyEffect(secret: state.secret, field: field)
                 }
                 return copyEffect(value: payload.value(for: field))
 
@@ -340,6 +341,30 @@ public struct SecretDetailFeature {
                         .failure(SecretUseCaseError.map(error)),
                         revealing: revealing,
                         thenCopy: thenCopy
+                    )
+                )
+            }
+        }
+        .cancellable(id: CancelID.reveal, cancelInFlight: true)
+    }
+
+    /// Copy에 필요한 payload만 복호화한다. 인증은 이어지는 `copySensitiveValue`가 설정을 읽어
+    /// 결정하며, 이 응답은 Reveal 인증 유효시간을 갱신하지 않는다.
+    private func loadPayloadForCopyEffect(
+        secret: Secret,
+        field: SecretFieldID
+    ) -> Effect<Action> {
+        .run { send in
+            do {
+                let payload = try await secretClient.loadPayloadForCopy(secret)
+                await send(.payloadResponse(.success(payload), revealing: nil, thenCopy: field))
+            } catch is CancellationError {
+            } catch {
+                await send(
+                    .payloadResponse(
+                        .failure(SecretUseCaseError.map(error)),
+                        revealing: nil,
+                        thenCopy: field
                     )
                 )
             }
