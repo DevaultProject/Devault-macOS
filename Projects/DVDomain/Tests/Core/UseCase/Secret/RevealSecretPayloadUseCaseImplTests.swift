@@ -95,7 +95,11 @@ struct RevealSecretPayloadUseCaseImplTests {
             settingsRepository: settingsRepository
         )
 
-        let revealed: APIKeyPayload = try await sut.revealPayload(id: secret.id, as: APIKeyPayload.self)
+        let revealed: APIKeyPayload = try await sut.revealPayload(
+            id: secret.id,
+            as: APIKeyPayload.self,
+            reason: AuthenticationReason.revealSecret
+        )
 
         #expect(revealed == payload)
         #expect(auth.authenticateCount == 1)
