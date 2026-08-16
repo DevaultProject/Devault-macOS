@@ -301,16 +301,17 @@ private enum ExpiryBucket: CaseIterable, Identifiable {
 
   func contains(_ expiresAt: Date?, referenceDate: Date) -> Bool {
     guard let expiresAt else { return false }
-    let sevenDaysOut = referenceDate.addingTimeInterval(7 * 86_400)
+    // Notice 탭과 같은 "7일" 기준을 쓴다.
+    let sevenDaysOut = SecretQuery.Collection.noticeWindowEnd(from: referenceDate)
     let thirtyDaysOut = referenceDate.addingTimeInterval(30 * 86_400)
 
     switch self {
     case .expired:
       return expiresAt < referenceDate
     case .within7Days:
-      return expiresAt >= referenceDate && expiresAt < sevenDaysOut
+      return expiresAt >= referenceDate && expiresAt <= sevenDaysOut
     case .within30Days:
-      return expiresAt >= sevenDaysOut && expiresAt <= thirtyDaysOut
+      return expiresAt > sevenDaysOut && expiresAt <= thirtyDaysOut
     }
   }
 }
