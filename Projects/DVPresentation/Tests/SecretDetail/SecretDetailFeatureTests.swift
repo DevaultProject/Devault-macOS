@@ -68,7 +68,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapToggleReveal(.value)) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.success(payload), revealing: .value, thenCopy: nil)) {
+        await store.receive(.payloadResponse(.success(payload), then: .reveal(.value))) {
             $0.payloadState = .loaded(payload)
             $0.revealAuthorizedAt = Self.referenceDate
             $0.revealedFields = [.value]
@@ -88,7 +88,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapToggleReveal(.value)) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.failure(.cryptoFailure(.decryptionFailed)), revealing: .value, thenCopy: nil)) {
+        await store.receive(.payloadResponse(.failure(.cryptoFailure(.decryptionFailed)), then: .reveal(.value))) {
             $0.payloadState = .failed(.cryptoFailure(.decryptionFailed))
             $0.alert = .payloadRevealFailed(.decryptionFailed)
         }
@@ -107,7 +107,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapToggleReveal(.value)) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.failure(.authenticationFailure(.cancelled)), revealing: .value, thenCopy: nil)) {
+        await store.receive(.payloadResponse(.failure(.authenticationFailure(.cancelled)), then: .reveal(.value))) {
             $0.payloadState = .failed(.authenticationFailure(.cancelled))
             $0.alert = .payloadRevealFailed(.authRequired)
         }
@@ -175,7 +175,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapRetryReveal) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.success(payload), revealing: nil, thenCopy: nil)) {
+        await store.receive(.payloadResponse(.success(payload), then: .none)) {
             $0.payloadState = .loaded(payload)
             $0.revealAuthorizedAt = Self.referenceDate
         }
@@ -194,7 +194,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapRetryReveal) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.failure(.cryptoFailure(.decryptionFailed)), revealing: nil, thenCopy: nil)) {
+        await store.receive(.payloadResponse(.failure(.cryptoFailure(.decryptionFailed)), then: .none)) {
             $0.payloadState = .failed(.cryptoFailure(.decryptionFailed))
             $0.alert = .payloadRevealFailed(.decryptionFailed)
         }
@@ -226,7 +226,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapToggleReveal(.value)) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.failure(.authenticationFailure(.cancelled)), revealing: .value, thenCopy: nil)) {
+        await store.receive(.payloadResponse(.failure(.authenticationFailure(.cancelled)), then: .reveal(.value))) {
             $0.payloadState = .failed(.authenticationFailure(.cancelled))
             $0.alert = .payloadRevealFailed(.authRequired)
         }
@@ -238,7 +238,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapRetryReveal) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.success(payload), revealing: nil, thenCopy: nil)) {
+        await store.receive(.payloadResponse(.success(payload), then: .none)) {
             $0.payloadState = .loaded(payload)
             $0.revealAuthorizedAt = Self.referenceDate
         }
@@ -421,7 +421,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapCopy(.value)) {
             $0.payloadState = .loading
         }
-        await store.receive(.payloadResponse(.success(payload), revealing: nil, thenCopy: .value)) {
+        await store.receive(.payloadResponse(.success(payload), then: .copy(.value))) {
             $0.payloadState = .loaded(payload)
         }
         await store.receive(.copyResponse(.success(true)))
@@ -489,7 +489,7 @@ struct SecretDetailFeatureTests {
         await store.send(.didTapToggleReveal(.clientId))
 
         await clock.advance(by: .seconds(1))
-        await store.receive(.payloadResponse(.success(payload), revealing: .clientId, thenCopy: nil)) {
+        await store.receive(.payloadResponse(.success(payload), then: .reveal(.clientId))) {
             $0.payloadState = .loaded(payload)
             $0.revealAuthorizedAt = Self.referenceDate
             $0.revealedFields = [.clientId]

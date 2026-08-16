@@ -19,6 +19,25 @@ public struct SecretDetailFeature {
         case editing
     }
 
+    // MARK: - RevealContinuation
+
+    /// 복호화가 끝난 뒤 이어서 할 일.
+    ///
+    /// 이어서 할 일을 State가 아니라 **액션에 싣는 것**은 취소와 함께 사라지게 하려는 것이다.
+    /// 복호화는 `CancelID.reveal`을 공유해 나중 요청이 앞 요청을 취소하는데, State에 남겨두면
+    /// 취소된 요청의 몫이 다음 응답에 얹혀 누르지도 않은 동작이 일어난다.
+    ///
+    /// 하나만 찰 수 있다는 것을 **타입이 보장한다** — 이전에는 `revealing:`·`thenCopy:` 두 파라미터를
+    /// 두고 "둘이 동시에 차는 경우는 없다"를 주석으로만 지켰다.
+    public enum RevealContinuation: Equatable {
+        /// 값만 받아온다. 재시도 경로처럼 어떤 필드가 유발했는지 잃은 경우.
+        case none
+        /// 눈 버튼이 유발했다. 성공하면 그 필드가 열린다.
+        case reveal(SecretFieldID)
+        /// 복사 버튼이 유발했다. 성공하면 이어서 복사한다.
+        case copy(SecretFieldID)
+    }
+
     // MARK: - State
 
     @ObservableState
@@ -86,16 +105,10 @@ public struct SecretDetailFeature {
 
         // MARK: Internal
         case linkedProjectsResponse(Result<[Project], SecretUseCaseError>)
-        /// 복호화 응답. 복호화를 유발한 동작을 함께 싣는다 — 눈 버튼이면 `revealing`에 그 필드가,
-        /// 복사 버튼이면 `thenCopy`에 그 필드가 담긴다. 둘이 동시에 차는 경우는 없다.
-        ///
-        /// 이어서 할 일을 State가 아니라 액션에 싣는 것은 **취소와 함께 사라지게 하려는 것**이다.
-        /// 복호화는 `CancelID.reveal`을 공유해 나중 요청이 앞 요청을 취소하는데, State에 남겨두면
-        /// 취소된 요청의 몫이 다음 응답에 얹혀 누르지도 않은 복사가 일어난다.
+        /// 복호화 응답. 복호화를 유발한 동작을 `then`에 함께 싣는다 (``RevealContinuation`` 참조).
         case payloadResponse(
             Result<CreateSecretPayload, SecretUseCaseError>,
-            revealing: SecretFieldID?,
-            thenCopy: SecretFieldID?
+            then: RevealContinuation
         )
         /// 인증만 수행한 결과. payload를 이미 들고 있는데 창만 만료된 경우에 쓴다.
         case reauthenticateResponse(Result<Bool, Never>, revealing: SecretFieldID)
@@ -173,7 +186,7 @@ public struct SecretDetailFeature {
             // 복호화 실패 후 재시도. 어떤 필드가 유발했는지는 이미 잃었으므로 값만 다시 받아온다.
             case .didTapRetryReveal:
                 state.payloadState = .loading
-                return revealEffect(secret: state.secret, revealing: nil, thenCopy: nil)
+                return revealEffect(secret: state.secret, then: .none)
 
             // 디자인에서 close(×) 버튼을 제거했으므로 현재 이 액션을 발생시키는 UI 경로가 없다.
             // detail은 사이드바 전환·리스트 선택 해제(`secretSelected(nil)`)로 닫힌다.
@@ -191,20 +204,26 @@ public struct SecretDetailFeature {
                 state.alert = .projectsLoadFailed
                 return .none
 
-            // Reveal이 유발한 복호화만 인증 성공 시각을 갱신한다.
-            // Copy 전용 경로는 이어지는 Copy UseCase가 별도로 인증 정책을 적용한다.
-            case .payloadResponse(.success(let payload), let revealing, let thenCopy):
+            // 복호화는 인증을 통과해야만 성공하므로, 도착 자체가 인증 성공을 뜻한다.
+            //
+            // 다만 **복사가 유발한 복호화는 열람 인증 창을 열지 않는다.** 복사는 자체 정책을
+            // 따로 갖고(`CopySensitiveValueUseCase`가 설정을 읽어 결정한다), 여기서 창을 열면
+            // 복사 한 번에 누르지도 않은 열람 권한이 따라붙는다.
+            case .payloadResponse(.success(let payload), let continuation):
                 state.payloadState = .loaded(payload)
-                if thenCopy == nil {
+                switch continuation {
+                case .none:
                     state.revealAuthorizedAt = now
+                    return .none
+                case .reveal(let field):
+                    state.revealAuthorizedAt = now
+                    state.revealedFields.insert(field)
+                    return .none
+                case .copy(let field):
+                    return copyEffect(value: payload.value(for: field))
                 }
-                if let revealing {
-                    state.revealedFields.insert(revealing)
-                }
-                guard let thenCopy else { return .none }
-                return copyEffect(value: payload.value(for: thenCopy))
 
-            case .payloadResponse(.failure(let error), _, _):
+            case .payloadResponse(.failure(let error), _):
                 state.payloadState = .failed(error)
                 state.alert = .payloadRevealFailed(SecretDetailError.map(error))
                 return .none
@@ -240,7 +259,7 @@ public struct SecretDetailFeature {
                 // 값이 아직 없으면 복호화가 필요하고, 복호화 경로가 인증까지 함께 수행한다.
                 guard case .loaded = state.payloadState else {
                     state.payloadState = .loading
-                    return revealEffect(secret: state.secret, revealing: field, thenCopy: nil)
+                    return revealEffect(secret: state.secret, then: .reveal(field))
                 }
                 // 값은 있고 인증 창만 남았는지 확인한다. 열려 있으면 인증 없이 연다.
                 guard !revealAuthPolicy.isAuthorized(since: state.revealAuthorizedAt, now: now) else {
@@ -323,33 +342,28 @@ public struct SecretDetailFeature {
     // MARK: - Effects
 
     /// 인증 + 복호화. `revealPayload`가 둘을 함께 하므로 값이 아직 없을 때만 쓴다.
-    /// - Parameter revealing: 이 복호화를 유발한 필드. 성공하면 함께 열린다. 재시도 경로에서는 `nil`.
-    /// - Parameter thenCopy: 복호화가 끝나면 이어서 복사할 필드. 복사 버튼이 유발한 경우에만 채운다.
+    /// - Parameter then: 복호화가 끝나면 이어서 할 일 (``RevealContinuation``).
     private func revealEffect(
         secret: Secret,
-        revealing: SecretFieldID?,
-        thenCopy: SecretFieldID?
+        then continuation: RevealContinuation
     ) -> Effect<Action> {
         .run { send in
             do {
                 let payload = try await secretClient.revealPayload(secret)
-                await send(.payloadResponse(.success(payload), revealing: revealing, thenCopy: thenCopy))
+                await send(.payloadResponse(.success(payload), then: continuation))
             } catch is CancellationError {
             } catch {
-                await send(
-                    .payloadResponse(
-                        .failure(SecretUseCaseError.map(error)),
-                        revealing: revealing,
-                        thenCopy: thenCopy
-                    )
-                )
+                await send(.payloadResponse(.failure(SecretUseCaseError.map(error)), then: continuation))
             }
         }
         .cancellable(id: CancelID.reveal, cancelInFlight: true)
     }
 
     /// Copy에 필요한 payload만 복호화한다. 인증은 이어지는 `copySensitiveValue`가 설정을 읽어
-    /// 결정하며, 이 응답은 Reveal 인증 유효시간을 갱신하지 않는다.
+    /// 결정하며, 이 응답은 Reveal 인증 유효시간을 갱신하지 않는다(`.copy` continuation).
+    ///
+    /// `revealEffect`와 나뉘어 있는 것은 **Client 호출이 다르기 때문**이다 —
+    /// 이쪽은 `loadPayloadForCopy`, 저쪽은 `revealPayload`로 인증 정책 자체가 갈린다.
     private func loadPayloadForCopyEffect(
         secret: Secret,
         field: SecretFieldID
@@ -357,14 +371,13 @@ public struct SecretDetailFeature {
         .run { send in
             do {
                 let payload = try await secretClient.loadPayloadForCopy(secret)
-                await send(.payloadResponse(.success(payload), revealing: nil, thenCopy: field))
+                await send(.payloadResponse(.success(payload), then: .copy(field)))
             } catch is CancellationError {
             } catch {
                 await send(
                     .payloadResponse(
                         .failure(SecretUseCaseError.map(error)),
-                        revealing: nil,
-                        thenCopy: field
+                        then: .copy(field)
                     )
                 )
             }
