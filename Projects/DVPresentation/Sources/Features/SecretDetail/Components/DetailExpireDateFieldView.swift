@@ -29,12 +29,14 @@ struct DetailExpireDateFieldView: View {
 
     var body: some View {
         DVLabeledField(.module("Expire Date"), size: size) {
+            // 복사 버튼이 없는 필드라 선택을 연다 — 막을 이유가 없고, 날짜는 부분 복사가 흔하다.
             DVTextContainer(
                 secret.expireDateDisplayText,
                 size: size,
                 textColor: emphasis?.colorToken ?? .gray900,
                 leadingIcon: emphasis?.icon
             )
+            .dvTextSelection(true)
         }
     }
 }
