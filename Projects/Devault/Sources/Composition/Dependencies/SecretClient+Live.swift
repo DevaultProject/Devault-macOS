@@ -58,10 +58,10 @@ extension SecretClient: @retroactive DependencyKey {
                 try await deleteSecretUseCase.permanentlyDelete(id: id)
                 await LiveUseCases.expirySchedule.cancel(secretID: id)
             },
-            revealPayload: { secret in
+            revealPayload: { secret, reason in
                 try await dispatchPayload(
                     secret: secret,
-                    access: .reveal(revealSecretPayloadUseCase)
+                    access: .reveal(revealSecretPayloadUseCase, reason: reason)
                 )
             },
             loadPayloadForCopy: { secret in
@@ -213,7 +213,10 @@ private func dispatchUpdateSecret(
 // MARK: - Payload Dispatch
 
 private enum PayloadAccess {
-    case reveal(any RevealSecretPayloadUseCase)
+    /// 열람·수정 진입. 인증을 타므로 시스템 시트에 띄울 문구를 함께 받는다 —
+    /// 같은 복호화라도 사용자가 누른 버튼이 다르면 기대하는 문장이 다르다.
+    case reveal(any RevealSecretPayloadUseCase, reason: String)
+    /// 복사. 인증 여부는 이어지는 `copySensitiveValue`가 설정을 읽어 결정하므로 여기서는 복호화만 한다.
     case copy(any DecryptSecretPayloadUseCase)
 
     func load<Payload: SecretPayloadData>(
@@ -221,8 +224,8 @@ private enum PayloadAccess {
         as type: Payload.Type
     ) async throws -> Payload {
         switch self {
-        case .reveal(let useCase):
-            return try await useCase.revealPayload(id: id, as: type)
+        case .reveal(let useCase, let reason):
+            return try await useCase.revealPayload(id: id, as: type, reason: reason)
         case .copy(let useCase):
             return try await useCase.decryptPayload(id: id, as: type)
         }

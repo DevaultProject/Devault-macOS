@@ -42,6 +42,29 @@ public struct SecretDetailFeature {
         /// **수정 진입이 복호화를, 따라서 인증을 탄다.** 실패하면 조회 모드에 남는다 —
         /// 인증을 취소했는데 편집 화면이 열려 있으면 안 된다.
         case edit
+
+        /// 이 복호화가 시스템 인증 시트에 표시할 문구.
+        ///
+        /// 같은 복호화라도 사용자가 누른 버튼이 다르면 기대하는 문장이 다르다. 눈·복사는 값을
+        /// 보려는 것이고 수정은 고치려는 것이라, 후자에 "확인하려면"이라고 물으면 잘못 눌렀나 싶어진다.
+        var authenticationReason: String {
+            switch self {
+            case .none, .reveal, .copy: return AuthenticationReason.revealSecret
+            case .edit:                 return AuthenticationReason.editSecret
+            }
+        }
+
+        /// 이 복호화가 성공했을 때 **열람 인증 창을 열어도 되는지**.
+        ///
+        /// 복사만 예외다. 복사는 자체 인증 정책을 따로 갖고(`CopySensitiveValueUseCase`가 설정을
+        /// 읽어 결정한다), 여기서 창을 열면 복사 한 번에 누르지도 않은 열람 권한이 따라붙는다.
+        /// 나머지는 전부 `revealPayload`로 인증을 통과한 것이므로 창을 여는 것이 맞다.
+        var opensRevealWindow: Bool {
+            switch self {
+            case .copy:                 return false
+            case .none, .reveal, .edit: return true
+            }
+        }
     }
 
     // MARK: - State
@@ -166,6 +189,9 @@ public struct SecretDetailFeature {
             case closed
             case secretUpdated(Secret)
             case deleted(Secret.ID)
+            /// 편집 폼 안에서 프로젝트를 새로 만들었다. **저장 여부와 무관하게** 프로젝트는 이미
+            /// 만들어졌으므로 사이드바가 곧바로 반영해야 한다 — 취소하고 나가도 프로젝트는 남는다.
+            case projectsChanged
         }
     }
 
@@ -243,12 +269,13 @@ public struct SecretDetailFeature {
             // 복사 한 번에 누르지도 않은 열람 권한이 따라붙는다.
             case .payloadResponse(.success(let payload), let continuation):
                 state.payloadState = .loaded(payload)
+                if continuation.opensRevealWindow {
+                    state.revealAuthorizedAt = now
+                }
                 switch continuation {
                 case .none:
-                    state.revealAuthorizedAt = now
                     return .none
                 case .reveal(let field):
-                    state.revealAuthorizedAt = now
                     state.revealedFields.insert(field)
                     return .none
                 case .copy(let field):
@@ -415,7 +442,8 @@ public struct SecretDetailFeature {
                 state.availableProjects.append(
                     Project(id: project.id, name: project.name, createdAt: now, updatedAt: now)
                 )
-                return .none
+                // 이 폼의 드롭다운만 갱신하고 끝내면 사이드바는 앱을 다시 열 때까지 모른다.
+                return .send(.delegate(.projectsChanged))
 
             case .didTapSave:
                 return handleSave(&state)
@@ -590,9 +618,10 @@ public struct SecretDetailFeature {
         secret: Secret,
         then continuation: RevealContinuation
     ) -> Effect<Action> {
-        .run { send in
+        let reason = continuation.authenticationReason
+        return .run { send in
             do {
-                let payload = try await secretClient.revealPayload(secret)
+                let payload = try await secretClient.revealPayload(secret, reason)
                 await send(.payloadResponse(.success(payload), then: continuation))
             } catch is CancellationError {
             } catch {

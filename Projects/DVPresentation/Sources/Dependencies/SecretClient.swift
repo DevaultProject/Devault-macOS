@@ -18,7 +18,9 @@ public struct SecretClient: Sendable {
   public var permanentlyDelete: @Sendable (_ id: Secret.ID) async throws -> Void
   /// 생체인증 후 Secret의 암호화된 payload를 복호화해 `CreateSecretPayload`로 반환한다.
   /// secretType/subType에 따라 적절한 도메인 payload 타입으로 dispatch하고 metadata JSON을 병합한다.
-  public var revealPayload: @Sendable (_ secret: Secret) async throws -> CreateSecretPayload
+  /// - Parameter reason: 시스템 인증 시트 문구. `AuthenticationReason`의 상수를 쓴다 —
+  ///   같은 복호화라도 열람과 수정 진입은 사용자가 누른 버튼이 달라 문장이 달라야 한다.
+  public var revealPayload: @Sendable (_ secret: Secret, _ reason: String) async throws -> CreateSecretPayload
   /// Copy가 자체 인증 정책을 적용하도록 Reveal 인증 없이 payload를 복호화한다.
   /// 반환값은 화면에 공개하지 않고 민감 값 Copy 흐름에서만 사용한다.
   public var loadPayloadForCopy: @Sendable (_ secret: Secret) async throws -> CreateSecretPayload
@@ -116,7 +118,7 @@ private extension SecretClient {
       // live `dispatchRevealPayload`와 case 구성이 1:1로 일치해야 한다 —
       // 한쪽만 바뀌면 프리뷰가 실제와 다른 payload 타입을 조용히 반환한다.
       // metadata는 CreateSecret 폼이 실제로 입력받는 필드만 채운다(나머지는 live에서도 항상 nil).
-      revealPayload: { secret in
+      revealPayload: { secret, _ in
           switch (secret.secretType, secret.subType) {
           case (.apiKeyToken, .apiKey), (.apiKeyToken, nil):
               return .apiKey(
@@ -200,7 +202,8 @@ private extension SecretClient {
           }
       },
       loadPayloadForCopy: { secret in
-        try await dummyClient().revealPayload(secret)
+        // 프리뷰는 인증을 타지 않으므로 문구가 무엇이든 결과가 같다.
+        try await dummyClient().revealPayload(secret, AuthenticationReason.revealSecret)
       },
       setLiked: { _, liked in
           var secret = Secret.preview

@@ -63,7 +63,7 @@ struct SecretDetailFeatureTests {
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
-            $0.secretClient.revealPayload = { _ in payload }
+            $0.secretClient.revealPayload = { _, _ in payload }
             $0.date = .constant(Self.referenceDate)
         }
 
@@ -84,7 +84,7 @@ struct SecretDetailFeatureTests {
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
-            $0.secretClient.revealPayload = { _ in throw SecretUseCaseError.cryptoFailure(.decryptionFailed) }
+            $0.secretClient.revealPayload = { _, _ in throw SecretUseCaseError.cryptoFailure(.decryptionFailed) }
         }
 
         await store.send(.didTapToggleReveal(.value)) {
@@ -103,7 +103,7 @@ struct SecretDetailFeatureTests {
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
-            $0.secretClient.revealPayload = { _ in throw SecretUseCaseError.authenticationFailure(.cancelled) }
+            $0.secretClient.revealPayload = { _, _ in throw SecretUseCaseError.authenticationFailure(.cancelled) }
         }
 
         await store.send(.didTapToggleReveal(.value)) {
@@ -170,7 +170,7 @@ struct SecretDetailFeatureTests {
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
-            $0.secretClient.revealPayload = { _ in payload }
+            $0.secretClient.revealPayload = { _, _ in payload }
             $0.date = .constant(Self.referenceDate)
         }
 
@@ -190,7 +190,7 @@ struct SecretDetailFeatureTests {
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
-            $0.secretClient.revealPayload = { _ in throw SecretUseCaseError.cryptoFailure(.decryptionFailed) }
+            $0.secretClient.revealPayload = { _, _ in throw SecretUseCaseError.cryptoFailure(.decryptionFailed) }
         }
 
         await store.send(.didTapRetryReveal) {
@@ -212,7 +212,7 @@ struct SecretDetailFeatureTests {
             SecretDetailFeature()
         } withDependencies: {
             $0.date = .constant(Self.referenceDate)
-            $0.secretClient.revealPayload = { _ in
+            $0.secretClient.revealPayload = { _, _ in
                 let attempt = attemptCount.withValue { count -> Int in
                     count += 1
                     return count
@@ -472,7 +472,7 @@ struct SecretDetailFeatureTests {
                 try await clock.sleep(for: .seconds(1))
                 return payload
             }
-            $0.secretClient.revealPayload = { _ in
+            $0.secretClient.revealPayload = { _, _ in
                 try await clock.sleep(for: .seconds(1))
                 return payload
             }
@@ -722,7 +722,7 @@ struct SecretDetailFeatureTests {
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
-            $0.secretClient.revealPayload = { _ in payload }
+            $0.secretClient.revealPayload = { _, _ in payload }
             $0.secretClient.fetchProjects = { throw CancellationError() }
             $0.date = .constant(Self.referenceDate)
         }
@@ -750,7 +750,7 @@ struct SecretDetailFeatureTests {
         let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
             SecretDetailFeature()
         } withDependencies: {
-            $0.secretClient.revealPayload = { _ in
+            $0.secretClient.revealPayload = { _, _ in
                 throw SecretUseCaseError.authenticationFailure(.cancelled)
             }
             $0.secretClient.fetchProjects = { throw CancellationError() }
@@ -904,6 +904,8 @@ struct SecretDetailFeatureTests {
                 )
             ]
         }
+        // 저장 여부와 무관하게 프로젝트는 이미 만들어졌다 — 사이드바가 곧바로 알아야 한다.
+        await store.receive(.delegate(.projectsChanged))
     }
 
     // MARK: - 저장
