@@ -11,7 +11,8 @@ import DVDomain
 /// `DVChipsContainer`로 표시한다. 생성 화면이 `DVMultiSelectDropdown`의 chip 트리거로
 /// 보여주는 것과 같은 모습이다.
 ///
-/// 연결된 프로젝트가 없으면 chip 없이 박스만 남는다 — 다른 optional 필드의 Empty 상태와 동일.
+/// 연결된 프로젝트가 없으면 안내 문구를 표시한다. 이 필드는 **조회에 실패해도 비어 있어서**
+/// (`linkedProjectsResponse` 실패 경로) 빈 박스로 두면 특히 헷갈린다.
 struct DetailProjectFieldView: View {
 
     let projects: [Project]
@@ -25,7 +26,11 @@ struct DetailProjectFieldView: View {
 
     var body: some View {
         DVLabeledField(.module("Project"), size: size) {
-            DVChipsContainer(projects.map(\.name), size: size)
+            DVChipsContainer(
+                projects.map(\.name),
+                placeholder: .module("No project selected"),
+                size: size
+            )
         }
     }
 }
