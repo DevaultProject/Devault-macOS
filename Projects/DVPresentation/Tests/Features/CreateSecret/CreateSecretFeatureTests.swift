@@ -23,6 +23,8 @@ struct CreateSecretFeatureTests {
         let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
             CreateSecretFeature()
         } withDependencies: {
+            // 기본 환경은 이 테스트의 관심사가 아니다. State 초기값과 같은 값을 물려 폼이 그대로이게 한다.
+            $0.generalSettingsClient.defaultEnvironment = { "dev" }
             $0.projectClient.fetchProjects = { projects }
         }
 
@@ -40,6 +42,7 @@ struct CreateSecretFeatureTests {
         let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
             CreateSecretFeature()
         } withDependencies: {
+            $0.generalSettingsClient.defaultEnvironment = { "dev" }
             $0.projectClient.fetchProjects = {
                 throw ProjectUseCaseError.repositoryFailure(.storageUnavailable)
             }
@@ -60,6 +63,7 @@ struct CreateSecretFeatureTests {
         let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
             CreateSecretFeature()
         } withDependencies: {
+            $0.generalSettingsClient.defaultEnvironment = { "dev" }
             $0.projectClient.fetchProjects = {
                 throw ProjectUseCaseError.unexpected
             }
@@ -71,6 +75,52 @@ struct CreateSecretFeatureTests {
         await store.receive(.projectsResponse(.failure(.unexpected))) {
             $0.isLoadingProjects = false
             $0.alert = .projectLoadFailed(.unexpected)
+        }
+    }
+
+    // MARK: - 기본 환경(설정) 반영
+
+    /// 설정에서 고른 기본 환경이 생성 폼의 Environment 라디오에 미리 선택돼 있어야 한다.
+    @Test("task: 설정의 기본 환경이 폼 초기값으로 얹힌다")
+    func task_appliesDefaultEnvironmentFromSettings() async {
+        let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
+            CreateSecretFeature()
+        } withDependencies: {
+            $0.generalSettingsClient.defaultEnvironment = { "prod" }
+            $0.projectClient.fetchProjects = { [] }
+        }
+
+        await store.send(.task) {
+            $0.meta.environment = .prod
+            $0.isLoadingProjects = true
+        }
+        await store.receive(.projectsResponse(.success([]))) {
+            $0.isLoadingProjects = false
+        }
+    }
+
+    /// 앱이 환경 목록을 바꾼 뒤 이전 값이 설정에 남은 경우다. 설정 화면이 읽을 때와 같은 규칙으로
+    /// `.dev`에 떨어져야 한다 — 폼이 빈 선택으로 열리면 안 된다.
+    @Test("task: 설정에 알 수 없는 환경이 저장돼 있으면 dev로 떨어진다")
+    func task_unknownDefaultEnvironment_fallsBackToDev() async {
+        // 초기값을 `.dev`가 아닌 것으로 두고 시작한다. `.dev`에서 출발하면 "폴백해서 dev가 됐다"와
+        // "아무것도 하지 않았다"가 같은 결과라 단언이 공허해진다.
+        var initial = CreateSecretFeature.State(secretType: .apiKeyToken)
+        initial.meta.environment = .prod
+
+        let store = TestStore(initialState: initial) {
+            CreateSecretFeature()
+        } withDependencies: {
+            $0.generalSettingsClient.defaultEnvironment = { "canary" }
+            $0.projectClient.fetchProjects = { [] }
+        }
+
+        await store.send(.task) {
+            $0.meta.environment = .dev
+            $0.isLoadingProjects = true
+        }
+        await store.receive(.projectsResponse(.success([]))) {
+            $0.isLoadingProjects = false
         }
     }
 
