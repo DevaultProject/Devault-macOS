@@ -70,6 +70,8 @@ struct ContentView: View {
             DVLabeledFieldPreviewView()
         case "DVChipsField":
             DVChipsFieldPreviewView()
+        case "DVMultiSelectDropdown":
+            DVMultiSelectDropdownPreviewView()
         default:
             ComponentPlaceholderView(name: component.name)
         }
@@ -107,6 +109,7 @@ private struct Component: Hashable {
         Component(name: "DVCategory"),
         Component(name: "DVButton"),
         Component(name: "DVCheckBox"),
+        Component(name: "DVMultiSelectDropdown"),
         Component(name: "DVTitleBar"),
         Component(name: "DVSecretType"),
         Component(name: "DVRadioButton"),
