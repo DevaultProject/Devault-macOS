@@ -22,13 +22,18 @@ struct SecuritySettingsUseCaseImplTests {
         #expect(sut.isRequireAuthToCopyEnabled() == false)
     }
 
-    @Test("자동 잠금 시간을 읽고 쓴다")
-    func autoLockMinutesRoundTrips() {
+    @Test("자동 잠금 설정을 읽고 쓴다")
+    func autoLockSettingsRoundTrip() {
         let repository = FakeSettingsRepository()
         let sut = SecuritySettingsUseCaseImpl(repository: repository)
 
+        #expect(sut.isAutoLockEnabled() == true)
         #expect(sut.autoLockMinutes() == 5)
+
+        sut.setAutoLockEnabled(false)
         sut.setAutoLockMinutes(15)
+
+        #expect(sut.isAutoLockEnabled() == false)
         #expect(sut.autoLockMinutes() == 15)
     }
 
@@ -55,5 +60,20 @@ struct SecuritySettingsUseCaseImplTests {
         #expect(sut.isHideDuringScreenRecordingEnabled() == true)
         sut.setHideDuringScreenRecordingEnabled(false)
         #expect(sut.isHideDuringScreenRecordingEnabled() == false)
+    }
+
+    @Test("화면 녹화 중 값 숨김 설정 스트림을 전달한다")
+    func hideDuringScreenRecordingStreamPassesThrough() async {
+        let repository = FakeSettingsRepository()
+        repository.hideDuringScreenRecordingEnabledStreamValue = AsyncStream { continuation in
+            continuation.yield(false)
+            continuation.finish()
+        }
+        let sut = SecuritySettingsUseCaseImpl(repository: repository)
+
+        var iterator = sut.hideDuringScreenRecordingEnabledStream().makeAsyncIterator()
+        let value = await iterator.next()
+
+        #expect(value == false)
     }
 }

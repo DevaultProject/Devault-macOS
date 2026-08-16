@@ -5,74 +5,87 @@ import ComposableArchitecture
 // MARK: - SecuritySettingsFeature
 
 @Reducer
-struct SecuritySettingsFeature {
+public struct SecuritySettingsFeature {
 
   // MARK: - State
 
   @ObservableState
-  struct State: Equatable {
+  public struct State: Equatable {
     var isRequireAuthOnLaunchEnabled = true
     var isRequireAuthToCopyEnabled = true
-    /// 0이면 "사용 안 함".
-    var autoLockMinutes = 5
+    var isAutoLockEnabled = true
+    var autoLockInterval: AutoLockInterval = .fiveMinutes
     var isAutoClearClipboardEnabled = true
-    var autoClearClipboardDelaySeconds = 30
+    var clipboardClearDelay: ClipboardClearDelay = .thirtySeconds
     var isHideDuringScreenRecordingEnabled = true
+
+    public init() {}
   }
 
   // MARK: - Action
 
-  enum Action: Equatable {
+  public enum Action: BindableAction, Equatable {
+
+    // MARK: - View
+
+    case binding(BindingAction<State>)
     case task
-    case didToggleRequireAuthOnLaunch(Bool)
-    case didToggleRequireAuthToCopy(Bool)
-    case didSelectAutoLockMinutes(Int)
-    case didToggleAutoClearClipboard(Bool)
-    case didSelectAutoClearClipboardDelay(Int)
-    case didToggleHideDuringScreenRecording(Bool)
   }
 
   // MARK: - Dependencies
 
-  @Dependency(\.settingsClient) var settingsClient
+  @Dependency(\.securitySettingsClient) var securitySettingsClient
 
   // MARK: - Body
 
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
+    BindingReducer()
     Reduce { state, action in
       switch action {
       case .task:
-        state.isRequireAuthOnLaunchEnabled = settingsClient.isRequireAuthOnLaunchEnabled()
-        state.isRequireAuthToCopyEnabled = settingsClient.isRequireAuthToCopyEnabled()
-        state.autoLockMinutes = settingsClient.autoLockMinutes()
-        state.isAutoClearClipboardEnabled = settingsClient.isAutoClearClipboardEnabled()
-        state.autoClearClipboardDelaySeconds = settingsClient.autoClearClipboardDelaySeconds()
-        state.isHideDuringScreenRecordingEnabled = settingsClient.isHideDuringScreenRecordingEnabled()
+        state.isRequireAuthOnLaunchEnabled = securitySettingsClient.isRequireAuthOnLaunchEnabled()
+        state.isRequireAuthToCopyEnabled = securitySettingsClient.isRequireAuthToCopyEnabled()
+        state.isAutoLockEnabled = securitySettingsClient.isAutoLockEnabled()
+        state.autoLockInterval = AutoLockInterval(
+          rawValue: securitySettingsClient.autoLockMinutes()
+        ) ?? .fiveMinutes
+        state.isAutoClearClipboardEnabled = securitySettingsClient.isAutoClearClipboardEnabled()
+        state.clipboardClearDelay = ClipboardClearDelay(
+          rawValue: securitySettingsClient.autoClearClipboardDelaySeconds()
+        ) ?? .thirtySeconds
+        state.isHideDuringScreenRecordingEnabled = securitySettingsClient.isHideDuringScreenRecordingEnabled()
         return .none
 
-      case .didToggleRequireAuthOnLaunch(let enabled):
-        state.isRequireAuthOnLaunchEnabled = enabled
-        return .run { _ in settingsClient.setRequireAuthOnLaunchEnabled(enabled) }
+      case .binding(\.isRequireAuthOnLaunchEnabled):
+        let enabled = state.isRequireAuthOnLaunchEnabled
+        return .run { _ in securitySettingsClient.setRequireAuthOnLaunchEnabled(enabled) }
 
-      case .didToggleRequireAuthToCopy(let enabled):
-        state.isRequireAuthToCopyEnabled = enabled
-        return .run { _ in settingsClient.setRequireAuthToCopyEnabled(enabled) }
+      case .binding(\.isRequireAuthToCopyEnabled):
+        let enabled = state.isRequireAuthToCopyEnabled
+        return .run { _ in securitySettingsClient.setRequireAuthToCopyEnabled(enabled) }
 
-      case .didSelectAutoLockMinutes(let minutes):
-        state.autoLockMinutes = minutes
-        return .run { _ in settingsClient.setAutoLockMinutes(minutes) }
+      case .binding(\.isAutoLockEnabled):
+        let enabled = state.isAutoLockEnabled
+        return .run { _ in securitySettingsClient.setAutoLockEnabled(enabled) }
 
-      case .didToggleAutoClearClipboard(let enabled):
-        state.isAutoClearClipboardEnabled = enabled
-        return .run { _ in settingsClient.setAutoClearClipboardEnabled(enabled) }
+      case .binding(\.autoLockInterval):
+        let interval = state.autoLockInterval
+        return .run { _ in securitySettingsClient.setAutoLockMinutes(interval.rawValue) }
 
-      case .didSelectAutoClearClipboardDelay(let seconds):
-        state.autoClearClipboardDelaySeconds = seconds
-        return .run { _ in settingsClient.setAutoClearClipboardDelaySeconds(seconds) }
+      case .binding(\.isAutoClearClipboardEnabled):
+        let enabled = state.isAutoClearClipboardEnabled
+        return .run { _ in securitySettingsClient.setAutoClearClipboardEnabled(enabled) }
 
-      case .didToggleHideDuringScreenRecording(let enabled):
-        state.isHideDuringScreenRecordingEnabled = enabled
-        return .run { _ in settingsClient.setHideDuringScreenRecordingEnabled(enabled) }
+      case .binding(\.clipboardClearDelay):
+        let delay = state.clipboardClearDelay
+        return .run { _ in securitySettingsClient.setAutoClearClipboardDelaySeconds(delay.rawValue) }
+
+      case .binding(\.isHideDuringScreenRecordingEnabled):
+        let enabled = state.isHideDuringScreenRecordingEnabled
+        return .run { _ in securitySettingsClient.setHideDuringScreenRecordingEnabled(enabled) }
+
+      case .binding:
+        return .none
       }
     }
   }
