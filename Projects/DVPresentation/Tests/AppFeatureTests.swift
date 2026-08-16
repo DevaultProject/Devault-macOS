@@ -10,6 +10,30 @@ import Testing
 @Suite("AppFeature")
 struct AppFeatureTests {
 
+    // MARK: - Screen 판정
+
+    /// 화면 전환 애니메이션이 이 값 하나에 걸려 있다.
+    @Test("screen: 세 화면이 각자 판정된다")
+    func screenReportsCurrentScreen() {
+        var onboarding = AppFeature.State()
+        onboarding.onboarding = .init()
+        #expect(onboarding.screen == .onboarding)
+
+        var locked = AppFeature.State()
+        locked.locked = .init()
+        #expect(locked.screen == .locked)
+
+        var main = AppFeature.State()
+        main.main = .init()
+        #expect(main.screen == .main)
+    }
+
+    /// 셋을 다 비웠다가 하나를 세우는 구간이 있다(`task`).
+    @Test("screen: 아무것도 없으면 nil이다")
+    func screenIsNilWhenNothingPresented() {
+        #expect(AppFeature.State().screen == nil)
+    }
+
     @Test("task는 온보딩을 완료했으면 locked 상태로 시작한다")
     func taskStartsLockedWhenOnboardingCompleted() async {
         let store = TestStore(initialState: AppFeature.State()) {

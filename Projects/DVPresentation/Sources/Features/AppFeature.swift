@@ -19,6 +19,21 @@ public struct AppFeature {
     var main: MainFeature.State?
     public var isWindowCaptureBlockingEnabled = true
 
+    /// 지금 어느 화면인지. 전환 애니메이션이 이 값 하나를 본다.
+    /// 셋을 다 비웠다가 하나를 세우는 구간이 있어(`task`) 옵셔널이다.
+    var screen: Screen? {
+      if onboarding != nil { return .onboarding }
+      if locked != nil { return .locked }
+      if main != nil { return .main }
+      return nil
+    }
+
+    enum Screen: Equatable {
+      case onboarding
+      case locked
+      case main
+    }
+
     public init() {}
   }
 

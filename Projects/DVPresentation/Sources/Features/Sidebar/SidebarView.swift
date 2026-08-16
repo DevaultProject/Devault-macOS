@@ -15,6 +15,8 @@ struct SidebarView: View {
     /// 갱신 중 이전 값에 씌우는 흐림. 더 낮추면 목록이 비활성처럼 보인다.
     static let refreshingOpacity: Double = 0.55
     static let fade: Animation = .easeInOut(duration: 0.18)
+    /// 프로젝트 섹션 접기·펴기. 높이가 함께 움직이므로 fade보다 조금 길게 잡는다.
+    static let sectionToggle: Animation = .smooth(duration: 0.28)
   }
 
   // MARK: - Properties
@@ -103,15 +105,27 @@ extension SidebarView {
     VStack(spacing: 12) {
       projectSectionHeader
         .padding(.horizontal, 8)
-      if store.isProjectSectionExpanded {
-        projectSectionBody
-      } else {
-        Spacer(minLength: 0)
-      }
+      collapsibleProjectBody
     }
     // `value`를 좁히지 않으면 이름 변경 입력 한 글자마다 섹션 전체가 다시 애니메이션된다.
     .animation(Metrics.fade, value: store.projectsState)
     .animation(Metrics.fade, value: store.isRefreshingProjects)
+  }
+
+  /// **`.clipped()`가 헤더를 포함하면 안 된다.** 클립 경계가 헤더보다 위에 생겨,
+  /// 접히는 목록이 "Project" 라벨 위를 지나간 뒤에야 잘린다.
+  private var collapsibleProjectBody: some View {
+    VStack(spacing: 0) {
+      if store.isProjectSectionExpanded {
+        projectSectionBody
+          // opacity만 주면 자리는 그대로인 채 내용만 없어져 접히는 것으로 보이지 않는다.
+          .transition(.move(edge: .top).combined(with: .opacity))
+      } else {
+        Spacer(minLength: 0)
+      }
+    }
+    .clipped()
+    .animation(Metrics.sectionToggle, value: store.isProjectSectionExpanded)
   }
 
   /// 스피너 대신 자리를 유지한 채 opacity만 움직인다. 갱신이 잦은 화면이라(시크릿 생성, 프로젝트
@@ -149,11 +163,12 @@ extension SidebarView {
       Spacer()
       projectHeaderButton(icon: "plus.circle") { store.send(.didTapAddProject) }
         .accessibilityLabel(String.module("Add Project"))
-      projectHeaderButton(
-        icon: store.isProjectSectionExpanded ? "chevron.down" : "chevron.up"
-      ) {
+      // 아이콘을 갈아끼우면 서로 다른 뷰라 툭 바뀐다. 하나를 돌려야 각도가 이어진다.
+      projectHeaderButton(icon: "chevron.down") {
         store.send(.didToggleProjectSection)
       }
+      .rotationEffect(.degrees(store.isProjectSectionExpanded ? 0 : 180))
+      .animation(Metrics.sectionToggle, value: store.isProjectSectionExpanded)
       .accessibilityLabel(store.isProjectSectionExpanded ? String.module("Collapse Projects") : String.module("Expand Projects"))
     }
   }
@@ -188,7 +203,7 @@ extension SidebarView {
     .listStyle(.sidebar)
     // 프로젝트가 추가·삭제·이름 변경될 때 행이 뚝 나타나지 않게 한다. `refresh` 경로가 목록을
     // 비우지 않으므로 실제로 바뀐 행만 움직인다.
-    .animation(.smooth(duration: 0.25), value: store.projects)
+    .animation(Metrics.sectionToggle, value: store.projects)
     .scrollContentBackground(.hidden)
     .padding(.horizontal, -12)
     .onKeyPress(.return) {

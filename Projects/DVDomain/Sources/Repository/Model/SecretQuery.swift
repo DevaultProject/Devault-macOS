@@ -29,7 +29,8 @@ public struct SecretQuery: Equatable, Sendable {
 }
 
 extension SecretQuery {
-    public enum Collection: Equatable, Sendable {
+    /// `Hashable`인 것은 목록 뷰가 "무엇을 보고 있는지"의 정체성(`.id(_:)`)으로 쓰기 때문이다.
+    public enum Collection: Equatable, Hashable, Sendable {
         case all
         case liked
         /// 아직 안 지났지만 곧 지날 것만 모은 컬렉션. Expired(30일)의 부분집합이며, 이미 지난 건 제외한다.
