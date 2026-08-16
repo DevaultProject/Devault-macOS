@@ -28,4 +28,24 @@ struct SettingsFeatureTests {
     await store.send(.didTapClose)
     await store.receive(.delegate(.closeRequested))
   }
+
+  @Test("iCloud 저장소 전환을 부모에게 전달한다")
+  func storageSwitchIsForwardedToParent() async {
+    let store = TestStore(initialState: SettingsFeature.State()) {
+      SettingsFeature()
+    }
+
+    await store.send(.icloud(.delegate(.storageDidSwitch)))
+    await store.receive(.delegate(.storageDidSwitch))
+  }
+
+  @Test("전체 데이터 삭제를 부모에게 전달한다")
+  func dataResetIsForwardedToParent() async {
+    let store = TestStore(initialState: SettingsFeature.State()) {
+      SettingsFeature()
+    }
+
+    await store.send(.data(.delegate(.dataDeleted)))
+    await store.receive(.delegate(.vaultDataReset))
+  }
 }

@@ -46,6 +46,8 @@ public struct SettingsFeature {
 
     public enum Delegate: Equatable {
       case closeRequested
+      case storageDidSwitch
+      case vaultDataReset
     }
   }
 
@@ -89,11 +91,17 @@ public struct SettingsFeature {
       case .security:
         return .none
 
+      case .icloud(.delegate(.storageDidSwitch)):
+        return .send(.delegate(.storageDidSwitch))
+
       case .icloud:
         return .none
 
       case .notifications:
         return .none
+
+      case .data(.delegate(.dataDeleted)):
+        return .send(.delegate(.vaultDataReset))
 
       case .data:
         return .none

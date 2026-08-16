@@ -36,8 +36,16 @@ public struct DataSettingsFeature {
 
     case alert(PresentationAction<Alert>)
 
+    // MARK: - Delegate
+
+    case delegate(Delegate)
+
     public enum Alert: Equatable {
       case confirmDelete
+    }
+
+    public enum Delegate: Equatable {
+      case dataDeleted
     }
   }
 
@@ -71,7 +79,7 @@ public struct DataSettingsFeature {
 
       case .deleteSucceeded:
         state.isDeleting = false
-        return .none
+        return .send(.delegate(.dataDeleted))
 
       case .deleteFailed:
         state.isDeleting = false
@@ -79,6 +87,9 @@ public struct DataSettingsFeature {
         return .none
 
       case .alert:
+        return .none
+
+      case .delegate:
         return .none
       }
     }
