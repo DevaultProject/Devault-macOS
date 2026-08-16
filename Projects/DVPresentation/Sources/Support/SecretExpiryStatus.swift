@@ -11,10 +11,10 @@ import DVDomain
 /// 모순이 생긴다. 판정은 이 타입만 하고, 표현(아이콘·색)은 ``DVExpiryEmphasis``가 갖는다.
 enum SecretExpiryStatus: Equatable {
 
-    /// 이미 만료됐거나 ``criticalWindow`` 이내에 만료된다.
+    /// ``criticalWindow`` 이내에 만료된다 — 즉시 조치가 필요한 단계.
     ///
-    /// 이미 지난 경우를 별도 단계로 두지 않는 것은 의도된 정책이다 —
-    /// 사용자가 취해야 할 조치(갱신)가 같으므로 구분해서 보여줄 이유가 없다.
+    /// 이미 지난 시크릿은 이 케이스에 포함되지 않는다. Expired 탭 자체가 "이미 지남"을
+    /// 전담해 보여주므로, 다른 탭에서까지 배지로 다시 강조하면 중복이다.
     case critical
 
     /// ``upcomingWindow`` 이내에 만료된다 — 아직 조치할 시간이 있는 예고 단계.
@@ -32,13 +32,14 @@ enum SecretExpiryStatus: Equatable {
     /// Notice 탭(`SecretQuery.Collection.noticeWindowDays`)도 같은 값을 파생시켜 쓴다.
     static let upcomingWindow: TimeInterval = TimeInterval(SecretExpiryPolicy.upcomingWindowDays) * secondsPerDay
 
-    /// 만료일로부터 상태를 산출한다. 만료일이 없거나 ``upcomingWindow``보다 멀면 `nil` — 아무 표시도 하지 않는다.
+    /// 만료일로부터 상태를 산출한다. 이미 지났거나, 만료일이 없거나, ``upcomingWindow``보다
+    /// 멀면 `nil` — 아무 표시도 하지 않는다.
     ///
     /// - Parameters:
     ///   - expiresAt: 시크릿의 만료일. `nil`이면 만료 개념이 없는 시크릿이다.
     ///   - now: 판정 기준 시각. 테스트가 고정 시각을 주입한다.
     init?(expiresAt: Date?, now: Date = .now) {
-        guard let expiresAt else { return nil }
+        guard let expiresAt, expiresAt > now else { return nil }
 
         if expiresAt <= now.addingTimeInterval(Self.criticalWindow) {
             self = .critical
@@ -54,6 +55,16 @@ enum SecretExpiryStatus: Equatable {
         switch self {
         case .critical: return .danger
         case .upcoming: return .warning
+        }
+    }
+
+    /// 배지에 hover 시 뜨는 설명 문구. 아이콘·색만으로는 "며칠 남았는지"가 전달되지 않는다.
+    var tooltipText: String {
+        switch self {
+        case .critical:
+            return String.module("Expires within \(SecretExpiryPolicy.criticalWindowDays) days")
+        case .upcoming:
+            return String.module("Expires within \(SecretExpiryPolicy.upcomingWindowDays) days")
         }
     }
 }

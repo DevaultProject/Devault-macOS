@@ -28,18 +28,20 @@ struct SecretExpiryStatusTests {
         #expect(SecretExpiryStatus(expiresAt: nil, now: Self.now) == nil)
     }
 
-    // MARK: - critical (이미 만료 + 3일 이내)
+    // MARK: - 이미 만료됨 (표시 없음)
 
-    @Test("이미 만료된 경우 critical — 3일 이내와 구분하지 않는다")
-    func alreadyExpiredIsCritical() {
-        #expect(Self.status(daysFromNow: -30) == .critical)
-        #expect(Self.status(daysFromNow: -1) == .critical)
+    @Test("이미 만료된 경우 nil — Expired 탭이 전담하므로 배지로 중복 표시하지 않는다")
+    func alreadyExpiredIsNil() {
+        #expect(Self.status(daysFromNow: -30) == nil)
+        #expect(Self.status(daysFromNow: -1) == nil)
     }
 
-    @Test("정확히 지금 만료되는 경우 critical")
-    func expiringExactlyNowIsCritical() {
-        #expect(Self.status(daysFromNow: 0) == .critical)
+    @Test("정확히 지금 만료되는 경우 nil — 이미 지난 것으로 취급한다")
+    func expiringExactlyNowIsNil() {
+        #expect(Self.status(daysFromNow: 0) == nil)
     }
+
+    // MARK: - critical (아직 안 지났고 3일 이내)
 
     @Test("3일 이내는 critical")
     func withinThreeDaysIsCritical() {
@@ -102,5 +104,13 @@ struct SecretExpiryStatusTests {
             SecretExpiryStatus.upcomingWindow
                 == TimeInterval(SecretQuery.Collection.noticeWindowDays) * 86_400
         )
+    }
+
+    // MARK: - tooltip 문구
+
+    @Test("critical은 3일, upcoming은 7일 문구를 갖는다")
+    func tooltipTextReflectsWindowDays() {
+        #expect(SecretExpiryStatus.critical.tooltipText.contains("3"))
+        #expect(SecretExpiryStatus.upcoming.tooltipText.contains("7"))
     }
 }
