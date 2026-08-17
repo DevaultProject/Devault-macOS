@@ -18,14 +18,8 @@ struct SecretExpiryPolicyTests {
         #expect(SecretExpiryPolicy.upcomingWindowDays == 7)
     }
 
-    @Test("listingWindowDays는 30일이다")
-    func listingWindowDaysIsThirty() {
-        #expect(SecretExpiryPolicy.listingWindowDays == 30)
-    }
-
-    @Test("단계별 기간은 critical < upcoming < listing 순으로 넓어진다")
+    @Test("단계별 기간은 critical < upcoming 순으로 넓어진다")
     func windowsAreOrdered() {
         #expect(SecretExpiryPolicy.criticalWindowDays < SecretExpiryPolicy.upcomingWindowDays)
-        #expect(SecretExpiryPolicy.upcomingWindowDays < SecretExpiryPolicy.listingWindowDays)
     }
 }

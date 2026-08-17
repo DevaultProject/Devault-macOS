@@ -45,15 +45,12 @@ public struct SecretListFeature {
       selectedSecretID = nil
     }
 
-    /// `.expired`는 "이미 지남 + N일 이내 예정"을 한 화면에서 섹션으로 나눠 보여준다.
-    /// window 계산은 `SecretQuery.Collection.expiringWindow(from:)` 한 곳에만 두고 사이드바 개수 집계와 공유한다.
-    /// 화면에 표시되는 `collection`(및 그 referenceDate)은 실제 "오늘"을 유지 — 섹션 분류 기준으로 View가 그대로 쓴다.
     var query: SecretQuery {
       let normalizedSearchText = searchText.isEmpty ? nil : searchText
       switch collection {
-      case let .expired(referenceDate):
+      case .expired:
         return SecretQuery(
-          collection: .expiringWindow(from: referenceDate),
+          collection: collection,
           searchText: normalizedSearchText,
           sort: SecretQuery.Sort(key: .expiry, direction: .ascending)
         )

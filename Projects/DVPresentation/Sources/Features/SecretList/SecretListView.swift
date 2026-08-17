@@ -57,12 +57,8 @@ extension SecretListView {
 
   private var list: some View {
     List(selection: selectedSecretIDBinding) {
-      if case let .expired(referenceDate) = store.collection {
-        expirySections(referenceDate: referenceDate)
-      } else {
-        ForEach(secrets) { secret in
-          row(for: secret)
-        }
+      ForEach(secrets) { secret in
+        row(for: secret)
       }
     }
     .listStyle(.sidebar)
@@ -79,26 +75,6 @@ extension SecretListView {
     // `contentShape`은 행이 없는 빈 영역도 눌리게 하려고 남긴다.
     .contentShape(Rectangle())
     .simultaneousGesture(TapGesture().onEnded { isSearchFocused = false })
-  }
-
-  /// "이미 지남"과 "N일 이내 예정"을 섹션으로 나눠 보여준다. 쿼리가 이미 `expiringSoon` 순으로 정렬해 와서
-  /// 버킷 안에서 다시 정렬할 필요는 없다.
-  @ViewBuilder
-  private func expirySections(referenceDate: Date) -> some View {
-    ForEach(ExpiryBucket.allCases) { bucket in
-      let bucketSecrets = secrets.filter { bucket.contains($0.expiresAt, referenceDate: referenceDate) }
-      if !bucketSecrets.isEmpty {
-        Section {
-          ForEach(bucketSecrets) { secret in
-            row(for: secret)
-          }
-        } header: {
-          Text(bucket.title)
-            .dvFont(.captionMDSemibold)
-            .foregroundStyle(Color(nsColor: .controlAccentColor))
-        }
-      }
-    }
   }
 
   private func row(for secret: Secret) -> some View {
@@ -257,49 +233,6 @@ extension SecretListView {
   }
 }
 
-// MARK: - ExpiryBucket
-
-/// Expired 탭의 섹션 구분. 경계는 `SecretExpiryPolicy`의 upcoming/listing window를 그대로 쓴다.
-
-private enum ExpiryBucket: CaseIterable, Identifiable {
-  case expired
-  case within7Days
-  case within30Days
-
-  var id: Self { self }
-
-  var title: String {
-    switch self {
-    case .expired:
-      return String.module("Expired")
-    case .within7Days:
-      return String.module("Expires in \(SecretExpiryPolicy.upcomingWindowDays) days")
-    case .within30Days:
-      return String.module("Expires in \(SecretExpiryPolicy.listingWindowDays) days")
-    }
-  }
-
-  func contains(_ expiresAt: Date?, referenceDate: Date) -> Bool {
-    guard let expiresAt else { return false }
-    // Notice 탭(`noticeWindowDays`)과 같은 값에서 파생된다.
-    let sevenDaysOut = referenceDate.addingTimeInterval(
-      TimeInterval(SecretExpiryPolicy.upcomingWindowDays) * 86_400
-    )
-    let thirtyDaysOut = referenceDate.addingTimeInterval(
-      TimeInterval(SecretExpiryPolicy.listingWindowDays) * 86_400
-    )
-
-    switch self {
-    case .expired:
-      return expiresAt < referenceDate
-    case .within7Days:
-      return expiresAt >= referenceDate && expiresAt <= sevenDaysOut
-    case .within30Days:
-      return expiresAt > sevenDaysOut && expiresAt <= thirtyDaysOut
-    }
-  }
-}
-
 // MARK: - Preview
 
 #if DEBUG
@@ -326,7 +259,7 @@ private enum ExpiryBucket: CaseIterable, Identifiable {
   .frame(width: 300, height: 500)
 }
 
-#Preview("Expired - Expired/7일/30일 섹션") {
+#Preview("Expired - 이미 만료된 것만") {
   SecretListView(
     store: Store(initialState: SecretListFeature.State(collection: .expired(referenceDate: .now))) {
       SecretListFeature()

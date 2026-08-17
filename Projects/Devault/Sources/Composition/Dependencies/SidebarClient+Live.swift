@@ -104,8 +104,7 @@ private extension SidebarFilter {
     case .notice:
       return .notice(referenceDate: referenceDate)
     case .expired:
-      // 목록의 Expired 탭과 같은 window 계산을 공유한다.
-      return .expiringWindow(from: referenceDate)
+      return .expired(referenceDate: referenceDate)
     case .deleted:
       return .deleted
     }
