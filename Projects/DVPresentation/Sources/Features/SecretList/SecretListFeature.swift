@@ -110,7 +110,9 @@ public struct SecretListFeature {
       case secretsChanged
     }
 
-    public enum Alert: Equatable {}
+    public enum Alert: Equatable {
+      case confirmDeleteForever(id: Secret.ID)
+    }
   }
 
   // MARK: - Dependencies
@@ -175,6 +177,10 @@ public struct SecretListFeature {
         return mutationEffect(id: id) { try await secretClient.restore(id) }
 
       case .didTapDeleteForever(let id):
+        state.alert = deleteForeverConfirmationAlert(id: id)
+        return .none
+
+      case .alert(.presented(.confirmDeleteForever(let id))):
         return mutationEffect(id: id) { try await secretClient.permanentlyDelete(id) }
 
       // 두 효과는 서로 독립적이지만 `.merge`는 도착 순서를 보장하지 않아 테스트가 깨지기 쉽다.
@@ -230,6 +236,22 @@ public struct SecretListFeature {
       } catch {
         await send(.mutationResponse(.failure(SecretUseCaseError.map(error))))
       }
+    }
+  }
+
+  /// 되돌릴 수 없는 작업이라 실수로 누른 걸 걸러낸다.
+  private func deleteForeverConfirmationAlert(id: Secret.ID) -> AlertState<Action.Alert> {
+    AlertState {
+      TextState(String.module("Delete Forever?"))
+    } actions: {
+      ButtonState(role: .destructive, action: .confirmDeleteForever(id: id)) {
+        TextState(String.module("Delete Forever"))
+      }
+      ButtonState(role: .cancel) {
+        TextState(String.module("Cancel"))
+      }
+    } message: {
+      TextState(String.module("This action cannot be undone."))
     }
   }
 }

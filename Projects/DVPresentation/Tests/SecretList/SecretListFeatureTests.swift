@@ -251,8 +251,31 @@ struct SecretListFeatureTests {
         }
     }
 
-    @Test("didTapDeleteForever는 permanentlyDelete를 호출하고 성공하면 목록을 재조회한다")
-    func deleteForeverRefetchesOnSuccess() async {
+    @Test("didTapDeleteForever는 바로 지우지 않고 확인 alert를 띄운다")
+    func deleteForeverShowsConfirmationAlert() async {
+        let secretID = UUID()
+        let store = TestStore(initialState: SecretListFeature.State(collection: .deleted)) {
+            SecretListFeature()
+        }
+
+        await store.send(.didTapDeleteForever(id: secretID)) {
+            $0.alert = AlertState {
+                TextState("Delete Forever?")
+            } actions: {
+                ButtonState(role: .destructive, action: .confirmDeleteForever(id: secretID)) {
+                    TextState("Delete Forever")
+                }
+                ButtonState(role: .cancel) {
+                    TextState("Cancel")
+                }
+            } message: {
+                TextState("This action cannot be undone.")
+            }
+        }
+    }
+
+    @Test("alert에서 영구 삭제를 확정하면 permanentlyDelete를 호출하고 성공하면 목록을 재조회한다")
+    func confirmDeleteForeverRefetchesOnSuccess() async {
         let secretID = UUID()
         let store = TestStore(initialState: SecretListFeature.State(collection: .deleted)) {
             SecretListFeature()
@@ -261,7 +284,23 @@ struct SecretListFeatureTests {
             $0.secretClient.fetchByQuery = { _ in [] }
         }
 
-        await store.send(.didTapDeleteForever(id: secretID))
+        await store.send(.didTapDeleteForever(id: secretID)) {
+            $0.alert = AlertState {
+                TextState("Delete Forever?")
+            } actions: {
+                ButtonState(role: .destructive, action: .confirmDeleteForever(id: secretID)) {
+                    TextState("Delete Forever")
+                }
+                ButtonState(role: .cancel) {
+                    TextState("Cancel")
+                }
+            } message: {
+                TextState("This action cannot be undone.")
+            }
+        }
+        await store.send(.alert(.presented(.confirmDeleteForever(id: secretID)))) {
+            $0.alert = nil
+        }
         await store.receive(.mutationResponse(.success(secretID)))
         await store.receive(.delegate(.secretsChanged))
         await store.receive(.secretsResponse(.success([]))) {
