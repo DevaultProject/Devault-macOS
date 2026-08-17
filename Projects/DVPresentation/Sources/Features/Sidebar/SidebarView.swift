@@ -302,7 +302,9 @@ private extension SidebarFilter {
   var iconColor: Color {
     switch self {
     case .notice:  Color.dv(.warning)
+    case .starred: Color.dv(.vaultGreen)
     case .expired: Color.dv(.danger)
+    case .deleted: Color.dv(.gray700)
     default:       Color.dv(.gray800)
     }
   }
