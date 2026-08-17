@@ -31,16 +31,21 @@ struct SecretListView: View {
 
 extension SecretListView {
 
-  private var content: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      DVTitleBar(
-        titleText: titleText,
-        searchText: searchTextBinding,
-        isSearchFocused: $isSearchFocused,
-        sortMenuContent: showsSort ? { AnyView(sortMenuContent) } : nil
-      )
-      .padding(.horizontal, 12)
+  /// `DVTitleBar`-리스트 사이 spacing. 헤더가 차지하는 총 높이를 계산할 때도 같이 쓴다.
+  private static let headerContentSpacing: CGFloat = 12
 
+  /// 헤더(`DVTitleBar` + spacing)가 차지하는 총 높이. `list`가 헤더 밑에서 시작하도록
+  /// 위쪽에 이만큼 여백을 예약해 둘 때 쓴다.
+  private static var headerReservedHeight: CGFloat {
+    DVTitleBar.totalHeight + headerContentSpacing
+  }
+
+  /// 헤더를 `ZStack`으로 얹어, empty/error 상태가 헤더 높이를 뺀 "남은 영역"이 아니라
+  /// **창 전체 높이 기준**으로 중앙 정렬되게 한다. 헤더 아래에 리스트를 두는 `VStack` 구조였을 때는
+  /// empty 상태가 항상 헤더 높이의 절반만큼 아래로 처져 보였다 — 디테일뷰(헤더 없음)와 비교하면
+  /// 어긋난다.
+  private var content: some View {
+    ZStack(alignment: .top) {
       Group {
         switch store.secretsState {
         case .failed:
@@ -51,7 +56,16 @@ extension SecretListView {
           list.transition(.opacity)
         }
       }
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
       .animation(MotionMetrics.transition, value: store.secretsState)
+
+      DVTitleBar(
+        titleText: titleText,
+        searchText: searchTextBinding,
+        isSearchFocused: $isSearchFocused,
+        sortMenuContent: showsSort ? { AnyView(sortMenuContent) } : nil
+      )
+      .padding(.horizontal, 12)
     }
   }
 
@@ -75,6 +89,11 @@ extension SecretListView {
     // `contentShape`은 행이 없는 빈 영역도 눌리게 하려고 남긴다.
     .contentShape(Rectangle())
     .simultaneousGesture(TapGesture().onEnded { isSearchFocused = false })
+    // `content`가 헤더를 ZStack으로 위에 얹으므로, 리스트 쪽만 헤더 높이만큼 안전 영역을 예약해
+    // 헤더에 가리지 않게 한다.
+    .safeAreaInset(edge: .top, spacing: 0) {
+      Color.clear.frame(height: Self.headerReservedHeight)
+    }
   }
 
   private func row(for secret: Secret) -> some View {
@@ -176,14 +195,10 @@ extension SecretListView {
   }
 
   private var emptyView: some View {
-    VStack(spacing: 12) {
-      Spacer()
-      Text("No secrets")
-        .dvFont(.bodyMD)
-        .foregroundStyle(Color.dv(.gray400))
-      Spacer()
-    }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    Text(.module("No secrets"))
+      .dvFont(.captionLG)
+      .foregroundStyle(Color.dv(.gray700))
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
   }
 
   private var secrets: IdentifiedArrayOf<Secret> {
