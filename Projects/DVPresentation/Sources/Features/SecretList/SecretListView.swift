@@ -74,9 +74,11 @@ extension SecretListView {
     .id(store.collection)
     .transition(.opacity)
     .animation(MotionMetrics.transition, value: store.collection)
-    // 빈 영역 클릭. 행 클릭은 선택 바인딩이 따로 처리한다.
+    // 어디를 누르든 검색 포커스를 놓는다. `onTapGesture`는 탭을 삼켜 NSTableView가 처리하는
+    // 행 클릭과 경합하므로, 이벤트를 흘려보내는 `simultaneousGesture`를 쓴다.
+    // `contentShape`은 행이 없는 빈 영역도 눌리게 하려고 남긴다.
     .contentShape(Rectangle())
-    .onTapGesture { isSearchFocused = false }
+    .simultaneousGesture(TapGesture().onEnded { isSearchFocused = false })
   }
 
   /// "이미 지남"과 "N일 이내 예정"을 섹션으로 나눠 보여준다. 쿼리가 이미 `expiringSoon` 순으로 정렬해 와서
