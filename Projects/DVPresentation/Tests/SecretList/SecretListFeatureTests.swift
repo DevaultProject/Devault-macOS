@@ -44,6 +44,25 @@ struct SecretListFeatureTests {
         }
     }
 
+    /// `.task`는 최초 진입이 아니라 뷰가 다시 만들어질 때마다 실행된다(설정 화면 왕복 등).
+    /// 비우면 이미 보고 있던 목록이 사라졌다 나타난다.
+    @Test("이미 로드된 상태에서 task가 다시 실행돼도 목록을 비우지 않는다")
+    func taskAfterReloadKeepsLoadedSecrets() async {
+        let secret = makeSecret(name: "GitHub API Key")
+        var initialState = SecretListFeature.State()
+        initialState.secretsState = .loaded([secret])
+
+        let store = TestStore(initialState: initialState) {
+            SecretListFeature()
+        } withDependencies: {
+            $0.secretClient.fetchByQuery = { _ in [secret] }
+        }
+
+        await store.send(.task)
+        #expect(store.state.secretsState == .loaded([secret]))
+        await store.receive(.secretsResponse(.success([secret])))
+    }
+
     @Test("didTapRetry는 failed 상태에서 다시 loading으로 전환하고 재조회한다")
     func retryRefetchesAfterFailure() async {
         let secret = makeSecret(name: "GitHub API Key")
