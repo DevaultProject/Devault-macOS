@@ -240,7 +240,11 @@ extension SidebarView {
         onCancel: { store.send(.didCancelRename) }
       )
     } else {
-      DVProjectContainer(name: project.name, count: store.counts?.count(forProject: project.id))
+      DVProjectContainer(
+        name: project.name,
+        count: store.counts?.count(forProject: project.id),
+        isSelected: store.highlighted == .project(id: project.id)
+      )
     }
   }
 
