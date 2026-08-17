@@ -39,17 +39,16 @@ extension CreateProjectView {
           .onSubmit { store.send(.didTapCreate) }
       } 
 
-      HStack(spacing: 12) {
+      HStack(spacing: 10) {
         Spacer()
-        Button("Cancel") {
+        DVButton(titleText: "Cancel", style: .secondary) {
           store.send(.didTapCancel)
         }
         .keyboardShortcut(.cancelAction)
 
-        Button("Create") {
+        DVButton(titleText: "Create", style: .secondaryProminent) {
           store.send(.didTapCreate)
         }
-        .buttonStyle(.borderedProminent)
         .keyboardShortcut(.defaultAction)
         .disabled(store.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
       }
