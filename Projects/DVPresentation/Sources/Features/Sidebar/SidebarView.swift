@@ -214,7 +214,9 @@ extension SidebarView {
     .padding(.horizontal, -12)
     .onKeyPress(.return) {
       guard store.renamingProjectID == nil else { return .ignored }
-      if case .project(id: let id) = store.selection {
+      // 강조된 것에만 반응한다. `selection`을 보면 생성 중(강조 없음)에도 이전 프로젝트의
+      // 이름 변경이 열린다.
+      if case .project(id: let id) = store.highlighted {
         store.send(.didTapRename(id: id))
         return .handled
       }
