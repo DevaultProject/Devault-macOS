@@ -168,10 +168,10 @@ struct MainFeatureTests {
       MainFeature()
     }
 
-    await store.send(.sidebar(.didSelect(.filter(.all)))) {
-      $0.sidebar.selection = .filter(.all)
-    }
+    // 생성 중에는 사이드바가 스스로 옮기지 않는다 — 확정한 부모가 옮긴다.
+    await store.send(.sidebar(.didSelect(.filter(.all))))
     await store.receive(.sidebar(.delegate(.selectionChanged(.filter(.all))))) {
+      $0.sidebar.selection = .filter(.all)
       $0.selectSecretType = nil
     }
     await store.receive(.sidebar(.setCreatingSecret(false))) {
@@ -302,9 +302,8 @@ struct MainFeatureTests {
 
     let store = TestStore(initialState: initial) { MainFeature() }
 
-    await store.send(.sidebar(.didSelect(.filter(.starred)))) {
-      $0.sidebar.mode = .creating(previous: .filter(.starred))
-    }
+    // 아직 확정이 아니므로 사이드바는 움직이지 않는다.
+    await store.send(.sidebar(.didSelect(.filter(.starred))))
     await store.receive(.sidebar(.delegate(.selectionChanged(.filter(.starred))))) {
       $0.pendingSelection = .filter(.starred)
     }
@@ -328,19 +327,61 @@ struct MainFeatureTests {
     var initial = MainFeature.State()
     initial.selectSecretType = .init()
     initial.createSecret = CreateSecretFeature.State(secretType: .apiKeyToken)
-    initial.sidebar.mode = .creating(previous: .filter(.starred))
+    // 들어오기 전 자리(All)와 다른 곳을 골라야 사이드바가 실제로 옮겨지는지 보인다.
+    initial.sidebar.mode = .creating(previous: .filter(.all))
     initial.pendingSelection = .filter(.starred)
 
     let store = TestStore(initialState: initial) { MainFeature() }
 
     await store.send(.createSecret(.delegate(.cancelled))) {
       $0.pendingSelection = nil
+      $0.sidebar.selection = .filter(.starred)
       $0.createSecret = nil
       $0.selectSecretType = nil
       $0.secretList = SecretListFeature.State(collection: .liked)
     }
     await store.receive(.sidebar(.setCreatingSecret(false))) {
       $0.sidebar.mode = .browsing(.filter(.starred))
+    }
+  }
+
+  /// 계속 편집을 골랐는데 사이드바가 옮겨져 있으면, 생성을 마쳤을 때 강조는 새 항목인데
+  /// 목록은 원래 것이 남아 둘이 영영 어긋난다.
+  @Test("확인 없이 alert를 닫으면 사이드바의 돌아갈 곳이 그대로다")
+  func dismissingConfirmationKeepsSidebarDestination() async {
+    var initial = MainFeature.State()
+    initial.selectSecretType = .init()
+    initial.createSecret = CreateSecretFeature.State(secretType: .apiKeyToken)
+    initial.sidebar.mode = .creating(previous: .filter(.all))
+
+    let store = TestStore(initialState: initial) { MainFeature() }
+
+    await store.send(.sidebar(.didSelect(.filter(.starred))))
+    await store.receive(.sidebar(.delegate(.selectionChanged(.filter(.starred))))) {
+      $0.pendingSelection = .filter(.starred)
+    }
+    await store.receive(.createSecret(.didTapCancel)) {
+      $0.createSecret?.alert = AlertState {
+        TextState("Discard changes?", bundle: .module)
+      } actions: {
+        ButtonState(role: .destructive, action: .confirmCancel) {
+          TextState("Discard", bundle: .module)
+        }
+        ButtonState(role: .cancel) {
+          TextState("Keep editing", bundle: .module)
+        }
+      }
+    }
+
+    await store.send(.createSecret(.alert(.dismiss))) {
+      $0.createSecret?.alert = nil
+      $0.pendingSelection = nil
+    }
+    #expect(store.state.sidebar.mode == .creating(previous: .filter(.all)))
+
+    // 마치고 나면 들어오기 전 자리로 돌아가야 한다.
+    await store.send(.sidebar(.setCreatingSecret(false))) {
+      $0.sidebar.mode = .browsing(.filter(.all))
     }
   }
 

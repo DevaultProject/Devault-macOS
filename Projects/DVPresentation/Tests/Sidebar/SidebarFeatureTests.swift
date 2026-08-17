@@ -179,6 +179,21 @@ struct SidebarFeatureTests {
     #expect(store.state.highlighted == nil)
   }
 
+  /// 여기서 갈아두면 되돌릴 방법이 없어, 부모의 확인에서 "계속 편집"을 골라도
+  /// 생성을 마쳤을 때 강조는 새 항목인데 목록은 원래 것이 남는다.
+  @Test("생성 중의 선택은 돌아갈 곳을 바꾸지 않고 알리기만 한다")
+  func didSelectWhileCreatingKeepsReturnDestination() async {
+    var state = SidebarFeature.State()
+    state.mode = .creating(previous: .filter(.all))
+
+    let store = TestStore(initialState: state) { SidebarFeature() }
+
+    await store.send(.didSelect(.filter(.starred)))
+    await store.receive(.delegate(.selectionChanged(.filter(.starred))))
+    #expect(store.state.mode == .creating(previous: .filter(.all)))
+    #expect(store.state.highlighted == nil)
+  }
+
   @Test("setCreatingSecret은 강조만 끄고 돌아갈 곳은 유지한다")
   func setCreatingSecretKeepsReturnDestination() async {
     var state = SidebarFeature.State()

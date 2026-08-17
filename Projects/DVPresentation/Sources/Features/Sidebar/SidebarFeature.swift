@@ -233,12 +233,13 @@ public struct SidebarFeature {
       case .didSelect(let selection) where state.highlighted == selection:
         return .none
 
-      // 생성 중이면 강조를 켜지 않고 목적지만 갈아둔다 — 확인을 취소했을 때 생성 화면인데
-      // 항목이 선택된 것처럼 보이기 때문이다. 강조는 `setCreatingSecret(false)`가 켠다.
+      // 생성 중이면 `previous`를 건드리지 않고 알리기만 한다. 이 선택은 아직 확정이 아니라
+      // 부모가 띄우는 "변경사항을 버릴까요?"를 거쳐야 하고, 계속 편집을 고르면 없던 일이
+      // 돼야 한다. 여기서 갈아두면 되돌릴 방법이 없어 강조와 목록이 어긋난 채 남는다.
+      // 확정됐을 때 목적지를 옮기는 것은 부모의 몫이다(`MainFeature`).
       case .didSelect(let selection):
-        switch state.mode {
-        case .browsing:  state.mode = .browsing(selection)
-        case .creating:  state.mode = .creating(previous: selection)
+        if case .browsing = state.mode {
+          state.mode = .browsing(selection)
         }
         return .send(.delegate(.selectionChanged(selection)))
 
