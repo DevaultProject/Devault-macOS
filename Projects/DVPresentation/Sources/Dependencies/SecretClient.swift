@@ -5,7 +5,7 @@ import Foundation
 import ComposableArchitecture
 import DVDomain
 
-/// SecretList / AddToProject / CreateProject Feature가 공유하는 Secret·Project Client.
+/// SecretList / SecretDetail / CreateProject Feature가 공유하는 Secret·Project Client.
 /// Live 조립은 Devault(App 타겟)에서 각 UseCase를 wrap한다.
 @DependencyClient
 public struct SecretClient: Sendable {
