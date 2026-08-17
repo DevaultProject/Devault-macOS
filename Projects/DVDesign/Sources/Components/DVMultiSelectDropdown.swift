@@ -472,7 +472,7 @@ private struct RowView: View {
                     .allowsHitTesting(false)
                 Text(highlighted)
                     .dvFont(.bodyLG)
-                    .foregroundStyle(isSelected ? Color.dv(.vaultGreenDark) : Color.dv(.gray900))
+                    .foregroundStyle(Color.dv(.gray900))
                     .lineLimit(1)
                     .truncationMode(.tail)
                 Spacer(minLength: 0)

@@ -77,11 +77,11 @@ public struct DVChipsContainer: View {
     @ViewBuilder
     private var content: some View {
         if labels.isEmpty, let placeholder {
-            // 값 텍스트(gray900)가 아니라 안내 문구로 읽혀야 하므로 placeholder 색을 쓴다 —
-            // `DVTextField`·`DVMultilineTextField`의 placeholder와 같은 취급이다.
+            // 값 텍스트(gray900)가 아니라 안내 문구로 읽혀야 하므로 placeholder 색을 쓴다.
+            // gray300 배경 위 gray400은 다크모드에서 배경과 거의 안 구분돼 gray500을 쓴다.
             Text(placeholder)
                 .dvFont(.bodyLG)
-                .foregroundStyle(Color.dv(.gray400))
+                .foregroundStyle(Color.dv(.gray500))
                 .frame(maxWidth: .infinity, alignment: .leading)
         } else {
             DVFlowLayout(hSpacing: Metrics.chipsSpacing, vSpacing: Metrics.chipsSpacing) {
