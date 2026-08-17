@@ -19,7 +19,7 @@ public enum CreatableSecretType: String, CaseIterable, Hashable {
         case .oauth:                  return .module("OAuth")
         case .database:               return .module("Database")
         case .sshAndCredentials:      return .module("SSH & Credentials")
-        case .environmentVariableSet: return .module("EnvSet")
+        case .environmentVariableSet: return .module("Environment Variable Set")
         case .etc:                    return .module("Etc")
         }
     }
