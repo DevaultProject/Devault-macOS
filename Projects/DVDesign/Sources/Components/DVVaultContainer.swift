@@ -50,6 +50,7 @@ public struct DVVaultContainer: View {
         }
         .padding(8)
         .frame(minWidth: 200, alignment: .leading)
+        .animation(MotionMetrics.hover, value: isSelected)
     }
 }
 
@@ -128,12 +129,12 @@ extension DVVaultContainer {
         VStack(alignment: .leading, spacing: 6) {
             Text(name)
                 .dvFont(.bodyLG)
-                .foregroundStyle(Color.dv(.gray900))
+                .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray900))
                 .lineLimit(1)
                 .truncationMode(.tail)
             Text(date)
                 .dvFont(.captionMDRegular)
-                .foregroundStyle(Color.dv(.gray600))
+                .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray600))
                 .lineLimit(1)
                 .truncationMode(.tail)
         }

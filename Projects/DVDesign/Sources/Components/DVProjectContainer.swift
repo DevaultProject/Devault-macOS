@@ -13,12 +13,14 @@ public struct DVProjectContainer: View {
     public let name: String
     /// nil이면 개수 라벨을 그리지 않는다 (`DVCategory.count`와 같은 규칙).
     public let count: Int?
+    public let isSelected: Bool
 
     // MARK: - Init
 
-    public init(name: String, count: Int?) {
+    public init(name: String, count: Int?, isSelected: Bool = false) {
         self.name = name
         self.count = count
+        self.isSelected = isSelected
     }
 
     // MARK: - Body
@@ -32,6 +34,7 @@ public struct DVProjectContainer: View {
         }
         .padding(2)
         .frame(minWidth: 120, alignment: .leading)
+        .animation(MotionMetrics.hover, value: isSelected)
     }
 }
 
@@ -42,13 +45,13 @@ extension DVProjectContainer {
     private var projectIcon: some View {
         Image(systemName: DVProjectContainer.projectIconSystemName)
             .dvFont(.captionLG)
-            .foregroundStyle(Color.dv(.gray900))
+            .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray900))
     }
 
     private var nameLabel: some View {
         Text(name)
             .dvFont(.bodyMD)
-            .foregroundStyle(Color.dv(.gray900))
+            .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray900))
             .lineLimit(1)
             .truncationMode(.tail)
             .frame(minWidth: 40, alignment: .leading)
@@ -59,7 +62,7 @@ extension DVProjectContainer {
         if let count {
             Text(count > 999 ? "999+" : "\(count)")
                 .dvFont(.bodyMD)
-                .foregroundStyle(Color.dv(.gray400))
+                .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray400))
                 .fixedSize()
         }
     }
