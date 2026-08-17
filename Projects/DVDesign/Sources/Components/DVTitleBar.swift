@@ -4,6 +4,21 @@ import SwiftUI
 
 public struct DVTitleBar: View {
 
+    // MARK: - Metrics
+
+    private enum Metrics {
+        static let verticalSpacing: CGFloat = 14
+        static let titleRowVerticalPadding: CGFloat = 4
+        static let searchFieldHeight: CGFloat = 36
+    }
+
+    /// 이 컴포넌트 전체의 세로 높이. 위아래로 다른 컴포넌트를 쌓거나 중앙 정렬을 보정할 때
+    /// 매직 넘버 대신 여기서 계산한 값을 쓴다.
+    public static var totalHeight: CGFloat {
+        let titleRowHeight = DVFont.headingXL.lineHeight + Metrics.titleRowVerticalPadding * 2
+        return titleRowHeight + Metrics.verticalSpacing + Metrics.searchFieldHeight
+    }
+
     // MARK: - Properties
 
     public let titleText: String
@@ -38,7 +53,7 @@ public struct DVTitleBar: View {
     // MARK: - Body
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: Metrics.verticalSpacing) {
             titleRow
             searchField
         }
@@ -60,7 +75,7 @@ extension DVTitleBar {
                 sortMenu(content: sortMenuContent)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, Metrics.titleRowVerticalPadding)
     }
 
     /// hover만 준다. `Menu`는 `ButtonStyle`을 타지 않아 눌림 상태를 알 수 없고,
@@ -102,7 +117,7 @@ extension DVTitleBar {
         }
         .padding(.horizontal, 10)
         .frame(maxWidth: .infinity)
-        .frame(height: 36)
+        .frame(height: Metrics.searchFieldHeight)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 18))
     }
