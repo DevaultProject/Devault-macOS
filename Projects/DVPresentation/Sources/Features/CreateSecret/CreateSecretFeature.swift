@@ -38,6 +38,10 @@ public struct CreateSecretFeature {
         /// 프로젝트 목록을 로드 중인 동안 true. Project picker spinner용.
         var isLoadingProjects = false
 
+        /// 설정의 기본 환경을 이미 얹었는지. `.task`는 화면이 다시 만들어질 때마다 실행되므로
+        /// 이 표시가 없으면 사용자가 고른 환경을 덮어쓴다.
+        var didApplyDefaultEnvironment = false
+
         @Presents var alert: AlertState<Action.Alert>?
 
         /// 프로젝트 생성 시트 State. `didTapCreateProject` 시 세팅되어 sheet 노출.
@@ -122,14 +126,18 @@ public struct CreateSecretFeature {
             // MARK: View
 
             case .task:
-                // 설정의 기본 환경을 폼 초기값으로 얹는다. 이 화면은 열 때마다 State가 새로
-                // 만들어지므로(`MainFeature`) 사용자가 고른 값을 덮어쓸 창이 없다.
+                // 설정의 기본 환경을 폼 초기값으로 **한 번만** 얹는다. `.task`는 화면이 다시
+                // 만들어질 때마다 실행되는데(설정 화면을 다녀오면 State는 살아남은 채 뷰만
+                // 다시 만들어진다) 매번 얹으면 사용자가 고른 환경이 조용히 되돌아간다.
                 //
                 // 저장된 문자열이 폼 enum에 없으면 `.dev`로 떨어뜨린다 — 설정 화면이 읽을 때와
                 // 같은 규칙이다(`GeneralSettingsFeature.task`).
-                state.meta.environment = SecretEnvironment(
-                    rawValue: generalSettingsClient.defaultEnvironment()
-                ) ?? .dev
+                if !state.didApplyDefaultEnvironment {
+                    state.didApplyDefaultEnvironment = true
+                    state.meta.environment = SecretEnvironment(
+                        rawValue: generalSettingsClient.defaultEnvironment()
+                    ) ?? .dev
+                }
                 state.isLoadingProjects = true
                 return .run { send in
                     do {
