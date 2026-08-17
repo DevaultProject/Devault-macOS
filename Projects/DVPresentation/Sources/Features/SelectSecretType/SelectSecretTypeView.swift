@@ -17,7 +17,9 @@ struct SelectSecretTypeView: View {
 
     var body: some View {
         typeGrid
-            .padding(48)
+            .padding(.horizontal, 48)
+            .padding(.bottom, 48)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
