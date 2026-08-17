@@ -278,7 +278,12 @@ extension MainFeature {
       applySelection(selection, &state)
       return .send(.sidebar(.setCreatingSecret(false)))
 
+    // 폼이 열려 있으면 사이드바 선택과 똑같이 확인을 거친다. `pendingSelection`을 두지
+    // 않으므로 확인되면 목록이 아니라 타입 선택으로 돌아간다 — `+`가 뜻하는 바 그대로다.
     case .addButtonTapped:
+      guard state.createSecret == nil else {
+        return .send(.createSecret(.didTapCancel))
+      }
       enterCreating(&state)
       return .send(.sidebar(.setCreatingSecret(true)))
 
