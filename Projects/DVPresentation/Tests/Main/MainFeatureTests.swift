@@ -225,6 +225,33 @@ struct MainFeatureTests {
     }
   }
 
+  /// 사이드바 선택은 확인을 거치는데 `+`만 조용히 버리면 같은 사이드바에서 결과가 갈린다.
+  @Test("addButtonTapped은 폼이 열려 있으면 확인을 거친다")
+  func addButtonTappedAsksBeforeDiscardingForm() async {
+    var initial = MainFeature.State()
+    initial.createSecret = CreateSecretFeature.State(secretType: .apiKeyToken)
+    initial.sidebar.mode = .creating(previous: .filter(.all))
+
+    let store = TestStore(initialState: initial) { MainFeature() }
+
+    await store.send(.sidebar(.didTapAddButton))
+    await store.receive(.sidebar(.delegate(.addButtonTapped)))
+    await store.receive(.createSecret(.didTapCancel)) {
+      $0.createSecret?.alert = AlertState {
+        TextState("Discard changes?", bundle: .module)
+      } actions: {
+        ButtonState(role: .destructive, action: .confirmCancel) {
+          TextState("Discard", bundle: .module)
+        }
+        ButtonState(role: .cancel) {
+          TextState("Keep editing", bundle: .module)
+        }
+      }
+    }
+    // 목적지를 두지 않았으므로 확인하면 목록이 아니라 타입 선택으로 돌아간다.
+    #expect(store.state.pendingSelection == nil)
+  }
+
   // MARK: - CreateSecret Routing
 
   @Test("typeSelected는 createSecret State를 세팅한다")
