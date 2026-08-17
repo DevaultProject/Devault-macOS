@@ -230,6 +230,10 @@ public struct MainFeature {
         // 생성 중이면 목록을 옮기지 않는다 — 마치고 엉뚱한 목록으로 돌아오게 된다.
         if case .browsing = state.sidebar.mode {
           state.sidebar.selection = .project(id: item.id)
+          // 새 프로젝트는 아직 `sidebar.projects`에 없어 이름을 찾을 수 없으므로
+          // `applySelection`을 쓰지 못한다. 상세를 놓는 것은 같은 이유로 필요하다 —
+          // 남겨두면 빈 목록 옆에 이전 시크릿이 그대로 떠 있고 Touch ID를 다시 요구한다.
+          state.secretDetail = nil
           state.secretList.retarget(to: .project(id: item.id), projectName: item.name)
         }
         return .send(.sidebar(.refresh))

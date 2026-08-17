@@ -487,6 +487,54 @@ struct MainFeatureTests {
     }
   }
 
+  /// 남겨두면 빈 새 프로젝트 목록 옆에 이전 시크릿이 그대로 떠 있고 Touch ID를 다시 요구한다.
+  @Test("projectCreated는 조회 중이던 secretDetail을 놓는다")
+  func projectCreatedClearsViewingSecret() async {
+    let item = ProjectItem(id: UUID(), name: "Backend")
+    let secret = Secret(
+      id: UUID(),
+      name: "Test Token",
+      secretType: .apiKeyToken,
+      createdAt: Date(),
+      updatedAt: Date(),
+      payload: SecretPayload(encryptedData: Data(), keyTag: "test", schemaVersion: 1)
+    )
+
+    var initial = MainFeature.State()
+    initial.createProject = .init()
+    initial.sidebar.mode = .browsing(initial.sidebar.selection)
+    initial.secretDetail = SecretDetailFeature.State(secret: secret)
+    initial.secretList.selectedSecretID = secret.id
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    } withDependencies: {
+      $0.sidebarClient.fetchProjects = { [item] }
+      $0.sidebarClient.fetchCounts = { _, _ in SecretCounts() }
+      $0.date = .constant(Self.referenceDate)
+    }
+
+    await store.send(.createProject(.presented(.delegate(.projectCreated(item))))) {
+      $0.createProject = nil
+      $0.secretDetail = nil
+      $0.sidebar.selection = .project(id: item.id)
+      $0.secretList = SecretListFeature.State(
+        collection: .project(id: item.id),
+        projectName: "Backend"
+      )
+    }
+    await store.receive(.sidebar(.refresh)) {
+      $0.sidebar.isRefreshingProjects = true
+    }
+    await store.receive(.sidebar(.projectsResponse(.success([item])))) {
+      $0.sidebar.isRefreshingProjects = false
+      $0.sidebar.projectsState = .loaded([item])
+    }
+    await store.receive(.sidebar(.countsResponse(.success(SecretCounts())))) {
+      $0.sidebar.countsState = .loaded(SecretCounts())
+    }
+  }
+
   @Test("projectCreated는 생성 중일 때 selection을 변경하지 않는다")
   func projectCreatedDoesNotSelectWhenCreatingSecret() async {
     let item = ProjectItem(id: UUID(), name: "Backend")
