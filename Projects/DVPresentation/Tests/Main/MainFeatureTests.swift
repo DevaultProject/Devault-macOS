@@ -990,6 +990,8 @@ struct MainFeatureTests {
     initial.sidebar.selection = .project(id: projectID)
     initial.sidebar.mode = .creating(previous: initial.sidebar.selection)
     initial.secretList = .init(collection: .project(id: projectID), projectName: "Old")
+    // 여기서 폼을 닫으면 `.alert(.dismiss)`가 다시 올 일이 없어 목적지가 영영 남는다.
+    initial.pendingSelection = .filter(.starred)
 
     let store = TestStore(initialState: initial) {
       MainFeature()
@@ -1005,6 +1007,7 @@ struct MainFeatureTests {
       $0.selectSecretType = nil
       $0.createProject = nil
       $0.createSecret = nil
+      $0.pendingSelection = nil
       $0.sidebar.selection = .filter(.all)
       $0.sidebar.mode = .browsing($0.sidebar.selection)
       $0.secretList = .init(collection: .all)

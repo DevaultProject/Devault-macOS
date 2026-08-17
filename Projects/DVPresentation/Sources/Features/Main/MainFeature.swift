@@ -366,6 +366,8 @@ extension MainFeature {
     state.createProject = nil
     state.createSecret = nil
     state.secretDetail = nil
+    // 여기서 폼을 닫으면 `.alert(.dismiss)`가 다시 올 일이 없어 목적지가 영영 남는다.
+    state.pendingSelection = nil
     state.sidebar.mode = .browsing(.filter(.all))
     state.secretList = .init(collection: .all)
   }
