@@ -28,6 +28,7 @@ struct CreateSecretFeatureTests {
         }
 
         await store.send(.task) {
+            $0.didApplyDefaultEnvironment = true
             $0.isLoadingProjects = true
         }
         await store.receive(.projectsResponse(.success(projects))) {
@@ -48,6 +49,7 @@ struct CreateSecretFeatureTests {
         }
 
         await store.send(.task) {
+            $0.didApplyDefaultEnvironment = true
             $0.isLoadingProjects = true
         }
         await store.receive(.projectsResponse(.failure(.repositoryFailure(.storageUnavailable)))) {
@@ -69,6 +71,7 @@ struct CreateSecretFeatureTests {
         }
 
         await store.send(.task) {
+            $0.didApplyDefaultEnvironment = true
             $0.isLoadingProjects = true
         }
         await store.receive(.projectsResponse(.failure(.unexpected))) {
@@ -90,6 +93,7 @@ struct CreateSecretFeatureTests {
         }
 
         await store.send(.task) {
+            $0.didApplyDefaultEnvironment = true
             $0.meta.environment = .prod
             $0.isLoadingProjects = true
         }
@@ -114,9 +118,35 @@ struct CreateSecretFeatureTests {
         }
 
         await store.send(.task) {
+            $0.didApplyDefaultEnvironment = true
             $0.meta.environment = .dev
             $0.isLoadingProjects = true
         }
+        await store.receive(.projectsResponse(.success([]))) {
+            $0.isLoadingProjects = false
+        }
+    }
+
+    /// `.task`는 최초 진입이 아니라 뷰가 다시 만들어질 때마다 실행된다 — 설정 화면을 다녀오면
+    /// State는 살아남은 채 뷰만 다시 만들어진다. 매번 얹으면 고른 환경이 조용히 되돌아간다.
+    @Test("task: 다시 실행돼도 사용자가 고른 환경을 덮어쓰지 않는다")
+    func task_rerun_keepsUserChosenEnvironment() async {
+        var initial = CreateSecretFeature.State(secretType: .apiKeyToken)
+        // 기본 환경을 이미 얹은 뒤 사용자가 직접 prod로 바꾼 상태.
+        initial.didApplyDefaultEnvironment = true
+        initial.meta.environment = .prod
+
+        let store = TestStore(initialState: initial) {
+            CreateSecretFeature()
+        } withDependencies: {
+            $0.generalSettingsClient.defaultEnvironment = { "dev" }
+            $0.projectClient.fetchProjects = { [] }
+        }
+
+        await store.send(.task) {
+            $0.isLoadingProjects = true
+        }
+        #expect(store.state.meta.environment == .prod)
         await store.receive(.projectsResponse(.success([]))) {
             $0.isLoadingProjects = false
         }
