@@ -19,8 +19,7 @@ enum SecretExpiryStatus: Equatable {
     /// ``upcomingWindow`` 이내에 만료된다 — 아직 조치할 시간이 있는 예고 단계.
     case upcoming
 
-    /// 하루를 고정 86,400초로 계산한다. 캘린더 일수(DST·타임존 경계)까지 따지지 않는 것은
-    /// 목록의 `ExpiryBucket`과 같은 기준을 쓰기 위한 것이다.
+    /// 하루를 고정 86,400초로 계산한다 — 캘린더 일수(DST·타임존 경계)는 따지지 않는다.
     private static let secondsPerDay: TimeInterval = 86_400
 
     static let criticalWindow: TimeInterval = TimeInterval(SecretExpiryPolicy.criticalWindowDays) * secondsPerDay

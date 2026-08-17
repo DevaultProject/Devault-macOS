@@ -49,20 +49,6 @@ extension SecretQuery {
         public static func noticeWindowEnd(from referenceDate: Date) -> Date {
             referenceDate.addingTimeInterval(TimeInterval(noticeWindowDays) * 86_400)
         }
-
-        /// "이미 지남 + `SecretExpiryPolicy.listingWindowDays`일 이내 만료 예정"을 한 번에 담는 컬렉션.
-        ///
-        /// `expired` predicate는 `expiresAt < referenceDate` 단일 비교라, 기준일을 window만큼
-        /// 미래로 밀어서 두 범위를 함께 가져온다. 목록 조회와 사이드바 개수 집계가 **같은 함수**를
-        /// 써야 카드에 찍힌 숫자와 목록에 뜨는 개수가 어긋나지 않는다.
-        /// - Parameter referenceDate: 실제 "오늘". window를 적용하기 전의 기준 시각
-        public static func expiringWindow(from referenceDate: Date) -> Self {
-            .expired(
-                referenceDate: referenceDate.addingTimeInterval(
-                    TimeInterval(SecretExpiryPolicy.listingWindowDays) * 86_400
-                )
-            )
-        }
     }
 
     /// 정렬 기준(`key`)과 방향(`direction`)을 독립된 축으로 표현한다.

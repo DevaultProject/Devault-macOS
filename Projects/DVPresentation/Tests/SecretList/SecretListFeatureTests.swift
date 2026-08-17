@@ -151,21 +151,14 @@ struct SecretListFeatureTests {
         #expect(state.secretsState != .loaded([]))
     }
 
-    @Test("expired collection의 query는 referenceDate를 확장 창만큼 밀고 만료 오름차순 정렬을 강제한다")
-    func expiredQueryWidensWindow() {
+    @Test("expired collection의 query는 collection을 그대로 쓰고 만료 오름차순 정렬을 강제한다")
+    func expiredQueryKeepsCollectionAsIs() {
         let today = Date(timeIntervalSince1970: 0)
         let state = SecretListFeature.State(collection: .expired(referenceDate: today))
 
         let query = state.query
 
-        guard case let .expired(windowEnd) = query.collection else {
-            Issue.record("collection이 .expired가 아님")
-            return
-        }
-        let expectedWindowEnd = today.addingTimeInterval(
-            TimeInterval(SecretExpiryPolicy.listingWindowDays) * 86_400
-        )
-        #expect(windowEnd == expectedWindowEnd)
+        #expect(query.collection == .expired(referenceDate: today))
         #expect(query.sort == SecretQuery.Sort(key: .expiry, direction: .ascending))
     }
 
