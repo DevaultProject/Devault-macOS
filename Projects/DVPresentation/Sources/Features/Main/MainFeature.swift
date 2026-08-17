@@ -217,6 +217,7 @@ public struct MainFeature {
         return .send(.sidebar(.setCreatingSecret(false)))
 
       // 목적지를 버리지 않으면 다음에 폼의 Cancel을 눌렀을 때 엉뚱하게 목록으로 나간다.
+      // 사이드바는 아직 움직이지 않았으므로 되돌릴 것이 없다.
       case .createSecret(.alert(.dismiss)):
         state.pendingSelection = nil
         return .none
@@ -300,7 +301,12 @@ extension MainFeature {
 
   /// 사이드바에서 고른 곳으로 이동한다. 생성 중이었다면 그 플로우를 접는다.
   /// 고른 곳이 이미 보고 있던 곳일 수 있어(생성 중 같은 필터 재선택) `retarget`을 거친다.
+  ///
+  /// **사이드바를 옮기는 것도 여기서 한다.** `SidebarFeature.didSelect`는 생성 중일 때
+  /// 알리기만 하므로(확인을 거쳐야 확정된다) 여기서 옮기지 않으면 이어지는
+  /// `setCreatingSecret(false)`가 이전 자리를 강조해 목록과 어긋난다.
   private func applySelection(_ selection: SidebarSelection, _ state: inout State) {
+    state.sidebar.selection = selection
     exitCreating(&state)
     state.secretDetail = nil
     let target = makeCollection(selection: selection, projects: state.sidebar.projects)
