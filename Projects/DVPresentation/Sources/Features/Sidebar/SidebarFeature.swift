@@ -189,8 +189,11 @@ public struct SidebarFeature {
         } else {
           state.projectsState = .loading
         }
-        if case .loaded = state.countsState {} else {
-          state.countsState = .loading
+        // 숫자에 `isRefreshing` 짝이 없는 것은 갱신 경로(`.countsRefreshRequested`)가
+        // 아예 `.loading`으로 되돌리지 않기 때문이다 — 흐릴 것 없이 이전 값이 계속 보인다.
+        switch state.countsState {
+        case .loaded: break
+        default: state.countsState = .loading
         }
         return fetchProjectsEffect()
 

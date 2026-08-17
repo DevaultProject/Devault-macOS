@@ -127,6 +127,9 @@ extension SidebarView {
 
   /// 스피너 대신 자리를 유지한 채 opacity만 움직인다. 갱신이 잦아 스피너로 갈아끼우면
   /// 목록이 사라졌다 나타나는 것으로 보인다.
+  ///
+  /// 첫 로드 동안에는 **아무것도 그리지 않는다.** 아직 목록이 없어 흐릴 대상이 없고,
+  /// "없다"고 쓰면 로딩 중에 잘못 알린 셈이 된다. 도착하면 opacity로 나타난다.
   @ViewBuilder
   private var projectSectionBody: some View {
     if case .failed = store.projectsState {
@@ -149,6 +152,7 @@ extension SidebarView {
     } else {
       projectList
         .opacity(store.isRefreshingProjects ? Metrics.refreshingOpacity : 1)
+        .transition(.opacity)
     }
   }
 
