@@ -131,7 +131,17 @@ public struct SecretListFeature {
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case .task, .didTapRetry:
+      // 이미 받아둔 목록이 있으면 비우지 않는다. `.task`는 최초 진입이 아니라 뷰가 다시
+      // 만들어질 때마다 실행되므로(설정 화면 왕복 등) 비우면 목록이 사라졌다 나타난다.
+      case .task:
+        switch state.secretsState {
+        case .loaded: break
+        default: state.secretsState = .loading
+        }
+        return fetchSecretsEffect(query: state.query, debounced: false)
+
+      // 재시도는 실패 화면에서만 눌리므로 되돌릴 목록이 없다.
+      case .didTapRetry:
         state.secretsState = .loading
         return fetchSecretsEffect(query: state.query, debounced: false)
 
