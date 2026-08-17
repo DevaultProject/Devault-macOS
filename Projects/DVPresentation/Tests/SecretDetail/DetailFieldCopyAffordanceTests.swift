@@ -8,7 +8,7 @@ import Testing
 @Suite("DetailFieldCopyAffordance")
 struct DetailFieldCopyAffordanceTests {
 
-    @Test("평문 필드에 값이 있으면 복사 버튼이 붙고 선택은 막힌다")
+    @Test("평문 필드는 복사 버튼이 붙어도 선택이 함께 열린다")
     func plainWithValue() {
         let affordance = DetailFieldCopyAffordance(
             isSensitive: false,
@@ -17,10 +17,10 @@ struct DetailFieldCopyAffordanceTests {
         )
 
         #expect(affordance.showsCopyButton)
-        #expect(!affordance.allowsTextSelection)
+        #expect(affordance.allowsTextSelection)
     }
 
-    @Test("평문 필드가 비면 복사 버튼이 없으므로 선택이 열린다")
+    @Test("평문 필드가 비면 복사 버튼이 사라지고 선택은 그대로 열린다")
     func plainEmpty() {
         let affordance = DetailFieldCopyAffordance(
             isSensitive: false,
@@ -44,8 +44,6 @@ struct DetailFieldCopyAffordanceTests {
         #expect(affordance.allowsTextSelection)
     }
 
-    /// 복호화 전 민감 필드는 값이 비어 있지만 빈 값 예외를 적용할 수 없다 —
-    /// 비었는지 알 수 없고, 마스킹 placeholder는 선택시켜 봐야 얻을 것도 없다.
     @Test("민감 필드는 복호화 전이어도 복사 버튼이 붙고 선택은 막힌다")
     func sensitiveBeforeReveal() {
         let affordance = DetailFieldCopyAffordance(
@@ -58,7 +56,8 @@ struct DetailFieldCopyAffordanceTests {
         #expect(!affordance.allowsTextSelection)
     }
 
-    @Test("민감 필드여도 복사 대상이 아니면 선택이 열린다")
+    /// 눈 토글은 `isCopyable`과 무관하게 살아 있어 reveal 후 평문이 그대로 ⌘C로 나간다.
+    @Test("민감 필드는 복사 대상이 아니어도 선택이 막힌다")
     func sensitiveNotCopyable() {
         let affordance = DetailFieldCopyAffordance(
             isSensitive: true,
@@ -67,22 +66,35 @@ struct DetailFieldCopyAffordanceTests {
         )
 
         #expect(!affordance.showsCopyButton)
-        #expect(affordance.allowsTextSelection)
+        #expect(!affordance.allowsTextSelection)
     }
 
-    /// 이 대응이 깨지면 복사 버튼이 있는 필드에 ⌘C가 열려 `ClipboardCopyPolicy`가 통째로 우회된다.
-    @Test("선택 허용은 언제나 복사 버튼 노출의 반대다")
-    func selectionIsAlwaysTheInverseOfCopyButton() {
-        for isSensitive in [true, false] {
-            for isCopyable in [true, false] {
-                for value in ["", "value"] {
-                    let affordance = DetailFieldCopyAffordance(
-                        isSensitive: isSensitive,
-                        isCopyable: isCopyable,
-                        value: value
-                    )
-                    #expect(affordance.allowsTextSelection == !affordance.showsCopyButton)
-                }
+    /// 판정이 `isCopyable`이나 값 유무로 새면 그 조합에서 `ClipboardCopyPolicy.sensitive`가
+    /// 통째로 우회되므로 전수로 못박는다.
+    @Test("민감 필드는 어떤 조합에서도 선택이 막힌다")
+    func sensitiveNeverAllowsSelection() {
+        for isCopyable in [true, false] {
+            for value in ["", "ghp_1234567890abcdef"] {
+                let affordance = DetailFieldCopyAffordance(
+                    isSensitive: true,
+                    isCopyable: isCopyable,
+                    value: value
+                )
+                #expect(!affordance.allowsTextSelection)
+            }
+        }
+    }
+
+    @Test("평문 필드는 어떤 조합에서도 선택이 열린다")
+    func plainAlwaysAllowsSelection() {
+        for isCopyable in [true, false] {
+            for value in ["", "https://app.example/oauth/callback"] {
+                let affordance = DetailFieldCopyAffordance(
+                    isSensitive: false,
+                    isCopyable: isCopyable,
+                    value: value
+                )
+                #expect(affordance.allowsTextSelection)
             }
         }
     }

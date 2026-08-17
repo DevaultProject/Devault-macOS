@@ -72,7 +72,7 @@ struct DetailReadOnlyFieldView: View {
     /// 실제 길이로 바뀌면 마스킹이 값의 크기를 흘린다. 항상 같은 개수라 유출 경로가 없다.
     private static let maskedPlaceholder = String(repeating: "•", count: 12)
 
-    /// 복사 버튼 노출과 텍스트 선택 허용은 한 규칙의 양면이다 (`DetailFieldCopyAffordance`).
+    /// 복사 버튼 노출과 텍스트 선택 허용을 한 곳에서 판정한다 (`DetailFieldCopyAffordance`).
     private var copyAffordance: DetailFieldCopyAffordance {
         DetailFieldCopyAffordance(isSensitive: isSensitive, isCopyable: isCopyable, value: value)
     }
@@ -105,8 +105,7 @@ extension DetailReadOnlyFieldView {
         isSensitive && !actions.isRevealed(field) ? Self.maskedPlaceholder : value
     }
 
-    /// 복사 버튼이 붙은 필드는 드래그 선택과 ⌘C를 막는다 — 열어두면 그 경로로 나간 값이
-    /// `ClipboardCopyPolicy`를 타지 않아 인증·자동 정리·반복 감지가 통째로 우회된다.
+    /// 민감 필드만 드래그 선택과 ⌘C를 막는다 (`DetailFieldCopyAffordance`).
     @ViewBuilder
     private var valueContainer: some View {
         Group {
