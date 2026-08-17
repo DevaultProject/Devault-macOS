@@ -300,8 +300,10 @@ extension MainFeature {
       return .none
 
     // State를 갈아끼우면 목록이 버려지는데 `collection`이 같아 다시 읽지도 않는다.
+    // 판정 기준은 사이드바가 아니라 목록이 지금 보고 있는 것이다 — 둘은 어긋날 수 있고
+    // (생성 중의 "돌아갈 곳") 사이드바를 보면 A의 목록에 B의 이름이 붙는다.
     case .projectRenamed(let item):
-      if case .project(id: item.id) = state.sidebar.selection {
+      if case .project(id: item.id) = state.secretList.collection {
         state.secretList.projectName = item.name
       }
       return .none

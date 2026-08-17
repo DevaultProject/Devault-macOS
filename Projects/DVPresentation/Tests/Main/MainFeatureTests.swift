@@ -901,6 +901,43 @@ struct MainFeatureTests {
     }
   }
 
+  /// 사이드바를 기준으로 삼으면 생성 중의 "돌아갈 곳"과 목록이 어긋난 사이에
+  /// A의 목록에 B의 이름이 붙는다.
+  @Test("projectRenamed는 목록이 그 프로젝트를 보고 있지 않으면 타이틀을 건드리지 않는다")
+  func projectRenamedIgnoresWhenListTargetsElsewhere() async {
+    let item = ProjectItem(id: UUID(), name: "Backend")
+    let renamed = ProjectItem(id: item.id, name: "Backend V2")
+
+    var initial = MainFeature.State()
+    initial.sidebar.projectsState = .loaded([item])
+    // 사이드바의 "돌아갈 곳"은 프로젝트지만 목록은 아직 All을 보고 있다.
+    initial.sidebar.mode = .creating(previous: .project(id: item.id))
+    initial.secretList = SecretListFeature.State(collection: .all)
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    } withDependencies: {
+      $0.sidebarClient.fetchProjects = { [renamed] }
+      $0.sidebarClient.fetchCounts = { _, _ in SecretCounts() }
+      $0.date = .constant(Self.referenceDate)
+    }
+
+    await store.send(.sidebar(.renameResponse(.success(renamed))))
+    await store.receive(.sidebar(.delegate(.projectRenamed(renamed))))
+    #expect(store.state.secretList.projectName == nil)
+
+    await store.receive(.sidebar(.refresh)) {
+      $0.sidebar.isRefreshingProjects = true
+    }
+    await store.receive(.sidebar(.projectsResponse(.success([renamed])))) {
+      $0.sidebar.isRefreshingProjects = false
+      $0.sidebar.projectsState = .loaded([renamed])
+    }
+    await store.receive(.sidebar(.countsResponse(.success(SecretCounts())))) {
+      $0.sidebar.countsState = .loaded(SecretCounts())
+    }
+  }
+
   // MARK: - Lock
 
   @Test("didTapLock은 lockRequested를 delegate로 알린다")
