@@ -8,22 +8,22 @@
 
 /* Begin PBXBuildFile section */
 		03484F9872813025A381D3E1 /* _LottieStub.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E6EE7C463E964F352262F3E7 /* _LottieStub.framework */; };
+		037C46C279355D75020BCE5E /* LockClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD1EBDD446A4EB6BF9CE398 /* LockClient+Live.swift */; };
+		0397A1C7466BF00371EA1AE9 /* DetectionClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A325BCAEEBDF710358BA9BE /* DetectionClient+Live.swift */; };
 		042435113056A1BA3086365E /* IssueReporting.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AD9AF4E1E605FD6147EAB0BB /* IssueReporting.framework */; };
-		0464C36A3AFBFFA233B254E6 /* LockClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97577A1D7EF60D4B1AE71E0C /* LockClient+Live.swift */; };
-		053FBDAD5B5A3A74C067FB1A /* LiveRepositoryProxies.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBA0D0D07EB3D8A0918BEA2D /* LiveRepositoryProxies.swift */; };
 		07221E428AC62B1CF7ADE6DA /* swift-composable-architecture_ComposableArchitecture.bundle in Dependencies */ = {isa = PBXBuildFile; fileRef = 94718C2C71FED044EAA3F4C1 /* swift-composable-architecture_ComposableArchitecture.bundle */; };
 		0B240378183C9F5F33762C07 /* ICloudSettingsClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACB9F39121175901689AFB57 /* ICloudSettingsClient+Live.swift */; };
-		0C0FBA6C420FCFCE94FE6E1A /* AppLifecycleClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7A8488C481C5AD829B2C88D /* AppLifecycleClient+Live.swift */; };
 		12616DB14282656DBB27E3F6 /* SwiftUINavigation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 82BEB208A09ED6BE1E89674B /* SwiftUINavigation.framework */; };
 		141BB8D8906E719EE68D2A59 /* Sharing2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 770C1670A16251E4E9DE256A /* Sharing2.framework */; };
-		1BF92CB03B2177DB4F22C786 /* SecretManagementClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A051CF1871942CD8EA2F126 /* SecretManagementClient+Live.swift */; };
+		17B9458FB50086D5D5489C43 /* SecretClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0A84948FCC268752A921BDB /* SecretClient+Live.swift */; };
 		2481192F21E87AF883589EF4 /* swift-composable-architecture_ComposableArchitecture.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 94718C2C71FED044EAA3F4C1 /* swift-composable-architecture_ComposableArchitecture.bundle */; };
 		27D4BFE4BF74FAC4B20CC809 /* InternalCollectionsUtilities.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2942A52D33BC85AD96CC972C /* InternalCollectionsUtilities.framework */; };
+		2E78C068B7CAE1F8A398E8EE /* WindowCaptureBlockerClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56F2375917D00B8169FC4161 /* WindowCaptureBlockerClient+Live.swift */; };
 		33025A064C08F92074526991 /* AppSecurityClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18E2B0FC31D13FA1350046E /* AppSecurityClient+Live.swift */; };
 		3C81750D30A67990C477A903 /* Clocks.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E7ACF02DCD507CDBC630DB68 /* Clocks.framework */; };
 		3CF2E970E237BA35BD252F55 /* Sharing1.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8E643C59D1F6566690F45173 /* Sharing1.framework */; };
+		3DA8D7A66C6321A94B20E909 /* LiveRepositoryProxies.swift in Sources */ = {isa = PBXBuildFile; fileRef = B73A11396E450B6565FE3653 /* LiveRepositoryProxies.swift */; };
 		4102816DA2A332767D8B2DD2 /* CombineSchedulers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AD077FEF086CCE80B3FF9DBB /* CombineSchedulers.framework */; };
-		43A404DFF6B102E607EE06E8 /* NotificationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E00F7536D02636712CCF2F2 /* NotificationDelegate.swift */; };
 		495FEBD65F320E2AC62B0858 /* DVDesign_DVDesign.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 4881224BE53703D984B81527 /* DVDesign_DVDesign.bundle */; };
 		4A61A6A53E418D100DAED989 /* DVPresentation_DVPresentation.bundle in Resources */ = {isa = PBXBuildFile; fileRef = C6C2617966AD3FD584C897E0 /* DVPresentation_DVPresentation.bundle */; };
 		4F95B48E8144C9025A6FF1D2 /* Lottie.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 88E46CB5D63075CF3DF1F006 /* Lottie.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -37,17 +37,19 @@
 		6EC0424EA676F3D0F812E8FA /* DevaultApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25A5E2EAC103E5B59E3FD108 /* DevaultApp.swift */; };
 		70DD43CB83A564D8128AFC5D /* PerceptionCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EA27C25F8760329698C6505A /* PerceptionCore.framework */; };
 		712240E0AFEBD8B5F6440A3E /* ConcurrencyExtras.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 72DF4B9736DEB0B42889A616 /* ConcurrencyExtras.framework */; };
+		75A8CCBF848A8A92D1D0EEE0 /* AppLifecycleClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263DCB34F5F2A6DBA7DD1EE7 /* AppLifecycleClient+Live.swift */; };
+		77396AAD34BEE87FCADCEECB /* NotificationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D83EFB0AEA14755E9BF37A7 /* NotificationDelegate.swift */; };
+		799E0187806A35F26DB1EE43 /* LiveServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81F6FE6C79772F0D6911E66 /* LiveServices.swift */; };
 		7C74B20BA158291729B306F4 /* XCTestDynamicOverlay.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02055C20AB8A724718D134D4 /* XCTestDynamicOverlay.framework */; };
 		7F29F68DAD6C34137749F7A8 /* CustomDump.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8AE11F80AF49C41A97D5B707 /* CustomDump.framework */; };
-		80D6492238CDA5C72D03E644 /* DetectionClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C00C6BDE9B4EAD1BAB8F127 /* DetectionClient+Live.swift */; };
-		82215B42DE13B22BBF9CAC88 /* LiveStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B924EF2B9510EAE169A4EB58 /* LiveStorage.swift */; };
 		824CBAFF04E235F47D04D10F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 26BCE75C3C31D24CB04ECAA8 /* Assets.xcassets */; };
-		8991420AB2CB7DA1F4EF5176 /* AppLaunchClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9371980EE6DF9BF252923EB9 /* AppLaunchClient+Live.swift */; };
-		8B92B538FA438D07640D3E9F /* LiveRepositories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56ACAE2381447285760E40BD /* LiveRepositories.swift */; };
 		8DC7FBB4B391828076574BFE /* IdentifiedCollections.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B4E21F7F3B2FC5D3E850B6A /* IdentifiedCollections.framework */; };
+		8E03BDC79408643B37EE8771 /* LiveRepositories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AEDA378EB351C322E1BDEB2 /* LiveRepositories.swift */; };
 		8E4214D30CF0D45365C64908 /* Perception.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9FBE7239EDD38156691DF89F /* Perception.framework */; };
+		8EC9EC95AF1272EF967B2C60 /* WindowCaptureBlocker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E8D783F56CD307FA0F8575 /* WindowCaptureBlocker.swift */; };
 		8FFF74CFD5CAD009825BF5E9 /* CasePaths.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9E0C59E78A1D00E26B194D /* CasePaths.framework */; };
 		921F746350278EED07A4EC97 /* Lottie.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 88E46CB5D63075CF3DF1F006 /* Lottie.xcframework */; };
+		93DF4992A870C47F06BEE9E3 /* SidebarClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54E910ADE9473C425E4F5655 /* SidebarClient+Live.swift */; };
 		9658A78661BF9A8FACFCF7EF /* DVDesign.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A9EAB5042B04649CF83D669 /* DVDesign.framework */; };
 		96CD60DC41AF7A7C1C2DDC14 /* TuistAssets+Devault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D18CCEE972A3408E153CCF9 /* TuistAssets+Devault.swift */; };
 		A571C64FC32AEF76F78FD2C0 /* OrderedCollections.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2B21D1B6F729584BB2F0FC3 /* OrderedCollections.framework */; };
@@ -55,25 +57,23 @@
 		B0B1FDBEC9A3CC156E77B728 /* UIKitNavigation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6DBC14B4984717F4AEB0715D /* UIKitNavigation.framework */; };
 		B4D14E15CB4A170B821EBB24 /* DVDomain.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 453AC358509F3B0E7C281FEE /* DVDomain.framework */; };
 		BA24F8D6F918F345E4D2CE47 /* DVCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 14306A7345483D37B4433E87 /* DVCore.framework */; };
-		BFB1799FA25A03C7054D04C1 /* WindowCaptureBlockerClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88BC6368466D5C4002D178B3 /* WindowCaptureBlockerClient+Live.swift */; };
-		C1DBDA1A62CE205674C242CE /* SidebarClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56C2AD0DB55656EA430444B /* SidebarClient+Live.swift */; };
-		C22D4A8ED679F8E25C2D1D0F /* ProjectClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 576DD56518DE3B09EA88D578 /* ProjectClient+Live.swift */; };
+		BFAB3A31647DB53C8B11066F /* OnboardingClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09FFDD6C0ABEE40A28DD258B /* OnboardingClient+Live.swift */; };
+		C2B576AA5C14966B7DE502E7 /* SecretManagementClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = C62F8443676E39714798E560 /* SecretManagementClient+Live.swift */; };
 		CBB669ACD85EC24C6A639CF6 /* DVPresentation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB361B9F556127B71BA763B0 /* DVPresentation.framework */; };
 		CD6A7335DC9EA6524FA26493 /* DVDesign_DVDesign.bundle in Dependencies */ = {isa = PBXBuildFile; fileRef = 4881224BE53703D984B81527 /* DVDesign_DVDesign.bundle */; };
 		CE35F55108D5BE577729364D /* AboutSettingsClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE1A1F8330D2C78294A935E /* AboutSettingsClient+Live.swift */; };
-		D191D3EE088A54E43E131D2A /* LiveUseCases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FC9E3CCD2F52E55FD8C7746 /* LiveUseCases.swift */; };
 		D2747FC9CB9E117367006671 /* SwiftNavigation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7865086157B48CD2C49A7F21 /* SwiftNavigation.framework */; };
 		DD08D50E7432373B6D7C006B /* swift-sharing_Sharing.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 6317A2D300F36CD49A067DA2 /* swift-sharing_Sharing.bundle */; };
 		DDDA0139579B2598ADD5762B /* DependenciesMacros.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 414561848CADFD92B28FD7F1 /* DependenciesMacros.framework */; };
+		E6F8BD09BF451B2B623EA707 /* ProjectClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B36B79F2D7A92DE4BB430F4 /* ProjectClient+Live.swift */; };
+		E7146CF51FE45DD841968DAB /* LiveStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06916F993DB1B93D97AF68A9 /* LiveStorage.swift */; };
 		E74B3D95623360466E355703 /* DataSettingsClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D22C02A4ADD0C68B01E0ED /* DataSettingsClient+Live.swift */; };
-		E7F07005B916DF9BEA4C26EF /* SecretClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89E1D3FB67367C4E09F39206 /* SecretClient+Live.swift */; };
-		E873D140BDC2357307A06943 /* OnboardingClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ABD7AE0302E3A71F95773FF /* OnboardingClient+Live.swift */; };
 		E94FA0D105E9B3E165FE88BE /* SecuritySettingsClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19B9DE1C7AD257803E72D326 /* SecuritySettingsClient+Live.swift */; };
+		E9858B96857E3168C6839952 /* AppLaunchClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDD2248F2A8A999890323734 /* AppLaunchClient+Live.swift */; };
+		E9EBE61F7270000DE3BA1C79 /* LiveUseCases.swift in Sources */ = {isa = PBXBuildFile; fileRef = D98CF6ECEB3B3AED26B84617 /* LiveUseCases.swift */; };
 		EB075EBFC2A89C3B21EC3B0E /* swift-sharing_Sharing.bundle in Dependencies */ = {isa = PBXBuildFile; fileRef = 6317A2D300F36CD49A067DA2 /* swift-sharing_Sharing.bundle */; };
-		F0BE61E29A939056F6D1A325 /* LiveServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = C75577FCC8589FA9B442DF7C /* LiveServices.swift */; };
 		F1E1790FFA9BEDDE2C784D4B /* CasePathsCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81616A454F59071F8B240715 /* CasePathsCore.framework */; };
 		F4F24863F611CBA788A8388D /* Dependencies.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9F6E6DC7775819C8E301ECB3 /* Dependencies.framework */; };
-		F5E8A6BE36585C0359B9D675 /* WindowCaptureBlocker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B549C9F6B95CEECFA76592FF /* WindowCaptureBlocker.swift */; };
 		FAFEE961DC43DCEA505ADA97 /* NotificationSettingsClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9ABEB22ED5A4FBEAE995334 /* NotificationSettingsClient+Live.swift */; };
 /* End PBXBuildFile section */
 
@@ -107,26 +107,29 @@
 /* Begin PBXFileReference section */
 		003B9B9DC74D9663235F338A /* GeneralSettingsClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GeneralSettingsClient+Live.swift"; sourceTree = "<group>"; };
 		02055C20AB8A724718D134D4 /* XCTestDynamicOverlay.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = XCTestDynamicOverlay.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		06916F993DB1B93D97AF68A9 /* LiveStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveStorage.swift; sourceTree = "<group>"; };
 		0998AFDB26C5CE0378B727FF /* Devault_IC.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = Devault_IC.icon; sourceTree = "<group>"; };
+		09FFDD6C0ABEE40A28DD258B /* OnboardingClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingClient+Live.swift"; sourceTree = "<group>"; };
 		14306A7345483D37B4433E87 /* DVCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = DVCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		16694800E496D9C0756FC1F6 /* Devault-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Devault-Info.plist"; sourceTree = "<group>"; };
 		19B9DE1C7AD257803E72D326 /* SecuritySettingsClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SecuritySettingsClient+Live.swift"; sourceTree = "<group>"; };
 		1D18CCEE972A3408E153CCF9 /* TuistAssets+Devault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+Devault.swift"; sourceTree = "<group>"; };
 		25A5E2EAC103E5B59E3FD108 /* DevaultApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevaultApp.swift; sourceTree = "<group>"; };
+		263DCB34F5F2A6DBA7DD1EE7 /* AppLifecycleClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppLifecycleClient+Live.swift"; sourceTree = "<group>"; };
 		26BCE75C3C31D24CB04ECAA8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2942A52D33BC85AD96CC972C /* InternalCollectionsUtilities.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = InternalCollectionsUtilities.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		2A051CF1871942CD8EA2F126 /* SecretManagementClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SecretManagementClient+Live.swift"; sourceTree = "<group>"; };
 		3A725A6F862409349357046A /* ComposableArchitecture.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = ComposableArchitecture.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		3B36B79F2D7A92DE4BB430F4 /* ProjectClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProjectClient+Live.swift"; sourceTree = "<group>"; };
 		414561848CADFD92B28FD7F1 /* DependenciesMacros.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = DependenciesMacros.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		453AC358509F3B0E7C281FEE /* DVDomain.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = DVDomain.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4881224BE53703D984B81527 /* DVDesign_DVDesign.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DVDesign_DVDesign.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		48B1DD6C0C56BA0B440BC252 /* TuistBundle+Devault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+Devault.swift"; sourceTree = "<group>"; };
-		4C00C6BDE9B4EAD1BAB8F127 /* DetectionClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DetectionClient+Live.swift"; sourceTree = "<group>"; };
-		56ACAE2381447285760E40BD /* LiveRepositories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveRepositories.swift; sourceTree = "<group>"; };
-		576DD56518DE3B09EA88D578 /* ProjectClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProjectClient+Live.swift"; sourceTree = "<group>"; };
+		54E910ADE9473C425E4F5655 /* SidebarClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SidebarClient+Live.swift"; sourceTree = "<group>"; };
+		56F2375917D00B8169FC4161 /* WindowCaptureBlockerClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WindowCaptureBlockerClient+Live.swift"; sourceTree = "<group>"; };
 		5B4E21F7F3B2FC5D3E850B6A /* IdentifiedCollections.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = IdentifiedCollections.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		5F9E0C59E78A1D00E26B194D /* CasePaths.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CasePaths.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6317A2D300F36CD49A067DA2 /* swift-sharing_Sharing.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "swift-sharing_Sharing.bundle"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6D83EFB0AEA14755E9BF37A7 /* NotificationDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationDelegate.swift; sourceTree = "<group>"; };
 		6DBC14B4984717F4AEB0715D /* UIKitNavigation.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = UIKitNavigation.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		72DF4B9736DEB0B42889A616 /* ConcurrencyExtras.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = ConcurrencyExtras.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		73E857A7242801671284A7FE /* Devault.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Devault.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -135,42 +138,39 @@
 		7ABF35A1ADC7FAD575163D0C /* Devault.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Devault.entitlements; sourceTree = "<group>"; };
 		81616A454F59071F8B240715 /* CasePathsCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CasePathsCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		82BEB208A09ED6BE1E89674B /* SwiftUINavigation.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SwiftUINavigation.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		88BC6368466D5C4002D178B3 /* WindowCaptureBlockerClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WindowCaptureBlockerClient+Live.swift"; sourceTree = "<group>"; };
 		88E46CB5D63075CF3DF1F006 /* Lottie.xcframework */ = {isa = PBXFileReference; expectedSignature = "SelfSigned:892F1B43047B50538F2F46EAD92900DD3D4811F3582178C061A5FB20F111CB26"; lastKnownFileType = wrapper.xcframework; name = Lottie.xcframework; path = "/Users/hyeon-ju/Documents/GitHub/Devault-macOS/Tuist/.build/artifacts/lottie-spm/Lottie/Lottie.xcframework"; sourceTree = "<absolute>"; };
-		89E1D3FB67367C4E09F39206 /* SecretClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SecretClient+Live.swift"; sourceTree = "<group>"; };
-		8ABD7AE0302E3A71F95773FF /* OnboardingClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingClient+Live.swift"; sourceTree = "<group>"; };
+		8A325BCAEEBDF710358BA9BE /* DetectionClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DetectionClient+Live.swift"; sourceTree = "<group>"; };
 		8AE11F80AF49C41A97D5B707 /* CustomDump.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CustomDump.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8E643C59D1F6566690F45173 /* Sharing1.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Sharing1.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		9371980EE6DF9BF252923EB9 /* AppLaunchClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppLaunchClient+Live.swift"; sourceTree = "<group>"; };
 		943E015EF2EDF50E3392544A /* Sharing.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Sharing.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		94718C2C71FED044EAA3F4C1 /* swift-composable-architecture_ComposableArchitecture.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "swift-composable-architecture_ComposableArchitecture.bundle"; sourceTree = BUILT_PRODUCTS_DIR; };
-		97577A1D7EF60D4B1AE71E0C /* LockClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LockClient+Live.swift"; sourceTree = "<group>"; };
 		9A9EAB5042B04649CF83D669 /* DVDesign.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = DVDesign.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		9E00F7536D02636712CCF2F2 /* NotificationDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationDelegate.swift; sourceTree = "<group>"; };
+		9AEDA378EB351C322E1BDEB2 /* LiveRepositories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveRepositories.swift; sourceTree = "<group>"; };
 		9F6E6DC7775819C8E301ECB3 /* Dependencies.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Dependencies.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FBE7239EDD38156691DF89F /* Perception.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Perception.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		9FC9E3CCD2F52E55FD8C7746 /* LiveUseCases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveUseCases.swift; sourceTree = "<group>"; };
+		A81F6FE6C79772F0D6911E66 /* LiveServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveServices.swift; sourceTree = "<group>"; };
 		AAE1A1F8330D2C78294A935E /* AboutSettingsClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AboutSettingsClient+Live.swift"; sourceTree = "<group>"; };
 		ACB9F39121175901689AFB57 /* ICloudSettingsClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ICloudSettingsClient+Live.swift"; sourceTree = "<group>"; };
 		AD077FEF086CCE80B3FF9DBB /* CombineSchedulers.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CombineSchedulers.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD9AF4E1E605FD6147EAB0BB /* IssueReporting.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = IssueReporting.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0A84948FCC268752A921BDB /* SecretClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SecretClient+Live.swift"; sourceTree = "<group>"; };
 		B2B21D1B6F729584BB2F0FC3 /* OrderedCollections.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = OrderedCollections.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		B549C9F6B95CEECFA76592FF /* WindowCaptureBlocker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowCaptureBlocker.swift; sourceTree = "<group>"; };
-		B56C2AD0DB55656EA430444B /* SidebarClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SidebarClient+Live.swift"; sourceTree = "<group>"; };
-		B7A8488C481C5AD829B2C88D /* AppLifecycleClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppLifecycleClient+Live.swift"; sourceTree = "<group>"; };
-		B924EF2B9510EAE169A4EB58 /* LiveStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveStorage.swift; sourceTree = "<group>"; };
+		B73A11396E450B6565FE3653 /* LiveRepositoryProxies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveRepositoryProxies.swift; sourceTree = "<group>"; };
 		BB361B9F556127B71BA763B0 /* DVPresentation.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = DVPresentation.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		C62F8443676E39714798E560 /* SecretManagementClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SecretManagementClient+Live.swift"; sourceTree = "<group>"; };
 		C6C2617966AD3FD584C897E0 /* DVPresentation_DVPresentation.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DVPresentation_DVPresentation.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
-		C75577FCC8589FA9B442DF7C /* LiveServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveServices.swift; sourceTree = "<group>"; };
+		CDD2248F2A8A999890323734 /* AppLaunchClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppLaunchClient+Live.swift"; sourceTree = "<group>"; };
 		D0D22C02A4ADD0C68B01E0ED /* DataSettingsClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataSettingsClient+Live.swift"; sourceTree = "<group>"; };
 		D18E2B0FC31D13FA1350046E /* AppSecurityClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppSecurityClient+Live.swift"; sourceTree = "<group>"; };
+		D98CF6ECEB3B3AED26B84617 /* LiveUseCases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveUseCases.swift; sourceTree = "<group>"; };
+		E3E8D783F56CD307FA0F8575 /* WindowCaptureBlocker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowCaptureBlocker.swift; sourceTree = "<group>"; };
 		E6EE7C463E964F352262F3E7 /* _LottieStub.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = _LottieStub.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E7ACF02DCD507CDBC630DB68 /* Clocks.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Clocks.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		EA27C25F8760329698C6505A /* PerceptionCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = PerceptionCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		EBA0D0D07EB3D8A0918BEA2D /* LiveRepositoryProxies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveRepositoryProxies.swift; sourceTree = "<group>"; };
 		ED8929967C9EDDDD93919656 /* DVData.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = DVData.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F61362F02D1650063F1F4979 /* UIKitNavigationShim.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = UIKitNavigationShim.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9ABEB22ED5A4FBEAE995334 /* NotificationSettingsClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationSettingsClient+Live.swift"; sourceTree = "<group>"; };
+		FCD1EBDD446A4EB6BF9CE398 /* LockClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LockClient+Live.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -225,7 +225,10 @@
 		2A4717A35A676BD0EDA7ECA2 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				CDD2248F2A8A999890323734 /* AppLaunchClient+Live.swift */,
+				263DCB34F5F2A6DBA7DD1EE7 /* AppLifecycleClient+Live.swift */,
 				D18E2B0FC31D13FA1350046E /* AppSecurityClient+Live.swift */,
+				56F2375917D00B8169FC4161 /* WindowCaptureBlockerClient+Live.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -262,12 +265,32 @@
 			path = Settings;
 			sourceTree = "<group>";
 		};
-		4555FC6784299C510535FA63 /* WindowCapture */ = {
+		488F05DF535528726DD6C8FA /* Graph */ = {
 			isa = PBXGroup;
 			children = (
-				88BC6368466D5C4002D178B3 /* WindowCaptureBlockerClient+Live.swift */,
+				9AEDA378EB351C322E1BDEB2 /* LiveRepositories.swift */,
+				B73A11396E450B6565FE3653 /* LiveRepositoryProxies.swift */,
+				A81F6FE6C79772F0D6911E66 /* LiveServices.swift */,
+				06916F993DB1B93D97AF68A9 /* LiveStorage.swift */,
+				D98CF6ECEB3B3AED26B84617 /* LiveUseCases.swift */,
 			);
-			path = WindowCapture;
+			path = Graph;
+			sourceTree = "<group>";
+		};
+		4DE121D43D1D96FD7317B5D7 /* Sidebar */ = {
+			isa = PBXGroup;
+			children = (
+				54E910ADE9473C425E4F5655 /* SidebarClient+Live.swift */,
+			);
+			path = Sidebar;
+			sourceTree = "<group>";
+		};
+		6BAE112C618962E0489F12A5 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				09FFDD6C0ABEE40A28DD258B /* OnboardingClient+Live.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		7AA4431EC9E18E2A0DF57AB0 /* Products */ = {
@@ -311,6 +334,15 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		81E6AB2F1BFDA19DBA1B222A /* AppShell */ = {
+			isa = PBXGroup;
+			children = (
+				6D83EFB0AEA14755E9BF37A7 /* NotificationDelegate.swift */,
+				E3E8D783F56CD307FA0F8575 /* WindowCaptureBlocker.swift */,
+			);
+			path = AppShell;
+			sourceTree = "<group>";
+		};
 		8F70FBC1AB01B2156C2CC51B = {
 			isa = PBXGroup;
 			children = (
@@ -328,6 +360,16 @@
 				B5BE108CD5FAC8F8CC71694B /* Sources */,
 			);
 			name = Project;
+			sourceTree = "<group>";
+		};
+		9FA28B2F5321A840B205C722 /* Secret */ = {
+			isa = PBXGroup;
+			children = (
+				8A325BCAEEBDF710358BA9BE /* DetectionClient+Live.swift */,
+				B0A84948FCC268752A921BDB /* SecretClient+Live.swift */,
+				C62F8443676E39714798E560 /* SecretManagementClient+Live.swift */,
+			);
+			path = Secret;
 			sourceTree = "<group>";
 		};
 		A52D819A5C09994B530481BE /* Derived */ = {
@@ -367,11 +409,9 @@
 		BCC037DE7613911FC9ED625F /* Composition */ = {
 			isa = PBXGroup;
 			children = (
+				81E6AB2F1BFDA19DBA1B222A /* AppShell */,
 				C54A9D872849D39AA10395F8 /* Dependencies */,
-				EBA0D0D07EB3D8A0918BEA2D /* LiveRepositoryProxies.swift */,
-				B924EF2B9510EAE169A4EB58 /* LiveStorage.swift */,
-				9E00F7536D02636712CCF2F2 /* NotificationDelegate.swift */,
-				B549C9F6B95CEECFA76592FF /* WindowCaptureBlocker.swift */,
+				488F05DF535528726DD6C8FA /* Graph */,
 			);
 			path = Composition;
 			sourceTree = "<group>";
@@ -380,22 +420,30 @@
 			isa = PBXGroup;
 			children = (
 				2A4717A35A676BD0EDA7ECA2 /* App */,
+				DBB1BADE831433D80CBB0DF7 /* Lock */,
+				6BAE112C618962E0489F12A5 /* Onboarding */,
+				D817FDFA9322B140C9B32AF2 /* Project */,
+				9FA28B2F5321A840B205C722 /* Secret */,
 				4442EF30CF25067FA29CDD21 /* Settings */,
-				4555FC6784299C510535FA63 /* WindowCapture */,
-				9371980EE6DF9BF252923EB9 /* AppLaunchClient+Live.swift */,
-				B7A8488C481C5AD829B2C88D /* AppLifecycleClient+Live.swift */,
-				4C00C6BDE9B4EAD1BAB8F127 /* DetectionClient+Live.swift */,
-				56ACAE2381447285760E40BD /* LiveRepositories.swift */,
-				C75577FCC8589FA9B442DF7C /* LiveServices.swift */,
-				9FC9E3CCD2F52E55FD8C7746 /* LiveUseCases.swift */,
-				97577A1D7EF60D4B1AE71E0C /* LockClient+Live.swift */,
-				8ABD7AE0302E3A71F95773FF /* OnboardingClient+Live.swift */,
-				576DD56518DE3B09EA88D578 /* ProjectClient+Live.swift */,
-				89E1D3FB67367C4E09F39206 /* SecretClient+Live.swift */,
-				2A051CF1871942CD8EA2F126 /* SecretManagementClient+Live.swift */,
-				B56C2AD0DB55656EA430444B /* SidebarClient+Live.swift */,
+				4DE121D43D1D96FD7317B5D7 /* Sidebar */,
 			);
 			path = Dependencies;
+			sourceTree = "<group>";
+		};
+		D817FDFA9322B140C9B32AF2 /* Project */ = {
+			isa = PBXGroup;
+			children = (
+				3B36B79F2D7A92DE4BB430F4 /* ProjectClient+Live.swift */,
+			);
+			path = Project;
+			sourceTree = "<group>";
+		};
+		DBB1BADE831433D80CBB0DF7 /* Lock */ = {
+			isa = PBXGroup;
+			children = (
+				FCD1EBDD446A4EB6BF9CE398 /* LockClient+Live.swift */,
+			);
+			path = Lock;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -471,30 +519,30 @@
 			files = (
 				96CD60DC41AF7A7C1C2DDC14 /* TuistAssets+Devault.swift in Sources */,
 				57BD0169AB45CF65B8898E11 /* TuistBundle+Devault.swift in Sources */,
+				77396AAD34BEE87FCADCEECB /* NotificationDelegate.swift in Sources */,
+				8EC9EC95AF1272EF967B2C60 /* WindowCaptureBlocker.swift in Sources */,
+				E9858B96857E3168C6839952 /* AppLaunchClient+Live.swift in Sources */,
+				75A8CCBF848A8A92D1D0EEE0 /* AppLifecycleClient+Live.swift in Sources */,
 				33025A064C08F92074526991 /* AppSecurityClient+Live.swift in Sources */,
-				8991420AB2CB7DA1F4EF5176 /* AppLaunchClient+Live.swift in Sources */,
-				0C0FBA6C420FCFCE94FE6E1A /* AppLifecycleClient+Live.swift in Sources */,
-				80D6492238CDA5C72D03E644 /* DetectionClient+Live.swift in Sources */,
-				8B92B538FA438D07640D3E9F /* LiveRepositories.swift in Sources */,
-				F0BE61E29A939056F6D1A325 /* LiveServices.swift in Sources */,
-				D191D3EE088A54E43E131D2A /* LiveUseCases.swift in Sources */,
-				0464C36A3AFBFFA233B254E6 /* LockClient+Live.swift in Sources */,
-				E873D140BDC2357307A06943 /* OnboardingClient+Live.swift in Sources */,
-				C22D4A8ED679F8E25C2D1D0F /* ProjectClient+Live.swift in Sources */,
-				E7F07005B916DF9BEA4C26EF /* SecretClient+Live.swift in Sources */,
-				1BF92CB03B2177DB4F22C786 /* SecretManagementClient+Live.swift in Sources */,
+				2E78C068B7CAE1F8A398E8EE /* WindowCaptureBlockerClient+Live.swift in Sources */,
+				037C46C279355D75020BCE5E /* LockClient+Live.swift in Sources */,
+				BFAB3A31647DB53C8B11066F /* OnboardingClient+Live.swift in Sources */,
+				E6F8BD09BF451B2B623EA707 /* ProjectClient+Live.swift in Sources */,
+				0397A1C7466BF00371EA1AE9 /* DetectionClient+Live.swift in Sources */,
+				17B9458FB50086D5D5489C43 /* SecretClient+Live.swift in Sources */,
+				C2B576AA5C14966B7DE502E7 /* SecretManagementClient+Live.swift in Sources */,
 				CE35F55108D5BE577729364D /* AboutSettingsClient+Live.swift in Sources */,
 				E74B3D95623360466E355703 /* DataSettingsClient+Live.swift in Sources */,
 				5EF2D5D3877ADF6809B5FF64 /* GeneralSettingsClient+Live.swift in Sources */,
 				0B240378183C9F5F33762C07 /* ICloudSettingsClient+Live.swift in Sources */,
 				FAFEE961DC43DCEA505ADA97 /* NotificationSettingsClient+Live.swift in Sources */,
 				E94FA0D105E9B3E165FE88BE /* SecuritySettingsClient+Live.swift in Sources */,
-				C1DBDA1A62CE205674C242CE /* SidebarClient+Live.swift in Sources */,
-				BFB1799FA25A03C7054D04C1 /* WindowCaptureBlockerClient+Live.swift in Sources */,
-				053FBDAD5B5A3A74C067FB1A /* LiveRepositoryProxies.swift in Sources */,
-				82215B42DE13B22BBF9CAC88 /* LiveStorage.swift in Sources */,
-				43A404DFF6B102E607EE06E8 /* NotificationDelegate.swift in Sources */,
-				F5E8A6BE36585C0359B9D675 /* WindowCaptureBlocker.swift in Sources */,
+				93DF4992A870C47F06BEE9E3 /* SidebarClient+Live.swift in Sources */,
+				8E03BDC79408643B37EE8771 /* LiveRepositories.swift in Sources */,
+				3DA8D7A66C6321A94B20E909 /* LiveRepositoryProxies.swift in Sources */,
+				799E0187806A35F26DB1EE43 /* LiveServices.swift in Sources */,
+				E7146CF51FE45DD841968DAB /* LiveStorage.swift in Sources */,
+				E9EBE61F7270000DE3BA1C79 /* LiveUseCases.swift in Sources */,
 				6EC0424EA676F3D0F812E8FA /* DevaultApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
