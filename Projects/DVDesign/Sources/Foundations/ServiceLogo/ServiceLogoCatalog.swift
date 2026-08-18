@@ -48,15 +48,15 @@ public enum ServiceLogoCatalog {
     private static let entries: [Entry] = [
         Entry(
             logo: DVServiceLogo(assetName: "google", brandColor: Color(hex: 0x4285F4), rendersAsTemplate: true),
-            aliases: ["google", "gmail", "googleworkspace"]
+            aliases: ["google", "gmail", "googleworkspace", "구글"]
         ),
         Entry(
             logo: DVServiceLogo(assetName: "github", brandColor: Color(hex: 0x181717), rendersAsTemplate: true),
-            aliases: ["github"]
+            aliases: ["github", "깃허브"]
         ),
         Entry(
             logo: DVServiceLogo(assetName: "naver", brandColor: Color(hex: 0x03C75A), rendersAsTemplate: true),
-            aliases: ["naver"]
+            aliases: ["naver", "네이버"]
         ),
         Entry(
             // 카카오 심볼(말풍선)은 브랜드 규정상 글리프가 항상 브라운 고정이라 흰색 관례를 따르지 않는다.
@@ -66,7 +66,71 @@ public enum ServiceLogoCatalog {
                 rendersAsTemplate: true,
                 glyphColor: Color(hex: 0x391B1B)
             ),
-            aliases: ["kakao", "kakaotalk"]
+            aliases: ["kakao", "kakaotalk", "카카오", "카카오톡"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "paypal", brandColor: Color(hex: 0x002991), rendersAsTemplate: true),
+            aliases: ["paypal", "페이팔"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "azure", brandColor: Color(hex: 0x0089D6), rendersAsTemplate: true),
+            aliases: ["azure", "애저"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "cloudinary", brandColor: Color(hex: 0x3448C5), rendersAsTemplate: true),
+            aliases: ["cloudinary", "클라우디너리"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "firebase", brandColor: Color(hex: 0xDD2C00), rendersAsTemplate: true),
+            aliases: ["firebase", "파이어베이스"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "notion", brandColor: Color(hex: 0x000000), rendersAsTemplate: true),
+            aliases: ["notion", "노션"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "discord", brandColor: Color(hex: 0x5865F2), rendersAsTemplate: true),
+            aliases: ["discord", "디스코드"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "slack", brandColor: Color(hex: 0x4A154B), rendersAsTemplate: true),
+            aliases: ["slack", "슬랙"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "anthropic", brandColor: Color(hex: 0x191919), rendersAsTemplate: true),
+            aliases: ["anthropic", "앤트로픽"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "huggingface", brandColor: Color(hex: 0xFFD21E), rendersAsTemplate: true),
+            aliases: ["huggingface", "허깅페이스"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "gitlab", brandColor: Color(hex: 0xFC6D26), rendersAsTemplate: true),
+            aliases: ["gitlab", "깃랩"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "npm", brandColor: Color(hex: 0xCB3837), rendersAsTemplate: true),
+            aliases: ["npm"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "vercel", brandColor: Color(hex: 0x000000), rendersAsTemplate: true),
+            aliases: ["vercel", "버셀"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "stripe", brandColor: Color(hex: 0x635BFF), rendersAsTemplate: true),
+            aliases: ["stripe", "스트라이프"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "sentry", brandColor: Color(hex: 0x362D59), rendersAsTemplate: true),
+            aliases: ["sentry", "센트리"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "telegram", brandColor: Color(hex: 0x26A5E4), rendersAsTemplate: true),
+            aliases: ["telegram", "텔레그램"]
+        ),
+        Entry(
+            logo: DVServiceLogo(assetName: "twilio", brandColor: Color(hex: 0xF22F46), rendersAsTemplate: true),
+            aliases: ["twilio", "트윌리오"]
         ),
     ]
 

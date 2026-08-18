@@ -175,6 +175,41 @@ struct PrefixRegexDetectorTests {
         let raw = "123456789:" + String(repeating: "A", count: 35)
         #expect(sut.detect(.testing(raw), context: context)?.candidates.first?.service == "Telegram")
     }
+
+    @Test("Toss Payments — test_sk_/live_sk_/test_ak_/live_ak_ prefix 매칭")
+    func tossPayments() {
+        let cases: [(String, String)] = [
+            ("test_sk_abcdef1234567890", "Toss Payments Test Secret Key"),
+            ("live_sk_abcdef1234567890", "Toss Payments Live Secret Key"),
+            ("test_ak_abcdef1234567890", "Toss Payments Test API Key"),
+            ("live_ak_abcdef1234567890", "Toss Payments Live API Key"),
+        ]
+        for (raw, expected) in cases {
+            let result = sut.detect(.testing(raw), context: context)
+            #expect(result?.candidates.first?.service == "Toss Payments")
+            #expect(result?.candidates.first?.displayLabel == expected)
+        }
+    }
+
+    @Test("PayPal Client ID — A21 prefix + 50자 이상")
+    func paypalClientID() {
+        #expect(sut.detect(.testing("A21" + String(repeating: "a", count: 40)), context: context) == nil)
+        let ok = "A21" + String(repeating: "a", count: 50)
+        #expect(sut.detect(.testing(ok), context: context)?.candidates.first?.service == "PayPal")
+    }
+
+    @Test("Azure Storage Connection String regex")
+    func azureStorageConnectionString() {
+        let key = String(repeating: "a", count: 86) + "=="
+        let raw = "DefaultEndpointsProtocol=https;AccountName=mystorageacct;AccountKey=\(key);EndpointSuffix=core.windows.net"
+        #expect(sut.detect(.testing(raw), context: context)?.candidates.first?.service == "Azure")
+    }
+
+    @Test("Cloudinary URL regex")
+    func cloudinaryURL() {
+        let raw = "CLOUDINARY_URL=cloudinary://123456789012345:abcDEF-ghiJKL_mno@my-cloud-name"
+        #expect(sut.detect(.testing(raw), context: context)?.candidates.first?.service == "Cloudinary")
+    }
 }
 
 private struct StubDetectorContext: DetectorContext {
