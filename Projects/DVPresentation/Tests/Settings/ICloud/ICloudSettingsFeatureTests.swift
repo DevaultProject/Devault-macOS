@@ -148,21 +148,18 @@ struct ICloudSettingsFeatureTests {
     }
   }
 
-  @Test("원격 변경이 감지되면 마지막 update 감지 시각을 저장한다")
+  @Test("원격 변경이 감지되면 표시용 마지막 update 감지 시각을 갱신한다(영속화는 AppFeature 단독)")
   func remoteChangeUpdatesLastUpdateDetectedAt() async {
     let fixedDate = Date(timeIntervalSince1970: 1_700_000_000)
-    let savedDate = LockIsolated<Date?>(nil)
     let store = TestStore(initialState: ICloudSettingsFeature.State()) {
       ICloudSettingsFeature()
     } withDependencies: {
       $0.date = .constant(fixedDate)
-      $0.iCloudSettingsClient.setLastUpdateDetectedAt = { savedDate.setValue($0) }
     }
 
     await store.send(.remoteChangeDetected) {
       $0.lastUpdateDetectedAt = fixedDate
     }
-    #expect(savedDate.value == fixedDate)
   }
 
   @Test("상태 새로고침에서 계정 오류가 확인되면 상태와 alert를 갱신한다")

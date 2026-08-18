@@ -120,8 +120,10 @@ public struct ICloudSettingsFeature {
         return requestRefreshStatusEffect()
 
       case .remoteChangeDetected:
+        // 표시만 즉시 갱신한다. 영속화는 상시 동작하는 AppFeature의 원격 변경 핸들러가 단독으로 맡아,
+        // 같은 값을 두 곳에서 쓰던 중복을 없앤다.
         state.lastUpdateDetectedAt = now
-        return .run { [now] _ in iCloudSettingsClient.setLastUpdateDetectedAt(now) }
+        return .none
 
       case let .syncSettingResponse(enabled, succeeded):
         state.isTogglingSync = false
