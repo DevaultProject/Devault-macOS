@@ -18,4 +18,10 @@ public protocol ScheduleSecretExpiryNotificationsUseCase: Sendable {
     /// 특정 Secret의 예약된 만료 알림을 모두 취소한다(삭제 시 호출).
     /// - Parameter secretID: 알림을 취소할 Secret의 ID
     func cancel(secretID: UUID) async
+
+    /// 예약된 **모든** 만료 알림을 취소한다(전체 데이터 삭제 시 호출).
+    ///
+    /// 개별 `cancel(secretID:)`와 달리 취소 대상 ID를 몰라도 되며, pending 목록에서
+    /// 만료 알림 식별자를 찾아 일괄 취소한다.
+    func cancelAll() async
 }

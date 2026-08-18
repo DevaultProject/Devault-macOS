@@ -9,7 +9,8 @@ extension DataSettingsClient: @retroactive DependencyKey {
     let useCase: any DataSettingsUseCase = DataSettingsUseCaseImpl(
       dataResetRepository: LiveRepositories.dataReset,
       settingsRepository: LiveRepositories.settings,
-      authenticateUseCase: LiveUseCases.authenticate
+      authenticateUseCase: LiveUseCases.authenticate,
+      expiryNotificationScheduler: LiveUseCases.expirySchedule
     )
 
     return DataSettingsClient(

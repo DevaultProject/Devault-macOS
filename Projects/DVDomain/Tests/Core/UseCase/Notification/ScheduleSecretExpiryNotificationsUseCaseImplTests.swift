@@ -336,4 +336,64 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
 
         #expect(notificationService.scheduled.isEmpty)
     }
+
+    @Test("syncAll은 더 이상 존재하지 않는(원격 삭제된) Secret의 고아 예약을 취소한다")
+    func syncAllCancelsOrphanNotificationsForVanishedSecrets() async throws {
+        let repository = InMemorySecretRepository()
+        let existing = SecretFixture.make(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000BB")!,
+            expiresAt: now.addingTimeInterval(10 * day)
+        )
+        repository.seed(existing)
+
+        let notificationService = FakeSecurityNotificationService()
+        // 이전 세션에 예약됐지만 지금은 repo에 없는(원격 삭제된) Secret의 알림.
+        let orphanID = UUID(uuidString: "00000000-0000-0000-0000-0000000000FF")!
+        notificationService.seedPending([
+            "secret-expiry-\(orphanID.uuidString)-30d",
+            "secret-expiry-\(orphanID.uuidString)-7d",
+        ])
+        let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
+            repository: repository,
+            notificationService: notificationService,
+            settingsRepository: FakeSettingsRepository(),
+            dateProvider: { self.now }
+        )
+
+        try await sut.syncAll()
+
+        let pending = Set(await notificationService.pendingIdentifiers())
+        // 고아 알림은 사라지고
+        #expect(!pending.contains("secret-expiry-\(orphanID.uuidString)-30d"))
+        #expect(!pending.contains("secret-expiry-\(orphanID.uuidString)-7d"))
+        // 존재하는 Secret의 예약은 남는다(10일 후 만료 → 7일 전 마크가 미래).
+        #expect(pending.contains("secret-expiry-\(existing.id.uuidString)-7d"))
+    }
+
+    // MARK: - cancelAll()
+
+    @Test("cancelAll은 예약된 모든 만료 알림을 취소하고, 만료 알림이 아닌 것은 건드리지 않는다")
+    func cancelAllCancelsAllPendingExpiryNotificationsOnly() async {
+        let notificationService = FakeSecurityNotificationService()
+        let idA = UUID(uuidString: "00000000-0000-0000-0000-0000000000A1")!
+        let idB = UUID(uuidString: "00000000-0000-0000-0000-0000000000B2")!
+        notificationService.seedPending([
+            "secret-expiry-\(idA.uuidString)-30d",
+            "secret-expiry-\(idB.uuidString)-3d",
+            "some-other-notification", // 만료 알림 접두어가 아니므로 유지되어야 한다
+        ])
+        let sut = ScheduleSecretExpiryNotificationsUseCaseImpl(
+            repository: InMemorySecretRepository(),
+            notificationService: notificationService,
+            settingsRepository: FakeSettingsRepository(),
+            dateProvider: { self.now }
+        )
+
+        await sut.cancelAll()
+
+        let pending = Set(await notificationService.pendingIdentifiers())
+        #expect(!pending.contains("secret-expiry-\(idA.uuidString)-30d"))
+        #expect(!pending.contains("secret-expiry-\(idB.uuidString)-3d"))
+        #expect(pending == ["some-other-notification"])
+    }
 }
