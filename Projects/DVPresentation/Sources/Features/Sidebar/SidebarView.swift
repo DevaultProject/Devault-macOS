@@ -133,7 +133,7 @@ extension SidebarView {
   @ViewBuilder
   private var projectSectionBody: some View {
     if case .failed = store.projectsState {
-      Text(.module("Failed to load"))
+      Text(.module("Failed to load."))
         .dvFont(.bodyMD)
         .foregroundStyle(Color.dv(.danger))
         .frame(maxWidth: .infinity)

@@ -62,6 +62,7 @@ extension SecretListView {
       DVTitleBar(
         titleText: titleText,
         searchText: searchTextBinding,
+        searchPromptText: .module("Search"),
         isSearchFocused: $isSearchFocused,
         sortMenuContent: showsSort ? { AnyView(sortMenuContent) } : nil
       )
@@ -129,15 +130,15 @@ extension SecretListView {
   private func contextMenuItems(for secret: Secret) -> some View {
     switch store.collection {
     case .deleted:
-      Button("Recover") {
+      Button(.module("Recover")) {
         store.send(.didTapRecover(id: secret.id))
       }
-      Button("Delete Forever", role: .destructive) {
+      Button(.module("Delete Forever"), role: .destructive) {
         store.send(.didTapDeleteForever(id: secret.id))
       }
 
     case .all, .liked, .notice, .expired, .project:
-      Button("Delete", role: .destructive) {
+      Button(.module("Delete"), role: .destructive) {
         store.send(.didTapDelete(id: secret.id))
       }
     }
@@ -147,18 +148,18 @@ extension SecretListView {
   /// `Menu`가 바깥 클릭·ESC·포커스 상실 처리를 대신하므로 이 화면은 두 축의 값만 계산하면 된다.
   @ViewBuilder
   private var sortMenuContent: some View {
-    Picker("Sort by", selection: sortKeyBinding) {
-      Text("Time").tag(SecretQuery.Sort.Key.time)
-      Text("Expiry").tag(SecretQuery.Sort.Key.expiry)
-      Text("Name").tag(SecretQuery.Sort.Key.name)
+    Picker(.module("Sort by"), selection: sortKeyBinding) {
+      Text(.module("Time")).tag(SecretQuery.Sort.Key.time)
+      Text(.module("Expiry")).tag(SecretQuery.Sort.Key.expiry)
+      Text(.module("Name")).tag(SecretQuery.Sort.Key.name)
     }
     .pickerStyle(.inline)
 
     Divider()
 
-    Picker("Direction", selection: sortDirectionBinding) {
-      Text("Ascending").tag(SecretQuery.Sort.Direction.ascending)
-      Text("Descending").tag(SecretQuery.Sort.Direction.descending)
+    Picker(.module("Direction"), selection: sortDirectionBinding) {
+      Text(.module("Ascending")).tag(SecretQuery.Sort.Direction.ascending)
+      Text(.module("Descending")).tag(SecretQuery.Sort.Direction.descending)
     }
     .pickerStyle(.inline)
   }
@@ -183,10 +184,10 @@ extension SecretListView {
       Image(systemName: "exclamationmark.triangle")
         .dvFont(.bodyLG)
         .foregroundStyle(Color.dv(.gray400))
-      Text("Failed to load the list")
+      Text(.module("Failed to load the list."))
         .dvFont(.bodyMD)
         .foregroundStyle(Color.dv(.gray500))
-      DVButton(titleText: "Retry", style: .secondary) {
+      DVButton(titleText: .module("Retry"), style: .secondary) {
         store.send(.didTapRetry)
       }
       Spacer()
@@ -195,7 +196,7 @@ extension SecretListView {
   }
 
   private var emptyView: some View {
-    Text(.module("No secrets"))
+    Text(.module("No secrets."))
       .dvFont(.captionLG)
       .foregroundStyle(Color.dv(.gray700))
       .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -215,7 +216,7 @@ extension SecretListView {
     case .notice: return "Notice"
     case .expired: return "Expired"
     case .deleted: return "Deleted"
-    case .project: return store.projectName ?? "Project"
+    case .project: return store.projectName ?? .module("Project")
     }
   }
 

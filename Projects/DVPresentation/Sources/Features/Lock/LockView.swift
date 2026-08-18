@@ -40,7 +40,7 @@ extension LockView {
   private var unlockView: some View {
     VStack(spacing: 40) {
       appIconWithLogoView
-      DVButton(titleText: "Unlock with Touch ID", style: .primary) {
+      DVButton(titleText: .module("Unlock with Touch ID"), style: .primary) {
         store.send(.didTapUnlock)
       }
     }

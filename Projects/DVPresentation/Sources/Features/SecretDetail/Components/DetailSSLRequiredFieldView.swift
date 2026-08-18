@@ -25,7 +25,7 @@ struct DetailSSLRequiredFieldView: View {
         // 정작 필요한 켜짐/꺼짐은 알려주지 않는다. 다른 조회 필드가 라벨 + 값으로 읽히므로
         // 이 행만 값이 비면 목록을 훑을 때 한 칸이 빈 것처럼 들린다.
         .accessibilityElement(children: .combine)
-        .accessibilityValue(Text(isRequired ? .module("Required") : .module("Not Required")))
+        .accessibilityValue(Text(isRequired ? .module("Required.") : .module("Not Required")))
     }
 }
 

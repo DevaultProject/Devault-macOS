@@ -41,7 +41,7 @@ extension AlertState where Action == CreateSecretFeature.Action.Alert {
         switch error {
         case .cryptoUnavailable:
             return Self {
-                TextState("Encryption unavailable", bundle: .module)
+                TextState("Encryption unavailable.", bundle: .module)
             } actions: {
                 ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
             } message: {

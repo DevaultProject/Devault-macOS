@@ -27,13 +27,13 @@ extension AboutSettingsView {
     SettingsDetailContainer(title: String.module("About")) {
       SettingsSection(title: String.module("Version")) {
         SettingsValueRow(
-          title: String.module("Devault"),
+          title: String.module("DeVault"),
           value: store.version
         )
       }
 
       SettingsSection(title: String.module("Developer")) {
-        SettingsValueRow(title: String.module("Devault Team"))
+        SettingsValueRow(title: String.module("DeVault Team"))
       }
 
       SettingsSection(title: String.module("License")) {

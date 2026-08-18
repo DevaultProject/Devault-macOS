@@ -328,7 +328,7 @@ private func _editingPreviewState(
     SecretDetailView(
         store: Store(
             initialState: {
-                var state = _editingPreviewState(validationErrors: [.value: .module("Required")])
+                var state = _editingPreviewState(validationErrors: [.value: .module("Required.")])
                 state.editFields?.content = .apiKeyToken(APIKeyTokenFields(value: ""))
                 return state
             }()

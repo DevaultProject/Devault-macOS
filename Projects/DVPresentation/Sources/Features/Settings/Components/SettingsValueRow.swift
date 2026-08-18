@@ -79,7 +79,7 @@ struct SettingsValueRow: View {
 #Preview("Settings Value Row") {
   Form {
     Section {
-      SettingsValueRow(title: "Devault", value: "1.0.0 (1)")
+      SettingsValueRow(title: "DeVault", value: "1.0.0 (1)")
       SettingsValueRow(title: "Open Settings", value: "⌘,", valueStyle: .emphasized)
     }
   }

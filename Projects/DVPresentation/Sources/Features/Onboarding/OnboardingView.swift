@@ -62,12 +62,12 @@ extension OnboardingView {
 
   private var securityView: some View {
     VStack(spacing: 56) {
-      appIconWithTextView(String.module("Your secrets are protected with Touch ID"))
+      appIconWithTextView(String.module("Your secrets are protected with Touch ID."))
       VStack(spacing: 12) {
         DVButton(titleText: String.module("Enable Touch ID"), style: .primary) {
           store.send(.didTapEnableTouchID)
         }
-        Text(.module("If Touch ID is unavailable,\nsystem password will be used"))
+        Text(.module("If Touch ID is unavailable,\nsystem password will be used."))
           .dvFont(.captionMDRegular)
           .foregroundStyle(Color.dv(.gray900))
           .multilineTextAlignment(.center)
@@ -95,7 +95,7 @@ extension OnboardingView {
           }
         }
         .disabled(store.isEnablingSync)
-        Text(.module("You can change this anytime in Settings"))
+        Text(.module("You can change this anytime in Settings."))
           .dvFont(.captionMDRegular)
           .foregroundStyle(Color.dv(.gray600))
       }

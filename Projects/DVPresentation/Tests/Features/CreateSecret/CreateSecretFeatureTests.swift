@@ -157,7 +157,7 @@ struct CreateSecretFeatureTests {
     @Test("selectedSubType 변경: content 교체 + validationErrors / detection state 초기화")
     func binding_selectedSubType_swapsContentAndClearsState() async {
         var initialState = CreateSecretFeature.State(secretType: .oauth)
-        initialState.validationErrors = [.name: "Required"]
+        initialState.validationErrors = [.name: "Required."]
         initialState.serviceCandidates = ["GitHub"]
         initialState.detectedServices = [.clientSecret: "GitHub"]
         initialState.meta.content = .oauthClient(OAuthClientFields(clientId: "prev-id"))
@@ -315,7 +315,7 @@ struct CreateSecretFeatureTests {
         }
 
         await store.send(.didTapSave) {
-            $0.validationErrors = [.name: "Required", .value: "Required"]
+            $0.validationErrors = [.name: "Required.", .value: "Required."]
         }
     }
 
@@ -329,14 +329,14 @@ struct CreateSecretFeatureTests {
         }
 
         await store.send(.didTapSave) {
-            $0.validationErrors = [.value: "Required"]
+            $0.validationErrors = [.value: "Required."]
         }
     }
 
     @Test("didTapSave 재시도: 이전 validationErrors가 새 결과로 대체 (해결된 필드 warning 사라짐)")
     func didTapSave_retryReplacesPriorErrors() async {
         var initialState = CreateSecretFeature.State(secretType: .apiKeyToken)
-        initialState.validationErrors = [.name: "Required", .value: "Required"]
+        initialState.validationErrors = [.name: "Required.", .value: "Required."]
         initialState.meta.name = "n"
 
         let store = TestStore(initialState: initialState) {
@@ -344,7 +344,7 @@ struct CreateSecretFeatureTests {
         }
 
         await store.send(.didTapSave) {
-            $0.validationErrors = [.value: "Required"]
+            $0.validationErrors = [.value: "Required."]
         }
     }
 
@@ -356,9 +356,9 @@ struct CreateSecretFeatureTests {
 
         await store.send(.didTapSave) {
             $0.validationErrors = [
-                .name: "Required",
-                .clientId: "Required",
-                .clientSecret: "Required",
+                .name: "Required.",
+                .clientId: "Required.",
+                .clientSecret: "Required.",
             ]
         }
     }

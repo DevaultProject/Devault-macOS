@@ -82,7 +82,7 @@ struct OnboardingFeatureTests {
         await store.receive(.iCloudSyncStatusResponse(.noAccount)) {
             $0.isEnablingSync = false
             $0.alert = AlertState {
-                TextState("iCloud sync isn't available")
+                TextState("iCloud sync isn't available.")
             } actions: {
                 ButtonState(action: .retry) { TextState("Try Again") }
                 ButtonState(action: .openSystemSettings) { TextState("Open System Settings") }
@@ -177,7 +177,7 @@ struct OnboardingFeatureTests {
 
 private func makeNoAccountAlert() -> AlertState<OnboardingFeature.Action.Alert> {
     AlertState {
-        TextState("iCloud sync isn't available")
+        TextState("iCloud sync isn't available.")
     } actions: {
         ButtonState(action: .retry) { TextState("Try Again") }
         ButtonState(action: .openSystemSettings) { TextState("Open System Settings") }

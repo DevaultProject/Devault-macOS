@@ -118,7 +118,7 @@ extension DataSettingsFeature {
 
   private var deleteFailureAlert: AlertState<Action.Alert> {
     AlertState {
-      TextState(String.module("Couldn't delete data"))
+      TextState(String.module("Couldn't delete data."))
     } actions: {
       ButtonState(role: .cancel) {
         TextState(String.module("OK"))

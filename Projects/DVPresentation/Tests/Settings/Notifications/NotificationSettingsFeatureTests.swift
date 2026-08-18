@@ -79,7 +79,7 @@ struct NotificationSettingsFeatureTests {
     }
     await store.receive(.expiryNotificationsUpdateFailed) {
       $0.alert = AlertState {
-        TextState("Couldn't update expiration alerts")
+        TextState("Couldn't update expiration alerts.")
       } actions: {
         ButtonState(role: .cancel) { TextState("OK") }
       } message: {

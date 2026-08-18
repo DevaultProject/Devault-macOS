@@ -225,12 +225,12 @@ struct SidebarFeatureTests {
     await store.send(.didTapDelete(id: item.id)) {
       $0.deletingProjectID = item.id
       $0.alert = AlertState {
-        TextState("'\(item.name)' 프로젝트를 삭제할까요?")
+        TextState(String.module("Delete project '\(item.name)'?"))
       } actions: {
-        ButtonState(role: .destructive, action: .confirmDelete) { TextState("삭제") }
-        ButtonState(role: .cancel) { TextState("취소") }
+        ButtonState(role: .destructive, action: .confirmDelete) { TextState(String.module("Delete")) }
+        ButtonState(role: .cancel) { TextState(String.module("Cancel")) }
       } message: {
-        TextState("프로젝트에 속한 Secret과의 연결이 해제됩니다. Secret 자체는 삭제되지 않습니다.")
+        TextState(String.module("Deleting this project will unlink its secrets. The secrets themselves won't be deleted."))
       }
     }
     await store.send(.alert(.dismiss)) {
@@ -340,11 +340,11 @@ struct SidebarFeatureTests {
     await store.send(.didConfirmRename)
     await store.receive(.renameResponse(.failure(.nameTaken))) {
       $0.alert = AlertState {
-        TextState("이미 사용 중인 이름이에요")
+        TextState(String.module("This name is already in use."))
       } actions: {
-        ButtonState(role: .cancel) { TextState("확인") }
+        ButtonState(role: .cancel) { TextState(String.module("OK")) }
       } message: {
-        TextState("다른 프로젝트 이름을 입력해주세요.")
+        TextState(String.module("Please enter a different project name."))
       }
     }
   }
@@ -380,12 +380,12 @@ struct SidebarFeatureTests {
     await store.send(.didTapDelete(id: item.id)) {
       $0.deletingProjectID = item.id
       $0.alert = AlertState {
-        TextState("'\(item.name)' 프로젝트를 삭제할까요?")
+        TextState(String.module("Delete project '\(item.name)'?"))
       } actions: {
-        ButtonState(role: .destructive, action: .confirmDelete) { TextState("삭제") }
-        ButtonState(role: .cancel) { TextState("취소") }
+        ButtonState(role: .destructive, action: .confirmDelete) { TextState(String.module("Delete")) }
+        ButtonState(role: .cancel) { TextState(String.module("Cancel")) }
       } message: {
-        TextState("프로젝트에 속한 Secret과의 연결이 해제됩니다. Secret 자체는 삭제되지 않습니다.")
+        TextState(String.module("Deleting this project will unlink its secrets. The secrets themselves won't be deleted."))
       }
     }
   }
@@ -399,12 +399,12 @@ struct SidebarFeatureTests {
     state.selection = .project(id: item.id)
     state.deletingProjectID = item.id
     state.alert = AlertState {
-      TextState("'\(item.name)' 프로젝트를 삭제할까요?")
+      TextState(String.module("Delete project '\(item.name)'?"))
     } actions: {
-      ButtonState(role: .destructive, action: .confirmDelete) { TextState("삭제") }
-      ButtonState(role: .cancel) { TextState("취소") }
+      ButtonState(role: .destructive, action: .confirmDelete) { TextState(String.module("Delete")) }
+      ButtonState(role: .cancel) { TextState(String.module("Cancel")) }
     } message: {
-      TextState("프로젝트에 속한 Secret과의 연결이 해제됩니다. Secret 자체는 삭제되지 않습니다.")
+      TextState(String.module("Deleting this project will unlink its secrets. The secrets themselves won't be deleted."))
     }
 
     let store = TestStore(initialState: state) {
