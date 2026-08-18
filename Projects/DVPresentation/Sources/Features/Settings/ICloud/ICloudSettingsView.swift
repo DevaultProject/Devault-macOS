@@ -31,7 +31,9 @@ extension ICloudSettingsView {
           ),
           isOn: $store.isSyncEnabled
         )
-        .disabled(store.isTogglingSync)
+        // `.disabled`는 tint 스위치를 손잡이 없는 단색 캡슐로 그린다(렌더 버그). 상호작용만 막고 흐림으로 표시.
+        .allowsHitTesting(!store.isTogglingSync)
+        .opacity(store.isTogglingSync ? 0.6 : 1)
 
       }
 
