@@ -109,7 +109,7 @@ extension SidebarView {
     .animation(MotionMetrics.subtle, value: store.isRefreshingProjects)
   }
 
-  /// **`.clipped()`가 헤더를 포함하면 안 된다.** 클립 경계가 헤더보다 위에 생겨,
+  /// **접힘 마스크가 헤더를 포함하면 안 된다.** 경계가 헤더보다 위에 생겨,
   /// 접히는 목록이 "Project" 라벨 위를 지나간 뒤에야 잘린다.
   private var collapsibleProjectBody: some View {
     VStack(spacing: 0) {
@@ -121,7 +121,10 @@ extension SidebarView {
         Spacer(minLength: 0)
       }
     }
-    .clipped()
+    // 접힘은 세로만 자르면 된다. 리스트가 `.padding(.horizontal, -12)`로 넘치므로 마스크를 좌우 12pt 넓혀 하이라이트가 안 깎이게 한다.
+    .mask {
+      Rectangle().padding(.horizontal, -12)
+    }
     .animation(MotionMetrics.layout, value: store.isProjectSectionExpanded)
   }
 
@@ -213,6 +216,7 @@ extension SidebarView {
       }
     }
     .listStyle(.sidebar)
+    .tint(Color.dv(.vaultGreen))
     .animation(MotionMetrics.layout, value: store.projects)
     .scrollContentBackground(.hidden)
     .padding(.horizontal, -12)
@@ -242,8 +246,7 @@ extension SidebarView {
     } else {
       DVProjectContainer(
         name: project.name,
-        count: store.counts?.count(forProject: project.id),
-        isSelected: store.highlighted == .project(id: project.id)
+        count: store.counts?.count(forProject: project.id)
       )
     }
   }
@@ -304,7 +307,6 @@ private extension SidebarFilter {
     case .notice:  Color.dv(.warning)
     case .starred: Color.dv(.vaultGreen)
     case .expired: Color.dv(.danger)
-    case .deleted: Color.dv(.gray700)
     default:       Color.dv(.gray800)
     }
   }

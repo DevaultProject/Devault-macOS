@@ -70,8 +70,7 @@ extension DVVaultContainerPreviewView {
                     service: vaults[index].3,
                     typeIcon: vaults[index].4 ? placeholderTypeIcon : nil,
                     trailingIcon: vaults[index].2,
-                    trailingIconTooltip: vaults[index].2 != nil ? "Expires soon" : nil,
-                    isSelected: selectedIndex == index
+                    trailingIconTooltip: vaults[index].2 != nil ? "Expires soon" : nil
                 )
                 .tag(index)
                 .contextMenu {

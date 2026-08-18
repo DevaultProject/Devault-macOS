@@ -64,7 +64,8 @@ extension SecretListView {
         searchText: searchTextBinding,
         searchPromptText: .module("Search"),
         isSearchFocused: $isSearchFocused,
-        sortMenuContent: showsSort ? { AnyView(sortMenuContent) } : nil
+        sortMenuContent: showsSort ? { AnyView(sortMenuContent) } : nil,
+        sortAccessibilityLabel: .module("Sort")
       )
       .padding(.horizontal, 12)
     }
@@ -83,7 +84,7 @@ extension SecretListView {
     }
     .listStyle(.sidebar)
     .scrollContentBackground(.hidden)
-    .tint(Color(nsColor: .controlAccentColor).opacity(0.6))
+    .tint(Color.dv(.vaultGreen))
     .animation(MotionMetrics.layout, value: secrets)
     // 필터가 바뀌면 행이 통째로 갈린다. 같은 목록으로 두면 무관한 행을 하나씩 지우고 넣는
     // 것으로 그려 어수선해지므로 새 내용으로 본다.
@@ -111,13 +112,13 @@ extension SecretListView {
       service: secret.service,
       typeIcon: secret.secretType.icon,
       trailingIcon: badgeStatus?.emphasis,
-      trailingIconTooltip: badgeStatus?.tooltipText,
-      isSelected: secret.id == store.selectedSecretID
+      trailingIconTooltip: badgeStatus?.tooltipText
     )
     .tag(secret.id)
     .listRowInsets(EdgeInsets())
-    .listRowBackground(Color.clear)
     .listRowSeparator(.hidden)
+    // 이름·날짜·만료 배지를 하나의 접근성 요소로 묶어 VoiceOver가 한 번에 읽게 한다.
+    .accessibilityElement(children: .combine)
     .contextMenu {
       contextMenuItems(for: secret)
     }
@@ -212,6 +213,7 @@ extension SecretListView {
       Image(systemName: "exclamationmark.triangle")
         .dvFont(.bodyLG)
         .foregroundStyle(Color.dv(.gray400))
+        .accessibilityHidden(true)
       Text(.module("Failed to load the list."))
         .dvFont(.bodyMD)
         .foregroundStyle(Color.dv(.gray500))
@@ -239,11 +241,11 @@ extension SecretListView {
 
   private var titleText: String {
     switch store.collection {
-    case .all: return "All"
-    case .liked: return "Star"
-    case .notice: return "Notice"
-    case .expired: return "Expired"
-    case .deleted: return "Deleted"
+    case .all: return .module("All")
+    case .liked: return .module("Star")
+    case .notice: return .module("Notice")
+    case .expired: return .module("Expired")
+    case .deleted: return .module("Deleted")
     case .project: return store.projectName ?? .module("Project")
     }
   }
