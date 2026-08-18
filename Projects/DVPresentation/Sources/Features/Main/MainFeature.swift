@@ -27,6 +27,9 @@ public struct MainFeature {
     /// 생성 폼의 취소 확인을 기다리는 동안 보관하는 이동 목적지.
     var pendingSelection: SidebarSelection?
 
+    /// New▸로 요청한 타입을, 작성 중이던 폼을 취소 확인한 뒤 열기 위해 보관한다.
+    var pendingCreateType: CreatableSecretType?
+
     /// 지금 무엇을 그릴지. **화면 분기는 이 값 하나만 본다.**
     /// 뷰에서 optional을 직접 조합하면 같은 판정이 렌더 지점마다 흩어진다.
     var screen: Screen {
@@ -190,13 +193,15 @@ public struct MainFeature {
         return .none
 
       case .createSecretRequested(let secretType):
-        state.selectSecretType = nil
-        state.createSecret = CreateSecretFeature.State(secretType: secretType)
-        // 생성 플로우 진입: 조회 중이던 상세를 놓아 스테일 상세 재등장을 막고,
-        // isCreatingSecret을 켜 사이드바가 아무 것도 선택되지 않은 상태로 표시되게 한다.
-        state.secretDetail = nil
-        state.secretList.selectedSecretID = nil
-        return .send(.sidebar(.setCreatingSecret(true)))
+        // 설정 화면에선 사이드바·리스트가 없어, 진행하면 보이지 않는 상태만 바뀐다(설정 닫을 때 튐).
+        guard state.settings == nil else { return .none }
+        // 작성 중인 폼이 있으면 덮어쓰지 않는다 — 다른 진입점(⌘N·사이드바)처럼 취소 확인을 거치고,
+        // 확인되면(cancelled) 이 타입으로 새 폼을 연다.
+        guard state.createSecret == nil else {
+          state.pendingCreateType = secretType
+          return .send(.createSecret(.didTapCancel))
+        }
+        return startCreating(secretType: secretType, &state)
 
       case .selectSecretType(.delegate(.typeSelected(let secretType))):
         state.createSecret = CreateSecretFeature.State(secretType: secretType)
@@ -222,6 +227,11 @@ public struct MainFeature {
 
       // 사이드바가 시작한 취소면 목록으로, 폼의 Cancel이면 타입 그리드로 — 목적지가 다르다.
       case .createSecret(.delegate(.cancelled)):
+        // New▸로 다른 타입을 요청해 폼을 접은 경우: 목록/그리드가 아니라 그 타입 폼을 새로 연다.
+        if let secretType = state.pendingCreateType {
+          state.pendingCreateType = nil
+          return startCreating(secretType: secretType, &state)
+        }
         guard let pending = state.pendingSelection else {
           state.createSecret = nil
           state.selectSecretType = .init()
@@ -235,6 +245,7 @@ public struct MainFeature {
       // 사이드바는 아직 움직이지 않았으므로 되돌릴 것이 없다.
       case .createSecret(.alert(.dismiss)):
         state.pendingSelection = nil
+        state.pendingCreateType = nil
         return .none
 
       case .createSecret:
@@ -339,6 +350,16 @@ extension MainFeature {
     state.secretList.retarget(to: target.collection, projectName: target.projectName)
   }
 
+  /// New▸ 진입: 타입 그리드를 건너뛰고 해당 타입 폼으로 바로 들어간다. 조회 중이던 상세를 놓아
+  /// 스테일 상세 재등장을 막고, 사이드바가 아무 것도 선택되지 않은 상태로 표시되게 한다.
+  private func startCreating(secretType: CreatableSecretType, _ state: inout State) -> Effect<Action> {
+    state.selectSecretType = nil
+    state.createSecret = CreateSecretFeature.State(secretType: secretType)
+    state.secretDetail = nil
+    state.secretList.selectedSecretID = nil
+    return .send(.sidebar(.setCreatingSecret(true)))
+  }
+
   /// 생성 플로우로 들어간다. 조회 중이던 시크릿을 함께 놓는다 — 상세 State가 살아남으면
   /// 돌아올 때 되살아나고 `.task(id:)`가 Touch ID까지 다시 요구한다.
   private func enterCreating(_ state: inout State) {
@@ -383,6 +404,7 @@ extension MainFeature {
     state.secretDetail = nil
     // 여기서 폼을 닫으면 `.alert(.dismiss)`가 다시 올 일이 없어 목적지가 영영 남는다.
     state.pendingSelection = nil
+    state.pendingCreateType = nil
     state.sidebar.mode = .browsing(.filter(.all))
     state.secretList = .init(collection: .all)
   }

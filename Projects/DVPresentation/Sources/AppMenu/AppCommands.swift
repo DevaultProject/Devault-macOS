@@ -62,8 +62,25 @@ extension AppCommands {
       store.send(command.action)
     }
     .keyboardShortcut(command.keyboardShortcut)
-    // main 세션이 아닐 때(온보딩·잠금)는 트리거할 대상이 없으므로 비활성화한다.
-    .disabled(store.main == nil)
+    .disabled(isDisabled(command))
+  }
+
+  /// main 세션이 없으면(온보딩·잠금) 모두 비활성. 콘텐츠를 바꾸는 커맨드는 **설정 화면에서도**
+  /// 비활성화한다 — 설정엔 사이드바·리스트가 없어, 켜두면 보이지 않는 상태만 바뀌고
+  /// 설정을 닫는 순간 요청하지 않은 화면(생성 폼·필터)으로 튄다.
+  private func isDisabled(_ command: AppMenuCommand) -> Bool {
+    switch command {
+    case .lockVault, .openSettings:
+      return store.main == nil
+    case .newSecret, .newProject:
+      return !isContentScreenActive
+    }
+  }
+
+  /// 사이드바·리스트·생성 플로우가 화면에 있는지(browsing/creating). 설정 화면·비활성 세션이면 false.
+  private var isContentScreenActive: Bool {
+    guard let screen = store.main?.screen else { return false }
+    return screen != .settings
   }
 
   /// File ▸ New ▸ — 타입 선택 그리드를 건너뛰고 6개 타입으로 바로 생성한다.
@@ -77,7 +94,7 @@ extension AppCommands {
         }
       }
     }
-    .disabled(store.main == nil)
+    .disabled(!isContentScreenActive)
   }
 
   /// View ▸ Filters ▸ — 사이드바 필터를 메뉴에서 선택. 라벨은 사이드바와 동일 소스(`filter.title`).
@@ -92,6 +109,6 @@ extension AppCommands {
         .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
       }
     }
-    .disabled(store.main == nil)
+    .disabled(!isContentScreenActive)
   }
 }
