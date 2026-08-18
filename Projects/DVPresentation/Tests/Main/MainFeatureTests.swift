@@ -392,9 +392,9 @@ struct MainFeatureTests {
       $0.secretDetail = nil
       $0.secretList.selectedSecretID = nil
     }
-    // isCreatingSecret이 true가 되면 사이드바는 어떤 행도 선택되지 않은 상태로 표시된다.
+    // 생성 모드로 들어가면 사이드바는 어떤 행도 선택되지 않은 상태로 표시된다.
     await store.receive(.sidebar(.setCreatingSecret(true))) {
-      $0.sidebar.isCreatingSecret = true
+      $0.sidebar.mode = .creating(previous: $0.sidebar.selection)
     }
   }
 
