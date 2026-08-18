@@ -46,6 +46,11 @@ public enum WindowLayoutMetrics {
   public static let windowMinWidth = max(browsingMinWidth, creatingMinWidth) + slack
   public static let windowMinHeight: CGFloat = 600
 
+  // MARK: - 설정
+
+  /// 설정 상세 콘텐츠 폭. 최소 창에서 상세 영역을 꽉 채우고, 그 이상에선 이 폭으로 캡한 뒤 가운데 정렬한다.
+  public static let settingsDetailWidth = windowMinWidth - sidebarWidth
+
   /// 하한에 붙여 열면 3컬럼이 전부 최소 폭이라 답답하다.
   public static let windowDefaultWidth: CGFloat = 1120
   public static let windowDefaultHeight: CGFloat = 700

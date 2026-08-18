@@ -61,7 +61,7 @@ struct SettingsDetailPreview<Content: View>: View {
 
   var body: some View {
     content()
-    .frame(width: 656, height: 560, alignment: .topLeading)
+    .frame(width: WindowLayoutMetrics.settingsDetailWidth, height: 560, alignment: .topLeading)
     .dvScreenBackground()
   }
 }
@@ -85,6 +85,6 @@ struct SettingsDetailPreview<Content: View>: View {
   }
   .formStyle(.grouped)
   .scrollContentBackground(.hidden)
-  .frame(width: 656)
+  .frame(width: WindowLayoutMetrics.settingsDetailWidth)
   .background(Color.dv(.gray100))
 }
