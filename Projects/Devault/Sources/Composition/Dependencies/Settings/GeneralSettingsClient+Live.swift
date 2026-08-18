@@ -27,6 +27,15 @@ extension GeneralSettingsClient: @retroactive DependencyKey {
       },
       setDefaultEnvironment: { rawValue in
         useCase.setDefaultEnvironment(rawValue)
+      },
+      appearance: {
+        useCase.appearance()
+      },
+      setAppearance: { rawValue in
+        useCase.setAppearance(rawValue)
+      },
+      appearanceStream: {
+        useCase.appearanceStream()
       }
     )
   }()

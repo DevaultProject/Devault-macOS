@@ -26,6 +26,8 @@ public struct AppView: View {
       .animation(MotionMetrics.transition, value: store.screen)
       // 진행 오버레이를 그리는 유일한 지점 (`.omc/GUIDELINES.md`).
       .windowBusyOverlay()
+      // 잠금 전환 시 메인이 사라지며 남는 고아 시트·알럿을 창에서 직접 닫는다.
+      .background(LockSheetDismisser(isLocked: store.locked != nil))
       .task { store.send(.task) }
   }
 }

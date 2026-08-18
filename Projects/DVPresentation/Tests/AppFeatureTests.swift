@@ -45,6 +45,7 @@ struct AppFeatureTests {
             $0.appLaunchClient.iCloudRemoteChangeStream = { AsyncStream { $0.finish() } }
             $0.appSecurityClient.isRequireAuthOnLaunchEnabled = { true }
             $0.windowCaptureBlockerClient.enabledStream = { AsyncStream { $0.finish() } }
+            $0.generalSettingsClient.appearanceStream = { AsyncStream { $0.finish() } }
         }
 
         await store.send(.task) {
@@ -64,6 +65,7 @@ struct AppFeatureTests {
             $0.appLaunchClient.iCloudRemoteChangeStream = { AsyncStream { $0.finish() } }
             $0.appSecurityClient.isRequireAuthOnLaunchEnabled = { true }
             $0.windowCaptureBlockerClient.enabledStream = { AsyncStream { $0.finish() } }
+            $0.generalSettingsClient.appearanceStream = { AsyncStream { $0.finish() } }
         }
 
         await store.send(.task) {
@@ -83,6 +85,7 @@ struct AppFeatureTests {
             $0.appLaunchClient.requestNotificationAuthorization = { true }
             $0.appLaunchClient.iCloudRemoteChangeStream = { AsyncStream { $0.finish() } }
             $0.windowCaptureBlockerClient.enabledStream = { AsyncStream { $0.finish() } }
+            $0.generalSettingsClient.appearanceStream = { AsyncStream { $0.finish() } }
             // syncExpiryNotifications를 오버라이드하지 않는다 — 호출되면 @DependencyClient의
             // unimplemented 클로저가 테스트를 실패시킨다.
         }
@@ -129,6 +132,7 @@ struct AppFeatureTests {
             $0.appSecurityClient.isRequireAuthOnLaunchEnabled = { false }
             $0.appSecurityClient.inactivityTimeoutStream = { AsyncStream { $0.finish() } }
             $0.windowCaptureBlockerClient.enabledStream = { AsyncStream { $0.finish() } }
+            $0.generalSettingsClient.appearanceStream = { AsyncStream { $0.finish() } }
         }
 
         await store.send(.task) {
@@ -180,6 +184,7 @@ struct AppFeatureTests {
                 }
             }
             $0.windowCaptureBlockerClient.enabledStream = { AsyncStream { $0.finish() } }
+            $0.generalSettingsClient.appearanceStream = { AsyncStream { $0.finish() } }
         }
 
         await store.send(.task) {
@@ -205,6 +210,7 @@ struct AppFeatureTests {
                     continuation.finish()
                 }
             }
+            $0.generalSettingsClient.appearanceStream = { AsyncStream { $0.finish() } }
         }
 
         await store.send(.task) {
@@ -212,6 +218,31 @@ struct AppFeatureTests {
         }
         await store.receive(.windowCaptureBlockingChanged(false)) {
             $0.isWindowCaptureBlockingEnabled = false
+        }
+    }
+
+    @Test("task는 화면 모드 설정 변경을 State에 반영한다")
+    func taskWatchesAppearanceSetting() async {
+        let store = TestStore(initialState: AppFeature.State()) {
+            AppFeature()
+        } withDependencies: {
+            $0.appLaunchClient.hasCompletedOnboarding = { false }
+            $0.appLaunchClient.requestNotificationAuthorization = { true }
+            $0.appLaunchClient.iCloudRemoteChangeStream = { AsyncStream { $0.finish() } }
+            $0.windowCaptureBlockerClient.enabledStream = { AsyncStream { $0.finish() } }
+            $0.generalSettingsClient.appearanceStream = {
+                AsyncStream { continuation in
+                    continuation.yield("dark")
+                    continuation.finish()
+                }
+            }
+        }
+
+        await store.send(.task) {
+            $0.onboarding = .init()
+        }
+        await store.receive(.appearanceChanged(.dark)) {
+            $0.appearance = .dark
         }
     }
 

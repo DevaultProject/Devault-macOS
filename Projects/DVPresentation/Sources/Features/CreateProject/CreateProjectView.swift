@@ -29,7 +29,7 @@ extension CreateProjectView {
     VStack(alignment: .leading, spacing: 16) {
       Text(.module("Create Project"))
             .dvFont(.bodyLG)
-        .foregroundStyle(Color.dv(.black))
+        .foregroundStyle(Color.dv(.gray900))
 
       VStack(alignment: .leading, spacing: 8) {
         Text(.module("Project Name"))

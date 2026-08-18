@@ -16,8 +16,6 @@ public enum AppLifecycleEvent: Equatable, Sendable {
     case didEnterBackground
 
     /// 잠금 화면으로 돌아갔다.
-    ///
-    /// 자동 잠금 기능이 아직 없어 현재 발신자가 없다. 기능이 생기면 그쪽에서 보내면 된다.
     case didLock
 }
 
