@@ -37,7 +37,7 @@ func makeICloudSyncUnavailableAlert<Alert: Equatable>(
     (String.module("Couldn't determine iCloud status. Please try again in a moment."), true, false)
   }
   return AlertState {
-    TextState(String.module("iCloud sync isn't available"))
+    TextState(String.module("iCloud sync isn't available."))
   } actions: {
     if canRetry {
       ButtonState(action: retry) { TextState(String.module("Try Again")) }

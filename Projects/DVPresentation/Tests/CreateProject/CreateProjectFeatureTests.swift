@@ -54,11 +54,11 @@ struct CreateProjectFeatureTests {
     await store.receive(.createResponse(.failure(.nameTaken))) {
       $0.isCreating = false
       $0.alert = AlertState {
-        TextState("이미 사용 중인 프로젝트 이름이에요")
+        TextState(String.module("This project name is already in use."))
       } actions: {
-        ButtonState(role: .cancel) { TextState("확인") }
+        ButtonState(role: .cancel) { TextState(String.module("OK")) }
       } message: {
-        TextState("다른 이름을 입력해주세요.")
+        TextState(String.module("Please enter a different name."))
       }
     }
   }
@@ -76,11 +76,11 @@ struct CreateProjectFeatureTests {
     await store.receive(.createResponse(.failure(.createFailed))) {
       $0.isCreating = false
       $0.alert = AlertState {
-        TextState("프로젝트를 만들지 못했어요")
+        TextState(String.module("Couldn't create the project."))
       } actions: {
-        ButtonState(role: .cancel) { TextState("확인") }
+        ButtonState(role: .cancel) { TextState(String.module("OK")) }
       } message: {
-        TextState("잠시 후 다시 시도해주세요.")
+        TextState(String.module("Please try again in a moment."))
       }
     }
   }

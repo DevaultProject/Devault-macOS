@@ -90,7 +90,7 @@ struct DataSettingsFeatureTests {
     await store.receive(.deleteFailed) {
       $0.isDeleting = false
       $0.alert = AlertState {
-        TextState("Couldn't delete data")
+        TextState("Couldn't delete data.")
       } actions: {
         ButtonState(role: .cancel) { TextState("OK") }
       } message: {

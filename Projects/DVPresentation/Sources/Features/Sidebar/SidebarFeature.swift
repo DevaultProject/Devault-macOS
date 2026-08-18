@@ -15,11 +15,11 @@ public enum SidebarFilter: Equatable, CaseIterable, Hashable, Sendable {
 
   var title: String {
     switch self {
-    case .all:     .module("All")
-    case .starred: .module("Star")
-    case .notice:  .module("Notice")
-    case .expired: .module("Expired")
-    case .deleted: .module("Deleted")
+    case .all:     "All"
+    case .starred: "Star"
+    case .notice:  "Notice"
+    case .expired: "Expired"
+    case .deleted: "Deleted"
     }
   }
 
@@ -408,56 +408,56 @@ private extension SidebarFeature {
 
   func makeDeleteAlert(for project: ProjectItem) -> AlertState<Action.Alert> {
     AlertState {
-      TextState("'\(project.name)' 프로젝트를 삭제할까요?")
+      TextState(String.module("Delete project '\(project.name)'?"))
     } actions: {
       ButtonState(role: .destructive, action: .confirmDelete) {
-        TextState("삭제")
+        TextState(String.module("Delete"))
       }
       ButtonState(role: .cancel) {
-        TextState("취소")
+        TextState(String.module("Cancel"))
       }
     } message: {
-      TextState("프로젝트에 속한 Secret과의 연결이 해제됩니다. Secret 자체는 삭제되지 않습니다.")
+      TextState(String.module("Deleting this project will unlink its secrets. The secrets themselves won't be deleted."))
     }
   }
 
   func makeRenameNameTakenAlert() -> AlertState<Action.Alert> {
     AlertState {
-      TextState("이미 사용 중인 이름이에요")
+      TextState(String.module("This name is already in use."))
     } actions: {
-      ButtonState(role: .cancel) { TextState("확인") }
+      ButtonState(role: .cancel) { TextState(String.module("OK")) }
     } message: {
-      TextState("다른 프로젝트 이름을 입력해주세요.")
+      TextState(String.module("Please enter a different project name."))
     }
   }
 
   func makeRenameEmptyNameAlert() -> AlertState<Action.Alert> {
     AlertState {
-      TextState("이름을 입력해주세요")
+      TextState(String.module("Please enter a name."))
     } actions: {
-      ButtonState(role: .cancel) { TextState("확인") }
+      ButtonState(role: .cancel) { TextState(String.module("OK")) }
     } message: {
-      TextState("프로젝트 이름은 비워둘 수 없어요.")
+      TextState(String.module("Project name can't be empty."))
     }
   }
 
   func makeRenameFailedAlert() -> AlertState<Action.Alert> {
     AlertState {
-      TextState("이름을 변경하지 못했어요")
+      TextState(String.module("Couldn't rename the project."))
     } actions: {
-      ButtonState(role: .cancel) { TextState("확인") }
+      ButtonState(role: .cancel) { TextState(String.module("OK")) }
     } message: {
-      TextState("잠시 후 다시 시도해주세요.")
+      TextState(String.module("Please try again in a moment."))
     }
   }
 
   func makeDeleteFailedAlert() -> AlertState<Action.Alert> {
     AlertState {
-      TextState("프로젝트를 삭제하지 못했어요")
+      TextState(String.module("Couldn't delete the project."))
     } actions: {
-      ButtonState(role: .cancel) { TextState("확인") }
+      ButtonState(role: .cancel) { TextState(String.module("OK")) }
     } message: {
-      TextState("잠시 후 다시 시도해주세요.")
+      TextState(String.module("Please try again in a moment."))
     }
   }
 }

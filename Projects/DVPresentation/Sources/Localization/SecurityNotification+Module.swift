@@ -11,15 +11,15 @@ extension SecurityNotification {
       let body: String
       switch kind {
       case .authenticationFailure:
-        body = String.module("Authentication failed \(threshold) times in a short period")
+        body = String.module("Authentication failed \(threshold) times in a short period.")
       case .repeatedCopy:
-        body = String.module("A value was copied \(threshold) times in a short period")
+        body = String.module("A value was copied \(threshold) times in a short period.")
       }
-      return (String.module("Abnormal access detected"), body)
+      return (String.module("Abnormal access detected."), body)
 
     case .clipboardExceeded(let seconds):
       return (
-        String.module("Clipboard cleared"),
+        String.module("Clipboard cleared."),
         String.module("The copied value was cleared after being on the clipboard for over \(seconds) seconds.")
       )
 

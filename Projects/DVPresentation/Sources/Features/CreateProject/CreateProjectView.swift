@@ -27,26 +27,26 @@ extension CreateProjectView {
 
   private var content: some View {
     VStack(alignment: .leading, spacing: 16) {
-      Text("Create Project")
+      Text(.module("Create Project"))
             .dvFont(.bodyLG)
         .foregroundStyle(Color.dv(.black))
 
       VStack(alignment: .leading, spacing: 8) {
-        Text("Project Name")
+        Text(.module("Project Name"))
           .dvFont(.bodyMD)
           .foregroundStyle(Color.dv(.gray700))
-        DVTextField("e.g DeVault", text: nameBinding, size: .md)
+        DVTextField(.module("e.g DeVault"), text: nameBinding, size: .md)
           .onSubmit { store.send(.didTapCreate) }
-      } 
+      }
 
       HStack(spacing: 10) {
         Spacer()
-        DVButton(titleText: "Cancel", style: .secondary) {
+        DVButton(titleText: .module("Cancel"), style: .secondary) {
           store.send(.didTapCancel)
         }
         .keyboardShortcut(.cancelAction)
 
-        DVButton(titleText: "Create", style: .secondaryProminent) {
+        DVButton(titleText: .module("Create"), style: .secondaryProminent) {
           store.send(.didTapCreate)
         }
         .keyboardShortcut(.defaultAction)

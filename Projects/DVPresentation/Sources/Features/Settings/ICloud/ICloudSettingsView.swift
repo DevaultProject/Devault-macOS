@@ -81,19 +81,19 @@ extension ICloudSettingsView {
     case .none where store.isRefreshingStatus:
       String.module("Checking Status…")
     case .none:
-      String.module("Status Unavailable")
+      String.module("Status Unavailable.")
     case .some(.noAccount):
       String.module("No iCloud Account")
     case .some(.restricted):
       String.module("iCloud Restricted")
     case .some(.temporarilyUnavailable):
-      String.module("iCloud Temporarily Unavailable")
+      String.module("iCloud Temporarily Unavailable.")
     case .some(.networkUnavailable):
-      String.module("Network Unavailable")
+      String.module("Network Unavailable.")
     case .some(.configurationUnavailable):
       String.module("Storage Configuration Failed")
     case .some(.couldNotDetermine):
-      String.module("Status Unavailable")
+      String.module("Status Unavailable.")
     }
   }
 

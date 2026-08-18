@@ -56,7 +56,7 @@ extension AlertState where Action == SecretDetailFeature.Action.Alert {
 
         case .decryptionFailed:
             return Self {
-                TextState("Failed to reveal secret", bundle: .module)
+                TextState("Failed to reveal secret.", bundle: .module)
             } actions: {
                 ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
             } message: {
@@ -68,7 +68,7 @@ extension AlertState where Action == SecretDetailFeature.Action.Alert {
 
         case .unexpected:
             return Self {
-                TextState("Failed to reveal secret", bundle: .module)
+                TextState("Failed to reveal secret.", bundle: .module)
             } actions: {
                 ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
             } message: {
@@ -84,7 +84,7 @@ extension AlertState where Action == SecretDetailFeature.Action.Alert {
     /// 나머지 필드는 계속 고칠 수 있으므로 편집을 이어가게 둔다.
     static var projectsLoadFailed: Self {
         Self {
-            TextState("Failed to load projects", bundle: .module)
+            TextState("Failed to load projects.", bundle: .module)
         } actions: {
             ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
         } message: {
@@ -131,7 +131,7 @@ extension AlertState where Action == SecretDetailFeature.Action.Alert {
     /// 클립보드 복사 실패. 자동 정리·반복 감지까지 포함한 경로가 실패한 경우다.
     static var copyFailed: Self {
         Self {
-            TextState("Failed to copy", bundle: .module)
+            TextState("Failed to copy.", bundle: .module)
         } actions: {
             ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
         } message: {
@@ -145,7 +145,7 @@ extension AlertState where Action == SecretDetailFeature.Action.Alert {
     /// 즐겨찾기 갱신 실패. payload 복호화가 없는 경로이므로 인증 실패는 나오지 않는다.
     static var likeFailed: Self {
         Self {
-            TextState("Failed to update favorite", bundle: .module)
+            TextState("Failed to update favorite.", bundle: .module)
         } actions: {
             ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
         } message: {
@@ -176,7 +176,7 @@ extension AlertState where Action == SecretDetailFeature.Action.Alert {
 
     static var deleteFailed: Self {
         Self {
-            TextState("Failed to delete secret", bundle: .module)
+            TextState("Failed to delete secret.", bundle: .module)
         } actions: {
             ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
         } message: {
@@ -190,7 +190,7 @@ extension AlertState where Action == SecretDetailFeature.Action.Alert {
     /// 수정 저장 실패. 편집 모드는 유지되므로 입력한 내용이 남아 있다는 것을 문구로 알린다.
     static var updateFailed: Self {
         Self {
-            TextState("Failed to save changes", bundle: .module)
+            TextState("Failed to save changes.", bundle: .module)
         } actions: {
             ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
         } message: {

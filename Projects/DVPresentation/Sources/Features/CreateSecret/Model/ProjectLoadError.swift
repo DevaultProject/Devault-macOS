@@ -29,7 +29,7 @@ extension AlertState where Action == CreateSecretFeature.Action.Alert {
         switch error {
         case .repositoryFailure:
             return Self {
-                TextState("Failed to load projects", bundle: .module)
+                TextState("Failed to load projects.", bundle: .module)
             } actions: {
                 ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
             } message: {
@@ -41,7 +41,7 @@ extension AlertState where Action == CreateSecretFeature.Action.Alert {
 
         case .unexpected:
             return Self {
-                TextState("Failed to load projects", bundle: .module)
+                TextState("Failed to load projects.", bundle: .module)
             } actions: {
                 ButtonState(role: .cancel) { TextState("OK", bundle: .module) }
             } message: {

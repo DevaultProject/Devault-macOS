@@ -630,7 +630,7 @@ public struct SecretDetailFeature {
             // 이전 시도의 잔존 경고를 지우고 이번 결과만 세운다. 생성 화면과 같은 규칙이다.
             state.validationErrors = [:]
             for fieldID in fieldIDs {
-                state.validationErrors[fieldID] = .module("Required")
+                state.validationErrors[fieldID] = .module("Required.")
             }
             return .none
 

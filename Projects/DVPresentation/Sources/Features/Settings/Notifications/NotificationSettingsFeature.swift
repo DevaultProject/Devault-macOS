@@ -92,7 +92,7 @@ public struct NotificationSettingsFeature {
 
       case .expiryNotificationsUpdateFailed:
         state.alert = AlertState {
-          TextState(String.module("Couldn't update expiration alerts"))
+          TextState(String.module("Couldn't update expiration alerts."))
         } actions: {
           ButtonState(role: .cancel) { TextState(String.module("OK")) }
         } message: {

@@ -287,7 +287,7 @@ public struct CreateSecretFeature {
             // 이전 시도의 잔존 warning 제거 후 이번 검증 결과만 세팅.
             state.validationErrors = [:]
             for fieldID in fieldIDs {
-                state.validationErrors[fieldID] = .module("Required")
+                state.validationErrors[fieldID] = .module("Required.")
             }
             return .none
 

@@ -1028,7 +1028,7 @@ struct SecretDetailFeatureTests {
         let store = TestStore(initialState: initial) { SecretDetailFeature() }
 
         await store.send(.didTapSave) {
-            $0.validationErrors = [.value: .module("Required")]
+            $0.validationErrors = [.value: .module("Required.")]
         }
     }
 
