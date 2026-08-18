@@ -286,7 +286,10 @@ public struct SidebarFeature {
         guard let id = state.renamingProjectID else { return .none }
         let name = state.renameText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else {
+          // 빈 이름은 보존할 입력이 없으므로 편집을 닫아 원래 이름으로 되돌린다(nameTaken과 달리).
           state.alert = makeRenameEmptyNameAlert()
+          state.renamingProjectID = nil
+          state.renameText = ""
           return .none
         }
         return .run { [id, name] send in  // 캡처 리스트 명시
