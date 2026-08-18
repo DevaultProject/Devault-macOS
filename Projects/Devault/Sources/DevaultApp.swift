@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import UserNotifications
 
@@ -14,6 +15,8 @@ struct DevaultApp: App {
 
   init() {
     UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+    // 단일 창 앱이라 창 탭이 불필요
+    NSWindow.allowsAutomaticWindowTabbing = false
   }
 
   var body: some Scene {
@@ -34,6 +37,9 @@ extension DevaultApp {
       width: WindowLayoutMetrics.windowDefaultWidth,
       height: WindowLayoutMetrics.windowDefaultHeight
     )
+    .commands {
+      AppCommands(store: store)
+    }
   }
 }
 

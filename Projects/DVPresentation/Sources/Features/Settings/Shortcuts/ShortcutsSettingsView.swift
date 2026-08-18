@@ -4,20 +4,6 @@ import SwiftUI
 
 import DVDesign
 
-// MARK: - AppShortcut
-
-private struct AppShortcut: Identifiable {
-  var id: String { keys }
-  let keys: String
-  let title: String
-
-  // TODO: - 현재는 임시 값, 추후 Feature/Client 연결 예정
-  static let all: [AppShortcut] = [
-    AppShortcut(keys: "⌘N", title: String.module("New Secret")),
-    AppShortcut(keys: "⌘,", title: String.module("Open Settings")),
-  ]
-}
-
 struct ShortcutsSettingsView: View {
   var body: some View {
     content
@@ -31,10 +17,11 @@ extension ShortcutsSettingsView {
   private var content: some View {
     SettingsDetailContainer(title: String.module("Shortcuts")) {
       SettingsSection(title: String.module("App Shortcuts")) {
-        ForEach(AppShortcut.all) { shortcut in
+        // App 메뉴와 동일한 단일 소스(`AppMenuCommand`)에서 제목·단축키를 그대로 노출한다.
+        ForEach(AppMenuCommand.all, id: \.self) { command in
           SettingsValueRow(
-            title: shortcut.title,
-            value: shortcut.keys,
+            title: command.title,
+            value: command.displayKeys,
             valueStyle: .emphasized
           )
         }
