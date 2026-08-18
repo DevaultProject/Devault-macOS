@@ -349,6 +349,31 @@ struct SidebarFeatureTests {
     }
   }
 
+  @Test("didConfirmRename에 빈 이름이면 alert를 띄우고 편집을 닫아 원래 이름으로 되돌린다")
+  func didConfirmRenameEmptyShowsAlertAndReverts() async {
+    let item = ProjectItem(id: UUID(), name: "Backend")
+    var state = SidebarFeature.State()
+    state.projectsState = .loaded([item])
+    state.renamingProjectID = item.id
+    state.renameText = "   "  // 공백만 → trim 후 빈 문자열
+
+    let store = TestStore(initialState: state) {
+      SidebarFeature()
+    }
+
+    await store.send(.didConfirmRename) {
+      $0.alert = AlertState {
+        TextState(String.module("Please enter a name."))
+      } actions: {
+        ButtonState(role: .cancel) { TextState(String.module("OK")) }
+      } message: {
+        TextState(String.module("Project name can't be empty."))
+      }
+      $0.renamingProjectID = nil
+      $0.renameText = ""
+    }
+  }
+
   @Test("didCancelRename은 rename 상태를 초기화한다")
   func didCancelRenameResetsState() async {
     var state = SidebarFeature.State()
