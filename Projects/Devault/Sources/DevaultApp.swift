@@ -62,5 +62,7 @@ private struct DevaultRootView: View {
           isEnabled: store.isWindowCaptureBlockingEnabled
         )
       )
+      // nil이면 macOS 시스템 설정을 따르고, 그 외에는 앱 전체를 라이트/다크로 고정한다.
+      .preferredColorScheme(store.appearance.colorScheme)
   }
 }

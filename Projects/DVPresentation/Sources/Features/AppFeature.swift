@@ -18,6 +18,7 @@ public struct AppFeature {
     var locked: LockFeature.State?
     var main: MainFeature.State?
     public var isWindowCaptureBlockingEnabled = true
+    public var appearance: AppAppearance = .system
 
     /// 지금 어느 화면인지. 전환 애니메이션이 이 값 하나를 본다.
     /// 셋을 다 비웠다가 하나를 세우는 구간이 있어(`task`) 옵셔널이다.
@@ -49,6 +50,7 @@ public struct AppFeature {
     // MARK: - Internal
 
     case windowCaptureBlockingChanged(Bool)
+    case appearanceChanged(AppAppearance)
     case iCloudRemoteChangeDetected
     case iCloudRemoteChangeHandled
 
@@ -70,6 +72,7 @@ public struct AppFeature {
   @Dependency(\.appLaunchClient) var appLaunchClient
   @Dependency(\.appSecurityClient) var appSecurityClient
   @Dependency(\.windowCaptureBlockerClient) var windowCaptureBlockerClient
+  @Dependency(\.generalSettingsClient) var generalSettingsClient
   @Dependency(\.continuousClock) var clock
   @Dependency(\.date.now) var now
 
@@ -82,6 +85,7 @@ public struct AppFeature {
   private enum CancelID {
     case inactivityWatch
     case windowCaptureSettingsWatch
+    case appearanceWatch
     case iCloudRemoteChangeWatch
     case iCloudRemoteChangeHandling
   }
@@ -116,11 +120,16 @@ public struct AppFeature {
             : .none,
           state.main != nil ? inactivityWatchEffect() : .none,
           windowCaptureSettingsWatchEffect(),
+          appearanceWatchEffect(),
           iCloudRemoteChangeWatchEffect()
         )
 
       case let .windowCaptureBlockingChanged(isEnabled):
         state.isWindowCaptureBlockingEnabled = isEnabled
+        return .none
+
+      case let .appearanceChanged(appearance):
+        state.appearance = appearance
         return .none
 
       case .iCloudRemoteChangeDetected:
@@ -212,6 +221,15 @@ private extension AppFeature {
       }
     }
     .cancellable(id: CancelID.windowCaptureSettingsWatch, cancelInFlight: true)
+  }
+
+  func appearanceWatchEffect() -> Effect<Action> {
+    .run { send in
+      for await rawValue in generalSettingsClient.appearanceStream() {
+        await send(.appearanceChanged(AppAppearance(rawValue: rawValue) ?? .system))
+      }
+    }
+    .cancellable(id: CancelID.appearanceWatch, cancelInFlight: true)
   }
 
   func iCloudRemoteChangeWatchEffect() -> Effect<Action> {
