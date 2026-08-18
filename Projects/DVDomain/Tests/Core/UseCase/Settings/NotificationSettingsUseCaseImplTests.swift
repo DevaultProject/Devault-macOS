@@ -65,4 +65,5 @@ private final class StubExpiryNotificationScheduler: ScheduleSecretExpiryNotific
 
     func schedule(secret: Secret) async {}
     func cancel(secretID: UUID) async {}
+    func cancelAll() async {}
 }

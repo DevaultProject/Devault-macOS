@@ -15,6 +15,7 @@ public final class FakeSecurityNotificationService: SecurityNotificationService,
     private var _notified: [SecurityNotification] = []
     private var _scheduled: [ScheduledSecurityNotification] = []
     private var _cancelledIdentifiers: [[String]] = []
+    private var _pending: Set<String> = []
 
     public var authorizationResult: Bool {
         get { lock.lock(); defer { lock.unlock() }; return _authorizationResult }
@@ -56,11 +57,23 @@ public final class FakeSecurityNotificationService: SecurityNotificationService,
         defer { lock.unlock() }
         if let error = _errorOnSchedule { throw error }
         _scheduled.append(request)
+        _pending.insert(request.identifier)
     }
 
     public func cancel(identifiers: [String]) async {
         lock.lock()
         defer { lock.unlock() }
         _cancelledIdentifiers.append(identifiers)
+        identifiers.forEach { _pending.remove($0) }
+    }
+
+    public func pendingIdentifiers() async -> [String] {
+        lock.lock(); defer { lock.unlock() }; return Array(_pending)
+    }
+
+    /// 이전 세션에 예약돼 아직 남아 있는 알림을 흉내낸다(원격 삭제된 Secret의 고아 알림 등).
+    public func seedPending(_ identifiers: [String]) {
+        lock.lock(); defer { lock.unlock() }
+        identifiers.forEach { _pending.insert($0) }
     }
 }

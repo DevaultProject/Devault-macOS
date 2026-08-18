@@ -65,6 +65,10 @@ public struct SecurityNotificationServiceImpl: SecurityNotificationService {
     public func cancel(identifiers: [String]) async {
         center.removePendingNotificationRequests(withIdentifiers: identifiers)
     }
+
+    public func pendingIdentifiers() async -> [String] {
+        await center.pendingNotificationRequests().map(\.identifier)
+    }
 }
 
 // MARK: - Private

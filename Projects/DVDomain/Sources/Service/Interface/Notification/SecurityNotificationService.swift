@@ -16,4 +16,8 @@ public protocol SecurityNotificationService: Sendable {
     /// 예약된 알림을 식별자로 취소한다. 취소 자체는 실패하지 않는 연산이라 throws가 아니다.
     /// - Parameter identifiers: 취소할 알림 식별자 목록
     func cancel(identifiers: [String]) async
+
+    /// 아직 발송되지 않은(pending) 예약 알림들의 식별자 목록을 반환한다.
+    /// 원격 삭제 등으로 대상 Secret이 사라져 개별 취소가 불가능한 고아 알림을 걷어낼 때 쓴다.
+    func pendingIdentifiers() async -> [String]
 }

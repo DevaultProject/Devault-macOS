@@ -7,6 +7,7 @@ import DVCore
 public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiryNotificationsUseCase {
 
     private static let expiryNotificationHour = 9
+    private static let expiryIDPrefix = "secret-expiry-"
 
     private let repository: any SecretRepository
     private let notificationService: any SecurityNotificationService
@@ -33,6 +34,9 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
                 // 만료일이 나중에 제거된 Secret의 정리도 같은 호출이 처리한다.
                 await schedule(secret: secret)
             }
+            // 조회에 잡히지 않는(원격 삭제·전체 삭제 등으로 사라진) Secret의 고아 예약을 걷어낸다.
+            // 개별 취소는 ID를 알아야 하지만, pending 목록과 현재 Secret 집합의 차집합으로 특정한다.
+            await cancelOrphans(existing: secrets)
         } catch {
             throw SecretUseCaseError.map(error)
         }
@@ -87,8 +91,31 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
         await notificationService.cancel(identifiers: identifiers)
     }
 
+    public func cancelAll() async {
+        let expiry = await pendingExpiryIdentifiers()
+        guard !expiry.isEmpty else { return }
+        await notificationService.cancel(identifiers: expiry)
+    }
+
+    /// 현재 존재하는 Secret 집합에 속하지 않는 만료 알림(고아)을 취소한다.
+    /// 원격 삭제된 Secret은 조회 결과에 없어 ID를 모르므로, pending 목록에서 유효 식별자 집합의
+    /// 차집합으로 특정한다.
+    private func cancelOrphans(existing secrets: [Secret]) async {
+        let valid = Set(secrets.flatMap { secret in
+            ExpiryAlertDay.allCases.map { Self.notificationID(secretID: secret.id, timing: $0) }
+        })
+        let orphans = await pendingExpiryIdentifiers().filter { !valid.contains($0) }
+        guard !orphans.isEmpty else { return }
+        await notificationService.cancel(identifiers: orphans)
+    }
+
+    /// pending 알림 중 만료 알림 식별자만 골라 반환한다(다른 종류의 알림은 건드리지 않는다).
+    private func pendingExpiryIdentifiers() async -> [String] {
+        await notificationService.pendingIdentifiers().filter { $0.hasPrefix(Self.expiryIDPrefix) }
+    }
+
     private static func notificationID(secretID: UUID, timing: ExpiryAlertDay) -> String {
-        "secret-expiry-\(secretID.uuidString)-\(timing.rawValue)d"
+        "\(expiryIDPrefix)\(secretID.uuidString)-\(timing.rawValue)d"
     }
 
     private static func notificationDate(expiresAt: Date, timing: ExpiryAlertDay) -> Date? {
