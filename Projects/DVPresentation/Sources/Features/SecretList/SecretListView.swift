@@ -95,10 +95,9 @@ extension SecretListView {
     // `contentShape`은 행이 없는 빈 영역도 눌리게 하려고 남긴다.
     .contentShape(Rectangle())
     .simultaneousGesture(TapGesture().onEnded { isSearchFocused = false })
-    // `content`가 헤더를 ZStack으로 위에 얹으므로, 리스트 쪽만 헤더 높이만큼 안전 영역을 예약해
-    // 헤더에 가리지 않게 한다.
+      // `content`가 헤더를 ZStack으로 위에 얹으므로, 리스트 쪽만 헤더 높이만큼 안전 영역을 예약해 헤더에 가리지 않게 한다.
     .safeAreaInset(edge: .top, spacing: 0) {
-      Color.clear.frame(height: Self.headerReservedHeight)
+      Color.dv(.gray100).frame(height: Self.headerReservedHeight)
     }
   }
 
