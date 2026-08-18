@@ -68,6 +68,9 @@ extension SecretListView {
         sortAccessibilityLabel: .module("Sort")
       )
       .padding(.horizontal, 12)
+      .background {
+        Color.dv(.gray100).ignoresSafeArea(edges: .top)
+      }
     }
   }
 
