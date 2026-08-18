@@ -35,6 +35,12 @@ enum BuiltInPrefixRules {
         .init(prefix: "access-sandbox-", service: "Plaid", displayLabel: "Plaid Sandbox Token", confidence: .high),
         .init(prefix: "access_token$production$", service: "Braintree", displayLabel: "Braintree Production Token", confidence: .high),
         .init(prefix: "access_token$sandbox$", service: "Braintree", displayLabel: "Braintree Sandbox Token", confidence: .high),
+        .init(prefix: "A21", minLength: 50,
+              service: "PayPal", displayLabel: "PayPal Client ID", confidence: .medium),
+        .init(prefix: "test_sk_", service: "Toss Payments", displayLabel: "Toss Payments Test Secret Key", confidence: .high),
+        .init(prefix: "live_sk_", service: "Toss Payments", displayLabel: "Toss Payments Live Secret Key", confidence: .high),
+        .init(prefix: "test_ak_", service: "Toss Payments", displayLabel: "Toss Payments Test API Key", confidence: .high),
+        .init(prefix: "live_ak_", service: "Toss Payments", displayLabel: "Toss Payments Live API Key", confidence: .high),
     ]
 
     /// 소스 컨트롤 · 배포 · 시크릿 관리 서비스 prefix.

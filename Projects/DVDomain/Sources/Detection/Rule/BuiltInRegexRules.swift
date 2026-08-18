@@ -41,5 +41,17 @@ enum BuiltInRegexRules {
             displayLabel: "Sentry DSN",
             confidence: .high
         ),
+        .init(
+            pattern: #"DefaultEndpointsProtocol=https?;AccountName=[A-Za-z0-9]+;AccountKey=[A-Za-z0-9+/]{86,88}={0,2};EndpointSuffix=[A-Za-z0-9.]+"#,
+            service: "Azure",
+            displayLabel: "Azure Storage Connection String",
+            confidence: .high
+        ),
+        .init(
+            pattern: #"CLOUDINARY_URL=cloudinary://[A-Za-z0-9]+:[A-Za-z0-9_-]+@[A-Za-z0-9_.-]+"#,
+            service: "Cloudinary",
+            displayLabel: "Cloudinary URL",
+            confidence: .high
+        ),
     ]
 }
