@@ -12,6 +12,10 @@ public struct GeneralSettingsClient: Sendable {
 
   public var defaultEnvironment: @Sendable () -> String = { "dev" }
   public var setDefaultEnvironment: @Sendable (String) -> Void
+
+  public var appearance: @Sendable () -> String = { "system" }
+  public var setAppearance: @Sendable (String) -> Void
+  public var appearanceStream: @Sendable () -> AsyncStream<String> = { AsyncStream { $0.finish() } }
 }
 
 extension GeneralSettingsClient: TestDependencyKey {
@@ -22,7 +26,10 @@ extension GeneralSettingsClient: TestDependencyKey {
     setLaunchAtLoginEnabled: { _ in .notRegistered },
     openLoginItemsSystemSettings: { },
     defaultEnvironment: { "dev" },
-    setDefaultEnvironment: { _ in }
+    setDefaultEnvironment: { _ in },
+    appearance: { "system" },
+    setAppearance: { _ in },
+    appearanceStream: { AsyncStream { $0.finish() } }
   )
 }
 

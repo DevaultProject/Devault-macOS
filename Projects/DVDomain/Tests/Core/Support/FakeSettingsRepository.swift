@@ -12,6 +12,8 @@ public final class FakeSettingsRepository: SettingsRepository, @unchecked Sendab
 
     public var isLaunchAtLoginEnabledValue = false
     public var defaultEnvironmentValue = "dev"
+    public var appearanceValue = "system"
+    public var appearanceStreamValue: AsyncStream<String>?
 
     public var isRequireAuthOnLaunchEnabledValue = true
     public var isRequireAuthToCopyEnabledValue = true
@@ -44,6 +46,18 @@ public final class FakeSettingsRepository: SettingsRepository, @unchecked Sendab
 
     public func defaultEnvironment() -> String { defaultEnvironmentValue }
     public func setDefaultEnvironment(_ rawValue: String) { defaultEnvironmentValue = rawValue }
+
+    public func appearance() -> String { appearanceValue }
+    public func setAppearance(_ rawValue: String) { appearanceValue = rawValue }
+    public func appearanceStream() -> AsyncStream<String> {
+        if let appearanceStreamValue {
+            return appearanceStreamValue
+        }
+        return AsyncStream { continuation in
+            continuation.yield(appearanceValue)
+            continuation.finish()
+        }
+    }
 
     public func isRequireAuthOnLaunchEnabled() -> Bool { isRequireAuthOnLaunchEnabledValue }
     public func setRequireAuthOnLaunchEnabled(_ enabled: Bool) { isRequireAuthOnLaunchEnabledValue = enabled }

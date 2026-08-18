@@ -43,6 +43,16 @@ public protocol SettingsRepository: Sendable {
   /// - Parameter rawValue: 저장할 기본 환경의 rawValue
   func setDefaultEnvironment(_ rawValue: String)
 
+  /// 앱 전체에 적용할 화면 모드(rawValue: system/light/dark).
+  /// - Returns: 화면 모드의 rawValue
+  func appearance() -> String
+  /// 앱 전체에 적용할 화면 모드(rawValue)를 저장한다.
+  /// - Parameter rawValue: 저장할 화면 모드의 rawValue
+  func setAppearance(_ rawValue: String)
+  /// 구독을 시작하면 현재 화면 모드를 즉시 한 번 방출하고, 이후 변경될 때마다 최신값을 방출한다.
+  /// - Returns: 앱 화면 모드 스트림
+  func appearanceStream() -> AsyncStream<String>
+
   // MARK: - Security
 
   /// 앱 실행 시 인증 요구 여부.

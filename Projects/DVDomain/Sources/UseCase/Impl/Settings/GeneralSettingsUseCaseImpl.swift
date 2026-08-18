@@ -43,4 +43,16 @@ public struct GeneralSettingsUseCaseImpl: GeneralSettingsUseCase {
   public func setDefaultEnvironment(_ rawValue: String) {
     repository.setDefaultEnvironment(rawValue)
   }
+
+  public func appearance() -> String {
+    repository.appearance()
+  }
+
+  public func setAppearance(_ rawValue: String) {
+    repository.setAppearance(rawValue)
+  }
+
+  public func appearanceStream() -> AsyncStream<String> {
+    repository.appearanceStream()
+  }
 }

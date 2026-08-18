@@ -12,6 +12,7 @@ enum UserDefaultsKey: String {
   // General
   case isLaunchAtLoginEnabled
   case defaultEnvironment
+  case appearance
 
   // Security
   case isRequireAuthOnLaunchEnabled
