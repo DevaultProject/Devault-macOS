@@ -48,6 +48,7 @@ extension [Secret] {
       (secret(name: "이름 없는 API 키",  type: .apiKeyToken, expiresAt: .now.addingTimeInterval(-86_400)), []),
       (secret(name: "사내 SSO",         type: .oauth), []),
       (secret(name: "운영 DB",          type: .database, expiresAt: .now.addingTimeInterval(3 * 86_400)), []),
+      (secret(name: "결제 게이트웨이 키", type: .apiKeyToken, expiresAt: .now.addingTimeInterval(6 * 86_400)), []),
       (secret(name: "배포 서버 SSH 키",  type: .sshAndCredentials, expiresAt: .now.addingTimeInterval(20 * 86_400)), []),
       (secret(name: ".env 모음",        type: .environmentVariableSet), []),
       (secret(name: "라이선스 키",       type: .etc), []),
