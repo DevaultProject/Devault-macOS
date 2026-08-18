@@ -92,10 +92,11 @@ let project = Project.project(
                 // 마케팅 버전(기본값 "1.0"을 덮어쓴다).
                 "CFBundleShortVersionString": .string("1.0.0"),
                 "CFBundleVersion": .string(buildNumber),
-                // 수출 규정 선언. AES-GCM으로 시크릿을 직접 암호화하므로 '면제 안 되는 암호화' → true.
-                // (표준 알고리즘이라 CCATS 불필요, 연 1회 자가분류 보고서 제출 대상)
-                "ITSAppUsesNonExemptEncryption": .boolean(true),
+                // 표준 AES-GCM(CryptoKit)만 사용 → 수출 규정 면제 대상.
+                "ITSAppUsesNonExemptEncryption": .boolean(false),
                 "NSFaceIDUsageDescription": .string("저장된 시크릿을 안전하게 보호하기 위해 Touch ID를 사용합니다."),
+                // About 패널·App Store에 노출. 기본값("Copyright ©. All rights reserved.")을 덮어쓴다.
+                "NSHumanReadableCopyright": .string("Copyright © 2026 Devault. All rights reserved."),
             ]),
             sources: .sources,
             resources: [.glob(pattern: "Resources/**", excluding: ["Resources/*.entitlements"])],
