@@ -301,6 +301,83 @@ struct SecretListFeatureTests {
         }
     }
 
+    @Test("삭제 대상이 지금 조회 중이던 시크릿이면, 재조회 후 남은 목록의 맨 위 항목으로 재선택한다")
+    func deleteViewedSecretReselectsTopOfRemainingList() async {
+        let deleted = makeSecret(name: "삭제될 시크릿")
+        let remainingTop = makeSecret(name: "남은 시크릿 1")
+        let remainingBottom = makeSecret(name: "남은 시크릿 2")
+
+        var initial = SecretListFeature.State()
+        initial.selectedSecretID = deleted.id
+
+        let store = TestStore(initialState: initial) {
+            SecretListFeature()
+        } withDependencies: {
+            $0.secretClient.softDelete = { _ in deleted }
+            $0.secretClient.fetchByQuery = { _ in [remainingTop, remainingBottom] }
+        }
+
+        await store.send(.didTapDelete(id: deleted.id))
+        await store.receive(.mutationResponse(.success(deleted.id)))
+        await store.receive(.delegate(.secretsChanged))
+        await store.receive(.secretsResponse(.success([remainingTop, remainingBottom]))) {
+            $0.secretsState = .loaded([remainingTop, remainingBottom])
+        }
+        await store.receive(.reselectAfterMutation) {
+            $0.selectedSecretID = remainingTop.id
+        }
+        await store.receive(.delegate(.secretSelected(remainingTop.id)))
+    }
+
+    @Test("삭제 대상이 지금 조회 중이던 시크릿이고 남은 목록이 비어 있으면 선택을 nil로 정리한다")
+    func deleteViewedSecretClearsSelectionWhenListBecomesEmpty() async {
+        let deleted = makeSecret(name: "삭제될 시크릿")
+
+        var initial = SecretListFeature.State()
+        initial.selectedSecretID = deleted.id
+
+        let store = TestStore(initialState: initial) {
+            SecretListFeature()
+        } withDependencies: {
+            $0.secretClient.softDelete = { _ in deleted }
+            $0.secretClient.fetchByQuery = { _ in [] }
+        }
+
+        await store.send(.didTapDelete(id: deleted.id))
+        await store.receive(.mutationResponse(.success(deleted.id)))
+        await store.receive(.delegate(.secretsChanged))
+        await store.receive(.secretsResponse(.success([]))) {
+            $0.secretsState = .loaded([])
+        }
+        await store.receive(.reselectAfterMutation)
+        await store.receive(.delegate(.secretSelected(nil)))
+    }
+
+    @Test("삭제 대상이 지금 조회 중이던 시크릿이 아니면 재선택을 하지 않는다")
+    func deleteOtherSecretDoesNotReselect() async {
+        let viewed = makeSecret(name: "조회 중인 시크릿")
+        let deleted = makeSecret(name: "다른 곳에서 삭제된 시크릿")
+
+        var initial = SecretListFeature.State()
+        initial.selectedSecretID = viewed.id
+
+        let store = TestStore(initialState: initial) {
+            SecretListFeature()
+        } withDependencies: {
+            $0.secretClient.softDelete = { _ in deleted }
+            $0.secretClient.fetchByQuery = { _ in [viewed] }
+        }
+
+        await store.send(.didTapDelete(id: deleted.id))
+        await store.receive(.mutationResponse(.success(deleted.id)))
+        await store.receive(.delegate(.secretsChanged))
+        await store.receive(.secretsResponse(.success([viewed]))) {
+            $0.secretsState = .loaded([viewed])
+        }
+        // `.reselectAfterMutation`도 `.delegate(.secretSelected)`도 오지 않는다 — selectedSecretID는 그대로다.
+        #expect(store.state.selectedSecretID == viewed.id)
+    }
+
     // MARK: - Helpers
 
     private func makeSecret(name: String) -> Secret {

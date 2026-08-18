@@ -86,6 +86,104 @@ struct MainFeatureTests {
     }
   }
 
+  // MARK: - List Menu Delete/Recover → Detail Sync
+
+  /// 리스트 메뉴로 지금 조회 중인 시크릿을 삭제하면, `SecretListFeature`가 재조회 후 남은
+  /// 목록의 맨 위 항목으로 스스로 재선택하고 `.secretSelected`를 보낸다 — `MainFeature`는
+  /// 기존 `secretSelected` 처리(위 SecretDetail Routing 섹션)를 그대로 타므로 새 시크릿으로
+  /// 조회뷰가 자동으로 옮겨간다.
+  /// 자식(`SecretListFeature`)의 재선택 concatenate와 부모가 델리게이트에 반응해 붙이는
+  /// 사이드바 카운트 갱신이 뒤섞여 정확한 도착 순서를 안전하게 단정할 수 없다 —
+  /// 최종 상태만 확인한다.
+  @Test("리스트 메뉴로 조회 중인 시크릿을 삭제하면 남은 목록의 맨 위 항목으로 조회뷰가 옮겨간다")
+  func listMenuDeleteOfViewedSecretMovesDetailToTopOfRemainingList() async {
+    let deleted = Self.makeSecret(name: "삭제될 시크릿")
+    let remainingTop = Self.makeSecret(name: "남은 시크릿 1")
+    let remainingBottom = Self.makeSecret(name: "남은 시크릿 2")
+    let counts = SecretCounts(byFilter: [.all: 2], byProject: [:])
+
+    var initial = MainFeature.State()
+    initial.secretList.secretsState = .loaded([deleted, remainingTop, remainingBottom])
+    initial.secretList.selectedSecretID = deleted.id
+    initial.secretDetail = SecretDetailFeature.State(secret: deleted)
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    } withDependencies: {
+      $0.secretClient.softDelete = { _ in deleted }
+      $0.secretClient.fetchByQuery = { _ in [remainingTop, remainingBottom] }
+      $0.sidebarClient.fetchCounts = { _, _ in counts }
+      $0.date = .constant(Self.referenceDate)
+    }
+    store.exhaustivity = .off(showSkippedAssertions: false)
+
+    await store.send(.secretList(.didTapDelete(id: deleted.id)))
+    await store.finish()
+
+    #expect(store.state.secretList.secretsState == .loaded([remainingTop, remainingBottom]))
+    #expect(store.state.secretList.selectedSecretID == remainingTop.id)
+    #expect(store.state.secretDetail?.secret.id == remainingTop.id)
+  }
+
+  /// 남은 항목이 없으면 갈 곳이 없으므로 조회뷰를 닫는다 — 기존 `secretSelected(nil)` 처리와 동일하다.
+  @Test("리스트 메뉴로 조회 중인 마지막 시크릿을 삭제하면 조회뷰가 닫힌다")
+  func listMenuDeleteOfLastViewedSecretClosesDetail() async {
+    let deleted = Self.makeSecret(name: "삭제될 시크릿")
+    let counts = SecretCounts(byFilter: [.all: 0], byProject: [:])
+
+    var initial = MainFeature.State()
+    initial.secretList.secretsState = .loaded([deleted])
+    initial.secretList.selectedSecretID = deleted.id
+    initial.secretDetail = SecretDetailFeature.State(secret: deleted)
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    } withDependencies: {
+      $0.secretClient.softDelete = { _ in deleted }
+      $0.secretClient.fetchByQuery = { _ in [] }
+      $0.sidebarClient.fetchCounts = { _, _ in counts }
+      $0.date = .constant(Self.referenceDate)
+    }
+    store.exhaustivity = .off(showSkippedAssertions: false)
+
+    await store.send(.secretList(.didTapDelete(id: deleted.id)))
+    await store.finish()
+
+    #expect(store.state.secretList.secretsState == .loaded([]))
+    #expect(store.state.secretList.selectedSecretID == nil)
+    #expect(store.state.secretDetail == nil)
+  }
+
+  /// 지금 조회 중이지 않은 다른 시크릿을 리스트 메뉴로 삭제한 경우까지 재선택하면
+  /// 무관한 조작에 조회뷰가 튕겨 나간다.
+  @Test("리스트 메뉴로 조회 중이지 않은 다른 시크릿을 삭제해도 조회뷰는 그대로다")
+  func listMenuDeleteOfOtherSecretKeepsDetail() async {
+    let viewed = Self.makeSecret(name: "조회 중인 시크릿")
+    let deleted = Self.makeSecret(name: "다른 곳에서 삭제된 시크릿")
+    let counts = SecretCounts(byFilter: [.all: 1], byProject: [:])
+
+    var initial = MainFeature.State()
+    initial.secretList.secretsState = .loaded([viewed, deleted])
+    initial.secretList.selectedSecretID = viewed.id
+    initial.secretDetail = SecretDetailFeature.State(secret: viewed)
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    } withDependencies: {
+      $0.secretClient.softDelete = { _ in deleted }
+      $0.secretClient.fetchByQuery = { _ in [viewed] }
+      $0.sidebarClient.fetchCounts = { _, _ in counts }
+      $0.date = .constant(Self.referenceDate)
+    }
+    store.exhaustivity = .off(showSkippedAssertions: false)
+
+    await store.send(.secretList(.didTapDelete(id: deleted.id)))
+    await store.finish()
+
+    #expect(store.state.secretDetail?.secret.id == viewed.id)
+    #expect(store.state.secretList.selectedSecretID == viewed.id)
+  }
+
   // MARK: - Sidebar Delegate
 
   @Test("selectionChanged(.project)는 secretList를 해당 프로젝트로 갱신한다")
