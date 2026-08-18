@@ -16,6 +16,8 @@ public struct DVTextField: View {
     @Binding private var text: String
     private let size: DVComponentSize
     private let isSecure: Bool
+    private let revealAccessibilityLabel: String
+    private let hideAccessibilityLabel: String
 
     @State private var isRevealed = false
     @FocusState private var isFocused: Bool
@@ -27,16 +29,22 @@ public struct DVTextField: View {
     ///   - text: 입력 값 양방향 바인딩.
     ///   - size: 너비 변형. 기본 ``DVComponentSize/md``.
     ///   - isSecure: 민감 값 마스킹 여부. 기본 `false`.
+    ///   - revealAccessibilityLabel: 마스킹 해제(표시) 눈 아이콘의 VoiceOver 라벨. 호출부가 번역해서 넘긴다.
+    ///   - hideAccessibilityLabel: 마스킹(숨김) 눈 아이콘의 VoiceOver 라벨.
     public init(
         _ placeholder: String,
         text: Binding<String>,
         size: DVComponentSize = .md,
-        isSecure: Bool = false
+        isSecure: Bool = false,
+        revealAccessibilityLabel: String = "Show",
+        hideAccessibilityLabel: String = "Hide"
     ) {
         self.placeholder = placeholder
         self._text = text
         self.size = size
         self.isSecure = isSecure
+        self.revealAccessibilityLabel = revealAccessibilityLabel
+        self.hideAccessibilityLabel = hideAccessibilityLabel
     }
 
     // MARK: - Body
@@ -102,6 +110,7 @@ extension DVTextField {
                 .frame(width: 24, height: 24)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(isRevealed ? hideAccessibilityLabel : revealAccessibilityLabel)
     }
 
     /// Field editor의 커서를 문자열 끝으로 이동 (`@FocusState = true` 시 macOS 기본 "전체 선택" 회피).

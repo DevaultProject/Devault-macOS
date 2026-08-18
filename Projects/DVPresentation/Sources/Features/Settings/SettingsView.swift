@@ -84,6 +84,7 @@ extension SettingsView {
         Image(systemName: "arrow.left")
           .frame(width: 16, height: 16)
           .fontWeight(.medium)
+          .accessibilityHidden(true)
         Text(.module("Back to App"))
           .dvFont(.bodyLG)
       }

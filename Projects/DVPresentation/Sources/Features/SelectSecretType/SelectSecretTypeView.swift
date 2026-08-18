@@ -48,6 +48,7 @@ extension SelectSecretTypeView {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(String(localized: type.displayName))
     }
 }
 

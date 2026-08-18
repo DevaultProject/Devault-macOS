@@ -30,6 +30,8 @@ public struct DVTitleBar: View {
     /// 검색 필드의 포커스를 바깥에서 풀 수 있게 열어 둔다 — 한 번 커서가 들어가면 다른 곳을
     /// 눌러도 놓지 않는 경우가 있다. `nil`이면 시스템에 맡긴다.
     public let isSearchFocused: Binding<Bool>?
+    /// 정렬 버튼의 VoiceOver 라벨. DVDesign엔 로컬라이저가 없어 호출부가 번역해서 넘긴다.
+    public let sortAccessibilityLabel: String
 
     @FocusState private var searchFieldFocused: Bool
     @State private var isSortHovered = false
@@ -41,13 +43,15 @@ public struct DVTitleBar: View {
         searchText: Binding<String>,
         searchPromptText: String = "Search",
         isSearchFocused: Binding<Bool>? = nil,
-        sortMenuContent: (() -> AnyView)? = nil
+        sortMenuContent: (() -> AnyView)? = nil,
+        sortAccessibilityLabel: String = "Sort"
     ) {
         self.titleText = titleText
         self.searchText = searchText
         self.searchPromptText = searchPromptText
         self.isSearchFocused = isSearchFocused
         self.sortMenuContent = sortMenuContent
+        self.sortAccessibilityLabel = sortAccessibilityLabel
     }
 
     // MARK: - Body
@@ -93,6 +97,7 @@ extension DVTitleBar {
         .fixedSize()
         .onHover { isSortHovered = $0 }
         .animation(MotionMetrics.hover, value: isSortHovered)
+        .accessibilityLabel(sortAccessibilityLabel)
     }
 
     private var searchField: some View {
@@ -100,6 +105,7 @@ extension DVTitleBar {
             Image(systemName: "magnifyingglass")
                 .dvFont(.bodyMD)
                 .foregroundStyle(Color.dv(.gray500))
+                .accessibilityHidden(true)
             TextField(searchPromptText, text: searchText)
                 .dvFont(.bodyMD)
                 .foregroundStyle(Color.dv(.gray900))

@@ -60,7 +60,14 @@ struct LabeledTextFieldView: View {
                 trailingHint: trailingHint,
                 size: size
             ) {
-                DVTextField(placeholder, text: $text, size: size, isSecure: isSecure)
+                DVTextField(
+                    placeholder,
+                    text: $text,
+                    size: size,
+                    isSecure: isSecure,
+                    revealAccessibilityLabel: String.module("Show"),
+                    hideAccessibilityLabel: String.module("Hide")
+                )
             }
         }
     }

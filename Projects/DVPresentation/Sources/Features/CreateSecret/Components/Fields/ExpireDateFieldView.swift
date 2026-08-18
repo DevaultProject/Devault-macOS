@@ -84,6 +84,7 @@ private extension ExpireDateFieldView {
         }
         .buttonStyle(.plain)
         .disabled(!isSet)
+        .accessibilityLabel(String.module("Clear"))
     }
 
     /// `DatePicker`가 non-optional `Date`를 요구하므로 옵셔널 shim.

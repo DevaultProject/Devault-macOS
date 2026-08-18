@@ -59,6 +59,7 @@ public struct DVCheckBox: View {
             }
             .buttonStyle(.plain)
             .onHover { isHovered = $0 }
+            .accessibilityAddTraits(isChecked ? .isSelected : [])
         } else {
             checkboxShape
         }

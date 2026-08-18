@@ -369,6 +369,7 @@ private struct SearchHeaderView: View {
             Image(systemName: "magnifyingglass")
                 .font(DVFont.bodyMD.font)
                 .foregroundStyle(Color.dv(.gray600))
+                .accessibilityHidden(true)
             TextField(placeholder, text: $text)
                 .textFieldStyle(.plain)
                 .dvFont(.bodyLG)
@@ -470,6 +471,7 @@ private struct RowView: View {
             HStack(spacing: DropdownMetrics.rowContentSpacing) {
                 DVCheckBox(isChecked: isSelected) { action() }
                     .allowsHitTesting(false)
+                    .accessibilityHidden(true)
                 Text(highlighted)
                     .dvFont(.bodyLG)
                     .foregroundStyle(Color.dv(.gray900))
@@ -483,6 +485,7 @@ private struct RowView: View {
             .background(isSelected ? Color.dv(.vaultGreenTint) : Color.clear)
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     /// 라벨을 AttributedString으로 렌더링. `query`와 정확히 일치하는(대소문자 무관)
