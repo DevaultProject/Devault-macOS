@@ -139,6 +139,7 @@ extension DetailReadOnlyFieldView {
                 } label: {
                     Image(systemName: "doc.on.doc")
                 }
+                .accessibilityLabel(String.module("Copy"))
             }
             if showsRevealToggle {
                 Button {
@@ -146,6 +147,7 @@ extension DetailReadOnlyFieldView {
                 } label: {
                     Image(systemName: actions.isRevealed(field) ? "eye.slash" : "eye")
                 }
+                .accessibilityLabel(actions.isRevealed(field) ? String.module("Hide") : String.module("Reveal"))
             }
         }
         .font(.system(size: 11))

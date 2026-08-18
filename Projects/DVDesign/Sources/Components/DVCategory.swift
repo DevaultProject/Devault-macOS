@@ -72,6 +72,7 @@ extension DVCategory {
             .dvFont(.headingLG)
             .foregroundStyle(isSelected ? Color.dv(.white) : iconColor)
             .frame(width: 24, height: 24)
+            .accessibilityHidden(true)
     }
 
     private var titleLabel: some View {

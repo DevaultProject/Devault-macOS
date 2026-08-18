@@ -14,7 +14,10 @@ struct SSLRequiredFieldView: View {
             Text(.module("SSL Required"))
                 .dvFont(.bodyMD)
                 .foregroundStyle(Color.dv(.gray700))
+                // 라벨은 체크박스가 대신 읽으므로 중복 방지로 숨긴다.
+                .accessibilityHidden(true)
             DVCheckBox(isChecked: isChecked) { isChecked.toggle() }
+                .accessibilityLabel(String.module("SSL Required"))
         }
     }
 }

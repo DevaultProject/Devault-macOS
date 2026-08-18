@@ -80,6 +80,7 @@ extension DVDropdown {
             .font(DVFont.captionMDSemibold.font)
             .foregroundStyle(Color.black.opacity(0.85))
             .frame(width: 24, height: 24)
+            .accessibilityHidden(true)
     }
 }
 
