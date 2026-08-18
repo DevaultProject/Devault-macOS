@@ -101,7 +101,7 @@ extension SidebarView {
   private var projectSection: some View {
     VStack(spacing: 12) {
       projectSectionHeader
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 4)
       collapsibleProjectBody
     }
     // `value`를 좁히지 않으면 이름 변경 입력 한 글자마다 섹션 전체가 다시 애니메이션된다.
@@ -160,7 +160,7 @@ extension SidebarView {
   }
 
   private var projectSectionHeader: some View {
-    HStack(spacing: 11) {
+    HStack(spacing: 4) {
       Text(.module("Project"))
         .dvFont(.captionMDSemibold)
         .foregroundStyle(Color.dv(.vaultGreen))
