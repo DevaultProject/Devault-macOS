@@ -398,6 +398,62 @@ struct MainFeatureTests {
     }
   }
 
+  /// 설정 화면엔 사이드바·리스트가 없어, 진행하면 보이지 않는 상태만 바뀌고 설정을 닫을 때 튄다.
+  @Test("설정 화면에서는 createSecretRequested를 무시한다")
+  func createSecretRequestedIgnoredDuringSettings() async {
+    var initial = MainFeature.State()
+    initial.settings = .init()
+
+    let store = TestStore(initialState: initial) { MainFeature() }
+
+    // 아무 상태도 바꾸지 않고 효과도 없어야 한다(닫혀 있는 상태를 조용히 오염시키지 않는다).
+    await store.send(.createSecretRequested(.oauth))
+  }
+
+  /// 다른 진입점(⌘N·사이드바)은 확인을 거치는데 New▸만 조용히 버리면 작성 중 입력이 사라진다.
+  @Test("createSecretRequested는 작성 중인 폼이 있으면 덮어쓰지 않고 취소 확인을 거친다")
+  func createSecretRequestedAsksBeforeDiscardingForm() async {
+    var initial = MainFeature.State()
+    initial.createSecret = CreateSecretFeature.State(secretType: .apiKeyToken)
+    initial.sidebar.mode = .creating(previous: .filter(.all))
+
+    let store = TestStore(initialState: initial) { MainFeature() }
+
+    // createSecret을 바꾸지 않고 pendingCreateType만 잡는다 — 바꿨다면 exhaustive가 실패한다.
+    await store.send(.createSecretRequested(.oauth)) {
+      $0.pendingCreateType = .oauth
+    }
+    await store.receive(.createSecret(.didTapCancel)) {
+      $0.createSecret?.alert = AlertState {
+        TextState("Discard changes?", bundle: .module)
+      } actions: {
+        ButtonState(role: .destructive, action: .confirmCancel) {
+          TextState("Discard", bundle: .module)
+        }
+        ButtonState(role: .cancel) {
+          TextState("Keep editing", bundle: .module)
+        }
+      }
+    }
+  }
+
+  @Test("취소를 확인하면 New▸로 요청한 타입으로 새 폼을 연다")
+  func confirmingDiscardOpensRequestedType() async {
+    var initial = MainFeature.State()
+    initial.createSecret = CreateSecretFeature.State(secretType: .apiKeyToken)
+    initial.pendingCreateType = .oauth
+    initial.sidebar.mode = .creating(previous: .filter(.all))
+
+    let store = TestStore(initialState: initial) { MainFeature() }
+
+    await store.send(.createSecret(.delegate(.cancelled))) {
+      $0.pendingCreateType = nil
+      $0.createSecret = CreateSecretFeature.State(secretType: .oauth)
+    }
+    // 이미 creating 모드라 setCreatingSecret(true)는 상태를 바꾸지 않는다.
+    await store.receive(.sidebar(.setCreatingSecret(true)))
+  }
+
   @Test("secretCreated는 생성 플로우를 닫고 사이드바 카운트를 다시 세게 한다")
   func secretCreatedClearsCreationFlow() async {
     let secretID = UUID()
