@@ -21,4 +21,15 @@ struct AboutSettingsFeatureTests {
       $0.version = "2.0.0"
     }
   }
+
+  @Test("didTapOpenSourceLicenses는 라이선스 sheet를 연다")
+  func didTapOpenSourceLicensesOpensSheet() async {
+    let store = TestStore(initialState: AboutSettingsFeature.State()) {
+      AboutSettingsFeature()
+    }
+
+    await store.send(.didTapOpenSourceLicenses) {
+      $0.isShowingLicenses = true
+    }
+  }
 }
