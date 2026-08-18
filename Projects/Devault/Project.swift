@@ -82,12 +82,10 @@ let project = Project.project(
             product: .app,
             bundleId: "com.devault.app",
             infoPlist: .extendingDefault(with: [
-                // 사용자에게 보이는 이름. 메뉴바는 CFBundleName, Finder·Launchpad는 CFBundleDisplayName을
-                // 쓰므로 둘 다 지정한다(기본값이 "Devault"라 안 바꾸면 남는다).
+                // 사용자에게 보이는 이름. 메뉴바는 CFBundleName, Finder·Launchpad는 CFBundleDisplayName을 쓰므로 둘 다 저장
                 "CFBundleDisplayName": .string("DeVault"),
                 "CFBundleName": .string("DeVault"),
-                // Mac App Store 필수. 여기엔 주 카테고리(생산성)만 들어가고,
-                // 보조 카테고리(유틸리티)는 App Store Connect 메타데이터에서 지정한다.
+                // Mac App Store 필수. 여기엔 주 카테고리(생산성)만 들어감
                 "LSApplicationCategoryType": .string("public.app-category.productivity"),
                 // 마케팅 버전(기본값 "1.0"을 덮어쓴다).
                 "CFBundleShortVersionString": .string("1.0.0"),
@@ -95,8 +93,9 @@ let project = Project.project(
                 // 표준 AES-GCM(CryptoKit)만 사용 → 수출 규정 면제 대상.
                 "ITSAppUsesNonExemptEncryption": .boolean(false),
                 "NSFaceIDUsageDescription": .string("저장된 시크릿을 안전하게 보호하기 위해 Touch ID를 사용합니다."),
-                // About 패널·App Store에 노출. 기본값("Copyright ©. All rights reserved.")을 덮어쓴다.
+                // About 패널·App Store에 노출.
                 "NSHumanReadableCopyright": .string("Copyright © 2026 Devault. All rights reserved."),
+                "CFBundleLocalizations": .array([.string("en"), .string("ko")]),
             ]),
             sources: .sources,
             resources: [.glob(pattern: "Resources/**", excluding: ["Resources/*.entitlements"])],

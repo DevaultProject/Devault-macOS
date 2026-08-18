@@ -15,11 +15,11 @@ public enum SidebarFilter: Equatable, CaseIterable, Hashable, Sendable {
 
   var title: String {
     switch self {
-    case .all:     "All"
-    case .starred: "Star"
-    case .notice:  "Notice"
-    case .expired: "Expired"
-    case .deleted: "Deleted"
+    case .all:     .module("All")
+    case .starred: .module("Star")
+    case .notice:  .module("Notice")
+    case .expired: .module("Expired")
+    case .deleted: .module("Deleted")
     }
   }
 
