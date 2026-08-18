@@ -143,6 +143,10 @@ public struct MainFeature {
         return .none
 
       // 자식끼리 직접 연결하지 않고 공통 부모가 사이드바 개수 갱신을 지시한다 (TCA_GUIDELINES 7.4).
+      //
+      // 리스트 메뉴로 지금 조회 중인 시크릿을 삭제·복구·영구삭제한 경우의 조회뷰 정리는 여기서
+      // 하지 않는다 — `SecretListFeature`가 재조회 후 남은 목록의 맨 위 항목으로 스스로 재선택하고
+      // (없으면 `nil`) 그 결과를 `.secretSelected`로 보내므로, 위 `.secretSelected` 케이스가 그대로 처리한다.
       case .secretList(.delegate(.secretsChanged)):
         return .send(.sidebar(.countsRefreshRequested))
 

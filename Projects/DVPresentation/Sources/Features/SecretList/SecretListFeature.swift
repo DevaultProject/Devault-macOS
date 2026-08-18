@@ -91,6 +91,9 @@ public struct SecretListFeature {
 
     case secretsResponse(Result<[Secret], SecretUseCaseError>)
     case mutationResponse(Result<Secret.ID, SecretUseCaseError>)
+    /// 지금 조회 중이던 시크릿을 삭제·복구·영구삭제해 목록에서 사라졌을 때만 보낸다.
+    /// 재조회가 끝난 뒤 남은 목록의 맨 위 항목으로 조회뷰를 옮기거나(있으면), 없으면 닫는다.
+    case reselectAfterMutation
 
     // MARK: - Child
 
@@ -102,7 +105,7 @@ public struct SecretListFeature {
 
     public enum Delegate: Equatable {
       case secretSelected(Secret.ID?)
-      /// 삭제·복구·영구삭제·프로젝트 연결로 Secret 집합이 바뀌었음을 부모에게 알린다.
+      /// 삭제·복구·영구삭제로 Secret 집합이 바뀌었음을 부모에게 알린다.
       /// 부모가 사이드바 개수를 다시 세는 근거가 된다.
       case secretsChanged
     }
@@ -180,13 +183,26 @@ public struct SecretListFeature {
       case .alert(.presented(.confirmDeleteForever(let id))):
         return mutationEffect(id: id) { try await secretClient.permanentlyDelete(id) }
 
-      // 두 효과는 서로 독립적이지만 `.merge`는 도착 순서를 보장하지 않아 테스트가 깨지기 쉽다.
-      // 부모 갱신을 먼저 흘려보내고 재조회를 잇는다 (`.send`는 즉시 끝나므로 지연은 없다).
-      case .mutationResponse(.success):
-        return .concatenate(
+      // 세 효과는 서로 독립적이지만 `.merge`는 도착 순서를 보장하지 않아 테스트가 깨지기 쉽다.
+      // 부모 갱신 → 재조회 → (조회 중이던 항목이 사라졌다면) 재선택 순으로 흘려보낸다
+      // (`.send`는 즉시 끝나므로 지연은 없다). 재선택은 재조회가 끝난 뒤 최신 목록을 봐야 하므로
+      // `fetchSecretsEffect` 다음에 와야 한다.
+      case .mutationResponse(.success(let id)):
+        let wasViewingMutatedSecret = state.selectedSecretID == id
+        var effects: [Effect<Action>] = [
           .send(.delegate(.secretsChanged)),
           fetchSecretsEffect(query: state.query, debounced: false)
-        )
+        ]
+        if wasViewingMutatedSecret {
+          effects.append(.send(.reselectAfterMutation))
+        }
+        return .concatenate(effects)
+
+      case .reselectAfterMutation:
+        guard case .loaded(let secrets) = state.secretsState else { return .none }
+        let newID = secrets.first?.id
+        state.selectedSecretID = newID
+        return .send(.delegate(.secretSelected(newID)))
 
       case .mutationResponse(.failure):
         state.alert = AlertState {
