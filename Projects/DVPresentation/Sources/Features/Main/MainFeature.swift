@@ -54,6 +54,8 @@ public struct MainFeature {
     case binding(BindingAction<State>)
     case task
     case didTapLock
+    /// App 메뉴 서브메뉴에서 타입 선택 그리드를 건너뛰고 해당 타입으로 바로 생성.
+    case createSecretRequested(CreatableSecretType)
 
     // MARK: - Internal
 
@@ -186,6 +188,15 @@ public struct MainFeature {
 
       case .secretDetail:
         return .none
+
+      case .createSecretRequested(let secretType):
+        state.selectSecretType = nil
+        state.createSecret = CreateSecretFeature.State(secretType: secretType)
+        // 생성 플로우 진입: 조회 중이던 상세를 놓아 스테일 상세 재등장을 막고,
+        // isCreatingSecret을 켜 사이드바가 아무 것도 선택되지 않은 상태로 표시되게 한다.
+        state.secretDetail = nil
+        state.secretList.selectedSecretID = nil
+        return .send(.sidebar(.setCreatingSecret(true)))
 
       case .selectSecretType(.delegate(.typeSelected(let secretType))):
         state.createSecret = CreateSecretFeature.State(secretType: secretType)
