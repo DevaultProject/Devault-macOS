@@ -366,6 +366,38 @@ struct MainFeatureTests {
     }
   }
 
+  @Test("createSecretRequested는 그리드 없이 바로 생성하며 사이드바 선택 하이라이트와 조회 상태를 해제한다")
+  func createSecretRequestedOpensCreateSecretDirectly() async {
+    let secret = Secret(
+      id: UUID(),
+      name: "Test Token",
+      secretType: .apiKeyToken,
+      createdAt: Date(),
+      updatedAt: Date(),
+      payload: SecretPayload(encryptedData: Data(), keyTag: "test", schemaVersion: 1)
+    )
+
+    // 사이드바에 필터가 선택돼 있고 시크릿을 조회 중인 상태 — App 메뉴 서브메뉴에서 바로 생성.
+    var initial = MainFeature.State()
+    initial.sidebar.selection = .filter(.starred)
+    initial.secretList.selectedSecretID = secret.id
+    initial.secretDetail = SecretDetailFeature.State(secret: secret)
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    }
+
+    await store.send(.createSecretRequested(.oauth)) {
+      $0.createSecret = CreateSecretFeature.State(secretType: .oauth)
+      $0.secretDetail = nil
+      $0.secretList.selectedSecretID = nil
+    }
+    // isCreatingSecret이 true가 되면 사이드바는 어떤 행도 선택되지 않은 상태로 표시된다.
+    await store.receive(.sidebar(.setCreatingSecret(true))) {
+      $0.sidebar.isCreatingSecret = true
+    }
+  }
+
   @Test("secretCreated는 생성 플로우를 닫고 사이드바 카운트를 다시 세게 한다")
   func secretCreatedClearsCreationFlow() async {
     let secretID = UUID()
