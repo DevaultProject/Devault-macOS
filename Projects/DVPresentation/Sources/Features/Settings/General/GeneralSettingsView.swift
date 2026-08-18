@@ -44,6 +44,19 @@ extension GeneralSettingsView {
         }
       }
 
+      SettingsSection(title: String.module("Appearance")) {
+        SettingsPickerRow(
+          title: String.module("Theme"),
+          description: String.module("Choose light or dark, or match your system setting."),
+          selection: $store.appearance
+        ) {
+          ForEach(AppAppearance.allCases, id: \.self) { appearance in
+            Text(String(localized: appearance.displayName))
+              .tag(appearance)
+          }
+        }
+      }
+
       SettingsSection(title: String.module("Defaults")) {
         SettingsPickerRow(
           title: String.module("Default environment"),

@@ -20,4 +20,14 @@ public protocol GeneralSettingsUseCase: Sendable {
   /// 새 Secret 생성 시 적용할 기본 환경(rawValue)을 저장한다.
   /// - Parameter rawValue: 저장할 기본 환경의 rawValue
   func setDefaultEnvironment(_ rawValue: String)
+
+  /// 앱 전체에 적용할 화면 모드(rawValue)를 반환한다.
+  /// - Returns: 화면 모드의 rawValue
+  func appearance() -> String
+  /// 앱 전체에 적용할 화면 모드(rawValue)를 저장한다.
+  /// - Parameter rawValue: 저장할 화면 모드의 rawValue
+  func setAppearance(_ rawValue: String)
+  /// 화면 모드 변경을 방출하는 스트림. 구독 즉시 현재값을 한 번 방출한다.
+  /// - Returns: 앱 화면 모드 스트림
+  func appearanceStream() -> AsyncStream<String>
 }

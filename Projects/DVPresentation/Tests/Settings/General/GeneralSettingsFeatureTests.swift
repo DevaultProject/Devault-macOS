@@ -23,6 +23,7 @@ struct GeneralSettingsFeatureTests {
     } withDependencies: {
       $0.generalSettingsClient.launchAtLoginStatus = { .enabled }
       $0.generalSettingsClient.defaultEnvironment = { "prod" }
+      $0.generalSettingsClient.appearance = { "system" }
     }
 
     await store.send(.task) {
@@ -41,11 +42,64 @@ struct GeneralSettingsFeatureTests {
     } withDependencies: {
       $0.generalSettingsClient.launchAtLoginStatus = { .notRegistered }
       $0.generalSettingsClient.defaultEnvironment = { "invalid" }
+      $0.generalSettingsClient.appearance = { "system" }
     }
 
     await store.send(.task) {
       $0.defaultEnvironment = .dev
     }
+  }
+
+  @Test("화면 모드의 초기값은 System이다")
+  func appearanceInitiallyUsesSystem() {
+    #expect(GeneralSettingsFeature.State().appearance == .system)
+  }
+
+  @Test("task는 저장된 화면 모드를 읽어온다")
+  func taskLoadsAppearance() async {
+    let store = TestStore(initialState: GeneralSettingsFeature.State()) {
+      GeneralSettingsFeature()
+    } withDependencies: {
+      $0.generalSettingsClient.launchAtLoginStatus = { .notRegistered }
+      $0.generalSettingsClient.defaultEnvironment = { "dev" }
+      $0.generalSettingsClient.appearance = { "dark" }
+    }
+
+    await store.send(.task) {
+      $0.appearance = .dark
+    }
+  }
+
+  @Test("저장된 화면 모드가 잘못되면 System을 사용한다")
+  func invalidAppearanceFallsBackToSystem() async {
+    var initialState = GeneralSettingsFeature.State()
+    initialState.appearance = .dark
+    let store = TestStore(initialState: initialState) {
+      GeneralSettingsFeature()
+    } withDependencies: {
+      $0.generalSettingsClient.launchAtLoginStatus = { .notRegistered }
+      $0.generalSettingsClient.defaultEnvironment = { "dev" }
+      $0.generalSettingsClient.appearance = { "invalid" }
+    }
+
+    await store.send(.task) {
+      $0.appearance = .system
+    }
+  }
+
+  @Test("화면 모드를 선택하면 저장한다")
+  func appearanceSelectionPersists() async {
+    let saved = LockIsolated("")
+    let store = TestStore(initialState: GeneralSettingsFeature.State()) {
+      GeneralSettingsFeature()
+    } withDependencies: {
+      $0.generalSettingsClient.setAppearance = { saved.setValue($0) }
+    }
+
+    await store.send(.binding(.set(\.appearance, .dark))) {
+      $0.appearance = .dark
+    }
+    #expect(saved.value == "dark")
   }
 
   @Test("승인 대기 상태에서는 토글을 유지하고 승인 상태를 표시한다")

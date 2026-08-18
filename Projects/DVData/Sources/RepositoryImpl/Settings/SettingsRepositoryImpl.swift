@@ -12,6 +12,8 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
   // TODO: SecretEnvironment를 DVDomain 공용 타입으로 이동하면 `.dev.rawValue`로 대체한다.
   private enum DefaultValue {
     static let environment = "dev"
+    // AppAppearance.system.rawValue와 동일. 기본은 macOS 시스템 설정을 따른다.
+    static let appearance = "system"
   }
 
   public init(
@@ -24,6 +26,7 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
     // 아직 사용자가 저장한 값이 없을 때 사용할 기본값
     defaults.register(defaults: [
       UserDefaultsKey.defaultEnvironment.rawValue: DefaultValue.environment,
+      UserDefaultsKey.appearance.rawValue: DefaultValue.appearance,
       UserDefaultsKey.isRequireAuthOnLaunchEnabled.rawValue: true,
       UserDefaultsKey.isRequireAuthToCopyEnabled.rawValue: true,
       UserDefaultsKey.isAutoLockEnabled.rawValue: true,
@@ -84,6 +87,31 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
 
   public func setDefaultEnvironment(_ rawValue: String) {
     defaults.set(rawValue, forKey: .defaultEnvironment)
+  }
+
+  public func appearance() -> String {
+    defaults.string(forKey: .appearance) ?? DefaultValue.appearance
+  }
+
+  public func setAppearance(_ rawValue: String) {
+    defaults.set(rawValue, forKey: .appearance)
+  }
+
+  public func appearanceStream() -> AsyncStream<String> {
+    AsyncStream { continuation in
+      let observer = NotificationCenter.default.addObserver(
+        forName: UserDefaults.didChangeNotification,
+        object: defaults,
+        queue: nil
+      ) { _ in
+        continuation.yield(appearance())
+      }
+
+      continuation.yield(appearance())
+      continuation.onTermination = { _ in
+        NotificationCenter.default.removeObserver(observer)
+      }
+    }
   }
 
   // MARK: - Security

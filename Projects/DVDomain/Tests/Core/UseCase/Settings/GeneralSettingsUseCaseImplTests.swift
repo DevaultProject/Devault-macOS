@@ -98,4 +98,17 @@ struct GeneralSettingsUseCaseImplTests {
     sut.setDefaultEnvironment("prod")
     #expect(sut.defaultEnvironment() == "prod")
   }
+
+  @Test("화면 모드 설정을 읽고 쓴다")
+  func appearanceRoundTrips() {
+    let repository = FakeSettingsRepository()
+    let sut = GeneralSettingsUseCaseImpl(
+      repository: repository,
+      launchAtLoginService: FakeLaunchAtLoginService()
+    )
+
+    #expect(sut.appearance() == "system")
+    sut.setAppearance("dark")
+    #expect(sut.appearance() == "dark")
+  }
 }

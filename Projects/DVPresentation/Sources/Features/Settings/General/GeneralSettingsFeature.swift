@@ -15,6 +15,7 @@ public struct GeneralSettingsFeature {
     var isLaunchAtLoginEnabled = false
     var launchAtLoginStatus: LaunchAtLoginStatus = .notRegistered
     var defaultEnvironment: SecretEnvironment = .dev
+    var appearance: AppAppearance = .system
 
     public init() {}
   }
@@ -52,6 +53,9 @@ public struct GeneralSettingsFeature {
         state.defaultEnvironment = SecretEnvironment(
           rawValue: generalSettingsClient.defaultEnvironment()
         ) ?? .dev
+        state.appearance = AppAppearance(
+          rawValue: generalSettingsClient.appearance()
+        ) ?? .system
         return .none
 
       case .binding(\.isLaunchAtLoginEnabled):
@@ -71,6 +75,10 @@ public struct GeneralSettingsFeature {
       case .binding(\.defaultEnvironment):
         let environment = state.defaultEnvironment
         return .run { _ in generalSettingsClient.setDefaultEnvironment(environment.rawValue) }
+
+      case .binding(\.appearance):
+        let appearance = state.appearance
+        return .run { _ in generalSettingsClient.setAppearance(appearance.rawValue) }
 
       case .binding:
         return .none
