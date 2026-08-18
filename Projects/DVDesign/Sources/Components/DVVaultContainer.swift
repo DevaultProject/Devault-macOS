@@ -17,7 +17,6 @@ public struct DVVaultContainer: View {
     public let trailingIcon: DVExpiryEmphasis?
     /// `trailingIcon`에 hover 시 뜨는 설명 문구. `trailingIcon`이 `nil`이면 무시된다.
     public let trailingIconTooltip: String?
-    public let isSelected: Bool
 
     // MARK: - Init
 
@@ -27,8 +26,7 @@ public struct DVVaultContainer: View {
         service: String? = nil,
         typeIcon: Image? = nil,
         trailingIcon: DVExpiryEmphasis? = nil,
-        trailingIconTooltip: String? = nil,
-        isSelected: Bool = false
+        trailingIconTooltip: String? = nil
     ) {
         self.name = name
         self.date = date
@@ -36,7 +34,6 @@ public struct DVVaultContainer: View {
         self.typeIcon = typeIcon
         self.trailingIcon = trailingIcon
         self.trailingIconTooltip = trailingIconTooltip
-        self.isSelected = isSelected
     }
 
     // MARK: - Body
@@ -50,7 +47,6 @@ public struct DVVaultContainer: View {
         }
         .padding(8)
         .frame(minWidth: 200, alignment: .leading)
-        .animation(MotionMetrics.hover, value: isSelected)
     }
 }
 
@@ -129,12 +125,12 @@ extension DVVaultContainer {
         VStack(alignment: .leading, spacing: 6) {
             Text(name)
                 .dvFont(.bodyLG)
-                .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray900))
+                .foregroundStyle(.primary)
                 .lineLimit(1)
                 .truncationMode(.tail)
             Text(date)
                 .dvFont(.captionMDRegular)
-                .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(.gray600))
+                .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
         }
@@ -145,10 +141,12 @@ extension DVVaultContainer {
     private var trailingIconView: some View {
         if let trailingIcon {
             trailingIcon.icon
-                .foregroundStyle(isSelected ? Color.dv(.white) : Color.dv(trailingIcon.colorToken))
+                .foregroundStyle(Color.dv(trailingIcon.colorToken))
                 .fixedSize()
                 // `.help(_:)`가 List 행 안에서 안 떠서 커스텀 말풍선으로 우회한다.
                 .hoverTooltip(trailingIconTooltip)
+                // 툴팁은 마우스 전용이라 접근성 트리에 없다. 상태 문구를 VoiceOver에도 노출한다.
+                .accessibilityLabel(trailingIconTooltip ?? "")
         }
     }
 }
