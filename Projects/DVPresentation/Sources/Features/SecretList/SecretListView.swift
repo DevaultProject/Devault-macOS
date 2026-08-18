@@ -72,8 +72,13 @@ extension SecretListView {
 
   private var list: some View {
     List(selection: selectedSecretIDBinding) {
-      ForEach(secrets) { secret in
-        row(for: secret)
+      if isNoticeCollection {
+        noticeSection(for: .critical)
+        noticeSection(for: .upcoming)
+      } else {
+        ForEach(secrets) { secret in
+          row(for: secret)
+        }
       }
     }
     .listStyle(.sidebar)
@@ -123,6 +128,30 @@ extension SecretListView {
   /// 임계값은 `SecretExpiryPolicy`가 소유한다 — 조회 화면 Expire Date 필드와 같은 정책을 써야 한다.
   private func expiryStatus(for secret: Secret) -> SecretExpiryStatus? {
     SecretExpiryStatus(expiresAt: secret.expiresAt)
+  }
+
+  private var isNoticeCollection: Bool {
+    if case .notice = store.collection { return true }
+    return false
+  }
+
+  /// `secrets`는 이미 만료 임박 순으로 정렬돼 온다(`SecretListFeature.State.query`) —
+  /// 여기서는 `status`로 걸러내기만 하면 섹션 내부 순서가 그대로 유지된다.
+  @ViewBuilder
+  private func noticeSection(for status: SecretExpiryStatus) -> some View {
+    let items = secrets.filter { expiryStatus(for: $0) == status }
+    if !items.isEmpty {
+      Section {
+        ForEach(items) { secret in
+          row(for: secret)
+        }
+      } header: {
+        Text(status.tooltipText)
+          .dvFont(.captionMDSemibold)
+          .foregroundStyle(Color.dv(.vaultGreen))
+          .textCase(nil)
+      }
+    }
   }
 
   /// All/Star/Expired는 "프로젝트에 추가/삭제", Deleted는 "복구/영구 삭제"를 보여준다.
@@ -264,7 +293,7 @@ extension SecretListView {
   .frame(width: 300, height: 500)
 }
 
-#Preview("Notice - 정렬 없음, 만료 임박 뱃지만") {
+#Preview("Notice - 3일/7일 섹션 분리, 정렬 없음") {
   SecretListView(
     store: Store(initialState: SecretListFeature.State(collection: .notice(referenceDate: .now))) {
       SecretListFeature()
