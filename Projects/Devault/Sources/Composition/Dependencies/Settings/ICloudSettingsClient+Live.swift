@@ -38,9 +38,6 @@ extension ICloudSettingsClient: @retroactive DependencyKey {
       lastUpdateDetectedAt: {
         useCase.lastUpdateDetectedAt()
       },
-      setLastUpdateDetectedAt: { date in
-        useCase.setLastUpdateDetectedAt(date)
-      },
       remoteChangeStream: {
         useCase.remoteChangeStream()
       },

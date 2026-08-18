@@ -11,7 +11,6 @@ public struct ICloudSettingsClient: Sendable {
   public var setEnabled: @Sendable (Bool) async throws -> Void
   public var openSystemSettings: @Sendable () -> Void
   public var lastUpdateDetectedAt: @Sendable () -> Date?
-  public var setLastUpdateDetectedAt: @Sendable (Date) -> Void
   /// CloudKit 원격 변경이 감지될 때마다 값을 방출한다.
   public var remoteChangeStream: @Sendable () -> AsyncStream<Void> = { AsyncStream { $0.finish() } }
   public var accountStatus: @Sendable () async -> ICloudAccountStatus = { .couldNotDetermine }
@@ -25,7 +24,6 @@ extension ICloudSettingsClient: TestDependencyKey {
     setEnabled: { _ in },
     openSystemSettings: { },
     lastUpdateDetectedAt: { nil },
-    setLastUpdateDetectedAt: { _ in },
     remoteChangeStream: { AsyncStream { $0.finish() } },
     accountStatus: { .available }
   )
