@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		08662F28730E5EC479B0B310 /* DVIconButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B751A71D789D2DF39775D12A /* DVIconButton.swift */; };
 		0B04A811487FA227A1C4D432 /* DVTitleBarPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A391B05AA0D2F24AFCADD78B /* DVTitleBarPreviewView.swift */; };
 		0B8740BB4931BA4C093DDD3D /* DVButtonPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C898B59F748F1A00DCA49071 /* DVButtonPreviewView.swift */; };
 		149A9FCFFB3996CC7FE9A1AC /* RadioButtonPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33413D47A8AD374779D8127 /* RadioButtonPreviewView.swift */; };
@@ -21,7 +22,7 @@
 		31770B107B26D71797726C5A /* DVDesign_DVDesign.bundle in Dependencies */ = {isa = PBXBuildFile; fileRef = 28C8DCD4642006F92D413FCE /* DVDesign_DVDesign.bundle */; };
 		3233D09A65244B8730B78740 /* Font+DVFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = B13D8FB6A25CBDB0D1CAE20B /* Font+DVFont.swift */; };
 		35124C61B5A30128E71E51AB /* TuistAssets+DVDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = B650B0D88515F4185A588F97 /* TuistAssets+DVDesign.swift */; };
-		36F84B762B8FAA40F115295F /* DVMultilineTextContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93B9B932A401DC519990D084 /* DVMultilineTextContainer.swift */; };
+		357F6B92A316BED9EADC5FE2 /* DVMultiSelectDropdownPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED1FD8F1A8907D1AEC762173 /* DVMultiSelectDropdownPreviewView.swift */; };
 		3A09EE774AB71A8535016BBC /* SizePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A7E9EA286AAEE9720040821 /* SizePreviewView.swift */; };
 		3EF51E22EAA4128D6614BD1E /* DVExpiryEmphasis.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04332B8C6319F164D87FBEB3 /* DVExpiryEmphasis.swift */; };
 		4159027EC6D06A63B765C966 /* DVDesignSampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6654B210584E3E7FFA315638 /* DVDesignSampleApp.swift */; };
@@ -33,6 +34,7 @@
 		51F1137D6852F1C36D77FBC1 /* DVMultilineTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = E09793C03E117C5EDF4F1E96 /* DVMultilineTextField.swift */; };
 		52395B50D2ED8E57D8E78809 /* DVComponentWidthPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BC48529907145B9B3E6A966 /* DVComponentWidthPolicy.swift */; };
 		5AE8860B002B12244050DBF0 /* DVTextContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10CCC33F02E40D56C752E4CE /* DVTextContainer.swift */; };
+		5AF114283C519D4E181BC1B2 /* MotionMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F5CAB15AD3A1BEF02AE000 /* MotionMetrics.swift */; };
 		6141EA20710D01143F1AD51B /* PlaceholderA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1408A81F027A04FBFB970EFE /* PlaceholderA.swift */; };
 		655351DF53567D5DA841ABBC /* DVFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84CA9934244344F70CC66FAB /* DVFont.swift */; };
 		6760EFD869C84716A14EC225 /* DVStepIndicatorPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A7266DFF91D52437C3272F7 /* DVStepIndicatorPreviewView.swift */; };
@@ -188,7 +190,6 @@
 		8C304E4F46C7CB7A9748B11B /* DVRadioButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVRadioButton.swift; sourceTree = "<group>"; };
 		8C367D2651EF8305DBE6BCC2 /* DVVaultContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVVaultContainer.swift; sourceTree = "<group>"; };
 		8C78E8D13866BB2755B2252B /* DVCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVCategory.swift; sourceTree = "<group>"; };
-		93B9B932A401DC519990D084 /* DVMultilineTextContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVMultilineTextContainer.swift; sourceTree = "<group>"; };
 		9802A76F3E8860547576DC2A /* ColorPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPreviewView.swift; sourceTree = "<group>"; };
 		9AECF75CF74BECCE06933E8A /* DVLabeledFieldPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVLabeledFieldPreviewView.swift; sourceTree = "<group>"; };
 		9FCF29E52FB25D3D477CF4D4 /* DVChipsField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVChipsField.swift; sourceTree = "<group>"; };
@@ -205,6 +206,7 @@
 		B63BB9B3C2AC51B1779E2F9D /* DVCheckBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVCheckBox.swift; sourceTree = "<group>"; };
 		B650B0D88515F4185A588F97 /* TuistAssets+DVDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+DVDesign.swift"; sourceTree = "<group>"; };
 		B729FFE53BD386888DCBB022 /* DVDesignSampleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DVDesignSampleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B751A71D789D2DF39775D12A /* DVIconButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVIconButton.swift; sourceTree = "<group>"; };
 		BCCA83F35F66903273B1B2CE /* DVRadioButtonGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVRadioButtonGroup.swift; sourceTree = "<group>"; };
 		BFF18DFDB756D88C48AF543E /* DVChipsFieldPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVChipsFieldPreviewView.swift; sourceTree = "<group>"; };
 		C701AADDF09078624D957F01 /* TextContainerPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextContainerPreviewView.swift; sourceTree = "<group>"; };
@@ -214,11 +216,13 @@
 		D2F952244F1A18C5AD30E31C /* DVProjectRenameContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVProjectRenameContainer.swift; sourceTree = "<group>"; };
 		D918F56487AF8EAE5BA02E07 /* progress.lottie */ = {isa = PBXFileReference; path = progress.lottie; sourceTree = "<group>"; };
 		E09793C03E117C5EDF4F1E96 /* DVMultilineTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVMultilineTextField.swift; sourceTree = "<group>"; };
+		E1F5CAB15AD3A1BEF02AE000 /* MotionMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionMetrics.swift; sourceTree = "<group>"; };
 		E4533B92C71D90FAB269B02D /* DVCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = DVCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E5ADE7807C0939C945963866 /* DVFloatingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVFloatingPanel.swift; sourceTree = "<group>"; };
 		E8C9F5B94D6A8E1681A059AD /* View+DVFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+DVFont.swift"; sourceTree = "<group>"; };
 		EB09DBFF650291C0CAF04BEC /* DVLabeledField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVLabeledField.swift; sourceTree = "<group>"; };
 		EBE02B69A05DBDA6E2E6CD7C /* DVMultiSelectDropdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVMultiSelectDropdown.swift; sourceTree = "<group>"; };
+		ED1FD8F1A8907D1AEC762173 /* DVMultiSelectDropdownPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVMultiSelectDropdownPreviewView.swift; sourceTree = "<group>"; };
 		F4ADDCB6AEF6236F0BE60867 /* DVSecretTypePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DVSecretTypePreviewView.swift; sourceTree = "<group>"; };
 		F635A31BDC57AB62F5552792 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		F82BF52D50ECB29762583E08 /* TypographyPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypographyPreviewView.swift; sourceTree = "<group>"; };
@@ -276,6 +280,7 @@
 				CAD5FF675EB087FF9D87A44D /* Expiry */,
 				66E125CDEAF3D8929EF1E631 /* Fonts */,
 				54A47987B95BF9265D6B3CCC /* Image */,
+				C88E4AADAAA7DF53F3AE373F /* Motion */,
 				F81DAB5CE2F91246051435EE /* ServiceLogo */,
 				13C0A2FA2214E5B9BEF0E1A8 /* Sizing */,
 				09F212B34F184761E8897742 /* Tooltip */,
@@ -362,8 +367,8 @@
 				177A302BC7D6542A16D72579 /* DVDropdown.swift */,
 				E5ADE7807C0939C945963866 /* DVFloatingPanel.swift */,
 				52A90233FCF24A42C5C0846B /* DVFlowLayout.swift */,
+				B751A71D789D2DF39775D12A /* DVIconButton.swift */,
 				EB09DBFF650291C0CAF04BEC /* DVLabeledField.swift */,
-				93B9B932A401DC519990D084 /* DVMultilineTextContainer.swift */,
 				E09793C03E117C5EDF4F1E96 /* DVMultilineTextField.swift */,
 				EBE02B69A05DBDA6E2E6CD7C /* DVMultiSelectDropdown.swift */,
 				8321DA3AEC5DEB016F562008 /* DVProjectContainer.swift */,
@@ -401,6 +406,7 @@
 				81ACBDC9F452B7A657B8E86E /* DVDropdownPreviewView.swift */,
 				9AECF75CF74BECCE06933E8A /* DVLabeledFieldPreviewView.swift */,
 				CC8C602D233DE6833271267E /* DVMultilineTextFieldPreviewView.swift */,
+				ED1FD8F1A8907D1AEC762173 /* DVMultiSelectDropdownPreviewView.swift */,
 				1AFC12C52DC2E4AFDBA9F400 /* DVProjectContainerPreviewView.swift */,
 				F4ADDCB6AEF6236F0BE60867 /* DVSecretTypePreviewView.swift */,
 				4A7266DFF91D52437C3272F7 /* DVStepIndicatorPreviewView.swift */,
@@ -440,6 +446,14 @@
 				D918F56487AF8EAE5BA02E07 /* progress.lottie */,
 			);
 			path = Lottie;
+			sourceTree = "<group>";
+		};
+		C88E4AADAAA7DF53F3AE373F /* Motion */ = {
+			isa = PBXGroup;
+			children = (
+				E1F5CAB15AD3A1BEF02AE000 /* MotionMetrics.swift */,
+			);
+			path = Motion;
 			sourceTree = "<group>";
 		};
 		CAD5FF675EB087FF9D87A44D /* Expiry */ = {
@@ -637,6 +651,7 @@
 				4159027EC6D06A63B765C966 /* DVDesignSampleApp.swift in Sources */,
 				B0806F8B6C8CF68D5D3ADF00 /* DVDropdownPreviewView.swift in Sources */,
 				A16BA787530785535B8E2399 /* DVLabeledFieldPreviewView.swift in Sources */,
+				357F6B92A316BED9EADC5FE2 /* DVMultiSelectDropdownPreviewView.swift in Sources */,
 				DEE7C68DC7B6CB4A33876600 /* DVMultilineTextFieldPreviewView.swift in Sources */,
 				CED75CE3377EE1AAD57B2BB8 /* DVProjectContainerPreviewView.swift in Sources */,
 				A966F11165224B77859FEEF9 /* DVSecretTypePreviewView.swift in Sources */,
@@ -668,9 +683,9 @@
 				6D164666A7BA916AAD341317 /* DVDropdown.swift in Sources */,
 				C0CCE5B53C91CCA8BAB6B60A /* DVFloatingPanel.swift in Sources */,
 				1F79D4F85CE4C1553162DC9A /* DVFlowLayout.swift in Sources */,
+				08662F28730E5EC479B0B310 /* DVIconButton.swift in Sources */,
 				77DA1BDF81341D47E8440C74 /* DVLabeledField.swift in Sources */,
 				77A58289D01161E2D07E0F1A /* DVMultiSelectDropdown.swift in Sources */,
-				36F84B762B8FAA40F115295F /* DVMultilineTextContainer.swift in Sources */,
 				51F1137D6852F1C36D77FBC1 /* DVMultilineTextField.swift in Sources */,
 				78A9E83F9D5FEC574E5DF8A5 /* DVProjectContainer.swift in Sources */,
 				FC2BBA0EC618CAB21F58E2F8 /* DVProjectRenameContainer.swift in Sources */,
@@ -694,6 +709,7 @@
 				B25E65B6A22884B45B92F937 /* View+DVFont.swift in Sources */,
 				D50B6908675167D61BFEA900 /* DVImage.swift in Sources */,
 				8C36AD34C1E45C223B5D47D8 /* Image+DVImage.swift in Sources */,
+				5AF114283C519D4E181BC1B2 /* MotionMetrics.swift in Sources */,
 				BB24785739F52539142BB693 /* ServiceLogoCatalog.swift in Sources */,
 				CA8EBED0A2FA1835E410CA17 /* DVComponentSize.swift in Sources */,
 				52395B50D2ED8E57D8E78809 /* DVComponentWidthPolicy.swift in Sources */,
