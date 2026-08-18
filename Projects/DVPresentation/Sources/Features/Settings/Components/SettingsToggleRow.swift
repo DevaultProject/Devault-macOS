@@ -51,6 +51,6 @@ struct SettingsToggleRow: View {
   }
   .formStyle(.grouped)
   .scrollContentBackground(.hidden)
-  .frame(width: 656)
+  .frame(width: WindowLayoutMetrics.settingsDetailWidth)
   .background(Color.dv(.gray100))
 }

@@ -104,7 +104,7 @@ extension SettingsView {
 
   private var detailColumn: some View {
     detailContent
-      .frame(maxWidth: 656, maxHeight: .infinity, alignment: .topLeading)
+      .frame(maxWidth: WindowLayoutMetrics.settingsDetailWidth, maxHeight: .infinity, alignment: .topLeading)
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
       .dvScreenBackground()
   }
