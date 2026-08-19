@@ -24,17 +24,47 @@ public struct DVTitleBar: View {
     public let titleText: String
     public let searchText: Binding<String>
     public let searchPromptText: String
-    /// 정렬 버튼을 누르면 펼쳐질 메뉴 내용. `nil`이면 정렬 버튼 자체를 그리지 않는다.
-    /// 클로저가 반환하는 뷰가 시스템 `Menu` 안에 들어가므로, 바깥 클릭·ESC·포커스 상실 처리는 시스템이 담당한다.
-    public let sortMenuContent: (() -> AnyView)?
-    /// 검색 필드의 포커스를 바깥에서 풀 수 있게 열어 둔다 — 한 번 커서가 들어가면 다른 곳을
-    /// 눌러도 놓지 않는 경우가 있다. `nil`이면 시스템에 맡긴다.
+    /// 검색 필드의 포커스를 바깥에서 풀 수 있게 열어 둔다
+    /// 한 번 커서가 들어가면 다른 곳을 눌러도 놓지 않는 경우가 있다. `nil`이면 시스템에 맡긴다.
     public let isSearchFocused: Binding<Bool>?
-    /// 정렬 버튼의 VoiceOver 라벨. DVDesign엔 로컬라이저가 없어 호출부가 번역해서 넘긴다.
-    public let sortAccessibilityLabel: String
+    /// 제목행 우측 정렬 메뉴. `nil`이면 정렬 버튼 자체를 그리지 않는다.
+    /// `trailingAction`과 상호배타 — 둘 다 있으면 정렬이 우선한다.
+    public let sortMenu: SortMenu?
+    /// 정렬 버튼이 없는 화면에서 제목행 우측(정렬 자리)에 놓는 '비우기/모두 삭제' 버튼.
+    public let trailingAction: TrailingAction?
 
     @FocusState private var searchFieldFocused: Bool
-    @State private var isSortHovered = false
+    // 정렬 버튼과 정리 버튼은 상호배타(같은 자리)라 hover 상태를 공유한다.
+    @State private var isHovered = false
+
+    /// 제목행 우측 정렬 메뉴. `content`가 반환하는 뷰가 시스템 `Menu` 안에 들어가므로
+    /// 바깥 클릭·ESC·포커스 상실 처리는 시스템이 담당한다.
+    public struct SortMenu {
+        public let accessibilityLabel: String
+        public let content: () -> AnyView
+
+        public init(accessibilityLabel: String = "Sort", content: @escaping () -> AnyView) {
+            self.accessibilityLabel = accessibilityLabel
+            self.content = content
+        }
+    }
+
+    /// 제목행 우측 '비우기/모두 삭제' 버튼. 아이콘은 고정이라 호출부는 라벨·활성·동작만 넘긴다.
+    public struct TrailingAction {
+        public let accessibilityLabel: String
+        public let isEnabled: Bool
+        public let handler: () -> Void
+
+        public init(
+            accessibilityLabel: String,
+            isEnabled: Bool = true,
+            handler: @escaping () -> Void
+        ) {
+            self.accessibilityLabel = accessibilityLabel
+            self.isEnabled = isEnabled
+            self.handler = handler
+        }
+    }
 
     // MARK: - Init
 
@@ -43,15 +73,15 @@ public struct DVTitleBar: View {
         searchText: Binding<String>,
         searchPromptText: String = "Search",
         isSearchFocused: Binding<Bool>? = nil,
-        sortMenuContent: (() -> AnyView)? = nil,
-        sortAccessibilityLabel: String = "Sort"
+        sortMenu: SortMenu? = nil,
+        trailingAction: TrailingAction? = nil
     ) {
         self.titleText = titleText
         self.searchText = searchText
         self.searchPromptText = searchPromptText
         self.isSearchFocused = isSearchFocused
-        self.sortMenuContent = sortMenuContent
-        self.sortAccessibilityLabel = sortAccessibilityLabel
+        self.sortMenu = sortMenu
+        self.trailingAction = trailingAction
     }
 
     // MARK: - Body
@@ -75,29 +105,45 @@ extension DVTitleBar {
                 .dvFont(.headingXL)
                 .foregroundStyle(Color.dv(.gray900))
             Spacer()
-            if let sortMenuContent {
-                sortMenu(content: sortMenuContent)
+            if let sortMenu {
+                sortMenuButton(sortMenu)
+            } else if let trailingAction {
+                trailingActionButton(trailingAction)
             }
         }
         .padding(.vertical, Metrics.titleRowVerticalPadding)
     }
 
+    private func trailingActionButton(_ action: TrailingAction) -> some View {
+        Button(action: action.handler) {
+            Image(systemName: "xmark.bin")
+                .dvFont(.bodyXL)
+                .foregroundStyle(Color.dv(action.isEnabled ? (isHovered ? .gray900 : .gray800) : .gray400))
+        }
+        .buttonStyle(.plain)
+        .fixedSize()
+        .disabled(!action.isEnabled)
+        .onHover { isHovered = $0 }
+        .animation(MotionMetrics.hover, value: isHovered)
+        .accessibilityLabel(action.accessibilityLabel)
+    }
+
     /// hover만 준다. `Menu`는 `ButtonStyle`을 타지 않아 눌림 상태를 알 수 없고,
     /// 누르는 즉시 메뉴가 열려 그 자체가 되먹임이 된다.
-    private func sortMenu(content: () -> AnyView) -> some View {
+    private func sortMenuButton(_ sortMenu: SortMenu) -> some View {
         Menu {
-            content()
+            sortMenu.content()
         } label: {
             Image(systemName: "arrow.up.arrow.down")
                 .dvFont(.bodyXL)
-                .foregroundStyle(Color.dv(isSortHovered ? .gray900 : .gray800))
+                .foregroundStyle(Color.dv(isHovered ? .gray900 : .gray800))
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
-        .onHover { isSortHovered = $0 }
-        .animation(MotionMetrics.hover, value: isSortHovered)
-        .accessibilityLabel(sortAccessibilityLabel)
+        .onHover { isHovered = $0 }
+        .animation(MotionMetrics.hover, value: isHovered)
+        .accessibilityLabel(sortMenu.accessibilityLabel)
     }
 
     private var searchField: some View {
