@@ -18,7 +18,7 @@ struct DVTitleBarPreviewView: View {
                     DVTitleBar(
                         titleText: "All",
                         searchText: $searchText,
-                        sortMenuContent: { AnyView(Text("Sort menu content")) }
+                        sortMenu: DVTitleBar.SortMenu { AnyView(Text("Sort menu content")) }
                     )
                     .frame(width: 280)
                     .background(Color.white)
