@@ -8,15 +8,16 @@ import Foundation
 /// 보안 상태를 되돌려야 하는 앱 수준 사건.
 ///
 /// **트리거를 늘릴 때 case만 추가한다.** 구독자는 `RevealAuthPolicy.invalidates(on:)`으로
-/// 반응 여부를 묻기 때문에, 화면 보호기·유휴 타임아웃·수동 잠금이 생겨도 Feature 로직은 그대로다.
+/// 반응 여부를 묻기 때문에, 화면 보호기·유휴 타임아웃이 생겨도 Feature 로직은 그대로다.
 /// (새 case를 넣으면 그 `switch`가 컴파일 에러로 잡아주므로 정책 반영을 빠뜨릴 수 없다.)
+///
+/// 잠금은 여기 없다. 수동 잠금도 자동 잠금도 `AppFeature`가 `state.main`을 통째로 버려
+/// `SecretDetailFeature.State`가 인증 창과 함께 사라지므로, 이벤트를 보내도 받을 State가 없다.
+/// `MainFeature`를 살려 두는 잠금이 생기면 그때 case를 추가한다.
 public enum AppLifecycleEvent: Equatable, Sendable {
 
     /// 앱이 활성 상태를 잃었다. macOS에서는 다른 앱으로 전환된 경우다.
     case didEnterBackground
-
-    /// 잠금 화면으로 돌아갔다.
-    case didLock
 }
 
 // MARK: - Client

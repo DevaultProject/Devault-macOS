@@ -41,16 +41,14 @@ struct RevealAuthPolicyTests {
 
     // MARK: - 무효화 이벤트
 
-    @Test("기본 정책은 백그라운드 전환과 잠금 모두에서 창을 닫는다")
-    func defaultPolicy_invalidatesOnBothEvents() {
+    @Test("기본 정책은 백그라운드 전환에서 창을 닫는다")
+    func defaultPolicy_invalidatesOnBackground() {
         #expect(Self.policy.invalidates(on: .didEnterBackground))
-        #expect(Self.policy.invalidates(on: .didLock))
     }
 
     @Test("무효화를 끄면 해당 이벤트는 창을 닫지 않는다")
     func disabledInvalidation_keepsWindowOpen() {
-        let policy = RevealAuthPolicy(ttl: 180, invalidatesOnBackground: false, invalidatesOnLock: false)
+        let policy = RevealAuthPolicy(ttl: 180, invalidatesOnBackground: false)
         #expect(policy.invalidates(on: .didEnterBackground) == false)
-        #expect(policy.invalidates(on: .didLock) == false)
     }
 }
