@@ -2,6 +2,7 @@
 
 import Foundation
 
+import DVCore
 import DVDomain
 
 // MARK: - 조회 화면 표시 문자열
@@ -23,27 +24,14 @@ extension Secret {
         return String(localized: known.displayName)
     }
 
-    /// 만료일. 생성 화면 `ExpireDateFieldView`가 native stepper의 locale 포맷을 쓰므로
-    /// 조회 화면도 locale 기준 숫자 날짜로 맞춘다.
+    /// 만료일. 생성 화면(native stepper)·목록 셀과 같은 로케일 표기를 쓴다.
+    ///
+    /// 기기 로컬 시간대로 렌더된다. 저장값에 자정 정규화가 없어 시간대가 다른 기기에서는
+    /// 하루 차이가 날 수 있다 — 정규화는 생성 화면 매핑 사안이다.
     var expireDateDisplayText: String {
         guard let expiresAt else { return "" }
-        return Self.expireDateFormatter.string(from: expiresAt)
+        return SecretDateFormatter.displayString(from: expiresAt)
     }
-
-    /// `yy.MM.dd` 고정. 디자인이 이 형식을 명시하므로 `en_US_POSIX`로 locale 영향을 끊는다.
-    ///
-    /// `timeZone`은 지정하지 않아 기기 로컬 시간대로 렌더된다 — 생성 화면에서 사용자가 직접
-    /// 고른 날짜를 그대로 되돌려주는 쪽이 자연스럽기 때문이다. 다만 저장값이 `DatePicker`의
-    /// 시각을 그대로 담고 자정 정규화가 없어, 시간대가 다른 기기에서는 하루 차이가 날 수 있다.
-    /// 정규화는 생성 화면 매핑 사안이라 여기서 다루지 않는다.
-    ///
-    /// 매 렌더 생성되지 않도록 static으로 재사용한다.
-    private static let expireDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yy.MM.dd"
-        return formatter
-    }()
 
     var serviceDisplayText: String { service ?? "" }
 
