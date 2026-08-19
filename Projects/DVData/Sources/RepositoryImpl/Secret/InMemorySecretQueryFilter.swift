@@ -102,19 +102,24 @@ enum InMemorySecretQueryFilter {
             return true
         }
 
-        let fields: [String?] = [
+        let textFields: [String?] = [
             secret.name,
             secret.secretType.rawValue,
             secret.subType?.rawValue,
             secret.service,
             secret.environment,
             secret.memo,
-            SecretDateFormatter.string(from: secret.createdAt),
-            SecretDateFormatter.string(from: secret.updatedAt),
         ]
 
-        return fields.contains {
-            $0?.localizedCaseInsensitiveContains(keyword) == true
+        // 텍스트가 먼저다 — 날짜 매칭은 시크릿마다 날짜를 새로 포맷하고, 이 필터는 컬렉션
+        // 전체를 돈다(searchText가 SwiftData predicate에 없다).
+        if textFields.contains(where: { $0?.localizedCaseInsensitiveContains(keyword) == true }) {
+            return true
+        }
+
+        // `createdAt`은 목록에 표시되지 않지만 검색 대상에는 남아 있다.
+        return [secret.createdAt, secret.updatedAt].contains {
+            SecretDateFormatter.matches(searchKeyword: keyword, date: $0)
         }
     }
 }
