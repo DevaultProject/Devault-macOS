@@ -22,16 +22,10 @@ struct RevealAuthPolicy: Equatable, Sendable {
     /// 앱이 백그라운드로 가면 창을 닫을지.
     var invalidatesOnBackground: Bool
 
-    /// 잠금 화면으로 돌아가면 창을 닫을지.
-    ///
-    /// 자동 잠금 기능이 아직 없어 현재는 발신되지 않는다. 기능이 생기면 이벤트만 붙이면 된다.
-    var invalidatesOnLock: Bool
-
     /// 앱 기본값. 설정 화면이 생기기 전까지 이 값이 쓰인다.
     static let `default` = RevealAuthPolicy(
         ttl: 180,
-        invalidatesOnBackground: true,
-        invalidatesOnLock: true
+        invalidatesOnBackground: true
     )
 
     /// 인증 시각과 현재 시각으로 창이 아직 열려 있는지 판정한다.
@@ -47,10 +41,12 @@ struct RevealAuthPolicy: Equatable, Sendable {
     }
 
     /// 이 이벤트가 창을 닫아야 하는지.
+    ///
+    /// 사건이 하나뿐이어도 `switch`로 두는 것은, `AppLifecycleEvent`에 case가 늘면
+    /// 여기서 컴파일 에러가 나 정책 반영을 빠뜨릴 수 없게 하기 위해서다.
     func invalidates(on event: AppLifecycleEvent) -> Bool {
         switch event {
         case .didEnterBackground: return invalidatesOnBackground
-        case .didLock:            return invalidatesOnLock
         }
     }
 }

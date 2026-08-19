@@ -412,8 +412,7 @@ struct SecretDetailFeatureTests {
         } withDependencies: {
             $0.revealAuthPolicy = RevealAuthPolicy(
                 ttl: 180,
-                invalidatesOnBackground: false,
-                invalidatesOnLock: true
+                invalidatesOnBackground: false
             )
         }
 
