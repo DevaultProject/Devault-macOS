@@ -24,8 +24,11 @@ struct DetailSSLRequiredFieldView: View {
         // 접근성 트리에 아무것도 남기지 않는다 — 묶기만 하면 VoiceOver가 "SSL Required"만 읽고
         // 정작 필요한 켜짐/꺼짐은 알려주지 않는다. 다른 조회 필드가 라벨 + 값으로 읽히므로
         // 이 행만 값이 비면 목록을 훑을 때 한 칸이 빈 것처럼 들린다.
+        //
+        // 켜짐 값의 키는 `"Required"`다. 마침표가 붙은 `"Required."`는 빈 필수 입력을 알리는
+        // 검증 문구(`필수 항목이에요.`)라, 그쪽을 쓰면 SSL 상태 대신 엉뚱한 경고가 읽힌다.
         .accessibilityElement(children: .combine)
-        .accessibilityValue(Text(isRequired ? .module("Required.") : .module("Not Required")))
+        .accessibilityValue(Text(isRequired ? .module("Required") : .module("Not Required")))
     }
 }
 
