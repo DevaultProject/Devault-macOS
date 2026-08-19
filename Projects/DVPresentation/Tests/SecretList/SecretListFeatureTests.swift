@@ -25,6 +25,7 @@ struct SecretListFeatureTests {
         }
         await store.receive(.secretsResponse(.success([secret]))) {
             $0.secretsState = .loaded([secret])
+            $0.collectionCount = 1
         }
     }
 
@@ -60,7 +61,9 @@ struct SecretListFeatureTests {
 
         await store.send(.task)
         #expect(store.state.secretsState == .loaded([secret]))
-        await store.receive(.secretsResponse(.success([secret])))
+        await store.receive(.secretsResponse(.success([secret]))) {
+            $0.collectionCount = 1
+        }
     }
 
     @Test("didTapRetry는 failed 상태에서 다시 loading으로 전환하고 재조회한다")
@@ -79,6 +82,7 @@ struct SecretListFeatureTests {
         }
         await store.receive(.secretsResponse(.success([secret]))) {
             $0.secretsState = .loaded([secret])
+            $0.collectionCount = 1
         }
     }
 
@@ -98,6 +102,7 @@ struct SecretListFeatureTests {
         }
         await store.receive(.secretsResponse(.success([secret]))) {
             $0.secretsState = .loaded([secret])
+            $0.collectionCount = 1
         }
     }
 
@@ -118,6 +123,7 @@ struct SecretListFeatureTests {
             $0.searchText = "git"
         }
         await clock.advance(by: .milliseconds(300))
+        // 검색 중이라 collectionCount(검색 무관 전체 수)는 갱신되지 않는다.
         await store.receive(.secretsResponse(.success([secret]))) {
             $0.secretsState = .loaded([secret])
         }
@@ -140,6 +146,7 @@ struct SecretListFeatureTests {
         }
         await store.receive(.secretsResponse(.success([secret]))) {
             $0.secretsState = .loaded([secret])
+            $0.collectionCount = 1
         }
     }
 
@@ -307,6 +314,7 @@ struct SecretListFeatureTests {
     func emptyCollectionShowsPermanentAlertForDeleted() async {
         var initial = SecretListFeature.State(collection: .deleted)
         initial.secretsState = .loaded([makeSecret(name: "A")])
+        initial.collectionCount = 1
         let store = TestStore(initialState: initial) { SecretListFeature() }
 
         await store.send(.didTapEmptyCollection) {
@@ -338,6 +346,7 @@ struct SecretListFeatureTests {
         var initial = SecretListFeature.State(collection: .deleted)
         initial.secretsState = .loaded([target])
         initial.selectedSecretID = target.id
+        initial.collectionCount = 1
         let calledPermanent = LockIsolated(false)
 
         let store = TestStore(initialState: initial) {
@@ -362,7 +371,9 @@ struct SecretListFeatureTests {
         await store.send(.alert(.presented(.confirmEmptyCollection))) {
             $0.alert = nil
         }
-        await store.receive(.emptyCollectionResponse(nil))
+        await store.receive(.emptyCollectionResponse(nil)) {
+            $0.collectionCount = 0
+        }
         await store.receive(.delegate(.secretsChanged))
         await store.receive(.secretsResponse(.success([]))) {
             $0.secretsState = .loaded([])
@@ -379,6 +390,7 @@ struct SecretListFeatureTests {
         let target = makeSecret(name: "A")
         var initial = SecretListFeature.State(collection: .expired(referenceDate: Date(timeIntervalSince1970: 1_700_000_000)))
         initial.secretsState = .loaded([target])
+        initial.collectionCount = 1
         let calledSoft = LockIsolated(false)
 
         let store = TestStore(initialState: initial) {
@@ -403,7 +415,9 @@ struct SecretListFeatureTests {
         await store.send(.alert(.presented(.confirmEmptyCollection))) {
             $0.alert = nil
         }
-        await store.receive(.emptyCollectionResponse(nil))
+        await store.receive(.emptyCollectionResponse(nil)) {
+            $0.collectionCount = 0
+        }
         await store.receive(.delegate(.secretsChanged))
         await store.receive(.secretsResponse(.success([]))) {
             $0.secretsState = .loaded([])
@@ -411,6 +425,49 @@ struct SecretListFeatureTests {
         await store.receive(.reselectAfterMutation)
         await store.receive(.delegate(.secretSelected(nil)))
         #expect(calledSoft.value)
+    }
+
+    @Test("검색 결과가 0건이어도 검색 중이면 비우기가 컬렉션 전체에 실행된다")
+    func emptyCollectionRunsWhenSearchFiltersToEmpty() async {
+        var initial = SecretListFeature.State(collection: .deleted)
+        // 검색으로 걸러져 화면엔 0건이지만 컬렉션엔 5개가 있는 상황.
+        initial.secretsState = .loaded([])
+        initial.searchText = "no-match"
+        initial.collectionCount = 5
+        let calledPermanent = LockIsolated(false)
+
+        let store = TestStore(initialState: initial) {
+            SecretListFeature()
+        } withDependencies: {
+            $0.secretClient.permanentlyDeleteAll = { _ in calledPermanent.setValue(true) }
+            $0.secretClient.fetchByQuery = { _ in [] }
+        }
+
+        // 검색 결과가 0건이어도 확인 alert가 뜨고, 개수는 검색 무관 전체 수(5)를 보여준다.
+        await store.send(.didTapEmptyCollection) {
+            $0.alert = AlertState {
+                TextState(String.module("Empty Deleted list?"))
+            } actions: {
+                ButtonState(role: .destructive, action: .confirmEmptyCollection) {
+                    TextState(String.module("Empty"))
+                }
+                ButtonState(role: .cancel) { TextState(String.module("Cancel")) }
+            } message: {
+                TextState(String.module("\(5) secrets will be permanently deleted. This can't be undone."))
+            }
+        }
+        await store.send(.alert(.presented(.confirmEmptyCollection))) {
+            $0.alert = nil
+        }
+        await store.receive(.emptyCollectionResponse(nil)) {
+            $0.collectionCount = 0
+        }
+        await store.receive(.delegate(.secretsChanged))
+        await store.receive(.secretsResponse(.success([])))
+        await store.receive(.reselectAfterMutation)
+        await store.receive(.delegate(.secretSelected(nil)))
+        // 검색 결과(0건)가 아니라 컬렉션 전체를 대상으로 삭제가 위임됐다.
+        #expect(calledPermanent.value)
     }
 
     @Test("삭제 대상이 지금 조회 중이던 시크릿이면, 재조회 후 남은 목록의 맨 위 항목으로 재선택한다")
@@ -434,6 +491,7 @@ struct SecretListFeatureTests {
         await store.receive(.delegate(.secretsChanged))
         await store.receive(.secretsResponse(.success([remainingTop, remainingBottom]))) {
             $0.secretsState = .loaded([remainingTop, remainingBottom])
+            $0.collectionCount = 2
         }
         await store.receive(.reselectAfterMutation) {
             $0.selectedSecretID = remainingTop.id
@@ -485,6 +543,7 @@ struct SecretListFeatureTests {
         await store.receive(.delegate(.secretsChanged))
         await store.receive(.secretsResponse(.success([viewed]))) {
             $0.secretsState = .loaded([viewed])
+            $0.collectionCount = 1
         }
         // `.reselectAfterMutation`도 `.delegate(.secretSelected)`도 오지 않는다 — selectedSecretID는 그대로다.
         #expect(store.state.selectedSecretID == viewed.id)

@@ -5246,6 +5246,16 @@
         }
       }
     },
+    "Empty Deleted list?": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "'삭제됨'을 비울까요?"
+          }
+        }
+      }
+    },
     "%lld secrets will be permanently deleted. This can't be undone.": {
       "localizations": {
         "en": {
@@ -5298,16 +5308,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Secret %lld개를 '삭제됨'으로 이동합니다. 나중에 복구할 수 있습니다."
-          }
-        }
-      }
-    },
-    "Empty Deleted list?": {
-      "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'삭제됨'을 비울까요?"
           }
         }
       }

@@ -264,19 +264,20 @@ extension SecretListView {
     }
   }
 
-  /// Expired/Deleted 탭의 제목행 우측 정리 버튼(정렬 자리). 목록이 비어 있으면 비활성.
-  /// Expired="모두 삭제"(→삭제됨으로 이동), Deleted="비우기"(→영구 삭제). 아이콘 하나를 공유한다.
+  /// Expired/Deleted 탭의 제목행 우측 정리 버튼(정렬 자리). 아이콘 하나를 공유한다.
+  /// Expired="모두 삭제"(→삭제됨으로 이동), Deleted="비우기"(→영구 삭제).
+  /// 활성 여부는 검색과 무관한 컬렉션 전체 수(`collectionCount`)로 판단
   private var emptyAction: DVTitleBar.TrailingAction? {
     switch store.collection {
     case .expired:
       return DVTitleBar.TrailingAction(
         accessibilityLabel: .module("Delete All"),
-        isEnabled: !secrets.isEmpty
+        isEnabled: store.collectionCount > 0
       ) { store.send(.didTapEmptyCollection) }
     case .deleted:
       return DVTitleBar.TrailingAction(
         accessibilityLabel: .module("Empty"),
-        isEnabled: !secrets.isEmpty
+        isEnabled: store.collectionCount > 0
       ) { store.send(.didTapEmptyCollection) }
     case .all, .liked, .notice, .project:
       return nil
