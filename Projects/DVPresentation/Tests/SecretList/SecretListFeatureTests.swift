@@ -301,6 +301,118 @@ struct SecretListFeatureTests {
         }
     }
 
+    // MARK: - Empty Collection (비우기 / 모두 삭제)
+
+    @Test("didTapEmptyCollection은 Deleted에서 영구 삭제 확인 alert를 띄운다")
+    func emptyCollectionShowsPermanentAlertForDeleted() async {
+        var initial = SecretListFeature.State(collection: .deleted)
+        initial.secretsState = .loaded([makeSecret(name: "A")])
+        let store = TestStore(initialState: initial) { SecretListFeature() }
+
+        await store.send(.didTapEmptyCollection) {
+            $0.alert = AlertState {
+                TextState(String.module("Empty Deleted list?"))
+            } actions: {
+                ButtonState(role: .destructive, action: .confirmEmptyCollection) {
+                    TextState(String.module("Empty"))
+                }
+                ButtonState(role: .cancel) { TextState(String.module("Cancel")) }
+            } message: {
+                TextState(String.module("\(1) secrets will be permanently deleted. This can't be undone."))
+            }
+        }
+    }
+
+    @Test("didTapEmptyCollection은 목록이 비어 있으면 아무것도 하지 않는다")
+    func emptyCollectionNoOpWhenEmpty() async {
+        var initial = SecretListFeature.State(collection: .deleted)
+        initial.secretsState = .loaded([])
+        let store = TestStore(initialState: initial) { SecretListFeature() }
+
+        await store.send(.didTapEmptyCollection)
+    }
+
+    @Test("Deleted 비우기 확정은 permanentlyDeleteAll을 호출하고 재조회 후 조회뷰를 닫는다")
+    func confirmEmptyDeletedCallsPermanentlyDeleteAll() async {
+        let target = makeSecret(name: "A")
+        var initial = SecretListFeature.State(collection: .deleted)
+        initial.secretsState = .loaded([target])
+        initial.selectedSecretID = target.id
+        let calledPermanent = LockIsolated(false)
+
+        let store = TestStore(initialState: initial) {
+            SecretListFeature()
+        } withDependencies: {
+            $0.secretClient.permanentlyDeleteAll = { _ in calledPermanent.setValue(true) }
+            $0.secretClient.fetchByQuery = { _ in [] }
+        }
+
+        await store.send(.didTapEmptyCollection) {
+            $0.alert = AlertState {
+                TextState(String.module("Empty Deleted list?"))
+            } actions: {
+                ButtonState(role: .destructive, action: .confirmEmptyCollection) {
+                    TextState(String.module("Empty"))
+                }
+                ButtonState(role: .cancel) { TextState(String.module("Cancel")) }
+            } message: {
+                TextState(String.module("\(1) secrets will be permanently deleted. This can't be undone."))
+            }
+        }
+        await store.send(.alert(.presented(.confirmEmptyCollection))) {
+            $0.alert = nil
+        }
+        await store.receive(.emptyCollectionResponse(nil))
+        await store.receive(.delegate(.secretsChanged))
+        await store.receive(.secretsResponse(.success([]))) {
+            $0.secretsState = .loaded([])
+        }
+        await store.receive(.reselectAfterMutation) {
+            $0.selectedSecretID = nil
+        }
+        await store.receive(.delegate(.secretSelected(nil)))
+        #expect(calledPermanent.value)
+    }
+
+    @Test("Expired 모두 삭제 확정은 softDeleteAll을 호출한다('삭제됨'으로 이동)")
+    func confirmEmptyExpiredCallsSoftDeleteAll() async {
+        let target = makeSecret(name: "A")
+        var initial = SecretListFeature.State(collection: .expired(referenceDate: Date(timeIntervalSince1970: 1_700_000_000)))
+        initial.secretsState = .loaded([target])
+        let calledSoft = LockIsolated(false)
+
+        let store = TestStore(initialState: initial) {
+            SecretListFeature()
+        } withDependencies: {
+            $0.secretClient.softDeleteAll = { _ in calledSoft.setValue(true) }
+            $0.secretClient.fetchByQuery = { _ in [] }
+        }
+
+        await store.send(.didTapEmptyCollection) {
+            $0.alert = AlertState {
+                TextState(String.module("Delete All Expired?"))
+            } actions: {
+                ButtonState(role: .destructive, action: .confirmEmptyCollection) {
+                    TextState(String.module("Delete All"))
+                }
+                ButtonState(role: .cancel) { TextState(String.module("Cancel")) }
+            } message: {
+                TextState(String.module("\(1) secrets will move to Deleted. You can recover them later."))
+            }
+        }
+        await store.send(.alert(.presented(.confirmEmptyCollection))) {
+            $0.alert = nil
+        }
+        await store.receive(.emptyCollectionResponse(nil))
+        await store.receive(.delegate(.secretsChanged))
+        await store.receive(.secretsResponse(.success([]))) {
+            $0.secretsState = .loaded([])
+        }
+        await store.receive(.reselectAfterMutation)
+        await store.receive(.delegate(.secretSelected(nil)))
+        #expect(calledSoft.value)
+    }
+
     @Test("삭제 대상이 지금 조회 중이던 시크릿이면, 재조회 후 남은 목록의 맨 위 항목으로 재선택한다")
     func deleteViewedSecretReselectsTopOfRemainingList() async {
         let deleted = makeSecret(name: "삭제될 시크릿")

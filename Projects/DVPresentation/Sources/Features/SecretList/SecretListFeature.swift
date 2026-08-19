@@ -81,6 +81,8 @@ public struct SecretListFeature {
     case didTapDelete(id: Secret.ID)
     case didTapRecover(id: Secret.ID)
     case didTapDeleteForever(id: Secret.ID)
+    /// Expired/Deleted 탭의 "모두 삭제"/"비우기" — 컬렉션 전체 정리.
+    case didTapEmptyCollection
     case didTapRetry
     /// 외부(예: SecretDetail의 즐겨찾기·삭제)에서 목록 갱신을 요청할 때 사용.
     /// `task`/`didTapRetry`와 달리 `secretsState`를 `.loading`으로 바꾸지 않아 목록이 깜빡이지 않는다 —
@@ -91,6 +93,8 @@ public struct SecretListFeature {
 
     case secretsResponse(Result<[Secret], SecretUseCaseError>)
     case mutationResponse(Result<Secret.ID, SecretUseCaseError>)
+    /// 컬렉션 일괄 정리(비우기/모두 삭제) 결과. nil이면 성공.
+    case emptyCollectionResponse(SecretUseCaseError?)
     /// 지금 조회 중이던 시크릿을 삭제·복구·영구삭제해 목록에서 사라졌을 때만 보낸다.
     /// 재조회가 끝난 뒤 남은 목록의 맨 위 항목으로 조회뷰를 옮기거나(있으면), 없으면 닫는다.
     case reselectAfterMutation
@@ -112,6 +116,7 @@ public struct SecretListFeature {
 
     public enum Alert: Equatable {
       case confirmDeleteForever(id: Secret.ID)
+      case confirmEmptyCollection
     }
   }
 
@@ -180,8 +185,29 @@ public struct SecretListFeature {
         state.alert = deleteForeverConfirmationAlert(id: id)
         return .none
 
+      case .didTapEmptyCollection:
+        // 방어적으로 비어 있으면 무시(버튼은 이미 비활성).
+        guard case .loaded(let secrets) = state.secretsState, !secrets.isEmpty else { return .none }
+        state.alert = emptyCollectionConfirmationAlert(collection: state.collection, count: secrets.count)
+        return .none
+
       case .alert(.presented(.confirmDeleteForever(let id))):
         return mutationEffect(id: id) { try await secretClient.permanentlyDelete(id) }
+
+      case .alert(.presented(.confirmEmptyCollection)):
+        return emptyCollectionEffect(collection: state.collection)
+
+      case .emptyCollectionResponse(nil):
+        // 컬렉션이 통째로 비워졌다. 부모 개수 갱신 → 재조회 → 재선택(빈 목록이면 조회뷰가 닫힌다).
+        return .concatenate(
+          .send(.delegate(.secretsChanged)),
+          fetchSecretsEffect(query: state.query, debounced: false),
+          .send(.reselectAfterMutation)
+        )
+
+      case .emptyCollectionResponse(.some):
+        state.alert = mutationFailureAlert()
+        return .none
 
       // 세 효과는 서로 독립적이지만 `.merge`는 도착 순서를 보장하지 않아 테스트가 깨지기 쉽다.
       // 부모 갱신 → 재조회 → (조회 중이던 항목이 사라졌다면) 재선택 순으로 흘려보낸다
@@ -205,13 +231,7 @@ public struct SecretListFeature {
         return .send(.delegate(.secretSelected(newID)))
 
       case .mutationResponse(.failure):
-        state.alert = AlertState {
-          TextState(String.module("Couldn't complete the action."))
-        } actions: {
-          ButtonState(role: .cancel) { TextState(String.module("OK")) }
-        } message: {
-          TextState(String.module("Please try again in a moment."))
-        }
+        state.alert = mutationFailureAlert()
         return .none
 
       case .alert:
@@ -248,6 +268,64 @@ public struct SecretListFeature {
         await send(.mutationResponse(.success(id)))
       } catch {
         await send(.mutationResponse(.failure(SecretUseCaseError.map(error))))
+      }
+    }
+  }
+
+  /// 컬렉션 전체 정리. Deleted면 영구 삭제, 그 외(Expired)는 소프트 삭제로 '삭제됨'으로 옮긴다.
+  private func emptyCollectionEffect(collection: SecretQuery.Collection) -> Effect<Action> {
+    .run { send in
+      do {
+        switch collection {
+        case .deleted:
+          try await secretClient.permanentlyDeleteAll(collection)
+        default:
+          try await secretClient.softDeleteAll(collection)
+        }
+        await send(.emptyCollectionResponse(nil))
+      } catch {
+        await send(.emptyCollectionResponse(SecretUseCaseError.map(error)))
+      }
+    }
+  }
+
+  private func mutationFailureAlert() -> AlertState<Action.Alert> {
+    AlertState {
+      TextState(String.module("Couldn't complete the action."))
+    } actions: {
+      ButtonState(role: .cancel) { TextState(String.module("OK")) }
+    } message: {
+      TextState(String.module("Please try again in a moment."))
+    }
+  }
+
+  /// Deleted는 영구 삭제(되돌릴 수 없음), Expired는 '삭제됨'으로 이동(복구 가능)이라 문구가 다르다.
+  private func emptyCollectionConfirmationAlert(
+    collection: SecretQuery.Collection,
+    count: Int
+  ) -> AlertState<Action.Alert> {
+    switch collection {
+    case .deleted:
+      return AlertState {
+        TextState(String.module("Empty Deleted list?"))
+      } actions: {
+        ButtonState(role: .destructive, action: .confirmEmptyCollection) {
+          TextState(String.module("Empty"))
+        }
+        ButtonState(role: .cancel) { TextState(String.module("Cancel")) }
+      } message: {
+        TextState(String.module("\(count) secrets will be permanently deleted. This can't be undone."))
+      }
+    default:
+      return AlertState {
+        TextState(String.module("Delete All Expired?"))
+      } actions: {
+        ButtonState(role: .destructive, action: .confirmEmptyCollection) {
+          TextState(String.module("Delete All"))
+        }
+        ButtonState(role: .cancel) { TextState(String.module("Cancel")) }
+      } message: {
+        TextState(String.module("\(count) secrets will move to Deleted. You can recover them later."))
       }
     }
   }

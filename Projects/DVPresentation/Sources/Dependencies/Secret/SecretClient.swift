@@ -16,6 +16,10 @@ public struct SecretClient: Sendable {
   public var softDelete: @Sendable (_ id: Secret.ID) async throws -> Secret
   public var restore: @Sendable (_ id: Secret.ID) async throws -> Secret
   public var permanentlyDelete: @Sendable (_ id: Secret.ID) async throws -> Void
+  /// 컬렉션 전체를 소프트 삭제한다(예: Expired 목록을 '삭제됨'으로 이동).
+  public var softDeleteAll: @Sendable (_ collection: SecretQuery.Collection) async throws -> Void
+  /// 컬렉션 전체를 영구 삭제한다(예: Deleted 목록 비우기). 복구 불가.
+  public var permanentlyDeleteAll: @Sendable (_ collection: SecretQuery.Collection) async throws -> Void
   /// 생체인증 후 Secret의 암호화된 payload를 복호화해 `CreateSecretPayload`로 반환한다.
   /// secretType/subType에 따라 적절한 도메인 payload 타입으로 dispatch하고 metadata JSON을 병합한다.
   /// - Parameter reason: 시스템 인증 시트 문구. `AuthenticationReason`의 상수를 쓴다 —
@@ -112,6 +116,8 @@ private extension SecretClient {
       softDelete: { _ in .preview },
       restore: { _ in .preview },
       permanentlyDelete: { _ in },
+      softDeleteAll: { _ in },
+      permanentlyDeleteAll: { _ in },
       // live `dispatchRevealPayload`와 case 구성이 1:1로 일치해야 한다 —
       // 한쪽만 바뀌면 프리뷰가 실제와 다른 payload 타입을 조용히 반환한다.
       // metadata는 CreateSecret 폼이 실제로 입력받는 필드만 채운다(나머지는 live에서도 항상 nil).
