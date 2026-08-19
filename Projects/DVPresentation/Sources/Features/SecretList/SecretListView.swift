@@ -64,8 +64,8 @@ extension SecretListView {
         searchText: searchTextBinding,
         searchPromptText: .module("Search"),
         isSearchFocused: $isSearchFocused,
-        sortMenuContent: showsSort ? { AnyView(sortMenuContent) } : nil,
-        sortAccessibilityLabel: .module("Sort")
+        sortMenu: showsSort ? DVTitleBar.SortMenu(accessibilityLabel: .module("Sort")) { AnyView(sortMenuContent) } : nil,
+        trailingAction: emptyAction
       )
       .padding(.horizontal, 12)
       .background {
@@ -261,6 +261,25 @@ extension SecretListView {
       return true
     case .notice, .expired, .deleted, .project:
       return false
+    }
+  }
+
+  /// Expired/Deleted 탭의 제목행 우측 정리 버튼(정렬 자리). 목록이 비어 있으면 비활성.
+  /// Expired="모두 삭제"(→삭제됨으로 이동), Deleted="비우기"(→영구 삭제). 아이콘 하나를 공유한다.
+  private var emptyAction: DVTitleBar.TrailingAction? {
+    switch store.collection {
+    case .expired:
+      return DVTitleBar.TrailingAction(
+        accessibilityLabel: .module("Delete All"),
+        isEnabled: !secrets.isEmpty
+      ) { store.send(.didTapEmptyCollection) }
+    case .deleted:
+      return DVTitleBar.TrailingAction(
+        accessibilityLabel: .module("Empty"),
+        isEnabled: !secrets.isEmpty
+      ) { store.send(.didTapEmptyCollection) }
+    case .all, .liked, .notice, .project:
+      return nil
     }
   }
 

@@ -58,6 +58,14 @@ extension SecretClient: @retroactive DependencyKey {
                 try await deleteSecretUseCase.permanentlyDelete(id: id)
                 await LiveUseCases.expirySchedule.cancel(secretID: id)
             },
+            // 일괄 삭제엔 알림 취소가 불필요하다 — Expired는 마크가 전부 과거라 pending 알림이 없고,
+            // Deleted는 소프트 삭제 시점에 이미 취소됐다(+ syncAll reconcile가 안전망).
+            softDeleteAll: { collection in
+                try await deleteSecretUseCase.softDeleteAll(in: collection)
+            },
+            permanentlyDeleteAll: { collection in
+                try await deleteSecretUseCase.permanentlyDeleteAll(in: collection)
+            },
             revealPayload: { secret, reason in
                 try await dispatchPayload(
                     secret: secret,
