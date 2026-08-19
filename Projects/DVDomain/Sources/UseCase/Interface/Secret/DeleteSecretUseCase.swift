@@ -16,4 +16,12 @@ public protocol DeleteSecretUseCase: Sendable {
     /// Secret을 영구 삭제한다. 복구 불가.
     /// - Parameter id: 영구 삭제할 Secret의 ID
     func permanentlyDelete(id: UUID) async throws
+
+    /// 컬렉션에 속한 모든 Secret을 소프트 삭제한다(예: Expired 목록을 '삭제됨'으로 이동).
+    /// - Parameter collection: 대상 컬렉션
+    func softDeleteAll(in collection: SecretQuery.Collection) async throws
+
+    /// 컬렉션에 속한 모든 Secret을 영구 삭제한다(예: Deleted 목록 비우기). 복구 불가.
+    /// - Parameter collection: 대상 컬렉션
+    func permanentlyDeleteAll(in collection: SecretQuery.Collection) async throws
 }

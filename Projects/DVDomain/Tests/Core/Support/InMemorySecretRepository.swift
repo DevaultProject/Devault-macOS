@@ -25,6 +25,8 @@ public final class InMemorySecretRepository: SecretRepository, @unchecked Sendab
     public var errorOnUnlinkProject: SecretRepositoryError?
     public var errorOnCreateWithProjects: SecretRepositoryError?
     public var errorOnPatchWithProjects: SecretRepositoryError?
+    public var errorOnPatchAll: SecretRepositoryError?
+    public var errorOnDeleteAll: SecretRepositoryError?
 
     public private(set) var createCount = 0
     public private(set) var fetchByIDCount = 0
@@ -37,6 +39,8 @@ public final class InMemorySecretRepository: SecretRepository, @unchecked Sendab
     public private(set) var unlinkProjectCount = 0
     public private(set) var createWithProjectsCount = 0
     public private(set) var patchWithProjectsCount = 0
+    public private(set) var patchAllCount = 0
+    public private(set) var deleteAllCount = 0
 
     public private(set) var lastPatch: SecretPatch?
     public private(set) var lastProjectIDs: [UUID]?
@@ -150,6 +154,29 @@ public final class InMemorySecretRepository: SecretRepository, @unchecked Sendab
         secrets[id] = secret
         projectLinks[id] = Set(projectIDs)
         return secret
+    }
+
+    // MARK: - 컬렉션 일괄 (원자적)
+
+    public func patchAll(matching query: SecretQuery, with patch: SecretPatch) async throws {
+        patchAllCount += 1
+        lastPatch = patch
+        if let error = errorOnPatchAll { throw error }
+        let ids = secrets.filter { matches($0.value, query: query) }.map(\.key)
+        for id in ids {
+            guard var secret = secrets[id] else { continue }
+            secret.apply(patch)
+            secrets[id] = secret
+        }
+    }
+
+    public func deleteAll(matching query: SecretQuery) async throws {
+        deleteAllCount += 1
+        if let error = errorOnDeleteAll { throw error }
+        let ids = secrets.filter { matches($0.value, query: query) }.map(\.key)
+        for id in ids {
+            secrets.removeValue(forKey: id)
+        }
     }
 }
 

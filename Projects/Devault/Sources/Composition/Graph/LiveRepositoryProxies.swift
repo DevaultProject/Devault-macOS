@@ -51,6 +51,14 @@ struct LiveSecretRepository: SecretRepository {
   func patch(id: UUID, with patch: SecretPatch, projectIDs: [UUID]) async throws -> Secret {
     try await storage.secretRepository().patch(id: id, with: patch, projectIDs: projectIDs)
   }
+
+  func patchAll(matching query: SecretQuery, with patch: SecretPatch) async throws {
+    try await storage.secretRepository().patchAll(matching: query, with: patch)
+  }
+
+  func deleteAll(matching query: SecretQuery) async throws {
+    try await storage.secretRepository().deleteAll(matching: query)
+  }
 }
 
 /// 기존 Client와 UseCase가 인스턴스를 다시 만들지 않아도 현재 Project Repository를 사용하게 하는 Proxy.

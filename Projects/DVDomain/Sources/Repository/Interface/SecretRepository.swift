@@ -70,4 +70,18 @@ public protocol SecretRepository: Sendable {
     ///   - projectIDs: 수정 후 연결되어야 할 Project ID 목록
     /// - Returns: 수정된 Secret
     func patch(id: UUID, with patch: SecretPatch, projectIDs: [UUID]) async throws -> Secret
+
+    /// 쿼리에 맞는 Secret 전체에 같은 patch를 적용한다(예: Expired 목록을 한 번에 소프트 삭제).
+    /// fetch → 전체 변경 → 단일 save로 원자적으로 처리한다. 실패 시 ModelContext가 자동 롤백해 partial state가 없다.
+    /// `sort`·`searchText`는 무시하고 collection 범위로만 동작한다.
+    /// - Parameters:
+    ///   - query: 대상을 고르는 SecretQuery
+    ///   - patch: 매칭된 모든 Secret에 적용할 변경
+    func patchAll(matching query: SecretQuery, with patch: SecretPatch) async throws
+
+    /// 쿼리에 맞는 Secret 전체를 영구 삭제한다(예: Deleted 목록 비우기). 복구 불가.
+    /// fetch → 전체 삭제 → 단일 save로 원자적으로 처리한다. 실패 시 ModelContext가 자동 롤백해 partial state가 없다.
+    /// `sort`·`searchText`는 무시하고 collection 범위로만 동작한다.
+    /// - Parameter query: 대상을 고르는 SecretQuery
+    func deleteAll(matching query: SecretQuery) async throws
 }
