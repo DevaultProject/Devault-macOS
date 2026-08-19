@@ -22,6 +22,8 @@ public struct SecretListFeature {
     public internal(set) var selectedSecretID: Secret.ID?
     public internal(set) var searchText = ""
     public internal(set) var sort: SecretQuery.Sort = .recentlyAdded
+    /// 검색과 무관한 컬렉션 전체 개수(정리 버튼 활성 판단용).
+    public internal(set) var collectionCount = 0
     @Presents var alert: AlertState<Action.Alert>?
 
     public init(collection: SecretQuery.Collection = .all, projectName: String? = nil) {
@@ -164,7 +166,12 @@ public struct SecretListFeature {
         return fetchSecretsEffect(query: state.query, debounced: false)
 
       case .secretsResponse(.success(let secrets)):
-        state.secretsState = .loaded(IdentifiedArray(uniqueElements: secrets))
+        let list = IdentifiedArray(uniqueElements: secrets)
+        state.secretsState = .loaded(list)
+        // 검색이 없을 때의 결과가 곧 컬렉션 전체 수. 검색 중엔 갱신하지 않아 직전 전체 수를 유지한다.
+        if state.searchText.isEmpty {
+          state.collectionCount = list.count
+        }
         return .none
 
       case .secretsResponse(.failure(let error)):
@@ -186,9 +193,8 @@ public struct SecretListFeature {
         return .none
 
       case .didTapEmptyCollection:
-        // 방어적으로 비어 있으면 무시(버튼은 이미 비활성).
-        guard case .loaded(let secrets) = state.secretsState, !secrets.isEmpty else { return .none }
-        state.alert = emptyCollectionConfirmationAlert(collection: state.collection, count: secrets.count)
+        guard state.collectionCount > 0 else { return .none }
+        state.alert = emptyCollectionConfirmationAlert(collection: state.collection, count: state.collectionCount)
         return .none
 
       case .alert(.presented(.confirmDeleteForever(let id))):
@@ -198,7 +204,9 @@ public struct SecretListFeature {
         return emptyCollectionEffect(collection: state.collection)
 
       case .emptyCollectionResponse(nil):
-        // 컬렉션이 통째로 비워졌다. 부모 개수 갱신 → 재조회 → 재선택(빈 목록이면 조회뷰가 닫힌다).
+        // 컬렉션이 통째로 비워졌다. 검색 중이어도 전체 수는 0이 됐으므로 직접 반영한다.
+        state.collectionCount = 0
+        // 부모 개수 갱신 → 재조회 → 재선택(빈 목록이면 조회뷰가 닫힌다).
         return .concatenate(
           .send(.delegate(.secretsChanged)),
           fetchSecretsEffect(query: state.query, debounced: false),
