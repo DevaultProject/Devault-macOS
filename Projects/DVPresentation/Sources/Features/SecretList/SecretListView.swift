@@ -111,7 +111,7 @@ extension SecretListView {
 
     return DVVaultContainer(
       name: secret.name,
-      date: SecretDateFormatter.string(from: secret.updatedAt),
+      date: SecretDateFormatter.displayString(from: secret.updatedAt),
       service: secret.service,
       typeIcon: secret.secretType.icon,
       trailingIcon: badgeStatus?.emphasis,
