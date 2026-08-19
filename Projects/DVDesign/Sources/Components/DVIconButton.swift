@@ -23,6 +23,7 @@ public struct DVIconButton: View {
     private let action: () -> Void
 
     @State private var isHovered = false
+    @Environment(\.isEnabled) private var isEnabled
 
     // MARK: - Init
 
@@ -55,7 +56,8 @@ public struct DVIconButton: View {
         }
         .buttonStyle(
             DVIconButtonStyle(
-                isHovered: isHovered,
+                // 호버 색은 누를 수 있다는 신호라 비활성일 때는 주지 않는다.
+                isHovered: isHovered && isEnabled,
                 idle: idle,
                 hovered: hovered,
                 pressed: pressed,

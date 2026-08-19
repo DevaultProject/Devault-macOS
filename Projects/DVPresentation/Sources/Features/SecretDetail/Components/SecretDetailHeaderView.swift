@@ -7,43 +7,25 @@ import DVDomain
 
 /// 시크릿 조회 화면 상단 헤더 — 즐겨찾기 + 타입명 + 액션 + 읽기 전용 서브타입 탭바.
 ///
-/// Figma `1768:30819` (Header, 380×62) 구현.
-///
 /// ```
-/// [★ API Keys/Token                        ↗  ✎  🗑]   ← Type row, 30pt
+/// [★ API Keys/Token                            ✎  🗑]   ← Type row, 30pt
 ///                                                        ← spacing 16
 /// [○ API Key   ● Access Token   ○ API Webhook Secret]   ← Tab Bar, 16pt
 /// ```
 ///
-/// 생성 화면의 `CreateSecretHeaderView`에 대응하지만 두 가지가 다르다:
-/// 1. 액션(즐겨찾기·공유·수정·삭제)이 타입 행에 함께 놓인다.
-/// 2. **서브타입 탭바는 읽기 전용이다** — `DVRadioButton(readOnly:isSelected:)`.
-///
-/// 서브타입은 조회·수정 모드 모두에서 변경할 수 없다. 서브타입이 바뀌면 payload 스키마
-/// 자체가 달라지므로(`CreateSecretPayload` case가 교체됨) 기존 시크릿의 서브타입 변경은
-/// 수정이 아니라 재생성에 해당한다.
-///
-/// TCA store에 결합하지 않고 값·콜백만 받아 독립 Preview가 가능하다.
+/// 서브타입 탭바는 조회·수정 모두 읽기 전용이다 — 서브타입이 바뀌면 payload 스키마가
+/// 통째로 달라져(`CreateSecretPayload` case 교체) 수정이 아니라 재생성에 해당한다.
 struct SecretDetailHeaderView: View {
 
     let secretType: SecretType
     let subType: SecretSubType?
     let isLiked: Bool
-    /// 수정 진입을 받을 수 있는지. 판정은 호출부(`SecretDetailView.isEditEnabled`)가 갖는다 —
-    /// 복호화 진행 중이거나 연결 프로젝트를 아직 못 읽은 동안 거짓이다.
-    ///
-    /// `isEditing`이 참이면 수정 버튼 자체가 렌더되지 않으므로 조회 모드에서만 의미가 있다.
+    /// 수정 진입을 받을 수 있는지. 복호화 중이거나 연결 프로젝트를 아직 못 읽은 동안 거짓이다.
     var isEditEnabled: Bool = true
-    /// 편집 폼 위에 얹힌 헤더인지.
+    /// 편집 폼 위에 얹힌 헤더인지. 수정·삭제는 렌더하지 않고 즐겨찾기만 회색으로 남긴다.
     ///
-    /// 편집 중에는 **공유·수정·삭제를 렌더하지 않는다.** 눌러도 반응하지 않는 컨트롤을 노출하지
-    /// 않는다는 기준을 따르고(`#74`에서 수정 버튼을 숨긴 것과 같다), 편집 중 유효한 동작은
-    /// footer의 Save / Cancel뿐이다.
-    ///
-    /// **즐겨찾기만 남긴다.** 별은 액션이면서 동시에 상태 표시라, 숨기면 이 시크릿이 즐겨찾기인지가
-    /// 화면에서 사라진다. 대신 회색으로 바꿔 지금은 바꿀 수 없다는 것을 알린다 — 즐겨찾기 변경은
-    /// 조회 모드에서만 가능하다는 것이 정책이다. 편집 중에 즐겨찾기가 성공하면 `state.secret`이
-    /// 교체되어 저장 diff의 기준인 baseline과 어긋난다.
+    /// 별을 숨기지 않는 것은 상태 표시를 겸하기 때문이고, 잠그는 것은 편집 중 즐겨찾기가
+    /// 성공하면 `state.secret`이 교체되어 저장 diff의 baseline과 어긋나기 때문이다.
     var isEditing: Bool = false
     let onToggleLike: () -> Void
     let onEdit: () -> Void
@@ -88,21 +70,22 @@ extension SecretDetailHeaderView {
                 actionsContainer
             }
         }
-        // 액션이 빠져도 행 높이가 흔들리지 않도록 고정한다 — 모드 전환 시 타입명이 위아래로 움직이면 안 된다.
+        // 액션이 빠지는 편집 모드에서도 타입명이 위아래로 움직이지 않도록 고정한다.
         .frame(height: 30)
     }
 
     private var likeButton: some View {
-        Button(action: onToggleLike) {
-            Image(systemName: isLiked ? "star.fill" : "star")
-                .font(.system(size: 18, weight: .semibold))
-                // 색으로 비활성을 알린다. 별은 원래 유채색이라 opacity만 낮추면
-                // "연한 초록"이 되어 꺼진 것으로 읽히지 않는다.
-                .foregroundStyle(Color.dv(isEditing ? .gray400 : .vaultGreen))
-                .frame(width: 24, height: 30)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+        DVIconButton(
+            systemName: isLiked ? "star.fill" : "star",
+            font: .headingLG,
+            // opacity로 낮추면 "연한 초록"이 되어 꺼진 것으로 읽히지 않는다.
+            idle: isEditing ? .gray400 : .vaultGreen,
+            hovered: .vaultGreenDark,
+            pressed: .vaultGreenDark,
+            pressedOpacity: 0.7,
+            hitSize: 24, // 30이면 타입명이 6pt 밀린다.
+            action: onToggleLike
+        )
         .disabled(isEditing)
         .accessibilityLabel(
             Text(isLiked ? .module("Remove from favorites") : .module("Add to favorites"))
@@ -111,14 +94,6 @@ extension SecretDetailHeaderView {
 
     private var actionsContainer: some View {
         HStack(spacing: 6) {
-            // 공유 동작은 아직 정해지지 않았다. 눌러도 반응하지 않는 컨트롤을 활성 상태로
-            // 노출하지 않기 위해 disabled로 렌더한다.
-            actionButton(
-                systemName: "square.and.arrow.up",
-                accessibilityLabel: .module("Share"),
-                isEnabled: false,
-                action: {}
-            )
             actionButton(
                 systemName: "pencil",
                 accessibilityLabel: .module("Edit"),
@@ -139,23 +114,23 @@ extension SecretDetailHeaderView {
         isEnabled: Bool = true,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(Color.dv(.gray900))
-                .frame(width: 30, height: 30)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+        DVIconButton(
+            systemName: systemName,
+            font: .bodyLG,
+            idle: .gray700,
+            hovered: .gray900,
+            pressed: .gray900,
+            pressedOpacity: 0.7,
+            hitSize: 30,
+            action: action
+        )
         .disabled(!isEnabled)
-        // .plain 버튼은 disabled에서 자동으로 흐려지지 않으므로 명시적으로 낮춘다.
         .opacity(isEnabled ? 1 : 0.4)
         .accessibilityLabel(Text(accessibilityLabel))
     }
 
     private var tabBar: some View {
-        // Figma 시각 간격은 28pt. DVRadioButton이 좌우 2pt 패딩을 가지므로
-        // HStack spacing은 28 - (2 + 2) = 24로 두어야 실제 간격이 28이 된다.
+        // 디자인 간격은 28pt. DVRadioButton이 좌우 2pt 패딩을 가져 spacing 24가 실제 28이 된다.
         HStack(spacing: 24) {
             ForEach(subTypes, id: \.self) { sub in
                 DVRadioButton(
@@ -172,7 +147,7 @@ extension SecretDetailHeaderView {
 
 #if DEBUG
 
-/// Figma 기준 폭 — Main Container 420 - 좌우 padding 20×2.
+/// Main Container 420 - 좌우 padding 20×2.
 private let _headerWidth: CGFloat = 380
 
 #Preview("API Keys/Token · Access Token 선택") {
@@ -266,8 +241,6 @@ private let _headerWidth: CGFloat = 380
     .previewWidth(_headerWidth + 40)
 }
 
-/// 편집 중 모습. 공유·수정·삭제는 사라지고 즐겨찾기만 회색으로 남는다 —
-/// 즐겨찾기 여부는 계속 보여야 하는 정보이고, 회색이 지금은 바꿀 수 없다는 표시다.
 /// 액션이 빠져도 타입명 행의 높이는 조회 모드와 같아야 한다.
 #Preview("편집 중 · 즐겨찾기만 회색으로 남음") {
     SecretDetailHeaderView(
