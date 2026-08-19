@@ -319,6 +319,38 @@ public actor SecretRepositoryImpl: SecretRepository {
             throw SecretRepositoryError.persistenceFailed
         }
     }
+
+    /// 쿼리에 맞는 로컬 Secret 전체에 patch를 적용하고 한 번만 save한다
+    public func patchAll(matching query: SecretQuery, with patch: SecretPatch) async throws {
+        do {
+            let descriptor = SecretFetchDescriptorBuilder.make(from: query)
+            let localSecrets = try modelContext.fetch(descriptor)
+            for localSecret in localSecrets {
+                apply(patch, to: localSecret)
+            }
+            try modelContext.save()
+        } catch let error as SecretRepositoryError {
+            throw error
+        } catch {
+            throw SecretRepositoryError.persistenceFailed
+        }
+    }
+
+    /// 쿼리에 맞는 로컬 Secret 전체를 삭제하고 한 번만 save한다.
+    public func deleteAll(matching query: SecretQuery) async throws {
+        do {
+            let descriptor = SecretFetchDescriptorBuilder.make(from: query)
+            let localSecrets = try modelContext.fetch(descriptor)
+            for localSecret in localSecrets {
+                modelContext.delete(localSecret)
+            }
+            try modelContext.save()
+        } catch let error as SecretRepositoryError {
+            throw error
+        } catch {
+            throw SecretRepositoryError.persistenceFailed
+        }
+    }
 }
 
 extension SecretRepositoryImpl {
