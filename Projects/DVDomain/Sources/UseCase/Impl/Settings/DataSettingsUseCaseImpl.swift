@@ -23,7 +23,7 @@ public struct DataSettingsUseCaseImpl: DataSettingsUseCase {
     }
 
     public func deleteAllData() async throws {
-        try await authenticateUseCase.authenticate(reason: "Delete all data")
+        try await authenticateUseCase.authenticate(reason: .deleteAllData)
         try await dataResetRepository.deleteAll()
         // 데이터가 사라졌으니 예약된 만료 알림도 함께 걷어낸다. 삭제 성공 후에만 취소해,
         // 삭제가 실패하면(데이터가 남으면) 알림도 그대로 유지되게 한다.

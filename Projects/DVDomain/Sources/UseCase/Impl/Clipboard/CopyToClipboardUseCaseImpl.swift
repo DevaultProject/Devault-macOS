@@ -61,7 +61,7 @@ private extension CopyToClipboardUseCaseImpl {
     func authenticateIfNeeded(_ policy: ClipboardCopyPolicy) async throws {
         guard policy.requiresAuthentication,
               settingsRepository.isRequireAuthToCopyEnabled() else { return }
-        try await authenticateUseCase.authenticate(reason: AuthenticationReason.copySecret)
+        try await authenticateUseCase.authenticate(reason: .copySecret)
     }
 
     /// 알림 발송이 오래 걸려도 정리 시작 시점이 밀리지 않도록 값을 쓴 직후에 부른다.

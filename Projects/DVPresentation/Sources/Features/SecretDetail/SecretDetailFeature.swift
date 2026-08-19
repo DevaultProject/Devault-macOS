@@ -43,14 +43,14 @@ public struct SecretDetailFeature {
         /// 인증을 취소했는데 편집 화면이 열려 있으면 안 된다.
         case edit
 
-        /// 이 복호화가 시스템 인증 시트에 표시할 문구.
+        /// 이 복호화가 시스템 인증 시트에 표시할 사유.
         ///
         /// 같은 복호화라도 사용자가 누른 버튼이 다르면 기대하는 문장이 다르다. 눈·복사는 값을
         /// 보려는 것이고 수정은 고치려는 것이라, 후자에 "확인하려면"이라고 물으면 잘못 눌렀나 싶어진다.
-        var authenticationReason: String {
+        var authenticationReason: AuthenticationReason {
             switch self {
-            case .none, .reveal, .copy: return AuthenticationReason.revealSecret
-            case .edit:                 return AuthenticationReason.editSecret
+            case .none, .reveal, .copy: return .revealSecret
+            case .edit:                 return .editSecret
             }
         }
 
@@ -615,7 +615,7 @@ public struct SecretDetailFeature {
             return .run { [id = state.secret.id] send in
                 do {
                     if needsAuthentication {
-                        try await secretClient.authenticate(AuthenticationReason.editSecret)
+                        try await secretClient.authenticate(.editSecret)
                         await send(.saveAuthenticated)
                     }
                     let updated = try await secretClient.updateSecret(id, patch, change, projectIds)
@@ -778,7 +778,7 @@ public struct SecretDetailFeature {
     private func reauthenticateEffect(revealing field: SecretFieldID) -> Effect<Action> {
         .run { send in
             do {
-                try await secretClient.authenticate(AuthenticationReason.revealSecret)
+                try await secretClient.authenticate(.revealSecret)
                 await send(.reauthenticateResponse(.success(true), revealing: field))
             } catch is CancellationError {
             } catch {

@@ -21,7 +21,7 @@ struct AuthenticateUseCaseImplTests {
         )
 
         await #expect(throws: UserAuthenticationError.failed) {
-            try await sut.authenticate(reason: "test")
+            try await sut.authenticate(reason: .revealSecret)
         }
     }
 
@@ -38,7 +38,7 @@ struct AuthenticateUseCaseImplTests {
         )
 
         for _ in 0..<2 {
-            _ = try? await sut.authenticate(reason: "test")
+            _ = try? await sut.authenticate(reason: .revealSecret)
         }
 
         #expect(notificationService.notified.isEmpty)
@@ -58,7 +58,7 @@ struct AuthenticateUseCaseImplTests {
         )
 
         for _ in 0..<3 {
-            _ = try? await sut.authenticate(reason: "test")
+            _ = try? await sut.authenticate(reason: .revealSecret)
         }
 
         #expect(notificationService.notified.count == 1)
@@ -83,7 +83,7 @@ struct AuthenticateUseCaseImplTests {
         )
 
         for _ in 0..<3 {
-            _ = try? await sut.authenticate(reason: "test")
+            _ = try? await sut.authenticate(reason: .revealSecret)
         }
 
         #expect(notificationService.notified.isEmpty)
@@ -101,7 +101,7 @@ struct AuthenticateUseCaseImplTests {
         )
 
         for _ in 0..<10 {
-            try? await sut.authenticate(reason: "test")
+            try? await sut.authenticate(reason: .revealSecret)
         }
 
         #expect(notificationService.notified.isEmpty)
