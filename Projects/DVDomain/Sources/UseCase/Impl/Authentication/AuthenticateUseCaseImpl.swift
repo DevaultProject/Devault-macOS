@@ -41,7 +41,7 @@ public actor AuthenticateUseCaseImpl: AuthenticateUseCase {
         self.now = now
     }
 
-    public func authenticate(reason: String) async throws {
+    public func authenticate(reason: AuthenticationReason) async throws {
         do {
             try await authenticationService.authenticate(reason: reason)
         } catch {

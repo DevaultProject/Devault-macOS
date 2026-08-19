@@ -22,7 +22,7 @@ struct CopyToClipboardUseCaseImplTests {
         try await sut.execute("secret-value")
 
         #expect(authenticateUseCase.authenticateCount == 1)
-        #expect(authenticateUseCase.lastReason == AuthenticationReason.copySecret)
+        #expect(authenticateUseCase.lastReason == .copySecret)
         #expect(clipboardService.writtenValues == ["secret-value"])
     }
 
@@ -349,9 +349,9 @@ private extension FakeSecurityNotificationService {
 private final class StubAuthenticateUseCase: AuthenticateUseCase, @unchecked Sendable {
     var error: UserAuthenticationError?
     private(set) var authenticateCount = 0
-    private(set) var lastReason: String?
+    private(set) var lastReason: AuthenticationReason?
 
-    func authenticate(reason: String) async throws {
+    func authenticate(reason: AuthenticationReason) async throws {
         authenticateCount += 1
         lastReason = reason
         if let error { throw error }

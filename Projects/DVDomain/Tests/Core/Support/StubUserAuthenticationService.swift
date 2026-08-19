@@ -7,11 +7,11 @@ public final class StubUserAuthenticationService: UserAuthenticationService, @un
     public var errorOnAuthenticate: UserAuthenticationError?
 
     public private(set) var authenticateCount = 0
-    public private(set) var lastReason: String?
+    public private(set) var lastReason: AuthenticationReason?
 
     public init() {}
 
-    public func authenticate(reason: String) async throws {
+    public func authenticate(reason: AuthenticationReason) async throws {
         authenticateCount += 1
         lastReason = reason
         if let error = errorOnAuthenticate { throw error }

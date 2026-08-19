@@ -22,7 +22,7 @@ extension OnboardingClient: @retroactive DependencyKey {
 
     return OnboardingClient(
       enableTouchID: {
-        try await LiveUseCases.authenticate.authenticate(reason: "Touch ID를 사용하려면 인증이 필요합니다")
+        try await LiveUseCases.authenticate.authenticate(reason: .enableTouchID)
       },
       enableICloudSync: {
         let status = await iCloudSettingsUseCase.accountStatus()

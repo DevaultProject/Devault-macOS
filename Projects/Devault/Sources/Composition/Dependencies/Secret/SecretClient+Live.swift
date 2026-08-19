@@ -219,9 +219,9 @@ private func dispatchUpdateSecret(
 // MARK: - Payload Dispatch
 
 private enum PayloadAccess {
-    /// 열람·수정 진입. 인증을 타므로 시스템 시트에 띄울 문구를 함께 받는다 —
+    /// 열람·수정 진입. 인증을 타므로 시스템 시트에 띄울 사유를 함께 받는다 —
     /// 같은 복호화라도 사용자가 누른 버튼이 다르면 기대하는 문장이 다르다.
-    case reveal(any RevealSecretPayloadUseCase, reason: String)
+    case reveal(any RevealSecretPayloadUseCase, reason: AuthenticationReason)
     /// 복사. 인증 여부는 이어지는 `copySensitiveValue`가 설정을 읽어 결정하므로 여기서는 복호화만 한다.
     case copy(any DecryptSecretPayloadUseCase)
 

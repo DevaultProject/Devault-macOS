@@ -2,12 +2,17 @@
 
 import DVData
 import DVDomain
+import DVPresentation
 
 /// Composition Root 전체에서 공유하는 UseCase 인스턴스.
 enum LiveUseCases {
     /// 화면을 넘나드는 인증 실패를 하나의 `AbnormalAccessMonitor`로 감지하기 위해 공유한다.
+    /// 인증 시트 문구는 DVData가 접근 못 하는 로컬라이제이션 카탈로그 때문에
+    /// `AuthenticationReason.moduleText(for:)`(DVPresentation)에서 만들어 주입한다.
     static let authenticate: any AuthenticateUseCase = AuthenticateUseCaseImpl(
-        authenticationService: LocalUserAuthenticationServiceImpl(),
+        authenticationService: LocalUserAuthenticationServiceImpl(
+            makeReason: AuthenticationReason.moduleText(for:)
+        ),
         notificationService: LiveServices.securityNotification,
         settingsRepository: LiveRepositories.settings
     )
