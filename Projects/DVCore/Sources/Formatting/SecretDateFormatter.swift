@@ -2,24 +2,34 @@
 
 import Foundation
 
-/// Secret 목록에서 날짜를 표시·검색할 때 쓰는 공통 포맷.
+/// Secret 날짜의 표시와 검색 매칭.
 ///
-/// 표시(Presentation)와 검색(Data)이 서로 다른 모듈에서 동일한 문자열을
-/// 만들어야 하므로, 두 모듈이 공통으로 의존하는 DVCore에 둔다.
-/// 로케일에 따라 포맷이 바뀌면 검색어와 표시값이 어긋나므로 `en_US_POSIX`로 고정한다.
+/// 표시(Presentation)와 검색(Data)이 서로 다른 모듈에서 맞물려야 해 DVCore에 둔다.
+/// 규칙은 하나 — **검색은 보이는 대로 걸린다.**
 ///
-/// ```swift
-/// SecretDateFormatter.string(from: secret.updatedAt) // "2026.04.01"
-/// ```
+/// 문자열이 아니라 `matches(searchKeyword:date:)`를 노출하는 것은 공백 정규화 계약을 안에
+/// 가두기 위해서다. 호출자가 빠뜨리면 컴파일은 통과한 채 한국어에서만 검색이 안 된다.
 public enum SecretDateFormatter {
-    public static func string(from date: Date) -> String {
-        formatter.string(from: date)
+
+    /// 화면에 보여줄 날짜. ko `2026. 4. 1.` / en `4/1/2026`
+    public static func displayString(from date: Date) -> String {
+        date.formatted(displayStyle)
     }
 
-    private static let formatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy.MM.dd"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        return formatter
-    }()
+    /// 검색어가 이 날짜를 가리키는지. 로케일 숫자 날짜에는 공백이 섞여 양쪽에서 떼고 본다.
+    public static func matches(searchKeyword keyword: String, date: Date) -> Bool {
+        let compactKeyword = keyword.filter { !$0.isWhitespace }
+        guard !compactKeyword.isEmpty else { return false }
+
+        return compactDisplayString(from: date)
+            .localizedCaseInsensitiveContains(compactKeyword)
+    }
+
+    private static func compactDisplayString(from date: Date) -> String {
+        displayString(from: date).filter { !$0.isWhitespace }
+    }
+
+    /// 로케일을 비운 `DateFormatter`는 생성 시점의 `Locale.current`를 굳혀 앱 실행 중
+    /// 언어를 바꿔도 따라오지 않는다. `FormatStyle`은 `.autoupdatingCurrent`를 쓴다.
+    private static let displayStyle = Date.FormatStyle(date: .numeric, time: .omitted)
 }
