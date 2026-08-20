@@ -41,6 +41,16 @@ struct SecretDateSearchTests {
         #expect(Self.search(compact, in: [secret]) == [secret.id])
     }
 
+    /// 공백을 일부러 끼워 검색어 쪽 정규화를 강제한다 — 표시에 공백이 없는 로케일(en_US)에서는
+    /// 위 두 테스트의 검색어가 같아져 정규화가 한 번도 실행되지 않는다.
+    @Test("검색어에 공백이 섞여 있어도 걸린다")
+    func searchByKeywordWithInjectedWhitespace() {
+        let secret = Self.makeSecret()
+        let spaced = Self.displayed(Self.updatedAt).map(String.init).joined(separator: " ")
+
+        #expect(Self.search(spaced, in: [secret]) == [secret.id])
+    }
+
     // MARK: - 검색 대상 범위
 
     /// `createdAt`은 목록에 표시되지 않지만 검색 대상으로는 남아 있다.

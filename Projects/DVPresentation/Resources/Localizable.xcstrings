@@ -667,7 +667,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "시크릿 값을 복사하려면 인증이 필요합니다"
+            "value": "시크릿 값을 복사하려면 인증이 필요합니다."
           }
         }
       }
@@ -684,7 +684,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "모든 데이터를 삭제하려면 인증이 필요합니다"
+            "value": "모든 데이터를 삭제하려면 인증이 필요합니다."
           }
         }
       }
@@ -701,7 +701,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "시크릿을 수정하려면 인증이 필요합니다"
+            "value": "시크릿을 수정하려면 인증이 필요합니다."
           }
         }
       }
@@ -718,7 +718,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Touch ID를 사용하려면 인증이 필요합니다"
+            "value": "Touch ID를 사용하려면 인증이 필요합니다."
           }
         }
       }
@@ -735,7 +735,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "잠금을 해제하려면 인증이 필요합니다"
+            "value": "잠금을 해제하려면 인증이 필요합니다."
           }
         }
       }
@@ -752,7 +752,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "시크릿 값을 확인하려면 인증이 필요합니다"
+            "value": "시크릿 값을 확인하려면 인증이 필요합니다."
           }
         }
       }

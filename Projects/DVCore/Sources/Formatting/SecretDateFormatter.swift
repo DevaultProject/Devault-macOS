@@ -7,9 +7,22 @@ import Foundation
 /// 표시(Presentation)와 검색(Data)이 서로 다른 모듈에서 맞물려야 해 DVCore에 둔다.
 /// 규칙은 하나 — **검색은 보이는 대로 걸린다.**
 ///
-/// 문자열이 아니라 `matches(searchKeyword:date:)`를 노출하는 것은 공백 정규화 계약을 안에
-/// 가두기 위해서다. 호출자가 빠뜨리면 컴파일은 통과한 채 한국어에서만 검색이 안 된다.
+/// 문자열이 아니라 `SearchKeyword`와 `matches(_:date:)`를 노출하는 것은 공백 정규화 계약을
+/// 안에 가두기 위해서다. 호출자가 빠뜨리면 컴파일은 통과한 채 한국어에서만 검색이 안 된다.
 public enum SecretDateFormatter {
+
+    /// 정규화를 마친 검색어. 값으로 분리한 것은 검색 필터가 컬렉션 전체를 돌기 때문이다 —
+    /// 정규화가 `matches` 안에 있으면 같은 연산을 시크릿마다 되풀이한다.
+    public struct SearchKeyword: Equatable, Sendable {
+
+        fileprivate let compact: String
+
+        public init(_ raw: String) {
+            compact = raw.filter { !$0.isWhitespace }
+        }
+
+        public var isEmpty: Bool { compact.isEmpty }
+    }
 
     /// 화면에 보여줄 날짜. ko `2026. 4. 1.` / en `4/1/2026`
     public static func displayString(from date: Date) -> String {
@@ -17,12 +30,11 @@ public enum SecretDateFormatter {
     }
 
     /// 검색어가 이 날짜를 가리키는지. 로케일 숫자 날짜에는 공백이 섞여 양쪽에서 떼고 본다.
-    public static func matches(searchKeyword keyword: String, date: Date) -> Bool {
-        let compactKeyword = keyword.filter { !$0.isWhitespace }
-        guard !compactKeyword.isEmpty else { return false }
+    public static func matches(_ keyword: SearchKeyword, date: Date) -> Bool {
+        guard !keyword.isEmpty else { return false }
 
         return compactDisplayString(from: date)
-            .localizedCaseInsensitiveContains(compactKeyword)
+            .localizedCaseInsensitiveContains(keyword.compact)
     }
 
     private static func compactDisplayString(from date: Date) -> String {
