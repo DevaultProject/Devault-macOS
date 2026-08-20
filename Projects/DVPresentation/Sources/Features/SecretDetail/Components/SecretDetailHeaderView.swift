@@ -78,12 +78,13 @@ extension SecretDetailHeaderView {
         DVIconButton(
             systemName: isLiked ? "star.fill" : "star",
             font: .headingLG,
-            // opacity로 낮추면 "연한 초록"이 되어 꺼진 것으로 읽히지 않는다.
-            idle: isEditing ? .gray400 : .vaultGreen,
+            idle: .vaultGreen,
             hovered: .vaultGreenDark,
             pressed: .vaultGreenDark,
+            disabled: .gray400,
             pressedOpacity: 0.7,
-            hitSize: 24, // 30이면 타입명이 6pt 밀린다.
+            hitSize: 24, // 폭이 30이면 타입명이 6pt 밀린다.
+            hitHeight: 30,
             action: onToggleLike
         )
         .disabled(isEditing)
@@ -125,7 +126,6 @@ extension SecretDetailHeaderView {
             action: action
         )
         .disabled(!isEnabled)
-        .opacity(isEnabled ? 1 : 0.4)
         .accessibilityLabel(Text(accessibilityLabel))
     }
 

@@ -13,10 +13,28 @@ enum InMemorySecretQueryFilter {
         to secrets: [DVDomain.Secret],
         referenceDate: Date = .now
     ) -> [DVDomain.Secret] {
+        let search = SearchQuery(query.searchText)
         let filtered = secrets
-            .filter { matchesSearchText(query.searchText, secret: $0) }
+            .filter { matchesSearch(search, secret: $0) }
             .filter { matchesExpiry(query.collection, secret: $0, referenceDate: referenceDate) }
         return applySortIfNeeded(filtered, sort: query.sort)
+    }
+
+    /// 쿼리당 한 번 만들어 시크릿마다 재사용하는 검색어. 정규화를 필터 루프 밖에 둔다.
+    private struct SearchQuery {
+
+        let text: String
+        let date: SecretDateFormatter.SearchKeyword
+
+        /// 검색어가 없거나 공백뿐이면 `nil` — 전체 통과와 같다.
+        init?(_ raw: String?) {
+            guard let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !trimmed.isEmpty
+            else { return nil }
+
+            text = trimmed
+            date = SecretDateFormatter.SearchKeyword(trimmed)
+        }
     }
 
     /// `.all`/`.liked`(Star)는 이미 만료된 Secret을 보여주지 않는다 — 만료된 항목은 Expired 탭에서만 보인다.
@@ -92,13 +110,8 @@ enum InMemorySecretQueryFilter {
         return sorted + withoutExpiry
     }
 
-    private static func matchesSearchText(_ searchText: String?, secret: DVDomain.Secret) -> Bool {
-        guard let searchText else {
-            return true
-        }
-
-        let keyword = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !keyword.isEmpty else {
+    private static func matchesSearch(_ search: SearchQuery?, secret: DVDomain.Secret) -> Bool {
+        guard let search else {
             return true
         }
 
@@ -113,13 +126,12 @@ enum InMemorySecretQueryFilter {
 
         // 텍스트가 먼저다 — 날짜 매칭은 시크릿마다 날짜를 새로 포맷하고, 이 필터는 컬렉션
         // 전체를 돈다(searchText가 SwiftData predicate에 없다).
-        if textFields.contains(where: { $0?.localizedCaseInsensitiveContains(keyword) == true }) {
+        if textFields.contains(where: { $0?.localizedCaseInsensitiveContains(search.text) == true }) {
             return true
         }
 
         // `createdAt`은 목록에 표시되지 않지만 검색 대상에는 남아 있다.
-        return [secret.createdAt, secret.updatedAt].contains {
-            SecretDateFormatter.matches(searchKeyword: keyword, date: $0)
-        }
+        return SecretDateFormatter.matches(search.date, date: secret.createdAt)
+            || SecretDateFormatter.matches(search.date, date: secret.updatedAt)
     }
 }
