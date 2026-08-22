@@ -13,10 +13,15 @@ struct DevaultApp: App {
     AppFeature()
   }
 
+  /// 트랜잭션 감시 Task. 앱이 사는 동안 유지해야 외부 갱신·환불·가족 공유 승인을 놓치지 않는다.
+  private let transactionObserver: Task<Void, Never>
+
   init() {
     UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
     // 단일 창 앱이라 창 탭이 불필요
     NSWindow.allowsAutomaticWindowTabbing = false
+    // 화면이 아니라 앱 수명에 묶는다. Feature effect로 띄우면 화면이 사라질 때 리스너가 죽는다.
+    transactionObserver = LiveServices.purchase.observeTransactionUpdates()
   }
 
   var body: some Scene {

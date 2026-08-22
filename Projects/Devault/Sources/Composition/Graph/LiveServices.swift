@@ -9,4 +9,9 @@ enum LiveServices {
     static let securityNotification: any SecurityNotificationService = SecurityNotificationServiceImpl(
         makeContent: SecurityNotification.moduleContent(for:)
     )
+
+    /// 구독 판매와 권한 확인. 등급을 `SettingsRepository` 캐시에 쓰므로 인스턴스가 상태를 갖지 않지만, 트랜잭션 리스너를 하나만 띄우기 위해 여기서 공유한다.
+    static let purchase: any PurchaseService = PurchaseServiceImpl(
+        settingsRepository: LiveRepositories.settings
+    )
 }

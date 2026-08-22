@@ -40,17 +40,11 @@ enum LiveUseCases {
 
     /// 게이트 판정의 단일 지점. 화면마다 만들면 판정이 갈리므로 여기서 한 번만 만든다.
     ///
-    /// **등급은 아직 `.free`로 고정이다.** StoreKit(`PurchaseService`)이 붙으면 아래 두 클로저만 교체한다 — 판정 로직은 그대로 둔다.
+    /// 등급은 `SettingsRepository` 캐시에서 읽는다. `PurchaseService`가 StoreKit 확인 결과를 그 캐시에 쓰고, 여기서는 동기로 읽기만 한다 — 판정이 비동기를 기다리지 않아도 되는 이유다.
     static let entitlement: any EntitlementUseCase = EntitlementUseCaseImpl(
         secretRepository: LiveRepositories.secret,
         projectRepository: LiveRepositories.project,
-        entitlementProvider: { .free },
-        entitlementStream: {
-            // 값이 바뀔 일이 없으므로 현재값 하나만 방출하고 닫는다. 계약상 "구독 즉시 현재값 1회 방출"은 지켜진다.
-            AsyncStream { continuation in
-                continuation.yield(.free)
-                continuation.finish()
-            }
-        }
+        entitlementProvider: { LiveRepositories.settings.cachedEntitlement() },
+        entitlementStream: { LiveRepositories.settings.cachedEntitlementStream() }
     )
 }
