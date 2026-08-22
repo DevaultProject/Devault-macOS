@@ -80,6 +80,12 @@ public final class InMemorySecretRepository: SecretRepository, @unchecked Sendab
         return secrets.values.count { matches($0, query: query) }
     }
 
+    public func totalCountExcludingTrash() async throws -> Int {
+        countQueryCount += 1
+        if let error = errorOnCountQuery { throw error }
+        return secrets.values.count { $0.deletedAt == nil }
+    }
+
     public func patch(id: UUID, with patch: SecretPatch) async throws -> Secret {
         patchCount += 1
         lastPatch = patch

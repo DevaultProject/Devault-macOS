@@ -114,6 +114,20 @@ public actor SecretRepositoryImpl: SecretRepository {
         }
     }
     
+    /// 휴지통을 제외한 전체 개수를 집계한다. 무료 티어 한도 계산 전용이다.
+    public func totalCountExcludingTrash() async throws -> Int {
+        do {
+            let descriptor = SecretFetchDescriptorBuilder.makeTotalCountExcludingTrashDescriptor()
+            return try modelContext.fetchCount(descriptor)
+        } catch {
+            Log.error(
+                "[SecretRepository] totalCountExcludingTrash 실패 — error: \(error)",
+                category: .data
+            )
+            throw SecretRepositoryError.persistenceFailed
+        }
+    }
+
     /// SecretPatch 적용하여 update
     public func patch(id: UUID, with patch: SecretPatch) async throws -> DVDomain.Secret {
         do {
