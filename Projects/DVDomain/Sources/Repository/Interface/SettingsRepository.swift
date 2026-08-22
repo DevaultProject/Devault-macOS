@@ -141,4 +141,21 @@ public protocol SettingsRepository: Sendable {
   /// 클립보드 반복 복사 알림 사용 여부를 저장한다.
   /// - Parameter enabled: 클립보드 반복 복사 알림 사용 여부
   func setClipboardAbnormalAccessAlertEnabled(_ enabled: Bool)
+
+  // MARK: - Entitlement
+
+  /// 마지막으로 확인된 기능 등급을 반환한다.
+  ///
+  /// **StoreKit 조회 결과를 담아두는 캐시다.** `Transaction.currentEntitlements`는 비동기라 앱 시작 직후에는 답을 모르는데, 게이트 판정은 동기로 답해야 한다. 캐시가 없으면 그 구간에 Pro 사용자가 무료로 취급되어 **수정 화면이 잠긴다** — 정확히 결제한 사용자가 겪는 오작동이다. 스토어 확인이 끝나면 곧바로 정정된다.
+  ///
+  /// 기기별 캐시이므로 iCloud로 동기화하지 않는다. 권한의 진실은 언제나 Apple ID에 묶인 StoreKit이다.
+  /// - Returns: 마지막으로 확인된 등급. 확인한 적이 없으면 `.free`
+  func cachedEntitlement() -> Entitlement
+  /// 확인된 기능 등급을 캐시에 저장한다.
+  /// - Parameter entitlement: 저장할 등급
+  func setCachedEntitlement(_ entitlement: Entitlement)
+
+  /// 구독을 시작하면 현재 캐시값을 즉시 한 번 방출하고, 이후 캐시가 바뀔 때마다 최신값을 방출한다.
+  /// - Returns: 등급 스트림
+  func cachedEntitlementStream() -> AsyncStream<Entitlement>
 }
