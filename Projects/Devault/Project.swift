@@ -126,11 +126,22 @@ let project = Project.project(
             ],
             settings: .settings(base: signingSettings)
         ),
+        // StoreKit은 앱 번들 신원이 있어야 거래하므로 호스트 없는 유닛 번들에서는 상품 조회가 빈 배열로 떨어진다.
+        // 앱을 의존성으로 두면 Tuist가 TEST_HOST를 잡아준다.
+        .tests(
+            name: "DevaultTests",
+            dependencies: [
+                .target(name: DVModule.Devault.name),
+                .data(),
+                .domain(),
+            ]
+        ),
     ],
     schemes: [
         .scheme(
             name: DVModule.Devault.name,
             buildAction: .buildAction(targets: [.target(DVModule.Devault.name)]),
+            testAction: .targets([.testableTarget(target: .target("DevaultTests"))]),
             runAction: .runAction(
                 configuration: .debug,
                 executable: .target(DVModule.Devault.name),
