@@ -114,6 +114,34 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
     }
   }
 
+  // MARK: - Entitlement
+
+  public func cachedEntitlement() -> Entitlement {
+    defaults.string(forKey: .cachedEntitlement)
+      .flatMap(Entitlement.init(rawValue:)) ?? .free
+  }
+
+  public func setCachedEntitlement(_ entitlement: Entitlement) {
+    defaults.set(entitlement.rawValue, forKey: .cachedEntitlement)
+  }
+
+  public func cachedEntitlementStream() -> AsyncStream<Entitlement> {
+    AsyncStream { continuation in
+      let observer = NotificationCenter.default.addObserver(
+        forName: UserDefaults.didChangeNotification,
+        object: defaults,
+        queue: nil
+      ) { _ in
+        continuation.yield(cachedEntitlement())
+      }
+
+      continuation.yield(cachedEntitlement())
+      continuation.onTermination = { _ in
+        NotificationCenter.default.removeObserver(observer)
+      }
+    }
+  }
+
   // MARK: - Security
 
   public func isRequireAuthOnLaunchEnabled() -> Bool {

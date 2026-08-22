@@ -28,6 +28,9 @@ enum UserDefaultsKey: String {
   case expiryAlertDaysBefore
   case isAuthFailureAlertEnabled
   case isClipboardAbnormalAccessAlertEnabled
+
+  // Entitlement
+  case cachedEntitlement
 }
 
 extension UserDefaults {

@@ -112,4 +112,16 @@ public final class FakeSettingsRepository: SettingsRepository, @unchecked Sendab
 
     public func isClipboardAbnormalAccessAlertEnabled() -> Bool { isClipboardAbnormalAccessAlertEnabledValue }
     public func setClipboardAbnormalAccessAlertEnabled(_ enabled: Bool) { isClipboardAbnormalAccessAlertEnabledValue = enabled }
+
+    public var cachedEntitlementValue: Entitlement = .free
+
+    public func cachedEntitlement() -> Entitlement { cachedEntitlementValue }
+    public func setCachedEntitlement(_ entitlement: Entitlement) { cachedEntitlementValue = entitlement }
+
+    public func cachedEntitlementStream() -> AsyncStream<Entitlement> {
+        AsyncStream { continuation in
+            continuation.yield(cachedEntitlementValue)
+            continuation.finish()
+        }
+    }
 }
