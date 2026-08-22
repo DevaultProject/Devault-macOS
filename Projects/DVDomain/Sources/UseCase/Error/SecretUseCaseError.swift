@@ -9,6 +9,8 @@ public enum SecretUseCaseError: Error, Equatable, Sendable {
     case repositoryFailure(SecretRepositoryError)
     case cryptoFailure(SecretCryptoError)
     case authenticationFailure(UserAuthenticationError)
+    /// 보유 수가 무료 티어 한도를 넘겨 수정이 잠긴 상태. 조회·복사·즐겨찾기·삭제는 계속 허용된다.
+    case editLockedByEntitlement
     case unexpected
 }
 
