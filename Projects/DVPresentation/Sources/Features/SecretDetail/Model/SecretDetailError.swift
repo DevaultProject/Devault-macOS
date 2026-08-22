@@ -28,6 +28,9 @@ enum SecretDetailError: Equatable {
             case .encryptionFailed, .encodingFailed:
                 return .unexpected
             }
+        case .editLockedByEntitlement:
+            // 한도 초과 잠금은 alert가 아니라 업그레이드 시트로 안내해야 한다 — 트랙 2의 D2가 대체한다. 현재는 던지는 곳이 없어(D1 미구현) 도달하지 않으므로 임시로 unexpected에 접어둔다.
+            return .unexpected
         case .secretNotFound, .repositoryFailure,
              .invalidName, .invalidSecretType, .unexpected:
             return .unexpected
