@@ -34,6 +34,17 @@ enum SecretFetchDescriptorBuilder {
         return descriptor
     }
 
+    /// 휴지통만 제외하는 개수 집계용 descriptor를 만든다. 컬렉션·검색·만료 조건을 일절 걸지 않는다.
+    ///
+    /// 무료 티어 한도 계산 전용이다. `makeCountDescriptor`는 사이드바 배지용이라 `.all`에 만료 조건이 붙어 있어, 한도 계산에 쓰면 만료된 Secret만큼 적게 세어진다.
+    static func makeTotalCountExcludingTrashDescriptor() -> FetchDescriptor<SwiftDataModel.Secret> {
+        var descriptor = FetchDescriptor<SwiftDataModel.Secret>(
+            predicate: #Predicate<SwiftDataModel.Secret> { $0.deletedAt == nil }
+        )
+        descriptor.includePendingChanges = true
+        return descriptor
+    }
+
     /// `.all`/`.liked`만 만료 조건을 추가하고, 나머지는 목록용 predicate를 그대로 쓴다.
     ///
     /// 만료일이 없는 Secret은 "만료되지 않음"으로 취급해야 하는데, `#Predicate` 안에서는 강제 언래핑을

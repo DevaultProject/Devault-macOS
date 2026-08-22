@@ -25,6 +25,12 @@ public protocol SecretRepository: Sendable {
     /// - Returns: 조건에 부합하는 Secret 개수
     func count(_ query: SecretQuery) async throws -> Int
 
+    /// 휴지통을 제외하고 저장소에 남아 있는 Secret의 총 개수를 조회한다.
+    ///
+    /// **`count(SecretQuery(collection: .all))`과 다르다.** 그쪽은 사이드바 배지용이라 만료된 Secret까지 제외한다. 만료돼도 조회·수정이 되므로 한도 계산에는 포함해야 한다.
+    /// - Returns: `deletedAt == nil`인 Secret의 개수. 만료 여부는 따지지 않는다
+    func totalCountExcludingTrash() async throws -> Int
+
     /// Secret의 지정 필드를 수정한다.
     /// - Parameters:
     ///   - id: 수정할 Secret의 ID

@@ -24,6 +24,10 @@ struct LiveSecretRepository: SecretRepository {
     try await storage.secretRepository().count(query)
   }
 
+  func totalCountExcludingTrash() async throws -> Int {
+    try await storage.secretRepository().totalCountExcludingTrash()
+  }
+
   func patch(id: UUID, with patch: SecretPatch) async throws -> Secret {
     try await storage.secretRepository().patch(id: id, with: patch)
   }
