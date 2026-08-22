@@ -161,3 +161,7 @@ Tuist/Package.resolved
 
 # 개인 서명 자산 (팀 ID / 프로파일 이름)
 .signing.local
+
+# StoreKit Configuration — 상품 ID·구독 그룹 식별자가 들어 있어 추적하지 않는다.
+# 팀에서 별도로 전달받아 Projects/Devault/ 에 두고 `generate-storekit` 으로 스킴에 붙인다.
+*.storekit
