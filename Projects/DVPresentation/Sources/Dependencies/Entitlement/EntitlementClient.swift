@@ -41,6 +41,8 @@ extension EntitlementClient: TestDependencyKey {
         var client = EntitlementClient()
         client.canEnableICloudSync = { true }
         client.canUseMultipleExpiryAlertDays = { true }
+        // 화면이 `.task`에서 구독하므로, 비워 두면 게이트와 무관한 테스트가 미구현 호출로 먼저 깨진다. 즉시 끝나는 스트림이라 등급 변경은 오지 않는다.
+        client.stream = { .finished }
         return client
     }
 

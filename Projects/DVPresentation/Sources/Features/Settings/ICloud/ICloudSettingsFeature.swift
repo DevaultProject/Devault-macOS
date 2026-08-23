@@ -42,6 +42,7 @@ public struct ICloudSettingsFeature {
     case refreshStatusResponse(ICloudAccountStatus)
     case remoteChangeDetected
     case syncSettingResponse(enabled: Bool, succeeded: Bool)
+    case entitlementChanged(Entitlement)
 
     // MARK: - Child
 
@@ -90,6 +91,12 @@ public struct ICloudSettingsFeature {
             for await _ in iCloudSettingsClient.remoteChangeStream() {
               await send(.remoteChangeDetected)
             }
+          },
+          // 페이월이 이 화면 위에서 뜨므로, 결제 직후 화면이 잠긴 표시로 남지 않으려면 등급을 구독해야 한다.
+          .run { send in
+            for await entitlement in entitlementClient.stream() {
+              await send(.entitlementChanged(entitlement))
+            }
           }
         )
 
@@ -129,6 +136,10 @@ public struct ICloudSettingsFeature {
         guard state.isSyncEnabled, !state.isRefreshingStatus else { return .none }
         state.isRefreshingStatus = true
         return requestRefreshStatusEffect()
+
+      case .entitlementChanged:
+        state.isSyncLocked = !entitlementClient.canEnableICloudSync()
+        return .none
 
       case .remoteChangeDetected:
         // 표시만 즉시 갱신한다. 영속화는 상시 동작하는 AppFeature의 원격 변경 핸들러가 단독으로 맡아,

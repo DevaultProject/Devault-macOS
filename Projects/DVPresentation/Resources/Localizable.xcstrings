@@ -4756,6 +4756,22 @@
         }
       }
     },
+    "The free plan allows one alert timing.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The free plan allows one alert timing."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "무료 요금제는 알림 시점을 하나만 선택할 수 있습니다."
+          }
+        }
+      }
+    },
     "The project list couldn't be loaded. Please try again later.": {
       "localizations": {
         "en": {

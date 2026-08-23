@@ -53,6 +53,7 @@ public struct AppFeature {
     case appearanceChanged(AppAppearance)
     case iCloudRemoteChangeDetected
     case iCloudRemoteChangeHandled
+    case entitlementChanged
 
     // MARK: - Child
 
@@ -73,6 +74,7 @@ public struct AppFeature {
   @Dependency(\.appSecurityClient) var appSecurityClient
   @Dependency(\.windowCaptureBlockerClient) var windowCaptureBlockerClient
   @Dependency(\.generalSettingsClient) var generalSettingsClient
+  @Dependency(\.entitlementClient) var entitlementClient
   @Dependency(\.continuousClock) var clock
   @Dependency(\.date.now) var now
 
@@ -88,6 +90,7 @@ public struct AppFeature {
     case appearanceWatch
     case iCloudRemoteChangeWatch
     case iCloudRemoteChangeHandling
+    case entitlementWatch
   }
 
   // MARK: - Body
@@ -121,7 +124,8 @@ public struct AppFeature {
           state.main != nil ? inactivityWatchEffect() : .none,
           windowCaptureSettingsWatchEffect(),
           appearanceWatchEffect(),
-          iCloudRemoteChangeWatchEffect()
+          iCloudRemoteChangeWatchEffect(),
+          entitlementWatchEffect()
         )
 
       case let .windowCaptureBlockingChanged(isEnabled):
@@ -145,6 +149,10 @@ public struct AppFeature {
           await send(.iCloudRemoteChangeHandled)
         }
         .cancellable(id: CancelID.iCloudRemoteChangeHandling, cancelInFlight: true)
+
+      case .entitlementChanged:
+        // 등급이 바뀌면 만료 알림 시점 한도가 달라진다. 예약은 저장된 선택이 아니라 등급을 함께 보고 계산되므로, 다시 예약해야 강등 뒤에도 무료 한도가 지켜진다.
+        return .run { _ in await appLaunchClient.syncExpiryNotifications() }
 
       case .iCloudRemoteChangeHandled:
         guard state.main != nil else { return .none }
@@ -230,6 +238,21 @@ private extension AppFeature {
       }
     }
     .cancellable(id: CancelID.appearanceWatch, cancelInFlight: true)
+  }
+
+  /// 등급 변경을 감시한다. 스트림이 구독 즉시 현재 등급을 한 번 내보내므로 첫 방출은 건너뛴다 — 앱 시작 동기화와 겹친다.
+  func entitlementWatchEffect() -> Effect<Action> {
+    .run { send in
+      var isFirst = true
+      for await _ in entitlementClient.stream() {
+        guard !isFirst else {
+          isFirst = false
+          continue
+        }
+        await send(.entitlementChanged)
+      }
+    }
+    .cancellable(id: CancelID.entitlementWatch, cancelInFlight: true)
   }
 
   func iCloudRemoteChangeWatchEffect() -> Effect<Action> {
