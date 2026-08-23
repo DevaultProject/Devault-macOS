@@ -96,6 +96,7 @@ public struct PurchaseServiceImpl: PurchaseService {
         let willAutoRenew = await willAutoRenew(for: transaction)
         return DVDomain.SubscriptionStatus(
             entitlement: .pro,
+            productID: transaction.productID,
             renewsAt: transaction.expirationDate,
             willAutoRenew: willAutoRenew
         )
