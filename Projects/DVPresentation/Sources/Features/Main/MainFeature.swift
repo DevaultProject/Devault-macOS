@@ -99,6 +99,13 @@ public struct MainFeature {
 
   public init() {}
 
+  // MARK: - Cancellation
+
+  private enum CancelID {
+    /// 생성 게이트 판정. 세 진입점이 **하나의 ID를 공유한다** — 사용자가 마음을 바꿔 다른 생성을 누르면 앞선 판정은 버려야 한다. 나눠 두면 두 응답이 모두 도착해 한쪽 화면이 다른 쪽을 덮는다.
+    case createGate
+  }
+
   // MARK: - Body
 
   public var body: some ReducerOf<Self> {
@@ -258,6 +265,7 @@ public struct MainFeature {
             try await entitlementClient.canCreateSecret()
           }.mapError(SecretUseCaseError.map)))
         }
+        .cancellable(id: CancelID.createGate, cancelInFlight: true)
 
       case .selectSecretType(.delegate(.typeSelected(let secretType))):
         state.createSecret = CreateSecretFeature.State(secretType: secretType)
@@ -376,6 +384,7 @@ extension MainFeature {
           try await entitlementClient.canCreateSecret()
         }.mapError(SecretUseCaseError.map)))
       }
+      .cancellable(id: CancelID.createGate, cancelInFlight: true)
 
     case .addProjectTapped:
       // 생성 화면을 열기 전에 묻는다. 폼을 채우게 한 뒤 저장에서 막으면 입력한 값이 날아간다.
@@ -384,6 +393,7 @@ extension MainFeature {
           try await entitlementClient.canCreateProject()
         }.mapError(ProjectUseCaseError.map)))
       }
+      .cancellable(id: CancelID.createGate, cancelInFlight: true)
 
     case .settingsTapped:
       state.settings = .init()
