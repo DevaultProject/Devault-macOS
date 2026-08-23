@@ -6,12 +6,12 @@ import DVDomain
 // MARK: - DevaultProPaywallFeature
 
 @Reducer
-struct DevaultProPaywallFeature {
+public struct DevaultProPaywallFeature {
 
   // MARK: - State
 
   @ObservableState
-  struct State: Equatable {
+  public struct State: Equatable {
     var products: [SubscriptionProduct] = []
     var selectedProductID: String?
     var isPurchasing = false
@@ -25,11 +25,13 @@ struct DevaultProPaywallFeature {
     var isBusy: Bool { isPurchasing || isRestoring }
     var selectedProduct: SubscriptionProduct? { products.first { $0.id == selectedProductID } }
     var isSelectingCurrentPlan: Bool { selectedProductID != nil && selectedProductID == currentProductID }
+
+    public init() {}
   }
 
   // MARK: - Action
 
-  enum Action: Equatable {
+  public enum Action: Equatable {
 
     // MARK: - View
 
@@ -54,7 +56,7 @@ struct DevaultProPaywallFeature {
 
     case delegate(Delegate)
 
-    enum Delegate: Equatable {
+    public enum Delegate: Equatable {
       /// 구매/복원이 끝났다(성공). 부모가 시트를 닫는다.
       case didFinish
     }
@@ -66,7 +68,7 @@ struct DevaultProPaywallFeature {
 
   // MARK: - Body
 
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
       case .task:
