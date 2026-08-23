@@ -34,6 +34,9 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
             var fullPatch = try SecretUseCaseHelper.normalizedPatch(patch)
             fullPatch = SecretUseCaseHelper.settingUpdatedAtIfNeeded(fullPatch, now: dateProvider())
             return try await applyPatch(id: id, patch: fullPatch, projectIDs: projectIDs)
+        } catch let error as EntitlementError {
+            // 게이트 차단은 도메인 오류로 접지 않는다 — 호출부가 페이월을 띄워야 한다.
+            throw error
         } catch {
             throw SecretUseCaseError.map(error)
         }
@@ -52,6 +55,9 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
             fullPatch.metadata = .set(encodedMetadata)
             fullPatch = SecretUseCaseHelper.settingUpdatedAtIfNeeded(fullPatch, now: dateProvider())
             return try await applyPatch(id: id, patch: fullPatch, projectIDs: projectIDs)
+        } catch let error as EntitlementError {
+            // 게이트 차단은 도메인 오류로 접지 않는다 — 호출부가 페이월을 띄워야 한다.
+            throw error
         } catch {
             throw SecretUseCaseError.map(error)
         }
@@ -69,6 +75,9 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
             fullPatch.payload = .set(encryptedPayload)
             fullPatch = SecretUseCaseHelper.settingUpdatedAtIfNeeded(fullPatch, now: dateProvider())
             return try await applyPatch(id: id, patch: fullPatch, projectIDs: projectIDs)
+        } catch let error as EntitlementError {
+            // 게이트 차단은 도메인 오류로 접지 않는다 — 호출부가 페이월을 띄워야 한다.
+            throw error
         } catch {
             throw SecretUseCaseError.map(error)
         }
@@ -89,6 +98,9 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
             fullPatch.metadata = .set(encodedMetadata)
             fullPatch = SecretUseCaseHelper.settingUpdatedAtIfNeeded(fullPatch, now: dateProvider())
             return try await applyPatch(id: id, patch: fullPatch, projectIDs: projectIDs)
+        } catch let error as EntitlementError {
+            // 게이트 차단은 도메인 오류로 접지 않는다 — 호출부가 페이월을 띄워야 한다.
+            throw error
         } catch {
             throw SecretUseCaseError.map(error)
         }
@@ -110,9 +122,13 @@ extension PatchSecretUseCaseImpl {
     /// 잠금과 무관한 변경은 판정 자체를 건너뛴다. `canEditSecrets()`가 저장소 개수를 세므로, 즐겨찾기를 누를 때마다 카운트 쿼리가 나가면 안 된다.
     private func ensureEditable(patch: SecretPatch, projectIDs: PatchField<[UUID]>) async throws {
         guard !isAllowedWhileLocked(patch, projectIDs: projectIDs) else { return }
-        guard try await entitlementUseCase.canEditSecrets() else {
-            throw SecretUseCaseError.editLockedByEntitlement
+        let allowed: Bool
+        do {
+            allowed = try await entitlementUseCase.canEditSecrets()
+        } catch {
+            throw SecretUseCaseError.map(error)
         }
+        guard allowed else { throw EntitlementError.editLocked }
     }
 
     /// 잠금 상태에서도 허용되는 변경인지 판정한다. 즐겨찾기와 휴지통 이동만 해당한다.

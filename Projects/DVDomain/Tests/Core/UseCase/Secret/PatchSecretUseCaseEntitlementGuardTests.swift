@@ -32,7 +32,7 @@ struct PatchSecretUseCaseEntitlementGuardTests {
     func blocksNameChangeWhenLocked() async throws {
         let (sut, _, _, secret) = makeSUT(canEditSecrets: false)
 
-        await #expect(throws: SecretUseCaseError.editLockedByEntitlement) {
+        await #expect(throws: EntitlementError.editLocked) {
             _ = try await sut.updateSimple(id: secret.id, with: SecretPatch(name: .set("새 이름")))
         }
     }
@@ -41,7 +41,7 @@ struct PatchSecretUseCaseEntitlementGuardTests {
     func blocksExpiresAtChangeWhenLocked() async throws {
         let (sut, _, _, secret) = makeSUT(canEditSecrets: false)
 
-        await #expect(throws: SecretUseCaseError.editLockedByEntitlement) {
+        await #expect(throws: EntitlementError.editLocked) {
             _ = try await sut.updateSimple(id: secret.id, with: SecretPatch(expiresAt: .set(Date())))
         }
     }
@@ -50,7 +50,7 @@ struct PatchSecretUseCaseEntitlementGuardTests {
     func blocksPayloadChangeWhenLocked() async throws {
         let (sut, _, _, secret) = makeSUT(canEditSecrets: false)
 
-        await #expect(throws: SecretUseCaseError.editLockedByEntitlement) {
+        await #expect(throws: EntitlementError.editLocked) {
             _ = try await sut.update(
                 id: secret.id,
                 patch: SecretPatch(),
@@ -64,7 +64,7 @@ struct PatchSecretUseCaseEntitlementGuardTests {
     func blocksProjectChangeWhenLocked() async throws {
         let (sut, _, _, secret) = makeSUT(canEditSecrets: false)
 
-        await #expect(throws: SecretUseCaseError.editLockedByEntitlement) {
+        await #expect(throws: EntitlementError.editLocked) {
             _ = try await sut.update(id: secret.id, patch: SecretPatch(), projectIDs: .set([UUID()]))
         }
     }
@@ -105,7 +105,7 @@ struct PatchSecretUseCaseEntitlementGuardTests {
     func blocksAllowedFieldMixedWithDisallowed() async throws {
         let (sut, _, _, secret) = makeSUT(canEditSecrets: false)
 
-        await #expect(throws: SecretUseCaseError.editLockedByEntitlement) {
+        await #expect(throws: EntitlementError.editLocked) {
             _ = try await sut.updateSimple(
                 id: secret.id,
                 with: SecretPatch(name: .set("새 이름"), liked: .set(true))

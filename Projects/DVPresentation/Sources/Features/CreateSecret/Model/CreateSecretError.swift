@@ -28,9 +28,6 @@ enum CreateSecretError: Equatable {
             return .authRequired
         case .repositoryFailure:
             return .repositoryFailure
-        case .editLockedByEntitlement:
-            // 생성 경로에서는 나오지 않는다 — 수정 잠금 전용이고, 개수 한도는 생성 진입 시점에 업그레이드 시트로 막는다(트랙 2의 C1·C5). 여기 오면 계약이 깨진 것이다.
-            return .unexpected
         case .invalidName, .invalidSecretType, .secretNotFound, .unexpected:
             return .unexpected
         }
