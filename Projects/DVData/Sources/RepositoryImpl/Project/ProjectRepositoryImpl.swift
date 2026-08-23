@@ -7,6 +7,26 @@ import SwiftData
 @ModelActor
 public actor ProjectRepositoryImpl: ProjectRepository {
     public func create(_ project: DVDomain.Project) async throws -> DVDomain.Project {
+        try insert(project)
+    }
+
+    public func create(
+        _ project: DVDomain.Project,
+        withinTotalLimit limit: Int
+    ) async throws -> DVDomain.Project? {
+        // 세기와 넣기 사이에 await가 없어야 actor가 다른 요청을 끼워 넣지 못한다. 둘 다 동기 호출로 유지할 것.
+        let held: Int
+        do {
+            held = try modelContext.fetchCount(FetchDescriptor<SwiftDataModel.Project>())
+        } catch {
+            throw ProjectRepositoryError.persistenceFailed
+        }
+
+        guard held < limit else { return nil }
+        return try insert(project)
+    }
+
+    private func insert(_ project: DVDomain.Project) throws -> DVDomain.Project {
         do {
             if try fetchLocalProject(id: project.id) != nil {
                 throw ProjectRepositoryError.duplicateID(id: project.id)

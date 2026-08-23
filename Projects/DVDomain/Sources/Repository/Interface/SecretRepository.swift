@@ -67,6 +67,16 @@ public protocol SecretRepository: Sendable {
     /// - Returns: 저장된 Secret
     func create(_ secret: Secret, projectIDs: [UUID]) async throws -> Secret
 
+    /// 휴지통을 제외한 보유 수가 `limit` 미만일 때만 Secret을 생성한다.
+    ///
+    /// 세는 것과 넣는 것을 한 번에 처리해, 동시에 들어온 생성 둘이 같은 개수를 보고 나란히 통과하는 틈을 없앤다. 한도가 얼마인지·언제 적용되는지는 호출부가 정하고 저장소는 받은 수만 지킨다.
+    /// - Parameters:
+    ///   - secret: 저장할 Secret 엔티티
+    ///   - projectIDs: 연결할 Project ID 목록. 중복은 무시된다
+    ///   - limit: 허용하는 보유 수
+    /// - Returns: 저장된 Secret. 한도에 걸려 만들지 않았으면 nil
+    func create(_ secret: Secret, projectIDs: [UUID], withinTotalLimit limit: Int) async throws -> Secret?
+
     /// Secret 필드 수정과 Project 연결 재조정을 단일 트랜잭션으로 처리한다.
     /// 현재 연결 상태와 projectIDs를 비교해 link/unlink를 결정한다.
     /// 실패 시 ModelContext가 자동 롤백하므로 partial state가 발생하지 않는다.

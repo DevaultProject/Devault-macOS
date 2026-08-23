@@ -52,6 +52,10 @@ struct LiveSecretRepository: SecretRepository {
     try await storage.secretRepository().create(secret, projectIDs: projectIDs)
   }
 
+  func create(_ secret: Secret, projectIDs: [UUID], withinTotalLimit limit: Int) async throws -> Secret? {
+    try await storage.secretRepository().create(secret, projectIDs: projectIDs, withinTotalLimit: limit)
+  }
+
   func patch(id: UUID, with patch: SecretPatch, projectIDs: [UUID]) async throws -> Secret {
     try await storage.secretRepository().patch(id: id, with: patch, projectIDs: projectIDs)
   }
@@ -71,6 +75,10 @@ struct LiveProjectRepository: ProjectRepository {
 
   func create(_ project: Project) async throws -> Project {
     try await storage.projectRepository().create(project)
+  }
+
+  func create(_ project: Project, withinTotalLimit limit: Int) async throws -> Project? {
+    try await storage.projectRepository().create(project, withinTotalLimit: limit)
   }
 
   func fetch(id: UUID) async throws -> Project? {

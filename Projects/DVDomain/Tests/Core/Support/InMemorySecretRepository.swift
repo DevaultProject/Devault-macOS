@@ -136,6 +136,16 @@ public final class InMemorySecretRepository: SecretRepository, @unchecked Sendab
 
     // MARK: - 원자적 생성·수정 (Project 연결 포함)
 
+    public func create(
+        _ secret: Secret,
+        projectIDs: [UUID],
+        withinTotalLimit limit: Int
+    ) async throws -> Secret? {
+        let held = secrets.values.count { $0.deletedAt == nil }
+        guard held < limit else { return nil }
+        return try await create(secret, projectIDs: projectIDs)
+    }
+
     public func create(_ secret: Secret, projectIDs: [UUID]) async throws -> Secret {
         createWithProjectsCount += 1
         lastProjectIDs = projectIDs
