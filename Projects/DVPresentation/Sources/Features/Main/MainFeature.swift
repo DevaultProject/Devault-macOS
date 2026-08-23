@@ -17,6 +17,8 @@ public struct MainFeature {
     /// sheet가 아닌 2-column NavigationSplitView 전환 용도이므로 @Presents 미사용
     var selectSecretType: SelectSecretTypeFeature.State?
     @Presents var createProject: CreateProjectFeature.State?
+    /// 게이트에 막혀 띄우는 업그레이드 시트. 지금은 데모 페이월이 붙어 있고, B2가 진짜 페이월로 대체한다.
+    var isPaywallPresented = false
     /// sheet가 아닌 2-column NavigationSplitView 전환 용도이므로 @Presents 미사용
     var createSecret: CreateSecretFeature.State?
     /// sheet가 아닌 3-column NavigationSplitView detail 컬럼 용도이므로 @Presents 미사용
@@ -70,6 +72,7 @@ public struct MainFeature {
     case secretList(SecretListFeature.Action)
     case selectSecretType(SelectSecretTypeFeature.Action)
     case createProject(PresentationAction<CreateProjectFeature.Action>)
+    case setPaywallPresented(Bool)
     case createSecret(CreateSecretFeature.Action)
     case secretDetail(SecretDetailFeature.Action)
     case settings(SettingsFeature.Action)
@@ -107,6 +110,10 @@ public struct MainFeature {
         return .none
 
       case .task:
+        return .none
+
+      case .setPaywallPresented(let isPresented):
+        state.isPaywallPresented = isPresented
         return .none
 
       case .iCloudRemoteChangeDetected:

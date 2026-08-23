@@ -15,6 +15,16 @@ struct MainView: View {
 
   // MARK: - Body
 
+  /// 게이트에 막혔을 때 띄우는 시트. 지금은 데모 페이월이고, B2가 진짜 페이월로 대체한다.
+  @ViewBuilder
+  private var paywallSheet: some View {
+    #if DEBUG
+    DebugPaywallView()
+    #else
+    EmptyView()
+    #endif
+  }
+
   var body: some View {
     content
       // `screen`으로 좁히지 않으면 목록·상세가 바뀔 때마다 화면 전체가 다시 페이드된다.
@@ -25,6 +35,9 @@ struct MainView: View {
         item: $store.scope(state: \.createProject, action: \.createProject)
       ) { createProjectStore in
         CreateProjectView(store: createProjectStore)
+      }
+      .sheet(isPresented: $store.isPaywallPresented.sending(\.setPaywallPresented)) {
+        paywallSheet
       }
       .overlay(alignment: .topTrailing) {
         lockButton
