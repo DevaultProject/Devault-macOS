@@ -15,6 +15,8 @@ public struct ICloudSettingsFeature {
   @ObservableState
   public struct State: Equatable {
     var isSyncEnabled = false
+    /// 무료 등급이라 동기화를 켤 수 없는 상태. 뷰가 잠금 표시에 쓴다.
+    var isSyncLocked = false
     var isTogglingSync = false
     var isRefreshingStatus = false
     var accountStatus: ICloudAccountStatus?
@@ -60,12 +62,15 @@ public struct ICloudSettingsFeature {
 
     public enum Delegate: Equatable {
       case storageDidSwitch
+      /// 무료 등급이라 동기화를 켤 수 없다. 페이월은 상위가 소유하므로 올려보낸다.
+      case paywallRequired
     }
   }
 
   // MARK: - Dependencies
 
   @Dependency(\.iCloudSettingsClient) var iCloudSettingsClient
+  @Dependency(\.entitlementClient) var entitlementClient
   @Dependency(\.date.now) var now
 
   // MARK: - Body
@@ -76,6 +81,7 @@ public struct ICloudSettingsFeature {
       switch action {
       case .task:
         state.isSyncEnabled = iCloudSettingsClient.isEnabled()
+        state.isSyncLocked = !entitlementClient.canEnableICloudSync()
         state.lastUpdateDetectedAt = iCloudSettingsClient.lastUpdateDetectedAt()
         state.isRefreshingStatus = state.isSyncEnabled
         return .merge(
@@ -92,6 +98,11 @@ public struct ICloudSettingsFeature {
           state.isSyncEnabled = true
           state.alert = disableSyncConfirmationAlert
           return .none
+        }
+        // 끄는 것은 등급과 무관하게 허용한다. 켜는 것만 막는다.
+        guard entitlementClient.canEnableICloudSync() else {
+          state.isSyncEnabled = false
+          return .send(.delegate(.paywallRequired))
         }
         state.isTogglingSync = true
         return requestICloudAccountStatusEffect()
