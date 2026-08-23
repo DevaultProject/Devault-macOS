@@ -40,6 +40,9 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
             // 조회에 잡히지 않는(원격 삭제·전체 삭제 등으로 사라진) Secret의 고아 예약을 걷어낸다.
             // 개별 취소는 ID를 알아야 하지만, pending 목록과 현재 Secret 집합의 차집합으로 특정한다.
             await cancelOrphans(existing: secrets)
+            // 등급이 바뀌면 여기로 다시 들어온다. 예약 건수는 화면에 드러나지 않으므로 강등 뒤 실제로 줄었는지 확인할 곳이 이 줄뿐이다.
+            let scheduled = await pendingExpiryIdentifiers().count
+            Log.info("[Expiry] 재예약 완료 — secrets: \(secrets.count), 예약: \(scheduled)건", category: .notification)
         } catch {
             throw SecretUseCaseError.map(error)
         }
@@ -141,7 +144,12 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
         }
         // rawValue가 만료 전 일수라 큰 쪽이 이르다.
         let earliestFirst = upcoming.sorted { $0.rawValue > $1.rawValue }
-        return Array(earliestFirst.prefix(EntitlementLimits.maxExpiryAlertDays))
+        let trimmed = Array(earliestFirst.prefix(EntitlementLimits.maxExpiryAlertDays))
+        // 실제로 줄어든 경우에만 남긴다. Secret마다 호출되므로 무조건 찍으면 보유 수만큼 같은 줄이 쌓인다.
+        if trimmed.count < selected.count {
+            Log.debug("[Expiry] 무료 트리밍 — 선택: \(selected.count)개 → 예약: \(trimmed.map(\.rawValue))일 전", category: .notification)
+        }
+        return trimmed
     }
 
     private static func notificationDate(expiresAt: Date, timing: ExpiryAlertDay) -> Date? {
