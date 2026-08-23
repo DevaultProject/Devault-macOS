@@ -11,6 +11,10 @@ public enum EntitlementLimits {
     /// 무료 티어가 생성할 수 있는 Project의 최대 개수.
     public static let maxProjects = 1
 
-    /// 무료 티어가 쓸 수 있는 유일한 만료 알림 시점. 저장된 설정값은 그대로 두고 스케줄만 이 시점으로 축소한다 — 지우면 재구독 시 복원할 수 없다.
-    public static let freeExpiryAlertDay: ExpiryAlertDay = .sevenDaysBefore
+    /// 무료 티어가 한 Secret에 예약할 수 있는 만료 알림 개수.
+    ///
+    /// **특정 시점을 고정하지 않고 개수만 줄인다.** 게이팅의 본질은 "다중 시점이 Pro"이지 "7일 전만 무료"가 아니다. 시점을 고정하면 사용자가 그 시점을 꺼둔 채 무료로 내려왔을 때 알림이 0건이 된다.
+    ///
+    /// 저장된 설정값은 건드리지 않고 읽은 값을 줄이기만 한다 — 지우면 재구독 시 복원할 수 없다.
+    public static let maxExpiryAlertDays = 1
 }

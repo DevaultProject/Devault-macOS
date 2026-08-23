@@ -12,17 +12,20 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
     private let repository: any SecretRepository
     private let notificationService: any SecurityNotificationService
     private let settingsRepository: any SettingsRepository
+    private let entitlementUseCase: any EntitlementUseCase
     private let dateProvider: @Sendable () -> Date
 
     public init(
         repository: any SecretRepository,
         notificationService: any SecurityNotificationService,
         settingsRepository: any SettingsRepository,
+        entitlementUseCase: any EntitlementUseCase,
         dateProvider: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.repository = repository
         self.notificationService = notificationService
         self.settingsRepository = settingsRepository
+        self.entitlementUseCase = entitlementUseCase
         self.dateProvider = dateProvider
     }
 
@@ -53,7 +56,7 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
 
         let now = dateProvider()
         guard expiresAt > now else { return }
-        for timing in settingsRepository.expiryAlertDaysBefore() {
+        for timing in scheduledTimings() {
             guard let dayMark = Self.notificationDate(
                 expiresAt: expiresAt,
                 timing: timing
@@ -116,6 +119,21 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
 
     private static func notificationID(secretID: UUID, timing: ExpiryAlertDay) -> String {
         "\(expiryIDPrefix)\(secretID.uuidString)-\(timing.rawValue)d"
+    }
+
+    /// 이번 Secret에 실제로 예약할 알림 시점. 무료 등급이면 개수를 ``EntitlementLimits/maxExpiryAlertDays``로 줄인다.
+    ///
+    /// **저장된 설정은 건드리지 않고 읽은 값을 줄이기만 한다** — 지우면 재구독 시 복원할 수 없다(설계 §2).
+    ///
+    /// 남길 하나는 **가장 이른 시점**이다. 시크릿 교체에는 시간이 필요해서 만료에 가까운 알림은 대응할 여유를 주지 못한다. 특정 시점을 고정하지 않는 이유는 ``EntitlementLimits/maxExpiryAlertDays``에 적었다.
+    /// - Returns: 예약할 시점 목록. 사용자가 아무 시점도 고르지 않았으면 빈 배열
+    private func scheduledTimings() -> [ExpiryAlertDay] {
+        let selected = settingsRepository.expiryAlertDaysBefore()
+        guard !entitlementUseCase.canUseMultipleExpiryAlertDays() else { return selected }
+
+        // rawValue가 만료 전 일수라 큰 쪽이 이르다.
+        let earliestFirst = selected.sorted { $0.rawValue > $1.rawValue }
+        return Array(earliestFirst.prefix(EntitlementLimits.maxExpiryAlertDays))
     }
 
     private static func notificationDate(expiresAt: Date, timing: ExpiryAlertDay) -> Date? {

@@ -19,6 +19,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: InMemorySecretRepository(),
             notificationService: notificationService,
             settingsRepository: FakeSettingsRepository(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { self.now }
         )
         let secret = SecretFixture.make(expiresAt: now.addingTimeInterval(40 * day))
@@ -41,6 +42,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: InMemorySecretRepository(),
             notificationService: notificationService,
             settingsRepository: FakeSettingsRepository(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { self.now }
         )
         let secret = SecretFixture.make(expiresAt: now.addingTimeInterval(5 * day))
@@ -68,6 +70,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: InMemorySecretRepository(),
             notificationService: notificationService,
             settingsRepository: FakeSettingsRepository(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { now }
         )
         let secret = SecretFixture.make(expiresAt: expiresAt)
@@ -93,6 +96,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: InMemorySecretRepository(),
             notificationService: notificationService,
             settingsRepository: FakeSettingsRepository(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { self.now }
         )
         let secret = SecretFixture.make(expiresAt: now)
@@ -109,6 +113,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: InMemorySecretRepository(),
             notificationService: notificationService,
             settingsRepository: FakeSettingsRepository(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { self.now }
         )
         let secretID = UUID(uuidString: "00000000-0000-0000-0000-0000000000DD")!
@@ -137,6 +142,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: InMemorySecretRepository(),
             notificationService: notificationService,
             settingsRepository: FakeSettingsRepository(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { self.now }
         )
         let secretID = UUID(uuidString: "00000000-0000-0000-0000-0000000000CC")!
@@ -162,6 +168,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: InMemorySecretRepository(),
             notificationService: notificationService,
             settingsRepository: FakeSettingsRepository(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { self.now }
         )
         let secretID = UUID(uuidString: "00000000-0000-0000-0000-0000000000DD")!
@@ -196,6 +203,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: InMemorySecretRepository(),
             notificationService: notificationService,
             settingsRepository: settingsRepository,
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { self.now }
         )
         let secret = SecretFixture.make(expiresAt: now.addingTimeInterval(40 * day))
@@ -215,6 +223,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: InMemorySecretRepository(),
             notificationService: notificationService,
             settingsRepository: settingsRepository,
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { self.now }
         )
         let secret = SecretFixture.make(expiresAt: now.addingTimeInterval(40 * day))
@@ -234,6 +243,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: InMemorySecretRepository(),
             notificationService: notificationService,
             settingsRepository: FakeSettingsRepository(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { self.now }
         )
         let secretID = UUID(uuidString: "00000000-0000-0000-0000-0000000000AA")!
@@ -269,6 +279,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: repository,
             notificationService: notificationService,
             settingsRepository: FakeSettingsRepository(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { self.now }
         )
 
@@ -291,6 +302,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: repository,
             notificationService: notificationService,
             settingsRepository: FakeSettingsRepository(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { self.now }
         )
 
@@ -312,6 +324,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: repository,
             notificationService: FakeSecurityNotificationService(),
             settingsRepository: FakeSettingsRepository(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { self.now }
         )
 
@@ -328,6 +341,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: InMemorySecretRepository(),
             notificationService: notificationService,
             settingsRepository: FakeSettingsRepository(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { self.now }
         )
         let secret = SecretFixture.make(expiresAt: now.addingTimeInterval(40 * day))
@@ -357,6 +371,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: repository,
             notificationService: notificationService,
             settingsRepository: FakeSettingsRepository(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { self.now }
         )
 
@@ -386,6 +401,7 @@ struct ScheduleSecretExpiryNotificationsUseCaseImplTests {
             repository: InMemorySecretRepository(),
             notificationService: notificationService,
             settingsRepository: FakeSettingsRepository(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { self.now }
         )
 

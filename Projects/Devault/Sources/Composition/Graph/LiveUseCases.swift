@@ -35,7 +35,8 @@ enum LiveUseCases {
     static let expirySchedule: any ScheduleSecretExpiryNotificationsUseCase = ScheduleSecretExpiryNotificationsUseCaseImpl(
         repository: LiveRepositories.secret,
         notificationService: LiveServices.securityNotification,
-        settingsRepository: LiveRepositories.settings
+        settingsRepository: LiveRepositories.settings,
+        entitlementUseCase: entitlement
     )
 
     /// 게이트 판정의 단일 지점. 화면마다 만들면 판정이 갈리므로 여기서 한 번만 만든다.
