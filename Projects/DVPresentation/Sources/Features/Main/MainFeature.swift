@@ -72,6 +72,10 @@ public struct MainFeature {
     case secretList(SecretListFeature.Action)
     case selectSecretType(SelectSecretTypeFeature.Action)
     case createProject(PresentationAction<CreateProjectFeature.Action>)
+    /// Project 생성 게이트 판정 결과. 화면은 **시도 전에** 물어보고, 막혔으면 페이월을 띄운다.
+    case canCreateProjectResponse(Result<Bool, ProjectUseCaseError>)
+    /// Secret 생성 게이트 판정 결과. 타입 선택 화면을 열기 **전에** 묻는다.
+    case canCreateSecretResponse(Result<Bool, SecretUseCaseError>)
     case setPaywallPresented(Bool)
     case createSecret(CreateSecretFeature.Action)
     case secretDetail(SecretDetailFeature.Action)
@@ -89,6 +93,7 @@ public struct MainFeature {
   // MARK: - Dependencies
 
   @Dependency(\.date.now) var now
+  @Dependency(\.entitlementClient) var entitlementClient
 
   // MARK: - Init
 
@@ -110,6 +115,30 @@ public struct MainFeature {
         return .none
 
       case .task:
+        return .none
+
+      case .canCreateSecretResponse(.success(true)):
+        enterCreating(&state)
+        return .send(.sidebar(.setCreatingSecret(true)))
+
+      case .canCreateSecretResponse(.success(false)):
+        state.isPaywallPresented = true
+        return .none
+
+      case .canCreateSecretResponse(.failure):
+        // 판정 실패는 저장소가 깨진 것이다. 페이월을 띄우면 결제해도 해결되지 않는다.
+        return .none
+
+      case .canCreateProjectResponse(.success(true)):
+        state.createProject = .init()
+        return .none
+
+      case .canCreateProjectResponse(.success(false)):
+        state.isPaywallPresented = true
+        return .none
+
+      case .canCreateProjectResponse(.failure):
+        // 판정 실패는 저장소가 깨진 것이다. 페이월을 띄우면 결제해도 해결되지 않는다.
         return .none
 
       case .setPaywallPresented(let isPresented):
@@ -321,12 +350,20 @@ extension MainFeature {
       guard state.createSecret == nil else {
         return .send(.createSecret(.didTapCancel))
       }
-      enterCreating(&state)
-      return .send(.sidebar(.setCreatingSecret(true)))
+      // 타입 선택 화면을 열기 전에 묻는다. 폼을 끝까지 채우게 한 뒤 저장에서 막으면 입력한 시크릿 값이 날아간다.
+      return .run { send in
+        await send(.canCreateSecretResponse(Result {
+          try await entitlementClient.canCreateSecret()
+        }.mapError(SecretUseCaseError.map)))
+      }
 
     case .addProjectTapped:
-      state.createProject = .init()
-      return .none
+      // 생성 화면을 열기 전에 묻는다. 폼을 채우게 한 뒤 저장에서 막으면 입력한 값이 날아간다.
+      return .run { send in
+        await send(.canCreateProjectResponse(Result {
+          try await entitlementClient.canCreateProject()
+        }.mapError(ProjectUseCaseError.map)))
+      }
 
     case .settingsTapped:
       state.settings = .init()
