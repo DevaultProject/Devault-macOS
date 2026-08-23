@@ -14,6 +14,7 @@ struct CreateProjectUseCaseImplTests {
         let fixedDate = Date(timeIntervalSince1970: 1_800_000_000)
         let sut = CreateProjectUseCaseImpl(
             repository: repo,
+            entitlementUseCase: StubEntitlementUseCase(),
             idGenerator: { fixedID },
             dateProvider: { fixedDate }
         )
@@ -29,7 +30,7 @@ struct CreateProjectUseCaseImplTests {
 
     @Test("빈 이름은 invalidName 에러를 던진다")
     func executeRejectsEmptyName() async {
-        let sut = CreateProjectUseCaseImpl(repository: InMemoryProjectRepository())
+        let sut = CreateProjectUseCaseImpl(repository: InMemoryProjectRepository(), entitlementUseCase: StubEntitlementUseCase())
 
         await #expect(throws: ProjectUseCaseError.invalidName) {
             _ = try await sut.execute(name: "")
@@ -38,7 +39,7 @@ struct CreateProjectUseCaseImplTests {
 
     @Test("공백만 있는 이름은 invalidName 에러를 던진다")
     func executeRejectsWhitespaceName() async {
-        let sut = CreateProjectUseCaseImpl(repository: InMemoryProjectRepository())
+        let sut = CreateProjectUseCaseImpl(repository: InMemoryProjectRepository(), entitlementUseCase: StubEntitlementUseCase())
 
         await #expect(throws: ProjectUseCaseError.invalidName) {
             _ = try await sut.execute(name: "   ")
@@ -52,6 +53,7 @@ struct CreateProjectUseCaseImplTests {
         repo.seed(ProjectFixture.make(id: existingID))
         let sut = CreateProjectUseCaseImpl(
             repository: repo,
+            entitlementUseCase: StubEntitlementUseCase(),
             idGenerator: { existingID }
         )
 

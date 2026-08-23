@@ -18,6 +18,7 @@ struct CreateSecretUseCaseImplTests {
         let sut = CreateSecretUseCaseImpl(
             repository: repo,
             cryptoService: crypto,
+            entitlementUseCase: StubEntitlementUseCase(),
             idGenerator: { fixedID },
             dateProvider: { fixedDate }
         )
@@ -40,7 +41,8 @@ struct CreateSecretUseCaseImplTests {
     func executeRejectsEmptyName() async {
         let sut = CreateSecretUseCaseImpl(
             repository: InMemorySecretRepository(),
-            cryptoService: FakeSecretCryptoService()
+            cryptoService: FakeSecretCryptoService(),
+            entitlementUseCase: StubEntitlementUseCase()
         )
         await #expect(throws: SecretUseCaseError.invalidName) {
             _ = try await sut.execute(
@@ -55,7 +57,8 @@ struct CreateSecretUseCaseImplTests {
     func executeRejectsWhitespaceName() async {
         let sut = CreateSecretUseCaseImpl(
             repository: InMemorySecretRepository(),
-            cryptoService: FakeSecretCryptoService()
+            cryptoService: FakeSecretCryptoService(),
+            entitlementUseCase: StubEntitlementUseCase()
         )
         await #expect(throws: SecretUseCaseError.invalidName) {
             _ = try await sut.execute(
@@ -71,7 +74,7 @@ struct CreateSecretUseCaseImplTests {
         let repo = InMemorySecretRepository()
         let crypto = FakeSecretCryptoService()
         crypto.errorOnEncryptPayload = .encryptionFailed
-        let sut = CreateSecretUseCaseImpl(repository: repo, cryptoService: crypto)
+        let sut = CreateSecretUseCaseImpl(repository: repo, cryptoService: crypto, entitlementUseCase: StubEntitlementUseCase())
 
         await #expect(throws: SecretUseCaseError.cryptoFailure(.encryptionFailed)) {
             _ = try await sut.execute(
@@ -91,6 +94,7 @@ struct CreateSecretUseCaseImplTests {
         let sut = CreateSecretUseCaseImpl(
             repository: repo,
             cryptoService: FakeSecretCryptoService(),
+            entitlementUseCase: StubEntitlementUseCase(),
             idGenerator: { existingID },
             dateProvider: { Date() }
         )
@@ -111,7 +115,8 @@ struct CreateSecretUseCaseImplTests {
         let projectID2 = UUID()
         let sut = CreateSecretUseCaseImpl(
             repository: repo,
-            cryptoService: FakeSecretCryptoService()
+            cryptoService: FakeSecretCryptoService(),
+            entitlementUseCase: StubEntitlementUseCase()
         )
 
         _ = try await sut.execute(
@@ -130,7 +135,7 @@ struct CreateSecretUseCaseImplTests {
     func executeWithMetadataHappyPath() async throws {
         let repo = InMemorySecretRepository()
         let crypto = FakeSecretCryptoService()
-        let sut = CreateSecretUseCaseImpl(repository: repo, cryptoService: crypto)
+        let sut = CreateSecretUseCaseImpl(repository: repo, cryptoService: crypto, entitlementUseCase: StubEntitlementUseCase())
 
         let secret = try await sut.execute(
             draft: SecretFixture.draft(),
@@ -149,7 +154,7 @@ struct CreateSecretUseCaseImplTests {
         let repo = InMemorySecretRepository()
         let crypto = FakeSecretCryptoService()
         crypto.errorOnEncodeMetadata = .encodingFailed
-        let sut = CreateSecretUseCaseImpl(repository: repo, cryptoService: crypto)
+        let sut = CreateSecretUseCaseImpl(repository: repo, cryptoService: crypto, entitlementUseCase: StubEntitlementUseCase())
 
         await #expect(throws: SecretUseCaseError.cryptoFailure(.encodingFailed)) {
             _ = try await sut.execute(

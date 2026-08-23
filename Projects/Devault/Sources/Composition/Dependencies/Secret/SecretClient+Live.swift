@@ -38,7 +38,8 @@ extension SecretClient: @retroactive DependencyKey {
             repository: projectRepo
         )
         let createProjectUseCase: any CreateProjectUseCase = CreateProjectUseCaseImpl(
-            repository: projectRepo
+            repository: projectRepo,
+            entitlementUseCase: LiveUseCases.entitlement
         )
 
         return SecretClient(
