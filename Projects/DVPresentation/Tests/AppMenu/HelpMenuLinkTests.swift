@@ -7,14 +7,19 @@ import Testing
 @Suite("HelpMenuLink")
 struct HelpMenuLinkTests {
 
-  @Test("all은 Help·Privacy Policy·Send Feedback 순서로 구성된다")
+  @Test("all은 Help·Terms of Service·Privacy Policy·Send Feedback 순서로 구성된다")
   func allContainsLinksInMenuOrder() {
-    #expect(HelpMenuLink.all == [.help, .privacyPolicy, .sendFeedback])
+    #expect(HelpMenuLink.all == [.help, .termsOfService, .privacyPolicy, .sendFeedback])
   }
 
   @Test("Help는 지원 사이트로 연결된다")
   func helpURL() {
     #expect(HelpMenuLink.help.url.absoluteString == "https://devault-support.notion.site/")
+  }
+
+  @Test("Terms of Service는 이용약관 페이지로 연결된다")
+  func termsOfServiceURL() {
+    #expect(HelpMenuLink.termsOfService.url.absoluteString == "https://devault-support.notion.site/terms-of-service")
   }
 
   @Test("Privacy Policy는 정책 사이트로 연결된다")
