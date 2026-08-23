@@ -35,6 +35,7 @@ public struct PurchaseServiceImpl: PurchaseService {
     }
 
     public func purchase(productID: String) async throws -> PurchaseResult {
+        // StoreKit이 프로세스 안에서 상품을 캐시하므로 이 조회는 보통 네트워크를 타지 않는다. 서비스가 상태를 갖지 않는 편(struct)이 락 없이 공유되는 이점이 커서 자체 캐시는 두지 않는다.
         let products: [Product]
         do {
             products = try await Product.products(for: [productID])
@@ -58,16 +59,13 @@ public struct PurchaseServiceImpl: PurchaseService {
 
         switch result {
         case .success(let verification):
-            // 검증에 실패한 트랜잭션은 **완료 처리하지 않는다.** finish는 권한을 부여했다는 신고이며,
-            // 여기서 끝내면 변조된 트랜잭션이 사라져 재검토할 기회도 없어진다.
+            // 검증에 실패한 트랜잭션은 **완료 처리하지 않는다.** finish는 권한을 부여했다는 신고이며, 여기서 끝내면 변조된 트랜잭션이 사라져 재검토할 기회도 없어진다.
             guard case .verified(let transaction) = verification else {
                 Log.error("[Purchase] 트랜잭션 검증 실패 — productID: \(productID)", category: .data)
                 throw PurchaseError.verificationFailed
             }
             await transaction.finish()
-            // 방금 검증한 트랜잭션이 손에 있으므로 `currentEntitlements`를 다시 묻지 않는다. 구매 직후에는
-            // 스토어가 아직 반영 전이라 같은 트랜잭션을 미검증으로 돌려주는 순간이 있고, 그때 다시 물으면
-            // 결제에 성공한 사용자가 잠시 무료로 떨어진다.
+            // 방금 검증한 트랜잭션이 손에 있으므로 `currentEntitlements`를 다시 묻지 않는다. 구매 직후에는 스토어가 아직 반영 전이라 같은 트랜잭션을 미검증으로 돌려주는 순간이 있고, 그때 다시 물으면 결제에 성공한 사용자가 잠시 무료로 떨어진다.
             settingsRepository.setCachedEntitlement(.pro)
             return .success
 
@@ -115,8 +113,7 @@ public struct PurchaseServiceImpl: PurchaseService {
 
     public func observeTransactionUpdates() -> Task<Void, Never> {
         Task.detached { [self] in
-            // 앱이 꺼져 있는 동안 도착한 트랜잭션은 updates로 오지 않는다. 시작 시 한 번 걷어야
-            // 승인 대기(pending)에서 승인된 구매나 다른 기기의 구매가 반영된다.
+            // 앱이 꺼져 있는 동안 도착한 트랜잭션은 updates로 오지 않는다. 시작 시 한 번 걷어야 승인 대기(pending)에서 승인된 구매나 다른 기기의 구매가 반영된다.
             await finishUnfinishedTransactions()
             await refreshEntitlement()
 

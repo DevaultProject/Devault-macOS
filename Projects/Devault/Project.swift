@@ -21,8 +21,7 @@ let buildNumber = Environment.buildNumber.getString(default: "1")
 
 /// 로컬 StoreKit 테스트 스토어를 실행 스킴에 붙인다. `generate-storekit`이 `TUIST_STORE_KIT_TESTING=1`로 설정한다.
 ///
-/// **기본값이 꺼짐인 이유는 `Devault.storekit`이 git으로 추적되지 않기 때문이다.** 공유 스킴은 커밋되므로,
-/// 항상 붙이면 파일을 받지 않은 팀원의 스킴이 없는 경로를 가리킨다. 파일을 별도로 전달받은 사람만 켠다.
+/// **기본값이 꺼짐인 이유는 `Devault.storekit`이 git으로 추적되지 않기 때문이다.** 공유 스킴은 커밋되므로, 항상 붙이면 파일을 받지 않은 팀원의 스킴이 없는 경로를 가리킨다. 파일을 별도로 전달받은 사람만 켠다.
 let isStoreKitTesting = Environment.storeKitTesting.getBoolean(default: false)
 
 let teamSigningSettings: SettingsDictionary = [
@@ -80,8 +79,7 @@ let signingSettings: SettingsDictionary = {
 
 /// 실행 스킴에 얹을 옵션. StoreKit 테스트가 꺼져 있으면 아무것도 얹지 않는다.
 ///
-/// 붙어 있으면 실제 샌드박스 대신 `Devault.storekit`의 상품으로 구매가 이뤄져, App Store Connect 상품 등록이나
-/// 유료 계약 승인 없이도 구매·갱신·만료·환불·복원을 검증할 수 있다. 실제 Sandbox 계정으로 검증할 때는 꺼야 한다.
+/// 붙어 있으면 실제 샌드박스 대신 `Devault.storekit`의 상품으로 구매가 이뤄져, App Store Connect 상품 등록이나 유료 계약 승인 없이도 구매·갱신·만료·환불·복원을 검증할 수 있다. 실제 Sandbox 계정으로 검증할 때는 꺼야 한다.
 let storeKitOptions: RunActionOptions = isStoreKitTesting
     ? .options(storeKitConfigurationPath: .relativeToManifest("Devault.storekit"))
     : .options()
@@ -126,8 +124,7 @@ let project = Project.project(
             ],
             settings: .settings(base: signingSettings)
         ),
-        // StoreKit은 앱 번들 신원이 있어야 거래하므로 호스트 없는 유닛 번들에서는 상품 조회가 빈 배열로 떨어진다.
-        // 앱을 의존성으로 두면 Tuist가 TEST_HOST를 잡아준다.
+        // StoreKit은 앱 번들 신원이 있어야 거래하므로 호스트 없는 유닛 번들에서는 상품 조회가 빈 배열로 떨어진다. 앱을 의존성으로 두면 Tuist가 TEST_HOST를 잡아준다.
         .tests(
             name: "DevaultTests",
             dependencies: [
