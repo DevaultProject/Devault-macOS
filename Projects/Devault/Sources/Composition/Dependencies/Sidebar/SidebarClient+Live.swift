@@ -30,6 +30,9 @@ extension SidebarClient: @retroactive DependencyKey {
       createProject: { name in
         do {
           return try await ProjectItem(createUseCase.execute(name: name))
+        } catch let error as EntitlementError {
+          // 게이트 차단은 SidebarError로 접지 않는다 — 접으면 호출부가 페이월을 띄울 근거를 잃는다.
+          throw error
         } catch let error as ProjectUseCaseError {
           if case .repositoryFailure(.duplicateName) = error { throw SidebarError.nameTaken }
           throw SidebarError.createFailed
