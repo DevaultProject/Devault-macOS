@@ -119,7 +119,10 @@ extension SettingsView {
         Text(SettingsCategory.devaultPro.title)
           .dvFont(.bodyLG)
         if store.isDevaultProSubscribed {
+          // DVChip은 내부적으로 Button이라 그대로 두면 포커스·클릭을 받는다 — 표시 전용
+          // 배지라 allowsHitTesting(false)로 인터랙션을 막는다(DVChipsContainer와 동일 패턴).
           DVChip(String.module("PRO"))
+            .allowsHitTesting(false)
         }
       }
     } icon: {
