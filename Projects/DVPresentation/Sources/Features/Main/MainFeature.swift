@@ -222,6 +222,10 @@ public struct MainFeature {
 
       // 자식끼리 직접 연결하지 않고 공통 부모가 사이드바 재조회를 지시한다 (TCA_GUIDELINES 7.4).
       // 아래 `.secretDetail` 캐치올보다 **앞에** 둬야 한다 — 뒤에 두면 그쪽이 먼저 잡아 무시된다.
+      case .secretDetail(.delegate(.paywallRequired)):
+        state.isPaywallPresented = true
+        return .none
+
       case .secretDetail(.delegate(.projectsChanged)):
         return .send(.sidebar(.refresh))
 

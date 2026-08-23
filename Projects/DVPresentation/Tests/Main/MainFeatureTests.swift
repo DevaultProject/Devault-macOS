@@ -645,6 +645,28 @@ struct MainFeatureTests {
     #expect(store.state.selectSecretType == nil)
   }
 
+  @Test("secretDetail이 수정 잠금을 알리면 페이월을 띄운다")
+  func secretDetailPaywallRequiredShowsPaywall() async {
+    let secret = Secret(
+      id: UUID(),
+      name: "Test Token",
+      secretType: .apiKeyToken,
+      createdAt: Date(),
+      updatedAt: Date(),
+      payload: SecretPayload(encryptedData: Data(), keyTag: "test", schemaVersion: 1)
+    )
+    var initial = MainFeature.State()
+    initial.secretDetail = SecretDetailFeature.State(secret: secret)
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    }
+
+    await store.send(.secretDetail(.delegate(.paywallRequired))) {
+      $0.isPaywallPresented = true
+    }
+  }
+
   @Test("addProjectTapped은 게이트를 통과하면 createProject sheet를 연다")
   func addProjectTappedOpensSheet() async {
     let store = TestStore(initialState: MainFeature.State()) {

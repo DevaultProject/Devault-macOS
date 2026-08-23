@@ -743,9 +743,11 @@ struct SecretDetailFeatureTests {
             // 프로젝트 목록은 이 테스트의 관심사가 아니다. 액션을 내지 않게 해 순서 의존을 없앤다.
             $0.secretClient.fetchProjects = { throw CancellationError() }
             $0.date = .constant(Self.referenceDate)
+            $0.entitlementClient.canEditSecrets = { true }
         }
 
-        await store.send(.didTapEdit) {
+        await store.send(.didTapEdit)
+        await store.receive(.canEditSecretsResponse(.success(true))) {
             $0.isLoadingProjects = true
             $0.mode = .editing
             $0.editFields = SecretMetaFields(secret: secret, payload: payload, projectIds: [project.id])
@@ -765,9 +767,11 @@ struct SecretDetailFeatureTests {
             $0.secretClient.revealPayload = { _, _ in payload }
             $0.secretClient.fetchProjects = { throw CancellationError() }
             $0.date = .constant(Self.referenceDate)
+            $0.entitlementClient.canEditSecrets = { true }
         }
 
-        await store.send(.didTapEdit) {
+        await store.send(.didTapEdit)
+        await store.receive(.canEditSecretsResponse(.success(true))) {
             $0.isLoadingProjects = true
             $0.payloadState = .loading
             $0.isEnteringEdit = true
@@ -797,9 +801,11 @@ struct SecretDetailFeatureTests {
             }
             $0.secretClient.fetchProjects = { throw CancellationError() }
             $0.date = .constant(Self.referenceDate)
+            $0.entitlementClient.canEditSecrets = { true }
         }
 
-        await store.send(.didTapEdit) {
+        await store.send(.didTapEdit)
+        await store.receive(.canEditSecretsResponse(.success(true))) {
             $0.isLoadingProjects = true
             $0.payloadState = .loading
             $0.isEnteringEdit = true
@@ -915,9 +921,11 @@ struct SecretDetailFeatureTests {
         } withDependencies: {
             $0.secretClient.fetchProjects = { projects }
             $0.date = .constant(Self.referenceDate)
+            $0.entitlementClient.canEditSecrets = { true }
         }
 
-        await store.send(.didTapEdit) {
+        await store.send(.didTapEdit)
+        await store.receive(.canEditSecretsResponse(.success(true))) {
             $0.isLoadingProjects = true
             $0.mode = .editing
             $0.editFields = SecretMetaFields(secret: secret, payload: payload, projectIds: [])
@@ -943,9 +951,11 @@ struct SecretDetailFeatureTests {
         } withDependencies: {
             $0.secretClient.fetchProjects = { throw ProjectUseCaseError.unexpected }
             $0.date = .constant(Self.referenceDate)
+            $0.entitlementClient.canEditSecrets = { true }
         }
 
-        await store.send(.didTapEdit) {
+        await store.send(.didTapEdit)
+        await store.receive(.canEditSecretsResponse(.success(true))) {
             $0.isLoadingProjects = true
             $0.mode = .editing
             $0.editFields = SecretMetaFields(secret: secret, payload: payload, projectIds: [])
