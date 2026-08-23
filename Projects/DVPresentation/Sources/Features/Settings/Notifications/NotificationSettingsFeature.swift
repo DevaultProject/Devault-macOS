@@ -48,6 +48,7 @@ public struct NotificationSettingsFeature {
 
     case permissionResponse(Bool)
     case expiryNotificationsUpdateFailed
+    case entitlementChanged(Entitlement)
 
     // MARK: - Child
 
@@ -73,12 +74,24 @@ public struct NotificationSettingsFeature {
         state.isMultipleAlertDaysLocked = !entitlementClient.canUseMultipleExpiryAlertDays()
         state.isAuthFailureAlertEnabled = notificationSettingsClient.isAuthFailureAlertEnabled()
         state.isClipboardAbnormalAccessAlertEnabled = notificationSettingsClient.isClipboardAbnormalAccessAlertEnabled()
-        return .run { send in
-          let granted = await notificationSettingsClient.isPermissionGranted()
-          await send(.permissionResponse(granted))
-        }
+        return .merge(
+          .run { send in
+            let granted = await notificationSettingsClient.isPermissionGranted()
+            await send(.permissionResponse(granted))
+          },
+          // 페이월이 이 화면 위에서 뜨므로, 결제 직후 화면이 잠긴 표시로 남지 않으려면 등급을 구독해야 한다.
+          .run { send in
+            for await entitlement in entitlementClient.stream() {
+              await send(.entitlementChanged(entitlement))
+            }
+          }
+        )
 
       case .delegate:
+        return .none
+
+      case .entitlementChanged:
+        state.isMultipleAlertDaysLocked = !entitlementClient.canUseMultipleExpiryAlertDays()
         return .none
 
       case .permissionResponse(let granted):
