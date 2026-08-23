@@ -171,6 +171,8 @@ public struct SecretDetailFeature {
         case didTapToggleLike
         case didTapDelete
         case didTapEdit
+        /// 수정 잠금 판정 결과. 복호화·인증을 시작하기 **전에** 묻는다.
+        case canEditSecretsResponse(Result<Bool, SecretUseCaseError>)
         case didTapCancelEdit
         case didTapSave
         /// 편집 폼의 프로젝트 필드에서 "새 프로젝트" 를 누른 경우.
@@ -221,6 +223,8 @@ public struct SecretDetailFeature {
             /// 편집 폼 안에서 프로젝트를 새로 만들었다. **저장 여부와 무관하게** 프로젝트는 이미
             /// 만들어졌으므로 사이드바가 곧바로 반영해야 한다 — 취소하고 나가도 프로젝트는 남는다.
             case projectsChanged
+            /// 보유 수가 한도를 넘겨 수정이 잠겼다. 페이월은 부모가 소유하므로 올려보낸다.
+            case paywallRequired
         }
     }
 
@@ -246,6 +250,7 @@ public struct SecretDetailFeature {
     // MARK: - Dependencies
 
     @Dependency(\.secretClient) var secretClient
+    @Dependency(\.entitlementClient) var entitlementClient
     @Dependency(\.appLifecycleClient) var appLifecycleClient
     @Dependency(\.revealAuthPolicy) var revealAuthPolicy
     @Dependency(\.date.now) var now
@@ -445,6 +450,23 @@ public struct SecretDetailFeature {
                 guard state.mode == .viewing else { return .none }
                 // 연결을 모르면 편집 baseline을 세울 수 없다. 빈 목록을 기준으로 삼으면 저장할 때
                 // 실제 연결이 끊긴다. 헤더의 수정 버튼도 같은 조건으로 잠겨 있다.
+                guard case .loaded = state.linkedProjectsState else { return .none }
+                // 복호화보다 앞에 둔다. 잠긴 상태에서 인증 창을 띄워 놓고 막으면 헛수고를 시키는 것이다.
+                return .run { send in
+                    await send(.canEditSecretsResponse(Result {
+                        try await entitlementClient.canEditSecrets()
+                    }.mapError(SecretUseCaseError.map)))
+                }
+
+            case .canEditSecretsResponse(.success(false)):
+                return .send(.delegate(.paywallRequired))
+
+            case .canEditSecretsResponse(.failure):
+                // 판정 실패는 저장소가 깨진 것이다. 페이월을 띄우면 결제해도 해결되지 않는다.
+                return .none
+
+            case .canEditSecretsResponse(.success(true)):
+                guard state.mode == .viewing else { return .none }
                 guard case .loaded = state.linkedProjectsState else { return .none }
                 state.isLoadingProjects = true
                 let projects = availableProjectsEffect()
