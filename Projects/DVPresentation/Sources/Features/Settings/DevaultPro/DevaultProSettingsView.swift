@@ -20,20 +20,38 @@ struct DevaultProSettingsView: View {
   @Dependency(\.entitlementClient) private var entitlementClient
 
   @State private var subscriptionStatus: DVDomain.SubscriptionStatus = .free
+  /// `SubscriptionStatus`엔 productID만 있고 표시명(개월수)이 없어서, 상품 목록에서 따로 찾아온다.
+  @State private var currentPlanName: String?
   @State private var isShowingPaywall = false
 
   var body: some View {
     content
-      .sheet(isPresented: $isShowingPaywall) {
+      .sheet(
+        isPresented: $isShowingPaywall,
+        // 같은 등급(Pro) 안에서 플랜만 바꾼 경우 아래 스트림이 반응하지 않는다 — 등급 값 자체는
+        // 안 바뀌어서 갱신 이벤트가 없다. 페이월을 닫는 시점에 한 번 더 읽어 갱신일·플랜을 맞춘다.
+        onDismiss: { Task { await reload() } }
+      ) {
         DevaultProPaywallView()
       }
       .task {
-        // 갱신·환불·복원으로 등급이 바뀔 때마다 다시 읽는다. 스트림이 구독 즉시 현재값을
+        // 환불·복원으로 등급이 바뀔 때마다 다시 읽는다. 스트림이 구독 즉시 현재값을
         // 한 번 방출하므로 최초 로드도 이 하나로 해결된다.
         for await _ in entitlementClient.stream() {
-          subscriptionStatus = await purchaseClient.subscriptionStatus()
+          await reload()
         }
       }
+  }
+
+  private func reload() async {
+    let status = await purchaseClient.subscriptionStatus()
+    subscriptionStatus = status
+
+    guard let productID = status.productID else {
+      currentPlanName = nil
+      return
+    }
+    currentPlanName = try? await purchaseClient.products().first { $0.id == productID }?.displayName
   }
 }
 
@@ -47,7 +65,8 @@ extension DevaultProSettingsView {
         currentPlanRow
       }
 
-      SettingsSection(title: .module("What You Get with Pro")) {
+      // Pro면 이미 누리고 있는 혜택이라 "얻을 수 있는"이 아니라 "누리고 있는" 어조로 바꾼다.
+      SettingsSection(title: isPro ? String.module("Your Pro Benefits") : String.module("What You Get with Pro")) {
         ForEach(DevaultProFeature.all) { feature in
           SettingsValueRow(
             title: feature.title,
@@ -66,12 +85,9 @@ extension DevaultProSettingsView {
     VStack(alignment: .leading, spacing: 10) {
       HStack(alignment: .center) {
         VStack(alignment: .leading, spacing: 4) {
-          HStack(spacing: 8) {
-            Text(isPro ? SettingsCategory.devaultPro.title : String.module("Free Plan"))
-              .dvFont(.bodyLG)
-              .foregroundStyle(Color.dv(.gray900))
-            DVChip(String.module("Current Plan"))
-          }
+          Text(isPro ? (currentPlanName ?? SettingsCategory.devaultPro.title) : String.module("Free Plan"))
+            .dvFont(.bodyLG)
+            .foregroundStyle(Color.dv(.gray900))
           if isPro, let renewalDescription {
             Text(renewalDescription)
               .dvFont(.captionMDRegular)
