@@ -108,22 +108,22 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
     _ read: @escaping @Sendable () -> Value
   ) -> AsyncStream<Value> {
     AsyncStream { continuation in
-      let state = LastValueBox(read())
-      continuation.yield(state.value)
+      let state = LastValueBox<Value>()
 
+      // 최초 방출보다 **먼저** 건다. 뒤에 걸면 그 사이에 일어난 변경의 알림을 놓친다.
       let observer = NotificationCenter.default.addObserver(
         forName: UserDefaults.didChangeNotification,
         object: defaults,
         queue: nil
       ) { _ in
-        let next = read()
-        guard state.replaceIfChanged(next) else { return }
-        continuation.yield(next)
+        state.emitIfChanged(read: read) { continuation.yield($0) }
       }
 
       continuation.onTermination = { _ in
         NotificationCenter.default.removeObserver(observer)
       }
+
+      state.emitIfChanged(read: read) { continuation.yield($0) }
     }
   }
 
@@ -282,22 +282,19 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
 private final class LastValueBox<Value: Equatable>: @unchecked Sendable {
 
   private let lock = NSLock()
-  private var storage: Value
+  /// 아직 아무것도 내보내지 않은 상태를 `nil`로 구분한다. 첫 호출은 값이 무엇이든 방출된다.
+  private var storage: Value?
 
-  init(_ value: Value) {
-    storage = value
-  }
-
-  var value: Value {
-    lock.withLock { storage }
-  }
-
-  /// 값이 달라졌을 때만 갱신하고 `true`를 돌려준다. 비교와 갱신을 한 임계 구역에서 처리해 중복 방출을 막는다.
-  func replaceIfChanged(_ next: Value) -> Bool {
+  /// **읽기·비교·방출을 한 임계 구역에서 처리한다.** 읽기를 밖에 두면 오래된 값이 비교를 통과해 최신값 뒤에 방출될 수 있다 — 구매 직후 구독자가 잠시 무료로 되돌아간다.
+  /// - Parameters:
+  ///   - read: 현재값을 읽는 클로저
+  ///   - yield: 값이 달라졌을 때 방출할 클로저
+  func emitIfChanged(read: () -> Value, yield: (Value) -> Void) {
     lock.withLock {
-      guard storage != next else { return false }
+      let next = read()
+      guard storage != next else { return }
       storage = next
-      return true
+      yield(next)
     }
   }
 }
