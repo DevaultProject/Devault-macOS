@@ -62,16 +62,7 @@ extension SettingsView {
         .listRowSeparator(.hidden)
 
       ForEach(SettingsCategory.allCases.filter { $0 != .devaultPro }, id: \.self) { category in
-        Label {
-          Text(category.title)
-            .dvFont(.bodyLG)
-        } icon: {
-          Image(systemName: category.icon)
-            .font(.system(size: 15, weight: .medium))
-            .frame(width: 20, height: 20)
-        }
-        .padding(.vertical, 5)
-        .tag(category)
+        settingsCategoryRow(category)
       }
     }
     .listStyle(.sidebar)
@@ -132,6 +123,59 @@ extension SettingsView {
     }
     .padding(.vertical, 5)
     .tag(SettingsCategory.devaultPro)
+  }
+
+  /// Free면 iCloud 동기화 자체를 켤 수 없으니(``EntitlementClient/canEnableICloudSync``와 같은 게이트),
+  /// 들어가 봤자 잠긴 화면만 보이는 탭을 아예 회색으로 죽이고 선택 못 하게 막는다.
+  @ViewBuilder
+  private func settingsCategoryRow(_ category: SettingsCategory) -> some View {
+    let isLocked = category == .icloud && !store.isDevaultProSubscribed
+
+    let label = Label {
+      HStack(spacing: 8) {
+        Text(category.title)
+          .dvFont(.bodyLG)
+        if isLocked {
+          forProBadge
+        }
+      }
+    } icon: {
+      // 아이콘은 Label 바깥의 foregroundStyle을 안 따라가서 잠긴 상태에서만 직접 건다.
+      // 나머지 행은 색을 강제하지 않아야 선택 시 시스템이 주는 흰색 하이라이트가 그대로 먹힌다.
+      if isLocked {
+        Image(systemName: category.icon)
+          .font(.system(size: 15, weight: .medium))
+          .frame(width: 20, height: 20)
+          .foregroundStyle(Color.dv(.gray400))
+      } else {
+        Image(systemName: category.icon)
+          .font(.system(size: 15, weight: .medium))
+          .frame(width: 20, height: 20)
+      }
+    }
+    .padding(.vertical, 5)
+    .tag(category)
+
+    if isLocked {
+      // `.tag`만 빼면 macOS List가 tag 매칭과 무관하게 클릭 시 하이라이트를 잠깐 보여준다 —
+      // `.selectionDisabled(true)`가 List 선택에서 이 행을 아예 제외하는 정식 API다.
+      label
+        .foregroundStyle(Color.dv(.gray400))
+        .selectionDisabled(true)
+    } else {
+      label
+    }
+  }
+
+  private var forProBadge: some View {
+    Text(String.module("for PRO"))
+      .dvFont(.captionMDSemibold)
+      .foregroundStyle(Color.dv(.gray500))
+      .padding(.horizontal, 8)
+      .padding(.vertical, 2)
+      .overlay(
+        Capsule().stroke(Color.dv(.gray300), lineWidth: 1)
+      )
   }
 
   private var detailColumn: some View {
