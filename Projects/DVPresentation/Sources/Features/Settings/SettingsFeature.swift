@@ -48,6 +48,8 @@ public struct SettingsFeature {
       case closeRequested
       case storageDidSwitch
       case vaultDataReset
+      /// 하위 설정이 게이트에 막혔다. 페이월은 MainFeature가 소유한다.
+      case paywallRequired
     }
   }
 
@@ -90,6 +92,10 @@ public struct SettingsFeature {
 
       case .security:
         return .none
+
+      case .icloud(.delegate(.paywallRequired)),
+           .notifications(.delegate(.paywallRequired)):
+        return .send(.delegate(.paywallRequired))
 
       case .icloud(.delegate(.storageDidSwitch)):
         return .send(.delegate(.storageDidSwitch))

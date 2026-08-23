@@ -17,6 +17,8 @@ public struct NotificationSettingsFeature {
     var isAuthFailureAlertEnabled = true
     var isClipboardAbnormalAccessAlertEnabled = true
     var isNotificationPermissionGranted = true
+    /// 무료 등급이라 시점을 하나만 고를 수 있는 상태. 뷰가 잠금 표시에 쓴다.
+    var isMultipleAlertDaysLocked = false
     @Presents var alert: AlertState<Action.Alert>?
 
     public init() {}
@@ -33,6 +35,15 @@ public struct NotificationSettingsFeature {
     case didTapExpiryAlertDay(ExpiryAlertDay)
     case didTapOpenNotificationSettings
 
+    // MARK: - Delegate
+
+    case delegate(Delegate)
+
+    public enum Delegate: Equatable {
+      /// 무료 등급이라 시점을 여러 개 고를 수 없다. 페이월은 상위가 소유하므로 올려보낸다.
+      case paywallRequired
+    }
+
     // MARK: - Internal
 
     case permissionResponse(Bool)
@@ -48,6 +59,7 @@ public struct NotificationSettingsFeature {
   // MARK: - Dependencies
 
   @Dependency(\.notificationSettingsClient) var notificationSettingsClient
+  @Dependency(\.entitlementClient) var entitlementClient
 
   // MARK: - Body
 
@@ -58,12 +70,16 @@ public struct NotificationSettingsFeature {
       case .task:
         state.isExpiryAlertsEnabled = notificationSettingsClient.isExpiryAlertsEnabled()
         state.expiryAlertDaysBefore = Set(notificationSettingsClient.expiryAlertDaysBefore())
+        state.isMultipleAlertDaysLocked = !entitlementClient.canUseMultipleExpiryAlertDays()
         state.isAuthFailureAlertEnabled = notificationSettingsClient.isAuthFailureAlertEnabled()
         state.isClipboardAbnormalAccessAlertEnabled = notificationSettingsClient.isClipboardAbnormalAccessAlertEnabled()
         return .run { send in
           let granted = await notificationSettingsClient.isPermissionGranted()
           await send(.permissionResponse(granted))
         }
+
+      case .delegate:
+        return .none
 
       case .permissionResponse(let granted):
         state.isNotificationPermissionGranted = granted
@@ -104,6 +120,10 @@ public struct NotificationSettingsFeature {
         if state.expiryAlertDaysBefore.contains(day) {
           state.expiryAlertDaysBefore.remove(day)
         } else {
+          // 무료는 하나만 고를 수 있다. 이미 고른 것이 있으면 바꾸는 게 아니라 막는다 — 조용히 갈아끼우면 사용자가 왜 이전 선택이 사라졌는지 알 수 없다.
+          if !entitlementClient.canUseMultipleExpiryAlertDays(), !state.expiryAlertDaysBefore.isEmpty {
+            return .send(.delegate(.paywallRequired))
+          }
           state.expiryAlertDaysBefore.insert(day)
         }
         let days = state.expiryAlertDaysBefore.sorted { $0.rawValue > $1.rawValue }
