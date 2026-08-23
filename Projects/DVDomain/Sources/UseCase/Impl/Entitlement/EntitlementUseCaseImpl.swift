@@ -1,5 +1,7 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import DVCore
+
 public struct EntitlementUseCaseImpl: EntitlementUseCase {
 
     private let secretRepository: any SecretRepository
@@ -36,27 +38,38 @@ public struct EntitlementUseCaseImpl: EntitlementUseCase {
     }
 
     public func canCreateSecret() async throws -> Bool {
-        guard current() == .free else { return true }
-        return try await secretRepository.totalCountExcludingTrash() < EntitlementLimits.maxSecrets
+        guard current() == .free else { return log("canCreateSecret", allowed: true) }
+        let count = try await secretRepository.totalCountExcludingTrash()
+        return log("canCreateSecret", allowed: count < EntitlementLimits.maxSecrets, detail: "보유: \(count)/\(EntitlementLimits.maxSecrets)")
     }
 
     public func canCreateProject() async throws -> Bool {
-        guard current() == .free else { return true }
+        guard current() == .free else { return log("canCreateProject", allowed: true) }
         // Project는 무료 1개 · Pro 무제한이라 목록이 길어질 일이 없다. 전용 count를 두지 않는다.
-        return try await projectRepository.fetchAll().count < EntitlementLimits.maxProjects
+        let count = try await projectRepository.fetchAll().count
+        return log("canCreateProject", allowed: count < EntitlementLimits.maxProjects, detail: "보유: \(count)/\(EntitlementLimits.maxProjects)")
     }
 
     public func canEditSecrets() async throws -> Bool {
-        guard current() == .free else { return true }
+        guard current() == .free else { return log("canEditSecrets", allowed: true) }
         // 한도와 **같으면** 허용한다. `canCreateSecret`의 `<`와 달리 여기가 `<=`인 이유는, 정확히 한도만큼 보유한 사용자는 잠기면 안 되기 때문이다. 잠금은 초과부터다.
-        return try await secretRepository.totalCountExcludingTrash() <= EntitlementLimits.maxSecrets
+        let count = try await secretRepository.totalCountExcludingTrash()
+        return log("canEditSecrets", allowed: count <= EntitlementLimits.maxSecrets, detail: "보유: \(count)/\(EntitlementLimits.maxSecrets)")
     }
 
     public func canEnableICloudSync() -> Bool {
-        current() == .pro
+        log("canEnableICloudSync", allowed: current() == .pro)
     }
 
     public func canUseMultipleExpiryAlertDays() -> Bool {
-        current() == .pro
+        log("canUseMultipleExpiryAlertDays", allowed: current() == .pro)
+    }
+
+    /// 판정 결과를 그대로 돌려주면서 근거를 남긴다. **`current()`와 `stream()`은 찍지 않는다** — 호출 빈도가 판정의 몇 배라 로그가 그쪽으로 덮인다.
+    @discardableResult
+    private func log(_ gate: String, allowed: Bool, detail: String? = nil) -> Bool {
+        let suffix = detail.map { ", \($0)" } ?? ""
+        Log.debug("[Gate] \(gate) — 등급: \(current())\(suffix) → \(allowed ? "허용" : "차단")", category: .domain)
+        return allowed
     }
 }
