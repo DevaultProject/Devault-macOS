@@ -281,10 +281,13 @@ struct MainFeatureTests {
   func addButtonTappedOpensSecretTypeSelection() async {
     let store = TestStore(initialState: MainFeature.State()) {
       MainFeature()
+    } withDependencies: {
+      $0.entitlementClient.canCreateSecret = { true }
     }
 
     await store.send(.sidebar(.didTapAddButton))
-    await store.receive(.sidebar(.delegate(.addButtonTapped))) {
+    await store.receive(.sidebar(.delegate(.addButtonTapped)))
+    await store.receive(.canCreateSecretResponse(.success(true))) {
       $0.selectSecretType = .init()
     }
     await store.receive(.sidebar(.setCreatingSecret(true))) {
@@ -310,10 +313,13 @@ struct MainFeatureTests {
 
     let store = TestStore(initialState: initial) {
       MainFeature()
+    } withDependencies: {
+      $0.entitlementClient.canCreateSecret = { true }
     }
 
     await store.send(.sidebar(.didTapAddButton))
-    await store.receive(.sidebar(.delegate(.addButtonTapped))) {
+    await store.receive(.sidebar(.delegate(.addButtonTapped)))
+    await store.receive(.canCreateSecretResponse(.success(true))) {
       $0.selectSecretType = .init()
       $0.secretDetail = nil
       $0.secretList.selectedSecretID = nil
@@ -623,16 +629,66 @@ struct MainFeatureTests {
     }
   }
 
-  @Test("addProjectTapped은 createProject sheet를 연다")
+  @Test("addButtonTapped은 게이트에 막히면 타입 선택 대신 페이월을 띄운다")
+  func addButtonTappedShowsPaywallWhenBlocked() async {
+    let store = TestStore(initialState: MainFeature.State()) {
+      MainFeature()
+    } withDependencies: {
+      $0.entitlementClient.canCreateSecret = { false }
+    }
+
+    await store.send(.sidebar(.didTapAddButton))
+    await store.receive(.sidebar(.delegate(.addButtonTapped)))
+    await store.receive(.canCreateSecretResponse(.success(false))) {
+      $0.isPaywallPresented = true
+    }
+    #expect(store.state.selectSecretType == nil)
+  }
+
+  @Test("addProjectTapped은 게이트를 통과하면 createProject sheet를 연다")
   func addProjectTappedOpensSheet() async {
     let store = TestStore(initialState: MainFeature.State()) {
       MainFeature()
+    } withDependencies: {
+      $0.entitlementClient.canCreateProject = { true }
     }
 
     await store.send(.sidebar(.didTapAddProject))
-    await store.receive(.sidebar(.delegate(.addProjectTapped))) {
+    await store.receive(.sidebar(.delegate(.addProjectTapped)))
+    await store.receive(.canCreateProjectResponse(.success(true))) {
       $0.createProject = CreateProjectFeature.State()
     }
+  }
+
+  @Test("addProjectTapped은 게이트에 막히면 sheet 대신 페이월을 띄운다")
+  func addProjectTappedShowsPaywallWhenBlocked() async {
+    let store = TestStore(initialState: MainFeature.State()) {
+      MainFeature()
+    } withDependencies: {
+      $0.entitlementClient.canCreateProject = { false }
+    }
+
+    await store.send(.sidebar(.didTapAddProject))
+    await store.receive(.sidebar(.delegate(.addProjectTapped)))
+    await store.receive(.canCreateProjectResponse(.success(false))) {
+      $0.isPaywallPresented = true
+    }
+    #expect(store.state.createProject == nil)
+  }
+
+  @Test("판정이 실패하면 페이월을 띄우지 않는다 — 결제로 해결되지 않는다")
+  func addProjectTappedDoesNotShowPaywallOnJudgementFailure() async {
+    let store = TestStore(initialState: MainFeature.State()) {
+      MainFeature()
+    } withDependencies: {
+      $0.entitlementClient.canCreateProject = { throw ProjectUseCaseError.unexpected }
+    }
+
+    await store.send(.sidebar(.didTapAddProject))
+    await store.receive(.sidebar(.delegate(.addProjectTapped)))
+    await store.receive(.canCreateProjectResponse(.failure(.unexpected)))
+    #expect(store.state.isPaywallPresented == false)
+    #expect(store.state.createProject == nil)
   }
 
   // MARK: - CreateProject Delegate
