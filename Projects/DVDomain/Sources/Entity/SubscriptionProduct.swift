@@ -14,9 +14,27 @@ public struct SubscriptionProduct: Equatable, Identifiable, Sendable {
     /// 통화 기호와 지역 형식이 이미 적용된 가격 문자열(`Product.displayPrice`). **직접 포맷하지 않는다** — 통화·지역·자릿수 처리를 StoreKit에 맡긴다.
     public let displayPrice: String
 
-    public init(id: String, displayName: String, displayPrice: String) {
+    /// 구독 기간을 개월로 환산한 값. 1 / 3 / 6 / 12.
+    ///
+    /// 페이월의 **정렬 기준**이다. 스토어는 상품 순서를 보장하지 않으므로 표시 순서를 여기서 정한다. 기간을 알 수 없는 상품은 애초에 이 타입으로 변환되지 않는다.
+    public let periodInMonths: Int
+
+    /// 월 환산 가격. 1개월 상품은 `displayPrice`와 같아지므로 nil이다.
+    ///
+    /// **문자열을 그대로 받는 이유**는 통화 서식 때문이다. `displayPrice`를 나눌 수 없어 숫자 가격이 필요한데, 그걸 도메인이나 뷰에서 포맷하면 통화 기호와 자릿수가 지역에 따라 어긋난다. StoreKit의 `Product.priceFormatStyle`을 아는 DVData가 계산과 서식을 함께 처리해 넘긴다.
+    public let monthlyEquivalentPrice: String?
+
+    public init(
+        id: String,
+        displayName: String,
+        displayPrice: String,
+        periodInMonths: Int,
+        monthlyEquivalentPrice: String? = nil
+    ) {
         self.id = id
         self.displayName = displayName
         self.displayPrice = displayPrice
+        self.periodInMonths = periodInMonths
+        self.monthlyEquivalentPrice = monthlyEquivalentPrice
     }
 }
