@@ -38,11 +38,6 @@ struct MainView: View {
         DebugPaywallView()
       }
       #endif
-      .overlay(alignment: .topTrailing) {
-          lockButton
-              .padding(16)
-              .ignoresSafeArea(edges: .top)
-      }
   }
 }
 
