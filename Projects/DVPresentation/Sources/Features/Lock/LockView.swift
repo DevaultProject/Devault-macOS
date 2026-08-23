@@ -43,6 +43,8 @@ extension LockView {
       DVButton(titleText: .module("Unlock with Touch ID"), style: .primary) {
         store.send(.didTapUnlock)
       }
+      // Enter(Return)로도 바로 인증
+      .keyboardShortcut(.defaultAction)
     }
   }
 
