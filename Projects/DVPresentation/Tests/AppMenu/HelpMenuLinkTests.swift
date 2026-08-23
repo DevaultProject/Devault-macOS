@@ -14,17 +14,17 @@ struct HelpMenuLinkTests {
 
   @Test("Help는 지원 사이트로 연결된다")
   func helpURL() {
-    #expect(HelpMenuLink.help.url.absoluteString == "https://devault-support.notion.site/")
+    #expect(HelpMenuLink.help.url.absoluteString == "https://devault-devteam.notion.site/")
   }
 
   @Test("Terms of Service는 이용약관 페이지로 연결된다")
   func termsOfServiceURL() {
-    #expect(HelpMenuLink.termsOfService.url.absoluteString == "https://devault-support.notion.site/terms-of-service")
+    #expect(HelpMenuLink.termsOfService.url.absoluteString == "https://devault-devteam.notion.site/terms-of-service")
   }
 
   @Test("Privacy Policy는 정책 사이트로 연결된다")
   func privacyPolicyURL() {
-    #expect(HelpMenuLink.privacyPolicy.url.absoluteString == "https://devault-policy.notion.site/")
+    #expect(HelpMenuLink.privacyPolicy.url.absoluteString == "https://devault-devteam.notion.site/privacy-policy")
   }
 
   @Test("Send Feedback은 팀 이메일 mailto로 연결된다")

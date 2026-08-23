@@ -28,9 +28,9 @@ enum HelpMenuLink: CaseIterable, Hashable {
 
   var url: URL {
     switch self {
-    case .help:          URL(string: "https://devault-support.notion.site/")!
-    case .termsOfService: URL(string: "https://devault-support.notion.site/terms-of-service")!
-    case .privacyPolicy: URL(string: "https://devault-policy.notion.site/")!
+    case .help:          URL(string: "https://devault-devteam.notion.site/")!
+    case .termsOfService: URL(string: "https://devault-devteam.notion.site/terms-of-service")!
+    case .privacyPolicy: URL(string: "https://devault-devteam.notion.site/privacy-policy")!
     case .sendFeedback:  URL(string: "mailto:devault.devteam@gmail.com")!
     }
   }
