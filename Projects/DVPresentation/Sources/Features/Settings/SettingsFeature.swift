@@ -1,6 +1,7 @@
 // Copyright © 2026 Devault. All rights reserved
 
 import ComposableArchitecture
+import DVDomain
 
 // MARK: - SettingsFeature
 
@@ -12,6 +13,7 @@ public struct SettingsFeature {
   @ObservableState
   public struct State: Equatable {
     var selectedCategory: SettingsCategory = .general
+    var isDevaultProSubscribed = false
     var general = GeneralSettingsFeature.State()
     var security = SecuritySettingsFeature.State()
     var icloud = ICloudSettingsFeature.State()
@@ -29,7 +31,12 @@ public struct SettingsFeature {
     // MARK: - View
 
     case binding(BindingAction<State>)
+    case task
     case didTapClose
+
+    // MARK: - Internal
+
+    case entitlementChanged(Entitlement)
 
     // MARK: - Child
 
@@ -52,6 +59,10 @@ public struct SettingsFeature {
       case paywallRequired
     }
   }
+
+  // MARK: - Dependencies
+
+  @Dependency(\.entitlementClient) var entitlementClient
 
   // MARK: - Init
 
@@ -82,6 +93,17 @@ public struct SettingsFeature {
     Reduce { state, action in
       switch action {
       case .binding:
+        return .none
+
+      case .task:
+        return .run { send in
+          for await entitlement in entitlementClient.stream() {
+            await send(.entitlementChanged(entitlement))
+          }
+        }
+
+      case .entitlementChanged(let entitlement):
+        state.isDevaultProSubscribed = entitlement == .pro
         return .none
 
       case .didTapClose:
