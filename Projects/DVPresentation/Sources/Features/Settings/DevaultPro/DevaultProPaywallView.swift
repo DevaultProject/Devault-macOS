@@ -187,19 +187,9 @@ extension DevaultProPaywallView {
 
     return DVRadioButton(isSelected: isSelected, action: { selectedProductID = product.id }) {
       HStack(alignment: .center) {
-        HStack(spacing: 6) {
-          Text(product.displayName)
-            .dvFont(.bodyLG)
-            .foregroundStyle(Color.dv(.gray900))
-          if product.id == currentProductID {
-            Text(String.module("Current"))
-              .dvFont(.captionMDSemibold)
-              .foregroundStyle(isSelected ? Color.dv(.white) : accentOnTint)
-              .padding(.horizontal, 6)
-              .padding(.vertical, 2)
-              .background(isSelected ? Color.dv(.vaultGreen) : Color.dv(.vaultGreenTint), in: Capsule())
-          }
-        }
+        Text(product.displayName)
+          .dvFont(.bodyLG)
+          .foregroundStyle(Color.dv(.gray900))
         Spacer(minLength: 12)
         priceText(for: product)
           .dvFont(.bodyLG)
