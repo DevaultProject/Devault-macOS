@@ -34,6 +34,30 @@ struct NotificationSettingsFeatureTests {
     }
   }
 
+  @Test("Free 등급이면 여러 개 선택된 알림 시점을 7일 하나로 맞춘다")
+  func taskClampsExpiryAlertDaysToSevenWhenLocked() async {
+    let saved = LockIsolated<[ExpiryAlertDay]?>(nil)
+    let store = TestStore(initialState: NotificationSettingsFeature.State()) {
+      NotificationSettingsFeature()
+    } withDependencies: {
+      $0.notificationSettingsClient.expiryAlertDaysBefore = { ExpiryAlertDay.allCases }
+      $0.notificationSettingsClient.isPermissionGranted = { true }
+      $0.notificationSettingsClient.setExpiryAlertDaysBefore = { saved.setValue($0) }
+      $0.entitlementClient.current = { .free }
+      $0.entitlementClient.stream = { .finished }
+      $0.entitlementClient.canUseMultipleExpiryAlertDays = { false }
+    }
+
+    await store.send(.task) {
+      $0.expiryAlertDaysBefore = [.sevenDaysBefore]
+      $0.isMultipleAlertDaysLocked = true
+    }
+    await store.receive(.permissionResponse(true)) {
+      $0.isNotificationPermissionGranted = true
+    }
+    #expect(saved.value == [.sevenDaysBefore])
+  }
+
   @Test("만료 알림 사용 토글을 저장한다")
   func expiryAlertsTogglePersists() async {
     let saved = LockIsolated<Bool?>(nil)
