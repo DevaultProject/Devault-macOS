@@ -160,6 +160,13 @@ public struct MainFeature {
       case .sidebar:
         return .none
 
+      // `case .settings:` catch-all보다 **앞에** 있어야 한다. 뒤에 두면 잡히지 않아 설정 게이트가
+      // 조용히 무시된다 — 토글만 되돌아가고 페이월이 뜨지 않는다.
+      case .settings(.delegate(.paywallRequired)),
+           .secretDetail(.delegate(.paywallRequired)):
+        state.isPaywallPresented = true
+        return .none
+
       case .settings(.delegate(.closeRequested)):
         state.settings = nil
         return .none
@@ -222,11 +229,6 @@ public struct MainFeature {
 
       // 자식끼리 직접 연결하지 않고 공통 부모가 사이드바 재조회를 지시한다 (TCA_GUIDELINES 7.4).
       // 아래 `.secretDetail` 캐치올보다 **앞에** 둬야 한다 — 뒤에 두면 그쪽이 먼저 잡아 무시된다.
-      case .settings(.delegate(.paywallRequired)),
-           .secretDetail(.delegate(.paywallRequired)):
-        state.isPaywallPresented = true
-        return .none
-
       case .secretDetail(.delegate(.projectsChanged)):
         return .send(.sidebar(.refresh))
 
