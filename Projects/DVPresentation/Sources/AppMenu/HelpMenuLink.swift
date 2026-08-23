@@ -10,6 +10,7 @@ import Foundation
 /// (온보딩·잠금 화면에서도 항상 열 수 있어야 하므로 활성 조건도 없다.)
 enum HelpMenuLink: CaseIterable, Hashable {
   case help
+  case termsOfService
   case privacyPolicy
   case sendFeedback
 
@@ -19,6 +20,7 @@ enum HelpMenuLink: CaseIterable, Hashable {
   var title: String {
     switch self {
     case .help:          .module("DeVault Help")
+    case .termsOfService: .module("Terms of Service")
     case .privacyPolicy: .module("Privacy Policy")
     case .sendFeedback:  .module("Send Feedback")
     }
@@ -27,6 +29,7 @@ enum HelpMenuLink: CaseIterable, Hashable {
   var url: URL {
     switch self {
     case .help:          URL(string: "https://devault-support.notion.site/")!
+    case .termsOfService: URL(string: "https://devault-support.notion.site/terms-of-service")!
     case .privacyPolicy: URL(string: "https://devault-policy.notion.site/")!
     case .sendFeedback:  URL(string: "mailto:devault.devteam@gmail.com")!
     }

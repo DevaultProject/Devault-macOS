@@ -233,9 +233,7 @@ extension DevaultProPaywallView {
         .fixedSize(horizontal: false, vertical: true)
 
       HStack(spacing: 12) {
-        // 이용약관 전용 URL이 아직 없어 Privacy Policy와 같은 페이지로 임시 연결한다.
-        // 실제 이용약관 URL이 정해지면 여기만 교체하면 된다.
-        Link(String.module("Terms of Service"), destination: HelpMenuLink.privacyPolicy.url)
+        Link(String.module("Terms of Service"), destination: HelpMenuLink.termsOfService.url)
           .underline()
         Link(String.module("Privacy Policy"), destination: HelpMenuLink.privacyPolicy.url)
           .underline()
