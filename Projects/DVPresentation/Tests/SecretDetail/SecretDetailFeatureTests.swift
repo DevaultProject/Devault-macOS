@@ -977,9 +977,11 @@ struct SecretDetailFeatureTests {
             SecretDetailFeature()
         } withDependencies: {
             $0.date = .constant(Self.referenceDate)
+            $0.entitlementClient.canCreateProject = { true }
         }
 
-        await store.send(.didTapCreateProject) {
+        await store.send(.didTapCreateProject)
+        await store.receive(.canCreateProjectResponse(.success(true))) {
             $0.createProject = CreateProjectFeature.State()
         }
         await store.send(.createProject(.presented(.delegate(.projectCreated(newItem))))) {
