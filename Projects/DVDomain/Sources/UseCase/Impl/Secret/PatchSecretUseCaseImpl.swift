@@ -48,6 +48,8 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
         metadata: Metadata,
         projectIDs: PatchField<[UUID]>
     ) async throws -> Secret {
+        try await ensureContentEditable()
+
         do {
             // 정규화를 인코딩·암호화보다 먼저 한다 — 거부될 patch에 크립토 작업을 들일 이유가 없다.
             var fullPatch = try SecretUseCaseHelper.normalizedPatch(patch)
@@ -69,6 +71,8 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
         payload: Payload,
         projectIDs: PatchField<[UUID]>
     ) async throws -> Secret {
+        try await ensureContentEditable()
+
         do {
             var fullPatch = try SecretUseCaseHelper.normalizedPatch(patch)
             let encryptedPayload = try await cryptoService.encryptPayload(payload)
@@ -90,6 +94,8 @@ public struct PatchSecretUseCaseImpl: PatchSecretUseCase {
         metadata: Metadata,
         projectIDs: PatchField<[UUID]>
     ) async throws -> Secret {
+        try await ensureContentEditable()
+
         do {
             var fullPatch = try SecretUseCaseHelper.normalizedPatch(patch)
             let encryptedPayload = try await cryptoService.encryptPayload(payload)
@@ -120,6 +126,19 @@ extension PatchSecretUseCaseImpl {
     /// 보유 수가 한도를 넘겼으면 수정을 막는다. **UI를 우회한 호출을 막는 마지막 방어선이다** — 화면 쪽은 `didTapEdit`에서 이미 걸러진다.
     ///
     /// 잠금과 무관한 변경은 판정 자체를 건너뛴다. `canEditSecrets()`가 저장소 개수를 세므로, 즐겨찾기를 누를 때마다 카운트 쿼리가 나가면 안 된다.
+    /// payload·metadata를 바꾸는 경로의 잠금 검사. **암호화·인코딩보다 앞에서 부른다** — 거부될 저장에 크립토 왕복을 들일 이유가 없다.
+    ///
+    /// 내용 변경이 확정된 경로이므로 필드를 살피지 않는다. 즐겨찾기·휴지통만 바꾸는 경우는 ``ensureEditable(patch:projectIDs:)``가 따로 가려낸다.
+    private func ensureContentEditable() async throws {
+        let allowed: Bool
+        do {
+            allowed = try await entitlementUseCase.canEditSecrets()
+        } catch {
+            throw SecretUseCaseError.map(error)
+        }
+        guard allowed else { throw EntitlementError.editLocked }
+    }
+
     private func ensureEditable(patch: SecretPatch, projectIDs: PatchField<[UUID]>) async throws {
         guard !isAllowedWhileLocked(patch, projectIDs: projectIDs) else { return }
         let allowed: Bool
@@ -136,6 +155,9 @@ extension PatchSecretUseCaseImpl {
     /// 허용 필드를 걷어낸 나머지가 빈 patch와 같아야 한다. 필드를 하나씩 나열해 비교하지 않는 이유는, **나중에 `SecretPatch`에 필드가 추가돼도 기본이 차단**이어야 하기 때문이다. 나열식은 새 필드를 조용히 통과시킨다.
     ///
     /// `updatedAt`은 네 overload가 모두 세우므로 판단에서 제외한다.
+    /// - Parameters:
+    ///   - patch: 살펴볼 patch
+    ///   - projectIDs: Project 연결 변경 여부
     /// - Returns: 잠금과 무관한 변경이면 true
     private func isAllowedWhileLocked(_ patch: SecretPatch, projectIDs: PatchField<[UUID]>) -> Bool {
         guard case .unchanged = projectIDs else { return false }
