@@ -60,7 +60,7 @@ struct DevaultProSettingsView: View {
 extension DevaultProSettingsView {
 
   private var content: some View {
-    SettingsDetailContainer(title: "Devault Pro") {
+    SettingsDetailContainer(title: "DeVault Pro") {
       SettingsSection(title: .module("Current Plan")) {
         currentPlanRow
       }
@@ -112,7 +112,7 @@ extension DevaultProSettingsView {
             }
           }
         } else {
-          DVButton(titleText: .module("Upgrade to Devault Pro"), style: .primarySmall) {
+          DVButton(titleText: .module("Upgrade to DeVault Pro"), style: .primarySmall) {
             isShowingPaywall = true
           }
         }
