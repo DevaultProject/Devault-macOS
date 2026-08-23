@@ -25,13 +25,9 @@ public struct PurchaseServiceImpl: PurchaseService {
     public func products() async throws -> [SubscriptionProduct] {
         do {
             let products = try await Product.products(for: productIDs)
-            return products.map {
-                SubscriptionProduct(
-                    id: $0.id,
-                    displayName: $0.displayName,
-                    displayPrice: $0.displayPrice
-                )
-            }
+            // 기간이 짧은 것부터 보여준다. 스토어는 순서를 보장하지 않는다.
+            return products.compactMap(Self.subscriptionProduct(from:))
+                .sorted { $0.periodInMonths < $1.periodInMonths }
         } catch {
             Log.error("[Purchase] 상품 조회 실패 — error: \(error)", category: .data)
             throw PurchaseError.storeUnavailable
@@ -133,6 +129,44 @@ public struct PurchaseServiceImpl: PurchaseService {
                 await refreshEntitlement()
             }
         }
+    }
+}
+
+// MARK: - Mapping
+
+extension PurchaseServiceImpl {
+
+    /// `Product`를 도메인 값 타입으로 옮긴다. **기간을 읽지 못하면 제외한다** — 페이월이 설명할 수 없는 상품을 띄우느니 빼는 편이 낫다.
+    private static func subscriptionProduct(from product: Product) -> SubscriptionProduct? {
+        guard let months = periodInMonths(of: product) else {
+            Log.error("[Purchase] 구독 기간을 읽지 못해 상품에서 제외 — productID: \(product.id)", category: .data)
+            return nil
+        }
+
+        return SubscriptionProduct(
+            id: product.id,
+            displayName: product.displayName,
+            displayPrice: product.displayPrice,
+            periodInMonths: months,
+            monthlyEquivalentPrice: monthlyEquivalentPrice(of: product, months: months)
+        )
+    }
+
+    /// 구독 기간을 개월로 환산한다. 주·일 단위 구독은 쓰지 않으므로 nil을 돌려준다.
+    private static func periodInMonths(of product: Product) -> Int? {
+        guard let period = product.subscription?.subscriptionPeriod else { return nil }
+        switch period.unit {
+        case .month: return period.value
+        case .year:  return period.value * 12
+        case .day, .week: return nil
+        @unknown default: return nil
+        }
+    }
+
+    /// 월 환산 가격을 스토어의 통화 서식으로 만든다. 1개월 상품은 `displayPrice`와 같아지므로 nil이다.
+    private static func monthlyEquivalentPrice(of product: Product, months: Int) -> String? {
+        guard months > 1 else { return nil }
+        return (product.price / Decimal(months)).formatted(product.priceFormatStyle)
     }
 }
 

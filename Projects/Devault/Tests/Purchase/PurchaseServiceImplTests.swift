@@ -51,6 +51,30 @@ struct PurchaseServiceImplTests {
         #expect(products.first?.displayPrice.isEmpty == false)
     }
 
+    @Test("상품은 기간이 짧은 것부터 정렬된다")
+    func sortsProductsByPeriod() async throws {
+        _ = try makeSession()
+        let (sut, _) = makeSUT()
+
+        let products = try await sut.products()
+
+        #expect(products.map(\.periodInMonths) == [1, 3, 6, 12])
+    }
+
+    @Test("1개월 상품만 월 환산 가격이 없다")
+    func omitsMonthlyEquivalentForMonthlyProduct() async throws {
+        _ = try makeSession()
+        let (sut, _) = makeSUT()
+
+        let products = try await sut.products()
+        let monthly = try #require(products.first { $0.periodInMonths == 1 })
+        let others = products.filter { $0.periodInMonths > 1 }
+
+        #expect(monthly.monthlyEquivalentPrice == nil)
+        #expect(others.isEmpty == false)
+        #expect(others.allSatisfy { $0.monthlyEquivalentPrice?.isEmpty == false })
+    }
+
     @Test("구매 전에는 무료 등급이다")
     func freeBeforePurchase() async throws {
         _ = try makeSession()
