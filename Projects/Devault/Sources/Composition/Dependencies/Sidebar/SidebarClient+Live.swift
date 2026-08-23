@@ -12,7 +12,7 @@ extension SidebarClient: @retroactive DependencyKey {
     let repo = LiveRepositories.project
 
     let fetchUseCase: any FetchProjectUseCase = FetchProjectUseCaseImpl(repository: repo)
-    let createUseCase: any CreateProjectUseCase = CreateProjectUseCaseImpl(repository: repo)
+    let createUseCase: any CreateProjectUseCase = CreateProjectUseCaseImpl(repository: repo, entitlementUseCase: LiveUseCases.entitlement)
     let renameUseCase: any RenameProjectUseCase = RenameProjectUseCaseImpl(repository: repo)
     let deleteUseCase: any DeleteProjectUseCase = DeleteProjectUseCaseImpl(repository: repo)
     let fetchSecretUseCase: any FetchSecretUseCase = FetchSecretUseCaseImpl(

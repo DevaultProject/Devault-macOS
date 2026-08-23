@@ -11,7 +11,8 @@ extension SecretManagementClient: @retroactive DependencyKey {
         let cryptoService: any SecretCryptoService = SecretCryptoServiceImpl()
         let createUseCase: any CreateSecretUseCase = CreateSecretUseCaseImpl(
             repository: LiveRepositories.secret,
-            cryptoService: cryptoService
+            cryptoService: cryptoService,
+            entitlementUseCase: LiveUseCases.entitlement
         )
         return SecretManagementClient(
             createSecret: { draft, payload, projectIds in
