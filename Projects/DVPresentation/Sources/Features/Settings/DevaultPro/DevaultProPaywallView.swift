@@ -302,8 +302,8 @@ extension DevaultProPaywallView {
       products = loaded
       if selectedProductID == nil {
         // 플랜 변경이면 지금 쓰고 있는 플랜을 그대로 보여준다 — 아무것도 안 눌러도 "다른 플랜"을
-        // 고르라는 화면인지 알 수 있어야 한다. 신규 가입이면 가장 긴 구독(가장 저렴한 월 환산가)을 기본값으로 둔다.
-        selectedProductID = currentProductID ?? loaded.last?.id
+        // 고르라는 화면인지 알 수 있어야 한다. 신규 가입이면 1개월(가장 짧은 구독, 정렬 기준 첫 항목)을 기본값으로 둔다.
+        selectedProductID = currentProductID ?? loaded.first?.id
       }
     } catch {
       errorMessage = String.module("Couldn't load subscription plans. Check your connection and try again.")
