@@ -31,7 +31,8 @@ extension SecretClient: @retroactive DependencyKey {
         )
         let patchSecretUseCase: any PatchSecretUseCase = PatchSecretUseCaseImpl(
             repository: secretRepo,
-            cryptoService: cryptoService
+            cryptoService: cryptoService,
+            entitlementUseCase: LiveUseCases.entitlement
         )
         let fetchProjectUseCase: any FetchProjectUseCase = FetchProjectUseCaseImpl(
             repository: projectRepo
