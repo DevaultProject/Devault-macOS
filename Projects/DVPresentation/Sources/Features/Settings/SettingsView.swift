@@ -20,6 +20,7 @@ struct SettingsView: View {
     content
       .navigationSplitViewStyle(.balanced)
       .tint(Color.dv(.vaultGreen))
+      .task { await store.send(.task).finish() }
   }
 }
 
@@ -53,7 +54,14 @@ extension SettingsView {
         .foregroundStyle(Color.dv(.gray900))
         .listRowSeparator(.hidden)
 
-      ForEach(SettingsCategory.allCases, id: \.self) { category in
+      devaultProRow
+
+      Divider()
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .listRowSeparator(.hidden)
+
+      ForEach(SettingsCategory.allCases.filter { $0 != .devaultPro }, id: \.self) { category in
         Label {
           Text(category.title)
             .dvFont(.bodyLG)
@@ -103,6 +111,26 @@ extension SettingsView {
     .animation(MotionMetrics.hover, value: isBackToAppHovered)
   }
 
+  /// 다른 탭과 같은 기본 시스템 선택 색을 그대로 쓴다 — 여기만 따로 초록을 칠하지 않는다.
+  /// "PRO" 배지는 실제로 구독 중일 때만 붙인다 — 미구독인데 배지를 보여주면 이미 구독한 것으로 오해한다.
+  private var devaultProRow: some View {
+    Label {
+      HStack(spacing: 8) {
+        Text(SettingsCategory.devaultPro.title)
+          .dvFont(.bodyLG)
+        if store.isDevaultProSubscribed {
+          DVChip(String.module("PRO"))
+        }
+      }
+    } icon: {
+      Image(systemName: SettingsCategory.devaultPro.icon)
+        .font(.system(size: 15, weight: .medium))
+        .frame(width: 20, height: 20)
+    }
+    .padding(.vertical, 5)
+    .tag(SettingsCategory.devaultPro)
+  }
+
   private var detailColumn: some View {
     detailContent
       .frame(maxWidth: WindowLayoutMetrics.settingsDetailWidth, maxHeight: .infinity, alignment: .topLeading)
@@ -113,6 +141,8 @@ extension SettingsView {
   @ViewBuilder
   private var detailContent: some View {
     switch store.selectedCategory {
+    case .devaultPro:
+      DevaultProSettingsView()
     case .general:
       GeneralSettingsView(store: store.scope(state: \.general, action: \.general))
     case .security:
