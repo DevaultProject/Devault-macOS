@@ -26,8 +26,7 @@ struct MainView: View {
       ) { createProjectStore in
         CreateProjectView(store: createProjectStore)
       }
-      // DEBUG에서만 띄운다. 릴리스에는 아직 띄울 페이월이 없어서(B2 미완) 시트를 열면
-      // 내용도 닫기 버튼도 없는 모달에 갇힌다. **B2가 올라오면 이 조건을 걷어낸다.**
+      // DEBUG에서만 띄운다. 릴리스에는 아직 띄울 페이월이 없어서(B2 미완) 시트를 열면 내용도 닫기 버튼도 없는 모달에 갇힌다. **B2가 올라오면 이 조건을 걷어낸다.**
       #if DEBUG
       .sheet(isPresented: $store.isPaywallPresented.sending(\.setPaywallPresented)) {
         DebugPaywallView()

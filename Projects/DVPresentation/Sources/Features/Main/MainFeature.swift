@@ -167,8 +167,7 @@ public struct MainFeature {
       case .sidebar:
         return .none
 
-      // `case .settings:` catch-all보다 **앞에** 있어야 한다. 뒤에 두면 잡히지 않아 설정 게이트가
-      // 조용히 무시된다 — 토글만 되돌아가고 페이월이 뜨지 않는다.
+      // `case .settings:` catch-all보다 **앞에** 있어야 한다. 뒤에 두면 잡히지 않아 설정 게이트가 조용히 무시된다 — 토글만 되돌아가고 페이월이 뜨지 않는다.
       case .settings(.delegate(.paywallRequired)),
            .secretDetail(.delegate(.paywallRequired)),
            .createSecret(.delegate(.paywallRequired)):
@@ -252,8 +251,7 @@ public struct MainFeature {
           state.pendingCreateType = secretType
           return .send(.createSecret(.didTapCancel))
         }
-        // 사이드바 `+`와 같은 규칙을 태운다. 여기만 빠지면 메뉴로 들어온 사용자는 폼을 다 채운 뒤
-        // 저장에서 막히고 입력한 시크릿 값이 날아간다.
+        // 사이드바 `+`와 같은 규칙을 태운다. 여기만 빠지면 메뉴로 들어온 사용자는 폼을 다 채운 뒤 저장에서 막히고 입력한 시크릿 값이 날아간다.
         state.pendingCreateType = secretType
         return .run { send in
           await send(.canCreateSecretResponse(Result {

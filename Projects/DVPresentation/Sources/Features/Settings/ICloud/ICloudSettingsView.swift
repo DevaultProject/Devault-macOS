@@ -34,7 +34,7 @@ extension ICloudSettingsView {
         // `.disabled`는 tint 스위치를 손잡이 없는 단색 캡슐로 그린다(렌더 버그). 상호작용만 막고 흐림으로 표시.
         // 잠긴 상태는 상호작용을 남겨 둔다 — 눌러야 페이월이 뜨고, 왜 못 켜는지 알 수 있다.
         .allowsHitTesting(!store.isTogglingSync)
-        .opacity(store.isTogglingSync ? 0.6 : (store.isSyncLocked ? 0.6 : 1))
+        .opacity(store.isTogglingSync || store.isSyncLocked ? 0.6 : 1)
 
       }
 
