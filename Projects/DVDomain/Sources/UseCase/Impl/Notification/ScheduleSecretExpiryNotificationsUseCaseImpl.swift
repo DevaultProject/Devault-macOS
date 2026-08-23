@@ -56,7 +56,7 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
 
         let now = dateProvider()
         guard expiresAt > now else { return }
-        for timing in scheduledTimings() {
+        for timing in scheduledTimings(expiresAt: expiresAt, now: now) {
             guard let dayMark = Self.notificationDate(
                 expiresAt: expiresAt,
                 timing: timing
@@ -126,13 +126,21 @@ public struct ScheduleSecretExpiryNotificationsUseCaseImpl: ScheduleSecretExpiry
     /// **저장된 설정은 건드리지 않고 읽은 값을 줄이기만 한다** — 지우면 재구독 시 복원할 수 없다(설계 §2).
     ///
     /// 남길 하나는 **가장 이른 시점**이다. 시크릿 교체에는 시간이 필요해서 만료에 가까운 알림은 대응할 여유를 주지 못한다. 특정 시점을 고정하지 않는 이유는 ``EntitlementLimits/maxExpiryAlertDays``에 적었다.
+    /// - Parameters:
+    ///   - expiresAt: 이 Secret의 만료 시각
+    ///   - now: 지났는지 판단할 기준 시각
     /// - Returns: 예약할 시점 목록. 사용자가 아무 시점도 고르지 않았으면 빈 배열
-    private func scheduledTimings() -> [ExpiryAlertDay] {
+    private func scheduledTimings(expiresAt: Date, now: Date) -> [ExpiryAlertDay] {
         let selected = settingsRepository.expiryAlertDaysBefore()
         guard !entitlementUseCase.canUseMultipleExpiryAlertDays() else { return selected }
 
+        // **아직 지나지 않은 시점 중에서** 고른다. 지난 것까지 후보에 넣으면, 만료가 10일 남았는데 30일 전이 선택돼 있을 때 그것 하나만 남고 예약 단계에서 걸러져 알림이 0건이 된다.
+        let upcoming = selected.filter { timing in
+            guard let mark = Self.notificationDate(expiresAt: expiresAt, timing: timing) else { return false }
+            return mark > now
+        }
         // rawValue가 만료 전 일수라 큰 쪽이 이르다.
-        let earliestFirst = selected.sorted { $0.rawValue > $1.rawValue }
+        let earliestFirst = upcoming.sorted { $0.rawValue > $1.rawValue }
         return Array(earliestFirst.prefix(EntitlementLimits.maxExpiryAlertDays))
     }
 
