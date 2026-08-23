@@ -13,7 +13,8 @@ struct ICloudSettingsUseCaseImplTests {
         let repository = FakeSettingsRepository()
         let sut = ICloudSettingsUseCaseImpl(
             repository: repository,
-            iCloudService: StubICloudService(status: .available)
+            iCloudService: StubICloudService(status: .available),
+            entitlementUseCase: StubEntitlementUseCase()
         )
         let date = Date(timeIntervalSince1970: 1_700_000_000)
 
@@ -28,7 +29,8 @@ struct ICloudSettingsUseCaseImplTests {
     func accountStatusUsesService() async {
         let sut = ICloudSettingsUseCaseImpl(
             repository: FakeSettingsRepository(),
-            iCloudService: StubICloudService(status: .noAccount)
+            iCloudService: StubICloudService(status: .noAccount),
+            entitlementUseCase: StubEntitlementUseCase()
         )
 
         let status = await sut.accountStatus()
@@ -44,7 +46,8 @@ struct ICloudSettingsUseCaseImplTests {
             iCloudService: StubICloudService(
                 status: .available,
                 configurationFails: true
-            )
+            ),
+            entitlementUseCase: StubEntitlementUseCase()
         )
 
         await #expect(throws: StubICloudService.Error.configurationFailed) {
@@ -60,7 +63,8 @@ struct ICloudSettingsUseCaseImplTests {
             iCloudService: StubICloudService(
                 status: .available,
                 emitsRemoteChange: true
-            )
+            ),
+            entitlementUseCase: StubEntitlementUseCase()
         )
 
         var iterator = sut.remoteChangeStream().makeAsyncIterator()

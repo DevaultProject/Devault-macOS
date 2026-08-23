@@ -18,7 +18,8 @@ extension ICloudSettingsClient: @retroactive DependencyKey {
         storageConfigurator: { enabled in
           try await LiveRepositories.storage.configure(iCloudSyncEnabled: enabled)
         }
-      )
+      ),
+      entitlementUseCase: LiveUseCases.entitlement
     )
 
     return ICloudSettingsClient(
