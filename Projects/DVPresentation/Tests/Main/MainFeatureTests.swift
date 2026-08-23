@@ -645,6 +645,20 @@ struct MainFeatureTests {
     #expect(store.state.selectSecretType == nil)
   }
 
+  @Test("설정이 게이트 차단을 알리면 페이월을 띄운다 — catch-all에 삼켜지면 안 된다")
+  func settingsPaywallRequiredShowsPaywall() async {
+    var initial = MainFeature.State()
+    initial.settings = SettingsFeature.State()
+
+    let store = TestStore(initialState: initial) {
+      MainFeature()
+    }
+
+    await store.send(.settings(.delegate(.paywallRequired))) {
+      $0.isPaywallPresented = true
+    }
+  }
+
   @Test("secretDetail이 수정 잠금을 알리면 페이월을 띄운다")
   func secretDetailPaywallRequiredShowsPaywall() async {
     let secret = Secret(
