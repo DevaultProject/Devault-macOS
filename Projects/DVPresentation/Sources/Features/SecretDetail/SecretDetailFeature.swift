@@ -177,6 +177,8 @@ public struct SecretDetailFeature {
         case didTapSave
         /// 편집 폼의 프로젝트 필드에서 "새 프로젝트" 를 누른 경우.
         case didTapCreateProject
+        /// Project 생성 게이트 판정 결과. 폼 안에서 만드는 경로도 사이드바와 같은 규칙을 탄다.
+        case canCreateProjectResponse(Result<Bool, ProjectUseCaseError>)
 
         // MARK: Internal
         case linkedProjectsResponse(Result<[Project], SecretUseCaseError>)
@@ -507,7 +509,22 @@ public struct SecretDetailFeature {
                 return .none
 
             case .didTapCreateProject:
+                // 시트를 열기 전에 묻는다. 열어 두고 저장에서 막으면 입력한 이름이 날아간다.
+                return .run { send in
+                    await send(.canCreateProjectResponse(Result {
+                        try await entitlementClient.canCreateProject()
+                    }.mapError(ProjectUseCaseError.map)))
+                }
+
+            case .canCreateProjectResponse(.success(true)):
                 state.createProject = CreateProjectFeature.State()
+                return .none
+
+            case .canCreateProjectResponse(.success(false)):
+                return .send(.delegate(.paywallRequired))
+
+            case .canCreateProjectResponse(.failure):
+                // 판정 실패는 저장소가 깨진 것이다. 페이월을 띄우면 결제해도 해결되지 않는다.
                 return .none
 
             // 방금 만든 프로젝트를 목록에 얹는다. 전체 재조회는 하지 않는다 —

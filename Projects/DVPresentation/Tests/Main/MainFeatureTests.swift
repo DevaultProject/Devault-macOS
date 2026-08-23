@@ -391,9 +391,15 @@ struct MainFeatureTests {
 
     let store = TestStore(initialState: initial) {
       MainFeature()
+    } withDependencies: {
+      $0.entitlementClient.canCreateSecret = { true }
     }
 
     await store.send(.createSecretRequested(.oauth)) {
+      $0.pendingCreateType = .oauth
+    }
+    await store.receive(.canCreateSecretResponse(.success(true))) {
+      $0.pendingCreateType = nil
       $0.createSecret = CreateSecretFeature.State(secretType: .oauth)
       $0.secretDetail = nil
       $0.secretList.selectedSecretID = nil
@@ -657,6 +663,24 @@ struct MainFeatureTests {
     await store.send(.settings(.delegate(.paywallRequired))) {
       $0.isPaywallPresented = true
     }
+  }
+
+  @Test("메뉴로 만드는 경로도 게이트에 막히면 페이월을 띄운다")
+  func createSecretRequestedShowsPaywallWhenBlocked() async {
+    let store = TestStore(initialState: MainFeature.State()) {
+      MainFeature()
+    } withDependencies: {
+      $0.entitlementClient.canCreateSecret = { false }
+    }
+
+    await store.send(.createSecretRequested(.apiKeyToken)) {
+      $0.pendingCreateType = .apiKeyToken
+    }
+    await store.receive(.canCreateSecretResponse(.success(false))) {
+      $0.pendingCreateType = nil
+      $0.isPaywallPresented = true
+    }
+    #expect(store.state.createSecret == nil)
   }
 
   @Test("secretDetail이 수정 잠금을 알리면 페이월을 띄운다")

@@ -75,6 +75,8 @@ public struct CreateSecretFeature {
         case didTapCancel
         case didTapSave
         case didTapCreateProject
+        /// Project 생성 게이트 판정 결과. 폼 안에서 만드는 경로도 사이드바와 같은 규칙을 탄다.
+        case canCreateProjectResponse(Result<Bool, ProjectUseCaseError>)
 
         // MARK: - Internal
 
@@ -102,6 +104,8 @@ public struct CreateSecretFeature {
             /// 폼 안에서 프로젝트를 새로 만들었다. **시크릿 저장 여부와 무관하게** 프로젝트는 이미
             /// 만들어졌으므로 사이드바가 곧바로 반영해야 한다 — 취소하고 나가도 프로젝트는 남는다.
             case projectsChanged
+            /// 무료 한도에 걸려 프로젝트를 더 만들 수 없다. 페이월은 상위가 소유하므로 올려보낸다.
+            case paywallRequired
         }
     }
 
@@ -109,6 +113,7 @@ public struct CreateSecretFeature {
 
     @Dependency(\.secretManagementClient) var secretManagementClient
     @Dependency(\.projectClient) var projectClient
+    @Dependency(\.entitlementClient) var entitlementClient
     @Dependency(\.detectionClient) var detectionClient
     @Dependency(\.generalSettingsClient) var generalSettingsClient
     @Dependency(\.date.now) var now
@@ -182,7 +187,22 @@ public struct CreateSecretFeature {
                 return handleSave(state: &state)
 
             case .didTapCreateProject:
+                // 시트를 열기 전에 묻는다. 열어 두고 저장에서 막으면 입력한 이름이 날아간다.
+                return .run { send in
+                    await send(.canCreateProjectResponse(Result {
+                        try await entitlementClient.canCreateProject()
+                    }.mapError(ProjectUseCaseError.map)))
+                }
+
+            case .canCreateProjectResponse(.success(true)):
                 state.createProject = CreateProjectFeature.State()
+                return .none
+
+            case .canCreateProjectResponse(.success(false)):
+                return .send(.delegate(.paywallRequired))
+
+            case .canCreateProjectResponse(.failure):
+                // 판정 실패는 저장소가 깨진 것이다. 페이월을 띄우면 결제해도 해결되지 않는다.
                 return .none
 
             // MARK: Internal

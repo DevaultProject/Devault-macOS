@@ -433,9 +433,12 @@ struct CreateSecretFeatureTests {
     func didTapCreateProject_opensSheet() async {
         let store = TestStore(initialState: .init(secretType: .apiKeyToken)) {
             CreateSecretFeature()
+        } withDependencies: {
+            $0.entitlementClient.canCreateProject = { true }
         }
 
-        await store.send(.didTapCreateProject) {
+        await store.send(.didTapCreateProject)
+        await store.receive(.canCreateProjectResponse(.success(true))) {
             $0.createProject = CreateProjectFeature.State()
         }
     }

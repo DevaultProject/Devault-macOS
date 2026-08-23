@@ -118,15 +118,22 @@ public struct MainFeature {
         return .none
 
       case .canCreateSecretResponse(.success(true)):
+        // 메뉴(File ▸ New ▸ 타입)로 들어왔으면 타입이 정해져 있다. 사이드바 `+`는 타입 선택부터 연다.
+        if let secretType = state.pendingCreateType {
+          state.pendingCreateType = nil
+          return startCreating(secretType: secretType, &state)
+        }
         enterCreating(&state)
         return .send(.sidebar(.setCreatingSecret(true)))
 
       case .canCreateSecretResponse(.success(false)):
+        state.pendingCreateType = nil
         state.isPaywallPresented = true
         return .none
 
       case .canCreateSecretResponse(.failure):
         // 판정 실패는 저장소가 깨진 것이다. 페이월을 띄우면 결제해도 해결되지 않는다.
+        state.pendingCreateType = nil
         return .none
 
       case .canCreateProjectResponse(.success(true)):
@@ -163,7 +170,8 @@ public struct MainFeature {
       // `case .settings:` catch-all보다 **앞에** 있어야 한다. 뒤에 두면 잡히지 않아 설정 게이트가
       // 조용히 무시된다 — 토글만 되돌아가고 페이월이 뜨지 않는다.
       case .settings(.delegate(.paywallRequired)),
-           .secretDetail(.delegate(.paywallRequired)):
+           .secretDetail(.delegate(.paywallRequired)),
+           .createSecret(.delegate(.paywallRequired)):
         state.isPaywallPresented = true
         return .none
 
@@ -244,7 +252,14 @@ public struct MainFeature {
           state.pendingCreateType = secretType
           return .send(.createSecret(.didTapCancel))
         }
-        return startCreating(secretType: secretType, &state)
+        // 사이드바 `+`와 같은 규칙을 태운다. 여기만 빠지면 메뉴로 들어온 사용자는 폼을 다 채운 뒤
+        // 저장에서 막히고 입력한 시크릿 값이 날아간다.
+        state.pendingCreateType = secretType
+        return .run { send in
+          await send(.canCreateSecretResponse(Result {
+            try await entitlementClient.canCreateSecret()
+          }.mapError(SecretUseCaseError.map)))
+        }
 
       case .selectSecretType(.delegate(.typeSelected(let secretType))):
         state.createSecret = CreateSecretFeature.State(secretType: secretType)
