@@ -189,7 +189,7 @@ extension SettingsView {
   private var detailContent: some View {
     switch store.selectedCategory {
     case .devaultPro:
-      DevaultProSettingsView()
+      DevaultProSettingsView(store: store.scope(state: \.devaultPro, action: \.devaultPro))
     case .general:
       GeneralSettingsView(store: store.scope(state: \.general, action: \.general))
     case .security:
