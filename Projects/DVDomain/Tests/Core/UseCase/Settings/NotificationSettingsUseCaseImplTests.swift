@@ -14,7 +14,8 @@ struct NotificationSettingsUseCaseImplTests {
         let scheduler = StubExpiryNotificationScheduler()
         let sut = NotificationSettingsUseCaseImpl(
             repository: repository,
-            expiryNotificationScheduler: scheduler
+            expiryNotificationScheduler: scheduler,
+            entitlementUseCase: StubEntitlementUseCase()
         )
 
         #expect(sut.isExpiryAlertsEnabled() == true)
@@ -29,7 +30,8 @@ struct NotificationSettingsUseCaseImplTests {
         let scheduler = StubExpiryNotificationScheduler()
         let sut = NotificationSettingsUseCaseImpl(
             repository: repository,
-            expiryNotificationScheduler: scheduler
+            expiryNotificationScheduler: scheduler,
+            entitlementUseCase: StubEntitlementUseCase()
         )
 
         #expect(sut.expiryAlertDaysBefore() == ExpiryAlertDay.defaultSelection)
@@ -43,7 +45,8 @@ struct NotificationSettingsUseCaseImplTests {
         let repository = FakeSettingsRepository()
         let sut = NotificationSettingsUseCaseImpl(
             repository: repository,
-            expiryNotificationScheduler: StubExpiryNotificationScheduler()
+            expiryNotificationScheduler: StubExpiryNotificationScheduler(),
+            entitlementUseCase: StubEntitlementUseCase()
         )
 
         #expect(sut.isAuthFailureAlertEnabled() == true)

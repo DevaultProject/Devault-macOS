@@ -6,13 +6,20 @@ public struct ICloudSettingsUseCaseImpl: ICloudSettingsUseCase {
 
   private let repository: any SettingsRepository
   private let iCloudService: any ICloudService
+  private let entitlementUseCase: any EntitlementUseCase
 
+  /// - Parameters:
+  ///   - repository: 설정 저장소
+  ///   - iCloudService: 계정 상태 조회와 저장소 구성
+  ///   - entitlementUseCase: 동기화 사용 가능 여부 판정. **기본값을 두지 않는다** — 빠뜨리면 가드가 조용히 사라진다
   public init(
     repository: any SettingsRepository,
-    iCloudService: any ICloudService
+    iCloudService: any ICloudService,
+    entitlementUseCase: any EntitlementUseCase
   ) {
     self.repository = repository
     self.iCloudService = iCloudService
+    self.entitlementUseCase = entitlementUseCase
   }
 
   public func isEnabled() -> Bool {
@@ -20,6 +27,10 @@ public struct ICloudSettingsUseCaseImpl: ICloudSettingsUseCase {
   }
 
   public func setEnabled(_ enabled: Bool) async throws {
+    // 켜는 것만 막는다. 끄는 것은 등급과 무관하게 언제나 허용해야 다운그레이드가 막히지 않는다.
+    if enabled, !entitlementUseCase.canEnableICloudSync() {
+      throw EntitlementError.requiresPro
+    }
     try await iCloudService.configureStorage(iCloudSyncEnabled: enabled)
     repository.setICloudSyncEnabled(enabled)
   }
