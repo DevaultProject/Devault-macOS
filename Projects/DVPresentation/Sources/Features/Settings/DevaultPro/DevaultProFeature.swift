@@ -12,13 +12,13 @@ struct DevaultProFeature: Identifiable {
     DevaultProFeature(
       id: "unlimitedSecrets",
       title: .module("Unlimited Secrets"),
-      description: .module("Save as many secrets as you need,\nwithout the 15-item limit."),
+      description: .module("Save as many secrets as you need, without the 15-item limit."),
       systemImage: "infinity"
     ),
     DevaultProFeature(
       id: "unlimitedProjects",
       title: .module("Unlimited Projects"),
-      description: .module("Create as many projects as you need,\nwithout the 1-project limit."),
+      description: .module("Create as many projects as you need, without the 1-project limit."),
       systemImage: "folder"
     ),
     DevaultProFeature(
