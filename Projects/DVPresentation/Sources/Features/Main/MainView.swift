@@ -15,16 +15,6 @@ struct MainView: View {
 
   // MARK: - Body
 
-  /// 게이트에 막혔을 때 띄우는 시트. 지금은 데모 페이월이고, B2가 진짜 페이월로 대체한다.
-  @ViewBuilder
-  private var paywallSheet: some View {
-    #if DEBUG
-    DebugPaywallView()
-    #else
-    EmptyView()
-    #endif
-  }
-
   var body: some View {
     content
       // `screen`으로 좁히지 않으면 목록·상세가 바뀔 때마다 화면 전체가 다시 페이드된다.
@@ -36,9 +26,13 @@ struct MainView: View {
       ) { createProjectStore in
         CreateProjectView(store: createProjectStore)
       }
+      // DEBUG에서만 띄운다. 릴리스에는 아직 띄울 페이월이 없어서(B2 미완) 시트를 열면
+      // 내용도 닫기 버튼도 없는 모달에 갇힌다. **B2가 올라오면 이 조건을 걷어낸다.**
+      #if DEBUG
       .sheet(isPresented: $store.isPaywallPresented.sending(\.setPaywallPresented)) {
-        paywallSheet
+        DebugPaywallView()
       }
+      #endif
       .overlay(alignment: .topTrailing) {
         lockButton
           .padding(16)
