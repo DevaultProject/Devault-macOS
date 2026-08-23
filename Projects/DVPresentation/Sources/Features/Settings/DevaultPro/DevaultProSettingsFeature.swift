@@ -6,23 +6,25 @@ import DVDomain
 // MARK: - DevaultProSettingsFeature
 
 @Reducer
-struct DevaultProSettingsFeature {
+public struct DevaultProSettingsFeature {
 
   // MARK: - State
 
   @ObservableState
-  struct State: Equatable {
+  public struct State: Equatable {
     var subscriptionStatus: SubscriptionStatus = .free
     /// `SubscriptionStatus`엔 productID만 있고 표시명(개월수)이 없어서, 상품 목록에서 따로 찾아온다.
     var currentPlanName: String?
     @Presents var paywall: DevaultProPaywallFeature.State?
 
     var isPro: Bool { subscriptionStatus.entitlement == .pro }
+
+    public init() {}
   }
 
   // MARK: - Action
 
-  enum Action: Equatable {
+  public enum Action: Equatable {
 
     // MARK: - View
 
@@ -48,7 +50,7 @@ struct DevaultProSettingsFeature {
 
   // MARK: - Body
 
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
       case .task:
