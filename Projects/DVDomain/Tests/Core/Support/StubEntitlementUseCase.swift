@@ -1,0 +1,49 @@
+// Copyright © 2026 Devault. All rights reserved
+
+import DVDomain
+
+/// 등급과 판정 결과를 고정으로 돌려주는 테스트용 ``EntitlementUseCase``.
+///
+/// 기본값은 **모든 게이트를 여는 Pro**다. 게이트와 무관한 테스트가 판정 때문에 실패하지 않게 하기 위한 것이며, 잠금을 검증하는 테스트만 `canEditSecretsValue` 등을 내려 쓴다.
+public final class StubEntitlementUseCase: EntitlementUseCase, @unchecked Sendable {
+
+    public var entitlementValue: Entitlement
+    public var canCreateSecretValue: Bool
+    public var canCreateProjectValue: Bool
+    public var canEditSecretsValue: Bool
+
+    /// 판정 호출 횟수. 허용된 변경이 개수를 세지 않고 지나가는지 확인할 때 쓴다.
+    public private(set) var canEditSecretsCallCount = 0
+
+    public init(
+        entitlement: Entitlement = .pro,
+        canCreateSecret: Bool = true,
+        canCreateProject: Bool = true,
+        canEditSecrets: Bool = true
+    ) {
+        self.entitlementValue = entitlement
+        self.canCreateSecretValue = canCreateSecret
+        self.canCreateProjectValue = canCreateProject
+        self.canEditSecretsValue = canEditSecrets
+    }
+
+    public func current() -> Entitlement { entitlementValue }
+
+    public func stream() -> AsyncStream<Entitlement> {
+        AsyncStream { continuation in
+            continuation.yield(entitlementValue)
+            continuation.finish()
+        }
+    }
+
+    public func canCreateSecret() async throws -> Bool { canCreateSecretValue }
+    public func canCreateProject() async throws -> Bool { canCreateProjectValue }
+
+    public func canEditSecrets() async throws -> Bool {
+        canEditSecretsCallCount += 1
+        return canEditSecretsValue
+    }
+
+    public func canEnableICloudSync() -> Bool { entitlementValue == .pro }
+    public func canUseMultipleExpiryAlertDays() -> Bool { entitlementValue == .pro }
+}

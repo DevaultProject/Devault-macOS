@@ -18,6 +18,7 @@ struct PatchSecretUseCaseImplTests {
         let sut = PatchSecretUseCaseImpl(
             repository: repo,
             cryptoService: FakeSecretCryptoService(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { fixedNow }
         )
 
@@ -36,6 +37,7 @@ struct PatchSecretUseCaseImplTests {
         let sut = PatchSecretUseCaseImpl(
             repository: repo,
             cryptoService: FakeSecretCryptoService(),
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { Date() }
         )
 
@@ -53,7 +55,8 @@ struct PatchSecretUseCaseImplTests {
         let missingID = UUID()
         let sut = PatchSecretUseCaseImpl(
             repository: repo,
-            cryptoService: FakeSecretCryptoService()
+            cryptoService: FakeSecretCryptoService(),
+        entitlementUseCase: StubEntitlementUseCase()
         )
 
         await #expect(throws: SecretUseCaseError.secretNotFound(id: missingID)) {
@@ -73,6 +76,7 @@ struct PatchSecretUseCaseImplTests {
         let sut = PatchSecretUseCaseImpl(
             repository: repo,
             cryptoService: crypto,
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { fixedNow }
         )
 
@@ -103,6 +107,7 @@ struct PatchSecretUseCaseImplTests {
         let sut = PatchSecretUseCaseImpl(
             repository: repo,
             cryptoService: crypto,
+            entitlementUseCase: StubEntitlementUseCase(),
             dateProvider: { fixedNow }
         )
 
@@ -131,7 +136,7 @@ struct PatchSecretUseCaseImplTests {
         repo.seed(secret)
         let crypto = FakeSecretCryptoService()
         crypto.errorOnEncryptPayload = .encryptionFailed
-        let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: crypto)
+        let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: crypto, entitlementUseCase: StubEntitlementUseCase())
 
         await #expect(throws: SecretUseCaseError.cryptoFailure(.encryptionFailed)) {
             _ = try await sut.update(
@@ -153,7 +158,7 @@ struct PatchSecretUseCaseImplTests {
         let secret = SecretFixture.make()
         repo.seed(secret)
         let crypto = FakeSecretCryptoService()
-        let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: crypto)
+        let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: crypto, entitlementUseCase: StubEntitlementUseCase())
 
         _ = try await sut.update(
             id: secret.id,
@@ -178,7 +183,7 @@ struct PatchSecretUseCaseImplTests {
         let repo = InMemorySecretRepository()
         let secret = SecretFixture.make()
         repo.seed(secret)
-        let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: FakeSecretCryptoService())
+        let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: FakeSecretCryptoService(), entitlementUseCase: StubEntitlementUseCase())
 
         _ = try await sut.update(id: secret.id, patch: SecretPatch(liked: .set(true)), projectIDs: .unchanged)
 
@@ -192,7 +197,7 @@ struct PatchSecretUseCaseImplTests {
         let secret = SecretFixture.make()
         repo.seed(secret)
         let projectID = UUID()
-        let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: FakeSecretCryptoService())
+        let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: FakeSecretCryptoService(), entitlementUseCase: StubEntitlementUseCase())
 
         _ = try await sut.update(id: secret.id, patch: SecretPatch(), projectIDs: .set([projectID]))
 
@@ -204,7 +209,7 @@ struct PatchSecretUseCaseImplTests {
     @Test("projectIDs가 .set일 때 존재하지 않는 id는 secretNotFound로 매핑된다")
     func updateWithSetProjectIDsMapsSecretNotFound() async {
         let missingID = UUID()
-        let sut = PatchSecretUseCaseImpl(repository: InMemorySecretRepository(), cryptoService: FakeSecretCryptoService())
+        let sut = PatchSecretUseCaseImpl(repository: InMemorySecretRepository(), cryptoService: FakeSecretCryptoService(), entitlementUseCase: StubEntitlementUseCase())
 
         await #expect(throws: SecretUseCaseError.secretNotFound(id: missingID)) {
             _ = try await sut.update(id: missingID, patch: SecretPatch(), projectIDs: .set([UUID()]))
@@ -257,7 +262,7 @@ struct PatchSecretUseCaseImplTests {
             let repo = InMemorySecretRepository()
             let secret = SecretFixture.make()
             repo.seed(secret)
-            let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: FakeSecretCryptoService())
+            let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: FakeSecretCryptoService(), entitlementUseCase: StubEntitlementUseCase())
 
             try await overload.call(sut, secret.id)
 
@@ -283,7 +288,7 @@ struct PatchSecretUseCaseImplTests {
         let secret = SecretFixture.make()
         repo.seed(secret)
         let crypto = FakeSecretCryptoService()
-        let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: crypto)
+        let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: crypto, entitlementUseCase: StubEntitlementUseCase())
 
         await #expect(throws: SecretUseCaseError.invalidName) {
             _ = try await sut.update(
@@ -304,7 +309,7 @@ struct PatchSecretUseCaseImplTests {
         let repo = InMemorySecretRepository()
         let secret = SecretFixture.make(expiresAt: Date(timeIntervalSince1970: 1_800_000_000))
         repo.seed(secret)
-        let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: FakeSecretCryptoService())
+        let sut = PatchSecretUseCaseImpl(repository: repo, cryptoService: FakeSecretCryptoService(), entitlementUseCase: StubEntitlementUseCase())
 
         let updated = try await sut.update(
             id: secret.id,
