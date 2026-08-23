@@ -96,7 +96,7 @@ extension DevaultProPaywallView {
       iconBadge
 
       VStack(spacing: 6) {
-        Text(isChangingPlan ? String.module("Change Your Plan") : String.module("Upgrade to Devault Pro"))
+        Text(isChangingPlan ? String.module("Change Your Plan") : String.module("Upgrade to DeVault Pro"))
           .dvFont(.headingLG)
           .foregroundStyle(Color.dv(.gray900))
         Text(.module("Manage your secrets more securely on every device, without the 15-item limit."))

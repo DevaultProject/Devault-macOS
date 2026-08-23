@@ -15,7 +15,7 @@ public enum SettingsCategory: String, Equatable, CaseIterable, Hashable, Sendabl
   /// 브랜드명이라 다른 탭과 달리 `.module(...)`로 번역하지 않는다.
   var title: String {
     switch self {
-    case .devaultPro:    "Devault Pro"
+    case .devaultPro:    "DeVault Pro"
     case .general:       .module("General")
     case .security:      .module("Security")
     case .icloud:        .module("iCloud")
