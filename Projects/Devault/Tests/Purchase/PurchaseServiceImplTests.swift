@@ -45,8 +45,8 @@ struct PurchaseServiceImplTests {
 
         let products = try await sut.products()
 
-        #expect(products.count == 1)
-        #expect(products.first?.id == SubscriptionProductID.proMonthly)
+        #expect(products.count == SubscriptionProductID.all.count)
+        #expect(Set(products.map(\.id)) == Set(SubscriptionProductID.all))
         // 가격은 스토어프론트마다 다르므로 값이 아니라 존재만 확인한다.
         #expect(products.first?.displayPrice.isEmpty == false)
     }
