@@ -31,6 +31,11 @@ public final class InMemoryProjectRepository: ProjectRepository, @unchecked Send
 
     // MARK: - ProjectRepository
 
+    public func create(_ project: Project, withinTotalLimit limit: Int) async throws -> Project? {
+        guard projects.count < limit else { return nil }
+        return try await create(project)
+    }
+
     public func create(_ project: Project) async throws -> Project {
         createCount += 1
         if let error = errorOnCreate { throw error }

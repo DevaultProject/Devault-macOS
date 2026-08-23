@@ -8,6 +8,15 @@ public protocol ProjectRepository: Sendable {
     /// - Returns: 저장된 Project
     func create(_ project: Project) async throws -> Project
 
+    /// 보유 수가 `limit` 미만일 때만 Project를 생성한다.
+    ///
+    /// 세는 것과 넣는 것을 한 번에 처리해, 동시에 들어온 생성 둘이 같은 개수를 보고 나란히 통과하는 틈을 없앤다. 한도가 얼마인지·언제 적용되는지는 호출부가 정하고 저장소는 받은 수만 지킨다.
+    /// - Parameters:
+    ///   - project: 저장할 Project 엔티티
+    ///   - limit: 허용하는 보유 수
+    /// - Returns: 저장된 Project. 한도에 걸려 만들지 않았으면 nil
+    func create(_ project: Project, withinTotalLimit limit: Int) async throws -> Project?
+
     /// ID로 단일 Project를 조회한다.
     /// - Parameter id: 조회할 Project의 ID
     /// - Returns: 해당 Project. 존재하지 않으면 nil

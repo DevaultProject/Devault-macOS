@@ -237,6 +237,30 @@ public actor SecretRepositoryImpl: SecretRepository {
     }
 
     public func create(_ secret: DVDomain.Secret, projectIDs: [UUID]) async throws -> DVDomain.Secret {
+        try insert(secret, projectIDs: projectIDs)
+    }
+
+    public func create(
+        _ secret: DVDomain.Secret,
+        projectIDs: [UUID],
+        withinTotalLimit limit: Int
+    ) async throws -> DVDomain.Secret? {
+        // 세기와 넣기 사이에 await가 없어야 actor가 다른 요청을 끼워 넣지 못한다. 둘 다 동기 호출로 유지할 것.
+        let held: Int
+        do {
+            held = try modelContext.fetchCount(
+                SecretFetchDescriptorBuilder.makeTotalCountExcludingTrashDescriptor()
+            )
+        } catch {
+            Log.error("[SecretRepository] 한도 검사용 개수 조회 실패 — error: \(error)", category: .data)
+            throw SecretRepositoryError.persistenceFailed
+        }
+
+        guard held < limit else { return nil }
+        return try insert(secret, projectIDs: projectIDs)
+    }
+
+    private func insert(_ secret: DVDomain.Secret, projectIDs: [UUID]) throws -> DVDomain.Secret {
         do {
             if try fetchLocalSecret(id: secret.id) != nil {
                 throw SecretRepositoryError.duplicateID(id: secret.id)

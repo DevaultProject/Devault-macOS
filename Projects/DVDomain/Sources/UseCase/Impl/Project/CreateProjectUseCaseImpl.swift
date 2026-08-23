@@ -44,7 +44,15 @@ public struct CreateProjectUseCaseImpl: CreateProjectUseCase {
                 createdAt: now,
                 updatedAt: now
             )
-            return try await repository.create(project)
+            // 판정과 저장 사이에 정규화·중복 검사가 끼어 있어, 동시에 시작한 생성 둘이 같은 개수를 보고 나란히 통과할 수 있다. 저장소가 세기와 넣기를 한 번에 처리하며 최종 판정을 내린다.
+            let limit = entitlementUseCase.current() == .free ? EntitlementLimits.maxProjects : Int.max
+            guard let created = try await repository.create(project, withinTotalLimit: limit) else {
+                throw EntitlementError.limitReached
+            }
+            return created
+        } catch let error as EntitlementError {
+            // 게이트 차단은 도메인 오류로 접지 않는다 — 접으면 호출부가 페이월을 띄울 근거를 잃는다.
+            throw error
         } catch {
             throw ProjectUseCaseError.map(error)
         }
