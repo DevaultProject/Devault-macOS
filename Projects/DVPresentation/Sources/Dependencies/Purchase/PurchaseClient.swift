@@ -20,6 +20,9 @@ public struct PurchaseClient: Sendable {
 
     /// 구독 설정 화면에 표시할 현재 상태. 게이트 판정에는 쓰지 않는다.
     public var subscriptionStatus: @Sendable () async -> SubscriptionStatus = { .free }
+
+    /// macOS엔 iOS의 인앱 구독 관리 시트가 없어, App Store의 구독 관리 페이지를 연다.
+    public var openManageSubscriptions: @Sendable () -> Void = {}
 }
 
 extension PurchaseClient: TestDependencyKey {
@@ -36,7 +39,8 @@ extension PurchaseClient: TestDependencyKey {
         },
         purchase: { _ in .success },
         restore: {},
-        subscriptionStatus: { .free }
+        subscriptionStatus: { .free },
+        openManageSubscriptions: {}
     )
 }
 

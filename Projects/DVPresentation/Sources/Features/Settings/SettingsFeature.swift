@@ -14,6 +14,7 @@ public struct SettingsFeature {
   public struct State: Equatable {
     var selectedCategory: SettingsCategory = .general
     var isDevaultProSubscribed = false
+    var devaultPro = DevaultProSettingsFeature.State()
     var general = GeneralSettingsFeature.State()
     var security = SecuritySettingsFeature.State()
     var icloud = ICloudSettingsFeature.State()
@@ -40,6 +41,7 @@ public struct SettingsFeature {
 
     // MARK: - Child
 
+    case devaultPro(DevaultProSettingsFeature.Action)
     case general(GeneralSettingsFeature.Action)
     case security(SecuritySettingsFeature.Action)
     case icloud(ICloudSettingsFeature.Action)
@@ -72,6 +74,9 @@ public struct SettingsFeature {
 
   public var body: some ReducerOf<Self> {
     BindingReducer()
+    Scope(state: \.devaultPro, action: \.devaultPro) {
+      DevaultProSettingsFeature()
+    }
     Scope(state: \.general, action: \.general) {
       GeneralSettingsFeature()
     }
@@ -108,6 +113,9 @@ public struct SettingsFeature {
 
       case .didTapClose:
         return .send(.delegate(.closeRequested))
+
+      case .devaultPro:
+        return .none
 
       case .general:
         return .none

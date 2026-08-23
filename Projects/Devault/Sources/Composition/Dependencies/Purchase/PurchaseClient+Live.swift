@@ -1,5 +1,6 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import AppKit
 import ComposableArchitecture
 import DVDomain
 import DVPresentation
@@ -11,7 +12,11 @@ extension PurchaseClient: @retroactive DependencyKey {
             products: { try await service.products() },
             purchase: { try await service.purchase(productID: $0) },
             restore: { try await service.restore() },
-            subscriptionStatus: { await service.subscriptionStatus() }
+            subscriptionStatus: { await service.subscriptionStatus() },
+            openManageSubscriptions: {
+                guard let url = URL(string: "https://apps.apple.com/account/subscriptions") else { return }
+                NSWorkspace.shared.open(url)
+            }
         )
     }()
 }

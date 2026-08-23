@@ -14,39 +14,16 @@ struct DevaultProPaywallView: View {
 
   // MARK: - Properties
 
+  let store: StoreOf<DevaultProPaywallFeature>
+
   @Environment(\.dismiss) private var dismiss
   @Environment(\.colorScheme) private var colorScheme
-
-  @Dependency(\.purchaseClient) private var purchaseClient
-
-  @State private var products: [SubscriptionProduct] = []
-  @State private var selectedProductID: String?
-  @State private var isPurchasing = false
-  @State private var isRestoring = false
-  @State private var errorMessage: String?
-  /// 이미 구독 중인 채로 열리면 카피와 버튼 문구가 "가입"이 아니라 "변경"이어야 한다.
-  @State private var isChangingPlan = false
-  /// 현재 구독 중인 상품 ID. 이 값과 같은 플랜을 선택하면 "변경"이 성립하지 않으므로 버튼을 막는다.
-  @State private var currentProductID: String?
 
   // MARK: - Body
 
   var body: some View {
     content
-      .task {
-        let status = await purchaseClient.subscriptionStatus()
-        isChangingPlan = status.entitlement == .pro
-        currentProductID = status.productID
-        await loadProducts()
-      }
-  }
-
-  private var isBusy: Bool { isPurchasing || isRestoring }
-  private var selectedProduct: SubscriptionProduct? {
-    products.first { $0.id == selectedProductID }
-  }
-  private var isSelectingCurrentPlan: Bool {
-    selectedProductID != nil && selectedProductID == currentProductID
+      .task { await store.send(.task).finish() }
   }
 
   /// `vaultGreenTint` 배경 위에 놓이는 아이콘·배지 글자색.
@@ -74,7 +51,7 @@ extension DevaultProPaywallView {
           .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
       }
 
-      if let errorMessage {
+      if let errorMessage = store.errorMessage {
         Text(errorMessage)
           .dvFont(.captionMDRegular)
           .foregroundStyle(Color.dv(.danger))
@@ -96,7 +73,7 @@ extension DevaultProPaywallView {
       iconBadge
 
       VStack(spacing: 6) {
-        Text(isChangingPlan ? String.module("Change Your Plan") : String.module("Upgrade to DeVault Pro"))
+        Text(store.isChangingPlan ? String.module("Change Your Plan") : String.module("Upgrade to DeVault Pro"))
           .dvFont(.headingLG)
           .foregroundStyle(Color.dv(.gray900))
         Text(.module("Manage your secrets more securely on every device, without the 15-item limit."))
@@ -170,12 +147,12 @@ extension DevaultProPaywallView {
 
   @ViewBuilder
   private var planGrid: some View {
-    if products.isEmpty {
+    if store.products.isEmpty {
       ProgressView()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     } else {
       VStack(spacing: 10) {
-        ForEach(products) { product in
+        ForEach(store.products) { product in
           planCard(product)
         }
       }
@@ -183,9 +160,9 @@ extension DevaultProPaywallView {
   }
 
   private func planCard(_ product: SubscriptionProduct) -> some View {
-    let isSelected = product.id == selectedProductID
+    let isSelected = product.id == store.selectedProductID
 
-    return DVRadioButton(isSelected: isSelected, action: { selectedProductID = product.id }) {
+    return DVRadioButton(isSelected: isSelected, action: { store.send(.didSelectProduct(product.id)) }) {
       HStack(alignment: .center) {
         Text(product.displayName)
           .dvFont(.bodyLG)
@@ -213,14 +190,14 @@ extension DevaultProPaywallView {
     // DVRadioButton 자체의 탭 영역은 인디케이터+라벨에만 붙어 있어 패딩(카드 여백)을 누르면
     // 반응하지 않는다 — 카드 전체를 눌러도 선택되도록 별도로 씌운다.
     .contentShape(Rectangle())
-    .onTapGesture { selectedProductID = product.id }
+    .onTapGesture { store.send(.didSelectProduct(product.id)) }
   }
 
   private var subscribeButton: some View {
     DVButton(titleText: subscribeButtonTitle, style: .primary) {
-      Task { await purchase() }
+      store.send(.didTapSubscribe)
     }
-    .disabled(selectedProduct == nil || isBusy || isSelectingCurrentPlan)
+    .disabled(store.selectedProduct == nil || store.isBusy || store.isSelectingCurrentPlan)
     .frame(maxWidth: .infinity)
   }
 
@@ -238,11 +215,11 @@ extension DevaultProPaywallView {
         Link(String.module("Privacy Policy"), destination: HelpMenuLink.privacyPolicy.url)
           .underline()
         Button(String.module("Restore Purchase")) {
-          Task { await restore() }
+          store.send(.didTapRestore)
         }
         .buttonStyle(.plain)
         .underline()
-        .disabled(isBusy)
+        .disabled(store.isBusy)
       }
       .dvFont(.captionMDRegular)
       .foregroundStyle(Color.dv(.gray500))
@@ -272,13 +249,13 @@ extension DevaultProPaywallView {
   }
 
   private var subscribeButtonTitle: String {
-    guard let selectedProduct else {
-      return isChangingPlan ? String.module("Change Plan") : String.module("Subscribe")
+    guard let selectedProduct = store.selectedProduct else {
+      return store.isChangingPlan ? String.module("Change Plan") : String.module("Subscribe")
     }
-    if isSelectingCurrentPlan {
+    if store.isSelectingCurrentPlan {
       return String.module("Your Current Plan")
     }
-    return isChangingPlan
+    return store.isChangingPlan
       ? String(format: String.module("Change to %@"), selectedProduct.displayName)
       : String(format: String.module("Subscribe for %@"), selectedProduct.displayName)
   }
@@ -290,59 +267,12 @@ extension DevaultProPaywallView {
   }
 }
 
-// MARK: - Actions
-
-extension DevaultProPaywallView {
-
-  private func loadProducts() async {
-    do {
-      let loaded = try await purchaseClient.products()
-      products = loaded
-      if selectedProductID == nil {
-        // 플랜 변경이면 지금 쓰고 있는 플랜을 그대로 보여준다 — 아무것도 안 눌러도 "다른 플랜"을
-        // 고르라는 화면인지 알 수 있어야 한다. 신규 가입이면 1개월(가장 짧은 구독, 정렬 기준 첫 항목)을 기본값으로 둔다.
-        selectedProductID = currentProductID ?? loaded.first?.id
-      }
-    } catch {
-      errorMessage = String.module("Couldn't load subscription plans. Check your connection and try again.")
-    }
-  }
-
-  private func purchase() async {
-    guard let selectedProduct else { return }
-    isPurchasing = true
-    defer { isPurchasing = false }
-    errorMessage = nil
-    do {
-      let result = try await purchaseClient.purchase(productID: selectedProduct.id)
-      switch result {
-      case .success:
-        dismiss()
-      case .userCancelled:
-        break
-      case .pending:
-        errorMessage = String.module("Your purchase is pending approval.")
-      }
-    } catch {
-      errorMessage = String.module("Purchase failed. Please try again.")
-    }
-  }
-
-  private func restore() async {
-    isRestoring = true
-    defer { isRestoring = false }
-    errorMessage = nil
-    do {
-      try await purchaseClient.restore()
-      dismiss()
-    } catch {
-      errorMessage = String.module("Couldn't restore your purchase. Please try again.")
-    }
-  }
-}
-
 // MARK: - Preview
 
 #Preview("Devault Pro Paywall") {
-  DevaultProPaywallView()
+  DevaultProPaywallView(
+    store: Store(initialState: DevaultProPaywallFeature.State()) {
+      DevaultProPaywallFeature()
+    }
+  )
 }
