@@ -67,6 +67,7 @@ extension DevaultProSettingsView {
               .foregroundStyle(Color.dv(.gray600))
           }
         }
+        refreshButton
         Spacer(minLength: 12)
         if store.isPro {
           HStack(spacing: 8) {
@@ -92,6 +93,28 @@ extension DevaultProSettingsView {
       }
     }
     .settingsRowLayout()
+  }
+
+  /// `Transaction.updates`가 아직 반영되기 전이면 방금 결제해도 잠깐 무료로 보일 수 있다.
+  /// 앱을 재시작하지 않아도 등급을 강제로 다시 물을 수 있는 탈출구.
+  private var refreshButton: some View {
+    Group {
+      if store.isRefreshing {
+        ProgressView()
+          .controlSize(.small)
+          .frame(width: 22, height: 22)
+      } else {
+        DVIconButton(
+          systemName: "arrow.clockwise",
+          idle: .gray500,
+          hovered: .gray700,
+          pressed: .gray800
+        ) {
+          store.send(.didTapRefresh)
+        }
+      }
+    }
+    .accessibilityLabel(String.module("Refresh subscription status"))
   }
 
   private func usageDescription(_ usage: (used: Int, limit: Int)) -> String {
