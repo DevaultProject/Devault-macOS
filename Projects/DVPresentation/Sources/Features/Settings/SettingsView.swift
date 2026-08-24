@@ -109,7 +109,7 @@ extension SettingsView {
       HStack(spacing: 8) {
         Text(SettingsCategory.devaultPro.title)
           .dvFont(.bodyLG)
-        if store.isDevaultProSubscribed {
+        if store.devaultPro.isPro {
           // DVChip은 내부적으로 Button이라 그대로 두면 포커스·클릭을 받는다 — 표시 전용
           // 배지라 allowsHitTesting(false)로 인터랙션을 막는다(DVChipsContainer와 동일 패턴).
           DVChip(String.module("PRO"))
@@ -129,7 +129,7 @@ extension SettingsView {
   /// 들어가 봤자 잠긴 화면만 보이는 탭을 아예 회색으로 죽이고 선택 못 하게 막는다.
   @ViewBuilder
   private func settingsCategoryRow(_ category: SettingsCategory) -> some View {
-    let isLocked = category == .icloud && !store.isDevaultProSubscribed
+    let isLocked = category == .icloud && !store.devaultPro.isPro
 
     let label = Label {
       HStack(spacing: 8) {
