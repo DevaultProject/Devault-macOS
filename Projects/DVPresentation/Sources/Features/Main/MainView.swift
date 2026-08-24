@@ -4,6 +4,9 @@ import SwiftUI
 
 import ComposableArchitecture
 import DVDesign
+#if DEBUG
+import AppKit
+#endif
 
 // MARK: - MainView
 
@@ -78,8 +81,14 @@ extension MainView {
       // 폼이 떠 있는 동안에도 타입 선택 State는 살아 있으므로 폼을 먼저 본다.
       if let createSecretStore = store.scope(state: \.createSecret, action: \.createSecret) {
         CreateSecretView(store: createSecretStore)
+          #if DEBUG
+          .columnWidthProbe("detail(form)", screen: store.screen)
+          #endif
       } else if let selectStore = store.scope(state: \.selectSecretType, action: \.selectSecretType) {
         SelectSecretTypeView(store: selectStore)
+          #if DEBUG
+          .columnWidthProbe("detail(typeGrid)", screen: store.screen)
+          #endif
       }
     } else {
       detailColumn
@@ -95,6 +104,9 @@ extension MainView {
         ideal: WindowLayoutMetrics.sidebarWidth,
         max: WindowLayoutMetrics.sidebarWidth
       )
+      #if DEBUG
+      .columnWidthProbe("sidebar", screen: store.screen)
+      #endif
   }
 
   /// 생성 중에는 폭 0으로 접혀 2컬럼처럼 보인다.
@@ -114,6 +126,9 @@ extension MainView {
         ideal: isCollapsed ? 0 : WindowLayoutMetrics.listIdealWidth,
         max: isCollapsed ? 0 : WindowLayoutMetrics.listMaxWidth
       )
+      #if DEBUG
+      .columnWidthProbe("content", screen: store.screen)
+      #endif
   }
 
   private var detailColumn: some View {
@@ -138,6 +153,9 @@ extension MainView {
       min: WindowLayoutMetrics.detailMinWidth,
       ideal: WindowLayoutMetrics.detailIdealWidth
     )
+    #if DEBUG
+    .columnWidthProbe("detail(browse)", screen: store.screen)
+    #endif
   }
 
   /// 초록 토큰이 둘뿐이라 press는 색만으로 hover와 구분되지 않아 흐림을 함께 준다.
@@ -156,6 +174,73 @@ extension MainView {
     .accessibilityLabel(String.module("Lock App"))
   }
 }
+
+// MARK: - 임시 진단 프로브 (이슈 #131)
+
+#if DEBUG
+
+/// **임시 코드다. #131 원인이 잡히면 통째로 지운다.** 15인치 이상에서 생성 화면의 가운데 컬럼이 폭 0으로
+/// 접히지 않는 현상을 발생 기기에서 실측하기 위한 로그다. 14인치(macOS 26.5.2)에서는 창 폭 1120~1710
+/// 전 구간이 정확히 0으로 접혀 재현되지 않았으므로, 필요한 값은 **그 기기의 OS·화면·컬럼 실측 폭**이다.
+///
+/// Debug로 실행해 생성 화면에 들어간 뒤 콘솔에서 `COLPROBE`로 필터해 붙여 주면 된다.
+extension View {
+
+  func columnWidthProbe(_ label: String, screen: MainFeature.State.Screen) -> some View {
+    background {
+      GeometryReader { proxy in
+        Color.clear
+          .onChange(of: proxy.size.width, initial: true) { _, width in
+            ColumnWidthProbeLog.environmentOnce()
+            ColumnWidthProbeLog.column(label, screen: screen, width: width)
+          }
+      }
+    }
+  }
+}
+
+private enum ColumnWidthProbeLog {
+
+  /// 기기·OS·화면. 재현 조건이 화면 크기인지 OS 버전인지를 이 줄로 가른다.
+  static func environmentOnce() {
+    guard !hasLoggedEnvironment else { return }
+    hasLoggedEnvironment = true
+
+    let screen = NSScreen.main
+    let frame = screen?.frame ?? .zero
+    let visible = screen?.visibleFrame ?? .zero
+    print(
+      "[COLPROBE] env model=\(hardwareModel) os=\(ProcessInfo.processInfo.operatingSystemVersionString)"
+        + " screen=\(Int(frame.width))x\(Int(frame.height))"
+        + " visible=\(Int(visible.width))x\(Int(visible.height))"
+        + " scale=\(screen?.backingScaleFactor ?? 0)"
+    )
+  }
+
+  static func column(_ label: String, screen: MainFeature.State.Screen, width: CGFloat) {
+    let window = NSApplication.shared.windows.first { $0.isVisible && $0.contentView != nil }
+    print(
+      "[COLPROBE] \(label.padding(toLength: 16, withPad: " ", startingAt: 0))"
+        + " screen=\(screen) width=\(String(format: "%7.1f", width))"
+        + " window=\(String(format: "%7.1f", window?.frame.width ?? -1))"
+        + " zoomed=\(window?.isZoomed ?? false)"
+    )
+  }
+
+  private static var hasLoggedEnvironment = false
+
+  /// `Mac15,3`처럼 기종을 식별한다 — 15인치 이상인지, Intel인지 구분하는 근거다.
+  private static var hardwareModel: String {
+    var size = 0
+    sysctlbyname("hw.model", nil, &size, nil, 0)
+    guard size > 0 else { return "unknown" }
+    var value = [CChar](repeating: 0, count: size)
+    sysctlbyname("hw.model", &value, &size, nil, 0)
+    return String(cString: value)
+  }
+}
+
+#endif
 
 // MARK: - Preview
 
