@@ -74,7 +74,6 @@ public struct NotificationSettingsFeature {
         state.isMultipleAlertDaysLocked = !entitlementClient.canUseMultipleExpiryAlertDays()
         state.isAuthFailureAlertEnabled = notificationSettingsClient.isAuthFailureAlertEnabled()
         state.isClipboardAbnormalAccessAlertEnabled = notificationSettingsClient.isClipboardAbnormalAccessAlertEnabled()
-        let clampEffect = clampExpiryAlertDaysIfLocked(&state)
         return .merge(
           .run { send in
             let granted = await notificationSettingsClient.isPermissionGranted()
@@ -85,8 +84,7 @@ public struct NotificationSettingsFeature {
             for await entitlement in entitlementClient.stream() {
               await send(.entitlementChanged(entitlement))
             }
-          },
-          clampEffect
+          }
         )
 
       case .delegate:
@@ -94,7 +92,7 @@ public struct NotificationSettingsFeature {
 
       case .entitlementChanged:
         state.isMultipleAlertDaysLocked = !entitlementClient.canUseMultipleExpiryAlertDays()
-        return clampExpiryAlertDaysIfLocked(&state)
+        return .none
 
       case .permissionResponse(let granted):
         state.isNotificationPermissionGranted = granted
@@ -158,33 +156,5 @@ public struct NotificationSettingsFeature {
       }
     }
     .ifLet(\.$alert, action: \.alert)
-  }
-}
-
-// MARK: - Free 등급 알림 시점 제한
-
-extension NotificationSettingsFeature {
-
-  /// Free 등급인데 시점이 2개 이상(또는 7일이 아닌 1개) 선택돼 있으면 7일로 맞춘다.
-  ///
-  /// **화면에 보이는 선택과 실제 예약이 어긋나면 안 된다.** 예약 쪽(`ScheduleSecretExpiryNotificationsUseCaseImpl`)은
-  /// 이미 Free를 가장 이른 시점 하나로 트리밍해서 보내지만, 설정 화면은 저장된 값을 그대로 보여주기만 해서
-  /// 기본값(전체 선택)이나 예전 Pro 시절 선택이 체크된 채로 남아 있었다 — 실제로는 하나만 울리는데 여러 개가
-  /// 켜진 것처럼 보인다. 7일을 고른 이유는 무료 한도(``EntitlementLimits/maxExpiryAlertDays``)의 기본값으로
-  /// 가장 무난한 시점이기 때문이다.
-  private func clampExpiryAlertDaysIfLocked(_ state: inout State) -> Effect<Action> {
-    guard state.isMultipleAlertDaysLocked,
-          state.expiryAlertDaysBefore != [.sevenDaysBefore]
-    else {
-      return .none
-    }
-    state.expiryAlertDaysBefore = [.sevenDaysBefore]
-    return .run { send in
-      do {
-        try await notificationSettingsClient.setExpiryAlertDaysBefore([.sevenDaysBefore])
-      } catch {
-        await send(.expiryNotificationsUpdateFailed)
-      }
-    }
   }
 }
