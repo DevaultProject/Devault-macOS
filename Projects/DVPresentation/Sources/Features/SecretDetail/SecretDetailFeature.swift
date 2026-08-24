@@ -203,6 +203,9 @@ public struct SecretDetailFeature {
         /// 앱 수준 사건. 정책이 무효화 대상으로 보면 인증 창과 열린 필드를 모두 닫는다.
         case lifecycleEvent(AppLifecycleEvent)
         case deleteResponse(Result<Secret, SecretUseCaseError>)
+        /// 휴지통에 있는 시크릿의 영구 삭제 응답. `permanentlyDelete`는 `Secret`을 돌려주지 않으므로
+        /// ID만 싣는다.
+        case deleteForeverResponse(Result<Secret.ID, SecretUseCaseError>)
 
         // MARK: Child
         case alert(PresentationAction<Alert>)
@@ -214,6 +217,8 @@ public struct SecretDetailFeature {
         public enum Alert: Equatable {
             case confirmDiscard
             case confirmDelete
+            /// 이미 휴지통에 있는 시크릿을 지우는 경우의 확인. 소프트 삭제가 아니라 영구 삭제로 이어진다.
+            case confirmDeleteForever
             /// 연결 프로젝트 조회 재시도. 읽지 못하면 수정에 들어갈 수 없으므로 재시도 경로가 필요하다.
             case retryLinkedProjects
         }
@@ -419,8 +424,11 @@ public struct SecretDetailFeature {
                 state.alert = .likeFailed
                 return .none
 
+            // 이미 휴지통에 있는 시크릿을 여기서 다시 지우면 소프트 삭제는 아무 일도 하지 않는다
+            // (이미 deletedAt이 찍혀 있다) — 영구 삭제로 물어야 리스트 화면의 "Delete Forever"와
+            // 같은 의미가 된다.
             case .didTapDelete:
-                state.alert = .confirmDelete
+                state.alert = state.secret.deletedAt != nil ? .confirmDeleteForever : .confirmDelete
                 return .none
 
             case .alert(.presented(.confirmDelete)):
@@ -440,6 +448,27 @@ public struct SecretDetailFeature {
                 return .send(.delegate(.deleted(deleted.id)))
 
             case .deleteResponse(.failure):
+                state.isDeleting = false
+                state.alert = .deleteFailed
+                return .none
+
+            case .alert(.presented(.confirmDeleteForever)):
+                state.isDeleting = true
+                return .run { [id = state.secret.id] send in
+                    do {
+                        try await secretClient.permanentlyDelete(id)
+                        await send(.deleteForeverResponse(.success(id)))
+                    } catch is CancellationError {
+                    } catch {
+                        await send(.deleteForeverResponse(.failure(SecretUseCaseError.map(error))))
+                    }
+                }
+
+            case .deleteForeverResponse(.success(let id)):
+                state.isDeleting = false
+                return .send(.delegate(.deleted(id)))
+
+            case .deleteForeverResponse(.failure):
                 state.isDeleting = false
                 state.alert = .deleteFailed
                 return .none
