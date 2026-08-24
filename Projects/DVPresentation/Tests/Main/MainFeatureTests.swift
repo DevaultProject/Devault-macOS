@@ -646,7 +646,7 @@ struct MainFeatureTests {
     await store.send(.sidebar(.didTapAddButton))
     await store.receive(.sidebar(.delegate(.addButtonTapped)))
     await store.receive(.canCreateSecretResponse(.success(false))) {
-      $0.isPaywallPresented = true
+      $0.paywall = DevaultProPaywallFeature.State()
     }
     #expect(store.state.selectSecretType == nil)
   }
@@ -661,7 +661,7 @@ struct MainFeatureTests {
     }
 
     await store.send(.settings(.delegate(.paywallRequired))) {
-      $0.isPaywallPresented = true
+      $0.paywall = DevaultProPaywallFeature.State()
     }
   }
 
@@ -678,7 +678,7 @@ struct MainFeatureTests {
     }
     await store.receive(.canCreateSecretResponse(.success(false))) {
       $0.pendingCreateType = nil
-      $0.isPaywallPresented = true
+      $0.paywall = DevaultProPaywallFeature.State()
     }
     #expect(store.state.createSecret == nil)
   }
@@ -701,7 +701,7 @@ struct MainFeatureTests {
     }
 
     await store.send(.secretDetail(.delegate(.paywallRequired))) {
-      $0.isPaywallPresented = true
+      $0.paywall = DevaultProPaywallFeature.State()
     }
   }
 
@@ -731,7 +731,7 @@ struct MainFeatureTests {
     await store.send(.sidebar(.didTapAddProject))
     await store.receive(.sidebar(.delegate(.addProjectTapped)))
     await store.receive(.canCreateProjectResponse(.success(false))) {
-      $0.isPaywallPresented = true
+      $0.paywall = DevaultProPaywallFeature.State()
     }
     #expect(store.state.createProject == nil)
   }
@@ -747,7 +747,7 @@ struct MainFeatureTests {
     await store.send(.sidebar(.didTapAddProject))
     await store.receive(.sidebar(.delegate(.addProjectTapped)))
     await store.receive(.canCreateProjectResponse(.failure(.unexpected)))
-    #expect(store.state.isPaywallPresented == false)
+    #expect(store.state.paywall == nil)
     #expect(store.state.createProject == nil)
   }
 
