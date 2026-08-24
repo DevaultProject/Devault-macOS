@@ -141,6 +141,30 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
     defaultsStream(cachedEntitlement)
   }
 
+  public func cachedSubscriptionStatus() -> SubscriptionStatus {
+    SubscriptionStatus(
+      entitlement: cachedEntitlement(),
+      productID: defaults.string(forKey: .cachedSubscriptionProductID),
+      renewsAt: defaults.date(forKey: .cachedSubscriptionRenewsAt),
+      willAutoRenew: defaults.bool(forKey: .cachedSubscriptionWillAutoRenew)
+    )
+  }
+
+  public func setCachedSubscriptionStatus(_ status: SubscriptionStatus) {
+    // 등급 자체는 setCachedEntitlement가 별도로 관리한다 — 여기서는 상품·갱신일·자동 갱신 여부만 저장한다.
+    if let productID = status.productID {
+      defaults.set(productID, forKey: .cachedSubscriptionProductID)
+    } else {
+      defaults.removeObject(forKey: .cachedSubscriptionProductID)
+    }
+    if let renewsAt = status.renewsAt {
+      defaults.set(renewsAt, forKey: .cachedSubscriptionRenewsAt)
+    } else {
+      defaults.removeObject(forKey: .cachedSubscriptionRenewsAt)
+    }
+    defaults.set(status.willAutoRenew, forKey: .cachedSubscriptionWillAutoRenew)
+  }
+
   // MARK: - Security
 
   public func isRequireAuthOnLaunchEnabled() -> Bool {
