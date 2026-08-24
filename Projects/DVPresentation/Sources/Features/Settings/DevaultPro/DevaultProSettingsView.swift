@@ -11,9 +11,11 @@ struct DevaultProSettingsView: View {
 
   @Bindable var store: StoreOf<DevaultProSettingsFeature>
 
-  /// 실제 시크릿 개수·한도는 목록/카운트 작업이 머지된 뒤 채운다. 머지 전까지 가짜 숫자를
-  /// 보여주면 실제 사용량으로 오해하므로, 값이 없는 동안은 사용량 표시 자체를 비워 둔다.
-  private let usage: (used: Int, limit: Int)? = nil
+  /// 카운트를 아직 못 읽어 온 동안은(로딩 중) 가짜 숫자로 오해하지 않도록 사용량 표시 자체를 비워 둔다.
+  private var usage: (used: Int, limit: Int)? {
+    guard let count = store.secretCount else { return nil }
+    return (count, EntitlementLimits.maxSecrets)
+  }
 
   var body: some View {
     content

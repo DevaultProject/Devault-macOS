@@ -46,6 +46,9 @@ extension SecretClient: @retroactive DependencyKey {
             fetchByQuery: { query in
                 try await fetchSecretUseCase.fetch(query: query)
             },
+            totalCountExcludingTrash: {
+                try await fetchSecretUseCase.totalCountExcludingTrash()
+            },
             softDelete: { id in
                 let secret = try await deleteSecretUseCase.softDelete(id: id)
                 await LiveUseCases.expirySchedule.cancel(secretID: secret.id)

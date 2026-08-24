@@ -28,6 +28,8 @@ struct DevaultProSettingsFeatureTests {
       }
       $0.purchaseClient.subscriptionStatus = { status }
       $0.purchaseClient.products = { [product] }
+      // 이 테스트는 상태·플랜 이름만 본다. 사용량 조회는 별도 테스트에서 검증한다.
+      $0.secretClient.totalCountExcludingTrash = { throw CancellationError() }
     }
 
     await store.send(.task)
@@ -36,6 +38,22 @@ struct DevaultProSettingsFeatureTests {
     }
     await store.receive(.planNameLoaded(product.displayName)) {
       $0.currentPlanName = product.displayName
+    }
+  }
+
+  @Test("task는 휴지통을 제외한 시크릿 사용량을 읽어 온다")
+  func taskLoadsSecretUsageCount() async {
+    let store = TestStore(initialState: DevaultProSettingsFeature.State()) {
+      DevaultProSettingsFeature()
+    } withDependencies: {
+      $0.entitlementClient.stream = { .finished }
+      $0.purchaseClient.subscriptionStatus = { .free }
+      $0.secretClient.totalCountExcludingTrash = { 3 }
+    }
+
+    await store.send(.task)
+    await store.receive(.secretCountLoaded(3)) {
+      $0.secretCount = 3
     }
   }
 
