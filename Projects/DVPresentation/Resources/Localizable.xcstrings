@@ -5099,18 +5099,18 @@
         }
       }
     },
-    "The free plan allows one alert timing." : {
+    "The free plan allows one alert timing. To switch, uncheck the current one first." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The free plan allows one alert timing."
+            "value" : "The free plan allows one alert timing. To switch, uncheck the current one first."
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "무료 요금제는 알림 시점을 하나만 선택할 수 있습니다."
+            "value" : "무료 요금제는 알림 시점을 하나만 선택할 수 있습니다. 다른 시점으로 바꾸려면 먼저 체크를 해제하세요."
           }
         }
       }

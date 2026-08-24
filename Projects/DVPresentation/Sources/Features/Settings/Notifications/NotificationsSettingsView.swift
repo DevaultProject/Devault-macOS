@@ -77,8 +77,9 @@ extension NotificationsSettingsView {
       }
 
       if store.isMultipleAlertDaysLocked {
-        // 체크박스 자체는 계속 눌린다 — 누르면 페이월이 뜬다. 눌러 보기 전에 이유를 알 수 있도록 여기서 미리 밝힌다.
-        Text(.module("The free plan allows one alert timing."))
+        // 체크박스 자체는 계속 눌린다 — 누르면 페이월이 뜬다. 눌러 보기 전에 "다른 걸 추가로 누르면 페이월,
+        // 바꾸고 싶으면 먼저 해제"라는 걸 미리 알려서 페이월을 오작동처럼 느끼지 않게 한다.
+        Text(.module("The free plan allows one alert timing. To switch, uncheck the current one first."))
           .dvFont(.captionLG)
           .foregroundStyle(Color.dv(.gray600))
       }
