@@ -88,7 +88,7 @@ extension DevaultProSettingsView {
       }
       if !store.isPro, let usage {
         ProgressView(value: Double(usage.used), total: Double(usage.limit))
-          .tint(Color.dv(.vaultGreen))
+          .tint(usageTint(usage.used))
       }
     }
     .settingsRowLayout()
@@ -96,6 +96,16 @@ extension DevaultProSettingsView {
 
   private func usageDescription(_ usage: (used: Int, limit: Int)) -> String {
     String(format: String.module("%lld of %lld secrets used"), usage.used, usage.limit)
+  }
+
+  /// 한도(15개)에 가까워질수록 경고 색으로 바꿔 남은 여유를 직관적으로 보여준다.
+  /// 11~13개는 곧 막힌다는 걸 미리 알리고, 14~15개(수정 잠금 직전·잠김)는 위험으로 표시한다.
+  private func usageTint(_ used: Int) -> Color {
+    switch used {
+    case ..<11: Color.dv(.vaultGreen)
+    case 11...13: Color.dv(.warning)
+    default: Color.dv(.danger)
+    }
   }
 
   private var renewalDescription: String? {
