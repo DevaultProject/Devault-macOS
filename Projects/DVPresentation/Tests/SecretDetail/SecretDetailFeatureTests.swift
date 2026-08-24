@@ -717,6 +717,69 @@ struct SecretDetailFeatureTests {
         }
     }
 
+    @Test("이미 휴지통에 있는 시크릿은 didTapDelete가 영구 삭제 확인 alert를 띄운다")
+    func didTapDelete_whenAlreadyTrashed_presentsConfirmDeleteForeverAlert() async {
+        var secret = Self.makeSecret()
+        secret.deletedAt = Date()
+        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
+            SecretDetailFeature()
+        }
+
+        await store.send(.didTapDelete) {
+            $0.alert = .confirmDeleteForever
+        }
+    }
+
+    @Test("confirmDeleteForever 성공: permanentlyDelete 호출 후 deleted delegate emit")
+    func confirmDeleteForever_success() async {
+        var secret = Self.makeSecret()
+        secret.deletedAt = Date()
+        let deletedID = LockIsolated<Secret.ID?>(nil)
+
+        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.permanentlyDelete = { id in deletedID.setValue(id) }
+        }
+
+        await store.send(.didTapDelete) {
+            $0.alert = .confirmDeleteForever
+        }
+        await store.send(.alert(.presented(.confirmDeleteForever))) {
+            $0.alert = nil
+            $0.isDeleting = true
+        }
+        await store.receive(.deleteForeverResponse(.success(secret.id))) {
+            $0.isDeleting = false
+        }
+        await store.receive(.delegate(.deleted(secret.id)))
+        #expect(deletedID.value == secret.id)
+    }
+
+    @Test("confirmDeleteForever 실패: isDeleting 해제 + alert 노출")
+    func confirmDeleteForever_failure() async {
+        var secret = Self.makeSecret()
+        secret.deletedAt = Date()
+
+        let store = TestStore(initialState: SecretDetailFeature.State(secret: secret)) {
+            SecretDetailFeature()
+        } withDependencies: {
+            $0.secretClient.permanentlyDelete = { _ in throw SecretUseCaseError.unexpected }
+        }
+
+        await store.send(.didTapDelete) {
+            $0.alert = .confirmDeleteForever
+        }
+        await store.send(.alert(.presented(.confirmDeleteForever))) {
+            $0.alert = nil
+            $0.isDeleting = true
+        }
+        await store.receive(.deleteForeverResponse(.failure(.unexpected))) {
+            $0.isDeleting = false
+            $0.alert = .deleteFailed
+        }
+    }
+
     // MARK: - 편집 진입
 
     /// 편집 폼의 type-specific 필드는 평문에서만 만들 수 있다. 값이 이미 있으면 다시 받을 이유가
