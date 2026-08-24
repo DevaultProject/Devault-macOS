@@ -15,6 +15,8 @@ public struct DevaultProSettingsFeature {
     var subscriptionStatus: SubscriptionStatus = .free
     /// `SubscriptionStatus`엔 productID만 있고 표시명(개월수)이 없어서, 상품 목록에서 따로 찾아온다.
     var currentPlanName: String?
+    /// 무료 사용량 표시("N/15개 사용")용. Pro는 화면에서 안 쓰지만 등급 전환 순간을 대비해 항상 읽어 둔다.
+    var secretCount: Int?
     @Presents var paywall: DevaultProPaywallFeature.State?
 
     var isPro: Bool { subscriptionStatus.entitlement == .pro }
@@ -37,6 +39,7 @@ public struct DevaultProSettingsFeature {
 
     case statusLoaded(SubscriptionStatus)
     case planNameLoaded(String?)
+    case secretCountLoaded(Int)
 
     // MARK: - Child
 
@@ -47,6 +50,7 @@ public struct DevaultProSettingsFeature {
 
   @Dependency(\.purchaseClient) var purchaseClient
   @Dependency(\.entitlementClient) var entitlementClient
+  @Dependency(\.secretClient) var secretClient
 
   // MARK: - Body
 
@@ -56,12 +60,21 @@ public struct DevaultProSettingsFeature {
       case .task:
         // 환불·복원·구매로 등급이 바뀔 때마다 다시 읽는다. 스트림이 구독 즉시 현재값을
         // 한 번 방출하므로 최초 로드도 이 하나로 해결된다.
-        return .run { send in
-          for await _ in entitlementClient.stream() {
-            let status = await purchaseClient.subscriptionStatus()
-            await send(.statusLoaded(status))
+        return .merge(
+          .run { send in
+            for await _ in entitlementClient.stream() {
+              let status = await purchaseClient.subscriptionStatus()
+              await send(.statusLoaded(status))
+            }
+          },
+          // 화면을 열 때 한 번만 읽는다. 생성·삭제 때마다 실시간으로 따라올 필요는 없는
+          // 참고용 사용량 표시다.
+          .run { send in
+            if let count = try? await secretClient.totalCountExcludingTrash() {
+              await send(.secretCountLoaded(count))
+            }
           }
-        }
+        )
 
       case .statusLoaded(let status):
         state.subscriptionStatus = status
@@ -76,6 +89,10 @@ public struct DevaultProSettingsFeature {
 
       case .planNameLoaded(let name):
         state.currentPlanName = name
+        return .none
+
+      case .secretCountLoaded(let count):
+        state.secretCount = count
         return .none
 
       case .didTapUpgrade, .didTapChangePlan:

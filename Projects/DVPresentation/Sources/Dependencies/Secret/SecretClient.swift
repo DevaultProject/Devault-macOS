@@ -13,6 +13,8 @@ public struct SecretClient: Sendable {
   // MARK: - Secret
 
   public var fetchByQuery: @Sendable (_ query: SecretQuery) async throws -> [Secret]
+  /// 휴지통을 제외한 전체 Secret 개수. 무료 한도(15개) 사용량 표시에 쓴다.
+  public var totalCountExcludingTrash: @Sendable () async throws -> Int
   public var softDelete: @Sendable (_ id: Secret.ID) async throws -> Secret
   public var restore: @Sendable (_ id: Secret.ID) async throws -> Secret
   public var permanentlyDelete: @Sendable (_ id: Secret.ID) async throws -> Void
@@ -113,6 +115,7 @@ private extension SecretClient {
         }
         return sorted(filtered, by: query.sort)
       },
+      totalCountExcludingTrash: { [Secret].preview.filter { $0.deletedAt == nil }.count },
       softDelete: { _ in .preview },
       restore: { _ in .preview },
       permanentlyDelete: { _ in },

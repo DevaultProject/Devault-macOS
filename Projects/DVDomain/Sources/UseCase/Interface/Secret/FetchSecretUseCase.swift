@@ -18,6 +18,14 @@ public protocol FetchSecretUseCase: Sendable {
     /// - Returns: 조건에 부합하는 Secret 개수
     func count(query: SecretQuery) async throws -> Int
 
+    /// 휴지통을 제외한 전체 Secret 개수. 무료 한도(`EntitlementLimits.maxSecrets`) 사용량 표시에 쓴다.
+    ///
+    /// `count(query:)`와 다르다 — 그쪽(`SecretQuery.Collection.all`)은 만료된 항목도 제외해
+    /// 한도 계산과 어긋난다. 한도는 만료돼도 자리를 차지하는 `totalCountExcludingTrash`
+    /// 기준이다(`EntitlementUseCaseImpl.canCreateSecret` 참고).
+    /// - Returns: `deletedAt == nil`인 Secret의 개수
+    func totalCountExcludingTrash() async throws -> Int
+
     /// Secret에 연결된 Project 목록을 조회한다.
     /// - Parameter secretID: 조회할 Secret의 ID
     /// - Returns: 해당 Secret에 연결된 Project 배열
