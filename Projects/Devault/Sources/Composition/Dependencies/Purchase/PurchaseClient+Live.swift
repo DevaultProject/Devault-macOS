@@ -13,6 +13,7 @@ extension PurchaseClient: @retroactive DependencyKey {
             purchase: { try await service.purchase(productID: $0) },
             restore: { try await service.restore() },
             subscriptionStatus: { await service.subscriptionStatus() },
+            refreshEntitlement: { await service.refreshEntitlement() },
             openManageSubscriptions: {
                 guard let url = URL(string: "https://apps.apple.com/account/subscriptions") else { return }
                 NSWorkspace.shared.open(url)

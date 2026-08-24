@@ -102,6 +102,31 @@ struct DevaultProSettingsFeatureTests {
     await store.receive(.statusLoaded(.free))
   }
 
+  @Test("새로고침을 누르면 등급을 강제로 다시 물어 상태를 갱신한다")
+  func didTapRefreshReloadsStatus() async {
+    let refreshed = LockIsolated(false)
+    let status = SubscriptionStatus(entitlement: .pro, productID: product.id)
+    let store = TestStore(initialState: DevaultProSettingsFeature.State()) {
+      DevaultProSettingsFeature()
+    } withDependencies: {
+      $0.purchaseClient.refreshEntitlement = { refreshed.setValue(true) }
+      $0.purchaseClient.subscriptionStatus = { status }
+      $0.purchaseClient.products = { [product] }
+    }
+
+    await store.send(.didTapRefresh) {
+      $0.isRefreshing = true
+    }
+    await store.receive(.statusLoaded(status)) {
+      $0.isRefreshing = false
+      $0.subscriptionStatus = status
+    }
+    await store.receive(.planNameLoaded(product.displayName)) {
+      $0.currentPlanName = product.displayName
+    }
+    #expect(refreshed.value)
+  }
+
   @Test("구독 관리를 누르면 App Store 구독 관리 페이지를 연다")
   func didTapManageSubscriptionOpensAppStore() async {
     let opened = LockIsolated(false)

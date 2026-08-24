@@ -17,6 +17,9 @@ public struct DevaultProSettingsFeature {
     var currentPlanName: String?
     /// 무료 사용량 표시("N/15개 사용")용. Pro는 화면에서 안 쓰지만 등급 전환 순간을 대비해 항상 읽어 둔다.
     var secretCount: Int?
+    /// 수동 새로고침 진행 중. `Transaction.updates`가 아직 반영 전이라 등급이 실제와
+    /// 다르게 보일 때, 사용자가 재시작 대신 누를 수 있는 탈출구를 위한 상태다.
+    var isRefreshing = false
     @Presents var paywall: DevaultProPaywallFeature.State?
 
     var isPro: Bool { subscriptionStatus.entitlement == .pro }
@@ -34,6 +37,7 @@ public struct DevaultProSettingsFeature {
     case didTapUpgrade
     case didTapChangePlan
     case didTapManageSubscription
+    case didTapRefresh
 
     // MARK: - Internal
 
@@ -76,7 +80,16 @@ public struct DevaultProSettingsFeature {
           }
         )
 
+      case .didTapRefresh:
+        state.isRefreshing = true
+        return .run { send in
+          await purchaseClient.refreshEntitlement()
+          let status = await purchaseClient.subscriptionStatus()
+          await send(.statusLoaded(status))
+        }
+
       case .statusLoaded(let status):
+        state.isRefreshing = false
         state.subscriptionStatus = status
         guard let productID = status.productID else {
           state.currentPlanName = nil
