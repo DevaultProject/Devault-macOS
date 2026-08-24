@@ -68,8 +68,13 @@ public struct PurchaseServiceImpl: PurchaseService {
             }
             await transaction.finish()
             Log.info("[Purchase] 구매 성공 — productID: \(productID)", category: .data)
-            // 방금 검증한 트랜잭션이 손에 있으므로 `currentEntitlements`를 다시 묻지 않는다. 구매 직후에는 스토어가 아직 반영 전이라 같은 트랜잭션을 미검증으로 돌려주는 순간이 있고, 그때 다시 물으면 결제에 성공한 사용자가 잠시 무료로 떨어진다.
+            // 방금 검증한 트랜잭션이 손에 있으므로 currentEntitlements를 다시 묻지 않는다. 구매 직후에는
+            // 스토어가 아직 반영 전이라 같은 트랜잭션을 미검증으로 돌려주는 순간이 있고, 그때 다시 물으면
+            // 결제에 성공한 사용자가 잠시 무료로 떨어진다. 갱신일 등 세부 정보도 지금 손에 있는
+            // 트랜잭션으로 바로 캐시에 채워 둔다 — `subscriptionStatus()`가 나중에 재조회 없이 즉시
+            // 정확한 값을 돌려줄 수 있게 하기 위해서다.
             applyEntitlement(.pro)
+            settingsRepository.setCachedSubscriptionStatus(await status(for: transaction))
             await logPendingPlanChange()
             return .success
 
@@ -90,9 +95,14 @@ public struct PurchaseServiceImpl: PurchaseService {
 
     @discardableResult
     public func refreshEntitlement() async -> Entitlement {
-        let entitlement: Entitlement = await hasActiveSubscription() ? .pro : .free
-        applyEntitlement(entitlement)
-        return entitlement
+        guard let transaction = await activeTransaction() else {
+            applyEntitlement(.free)
+            settingsRepository.setCachedSubscriptionStatus(.free)
+            return .free
+        }
+        applyEntitlement(.pro)
+        settingsRepository.setCachedSubscriptionStatus(await status(for: transaction))
+        return .pro
     }
 
     /// 등급 캐시를 갱신하고 **실제로 바뀔 때만** 로그를 남긴다. `Transaction.updates`가 돌 때마다 같은 값이 다시 쓰이므로, 비교 없이 찍으면 전환이 없는 갱신까지 전부 남아 실제 전환 시점을 못 찾는다.
@@ -105,9 +115,20 @@ public struct PurchaseServiceImpl: PurchaseService {
 
     // StoreKit에도 `SubscriptionStatus`가 있어 한정이 필요하다. `Transaction`과 같은 이유다.
     public func subscriptionStatus() async -> DVDomain.SubscriptionStatus {
-        guard let transaction = await activeTransaction() else { return .free }
+        if let transaction = await activeTransaction() {
+            return await status(for: transaction)
+        }
 
-        // 자동 갱신 여부는 트랜잭션이 아니라 구독 상태에 있다. 조회에 실패해도 등급·갱신일은 유효하므로 false로 둔다.
+        // 구매/복원 직후에는 스토어가 아직 반영 전이라 currentEntitlements가 잠시 비어 있을 수 있다
+        // (`purchase(productID:)` 주석 참고). 재조회로 그 틈을 메우는 대신, 등급이 바뀔 때마다
+        // `setCachedSubscriptionStatus`로 이미 저장해 둔 값을 그대로 돌려준다 — 재시도·대기 없이도
+        // 항상 정확하다. 캐시가 free면 진짜 무료 사용자다.
+        let cached = settingsRepository.cachedSubscriptionStatus()
+        return cached.entitlement == .pro ? cached : .free
+    }
+
+    /// 자동 갱신 여부는 트랜잭션이 아니라 구독 상태에 있다. 조회에 실패해도 등급·갱신일은 유효하므로 false로 둔다.
+    private func status(for transaction: StoreKit.Transaction) async -> DVDomain.SubscriptionStatus {
         let willAutoRenew = await willAutoRenew(for: transaction)
         return DVDomain.SubscriptionStatus(
             entitlement: .pro,
@@ -214,20 +235,32 @@ extension PurchaseServiceImpl {
         }
     }
 
-    /// 유효한 구독 권한이 있는지 확인한다.
-    private func hasActiveSubscription() async -> Bool {
-        await activeTransaction() != nil
-    }
-
     /// 현재 유효한 구독 트랜잭션. 없으면 nil.
     ///
-    /// `currentEntitlements`는 만료·해지된 구독을 이미 걸러주지만, **환불된 트랜잭션은 남을 수 있어** `revocationDate`를 직접 확인한다.
+    /// `Transaction.currentEntitlements`(Apple이 "지금 유효한 그룹 멤버"라고 계산해 주는 필터링된 뷰)를
+    /// 쓰지 않는다. 같은 그룹 안에서 플랜만 바꾸는 crossgrade 직후 이 뷰가 **아무것도 못 돌려주는**
+    /// 현상이 확인됐다(로컬 StoreKit 테스트 세션에서 재현).
+    ///
+    /// 개별 트랜잭션의 날짜 필드(`revocationDate`/`expirationDate`)를 직접 비교하는 방식도 시도했지만,
+    /// 로컬 테스트 세션에서 강제 만료·환불을 시켜도 **원래 서명된 트랜잭션 객체의 날짜 필드 자체는
+    /// 갱신되지 않아** 오탐이 났다. 대신 트랜잭션의 `subscriptionStatus`(Apple이 계산하는 그룹 단위
+    /// 상태 — `.subscribed`/`.expired`/`.revoked` 등)를 신뢰한다. 이 값은 crossgrade·환불·만료를
+    /// 전부 정확히 반영한다.
     private func activeTransaction() async -> StoreKit.Transaction? {
-        for await verification in Transaction.currentEntitlements {
+        for await verification in Transaction.all {
             guard case .verified(let transaction) = verification else { continue }
             guard productIDs.contains(transaction.productID) else { continue }
-            guard transaction.revocationDate == nil else { continue }
-            return transaction
+            guard let status = try? await transaction.subscriptionStatus else { continue }
+
+            switch status.state {
+            case .subscribed, .inGracePeriod, .inBillingRetryPeriod:
+                guard case .verified(let currentTransaction) = status.transaction,
+                      productIDs.contains(currentTransaction.productID)
+                else { continue }
+                return currentTransaction
+            default:
+                continue
+            }
         }
         return nil
     }
