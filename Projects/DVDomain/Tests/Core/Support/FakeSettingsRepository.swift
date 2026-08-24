@@ -124,4 +124,9 @@ public final class FakeSettingsRepository: SettingsRepository, @unchecked Sendab
             continuation.finish()
         }
     }
+
+    public var cachedSubscriptionStatusValue = SubscriptionStatus.free
+
+    public func cachedSubscriptionStatus() -> SubscriptionStatus { cachedSubscriptionStatusValue }
+    public func setCachedSubscriptionStatus(_ status: SubscriptionStatus) { cachedSubscriptionStatusValue = status }
 }
