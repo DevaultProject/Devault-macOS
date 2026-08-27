@@ -120,7 +120,13 @@ extension MainView {
       .opacity(isCollapsed ? 0 : 1)
       // 드래그 하한은 컬럼이 아니라 콘텐츠가 갖는다. 컬럼 `min`으로 주면 접힐 때
       // `width >= 300`과 `MaxSize <= 0`이 공존해 AppKit이 제약 충돌을 뱉는다.
-      .frame(minWidth: isCollapsed ? 0 : WindowLayoutMetrics.listMinWidth)
+      //
+      // 접을 때는 상한도 0으로 눌러야 한다. 하한만 풀면 목록이 자기 콘텐츠 폭(행 `DVVaultContainer`의
+      // `minWidth: 200`)을 계속 요구하고, 컬럼 `max: 0`보다 그쪽이 이기는 macOS에서 200pt 여백이 남는다.
+      .frame(
+        minWidth: isCollapsed ? 0 : WindowLayoutMetrics.listMinWidth,
+        maxWidth: isCollapsed ? 0 : nil
+      )
       .navigationSplitViewColumnWidth(
         min: 0,
         ideal: isCollapsed ? 0 : WindowLayoutMetrics.listIdealWidth,
