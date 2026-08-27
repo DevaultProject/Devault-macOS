@@ -198,6 +198,7 @@ extension View {
           .onChange(of: proxy.size.width, initial: true) { _, width in
             ColumnWidthProbeLog.environmentOnce()
             ColumnWidthProbeLog.column(label, screen: screen, width: width)
+            ColumnWidthProbeLog.splitViewPanes()
           }
       }
     }
@@ -231,6 +232,50 @@ private enum ColumnWidthProbeLog {
         + " zoomed=\(window?.isZoomed ?? false)"
     )
   }
+
+  /// AppKit이 실제로 각 페인에 무엇을 걸어 두었는지. `fitting`이 0이 아니면 폭을 붙잡는 주체가
+  /// 컬럼 제약이 아니라 **콘텐츠**라는 뜻이다.
+  static func splitViewPanes() {
+    guard !isSplitViewDumpScheduled else { return }
+    isSplitViewDumpScheduled = true
+
+    // 레이아웃이 앉은 뒤에 읽어야 전환 도중 값이 아니다.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+      isSplitViewDumpScheduled = false
+
+      guard
+        let root = NSApplication.shared.windows.first(where: { $0.isVisible && $0.contentView != nil })?.contentView,
+        let splitView = firstSplitView(in: root)
+      else { return }
+
+      guard let controller = splitView.delegate as? NSSplitViewController else {
+        for (index, pane) in splitView.arrangedSubviews.enumerated() {
+          print("[COLPROBE] pane#\(index) width=\(String(format: "%7.1f", pane.frame.width)) fitting=\(String(format: "%7.1f", pane.fittingSize.width)) (no controller)")
+        }
+        return
+      }
+
+      for (index, item) in controller.splitViewItems.enumerated() {
+        let pane = item.viewController.view
+        print(
+          "[COLPROBE] pane#\(index) width=\(String(format: "%7.1f", pane.frame.width))"
+            + " fitting=\(String(format: "%7.1f", pane.fittingSize.width))"
+            + " min=\(item.minimumThickness) max=\(item.maximumThickness)"
+            + " holding=\(item.holdingPriority.rawValue) collapsed=\(item.isCollapsed)"
+        )
+      }
+    }
+  }
+
+  private static func firstSplitView(in view: NSView) -> NSSplitView? {
+    if let splitView = view as? NSSplitView { return splitView }
+    for subview in view.subviews {
+      if let found = firstSplitView(in: subview) { return found }
+    }
+    return nil
+  }
+
+  private static var isSplitViewDumpScheduled = false
 
   private static var hasLoggedEnvironment = false
 
