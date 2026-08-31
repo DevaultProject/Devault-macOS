@@ -99,7 +99,7 @@ extension SettingsView {
     .foregroundStyle(isBackToAppHovered ? Color.dv(.gray900) : Color.dv(.gray700))
     .listRowSeparator(.hidden)
     .onHover { isBackToAppHovered = $0 }
-    .animation(MotionMetrics.hover, value: isBackToAppHovered)
+    .dvAnimation(MotionMetrics.hover, value: isBackToAppHovered)
   }
 
   /// 다른 탭과 같은 기본 시스템 선택 색을 그대로 쓴다 — 여기만 따로 초록을 칠하지 않는다.

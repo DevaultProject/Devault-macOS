@@ -57,7 +57,7 @@ extension SecretListView {
         }
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .animation(MotionMetrics.transition, value: store.secretsState)
+      .dvAnimation(MotionMetrics.transition, value: store.secretsState)
 
       DVTitleBar(
         titleText: titleText,
@@ -88,12 +88,12 @@ extension SecretListView {
     .listStyle(.sidebar)
     .scrollContentBackground(.hidden)
     .tint(Color.dv(.vaultGreen))
-    .animation(MotionMetrics.layout, value: secrets)
+    .dvAnimation(MotionMetrics.layout, value: secrets)
     // 필터가 바뀌면 행이 통째로 갈린다. 같은 목록으로 두면 무관한 행을 하나씩 지우고 넣는
     // 것으로 그려 어수선해지므로 새 내용으로 본다.
     .id(store.collection)
     .transition(.opacity)
-    .animation(MotionMetrics.transition, value: store.collection)
+    .dvAnimation(MotionMetrics.transition, value: store.collection)
     // 어디를 누르든 검색 포커스를 놓는다. `onTapGesture`는 탭을 삼켜 NSTableView가 처리하는
     // 행 클릭과 경합하므로, 이벤트를 흘려보내는 `simultaneousGesture`를 쓴다.
     // `contentShape`은 행이 없는 빈 영역도 눌리게 하려고 남긴다.

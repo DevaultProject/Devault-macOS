@@ -66,7 +66,7 @@ public struct DVChipsField: View {
                 .dvComponentWidth(size, alignment: .leading)
             }
         }
-        .animation(.spring(response: 0.5, dampingFraction: 0.85), value: visibleChips)
+        .dvAnimation(.spring(response: 0.5, dampingFraction: 0.85), value: visibleChips)
     }
 
     /// input과 정확히 일치하는 chip은 편집 대상으로 간주하여 목록에서 숨김.

@@ -35,6 +35,6 @@ extension DVStepIndicator {
         RoundedRectangle(cornerRadius: 4)
             .fill(isActive ? Color.dv(.vaultGreen) : Color.dv(.gray500))
             .frame(width: isActive ? 24 : 8, height: 8)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isActive)
+            .dvAnimation(.spring(response: 0.3, dampingFraction: 0.7), value: isActive)
     }
 }
