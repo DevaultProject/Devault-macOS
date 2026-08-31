@@ -795,13 +795,13 @@
         }
       }
     },
-    "Authenticate to unlock Devault." : {
+    "Authenticate to unlock DeVault." : {
       "comment" : "Reason shown in the system authentication sheet when unlocking the app.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Authenticate to unlock Devault."
+            "value" : "Authenticate to unlock DeVault."
           }
         },
         "ko" : {
