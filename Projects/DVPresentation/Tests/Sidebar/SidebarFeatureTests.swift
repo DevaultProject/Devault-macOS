@@ -58,7 +58,11 @@ struct SidebarFeatureTests {
       SidebarFeature()
     } withDependencies: {
       $0.sidebarClient.fetchProjects = { projects }
-      $0.sidebarClient.fetchCounts = { _, _ in counts }
+      $0.sidebarClient.fetchCounts = { _, projectIDs in
+        // 중복 id가 와도 카운트 조회는 고유한 id로만 이뤄져야 한다(같은 프로젝트 중복 조회 방지).
+        #expect(projectIDs == [id])
+        return counts
+      }
       $0.date = .constant(Self.referenceDate)
     }
 
@@ -337,7 +341,7 @@ struct SidebarFeatureTests {
 
     // 편집 상태는 성공 응답에서 닫힌다.
     await store.send(.didConfirmRename)
-    await store.receive(.renameResponse(.success(renamed))) {
+    await store.receive(.renameResponse(projectID: item.id, .success(renamed))) {
       $0.renamingProjectID = nil
       $0.renameText = ""
     }
@@ -370,7 +374,7 @@ struct SidebarFeatureTests {
 
     // 이름 중복이면 저장을 막고 편집을 닫아 원래 이름으로 되돌린다.
     await store.send(.didConfirmRename)
-    await store.receive(.renameResponse(.failure(.nameTaken))) {
+    await store.receive(.renameResponse(projectID: item.id, .failure(.nameTaken))) {
       $0.alert = AlertState {
         TextState(String.module("This name is already in use."))
       } actions: {
@@ -381,6 +385,23 @@ struct SidebarFeatureTests {
       $0.renamingProjectID = nil
       $0.renameText = ""
     }
+  }
+
+  @Test("편집 대상이 바뀐 뒤 도착한 이전 이름 변경의 nameTaken 응답은 현재 편집을 건드리지 않는다")
+  func staleRenameResponseDoesNotDisturbCurrentEdit() async {
+    let editingID = UUID()  // 지금 편집 중인 프로젝트(B)
+    let staleID = UUID()    // 이전에 확정했던 프로젝트(A)
+
+    var state = SidebarFeature.State()
+    state.renamingProjectID = editingID
+    state.renameText = "편집 중"
+
+    let store = TestStore(initialState: state) {
+      SidebarFeature()
+    }
+
+    // A(staleID)의 뒤늦은 nameTaken 응답 — 지금은 B를 편집 중이므로 무시되어야 한다(상태 변화·alert 없음).
+    await store.send(.renameResponse(projectID: staleID, .failure(.nameTaken)))
   }
 
   @Test("didConfirmRename에 빈 이름이면 alert를 띄우고 편집을 닫아 원래 이름으로 되돌린다")
