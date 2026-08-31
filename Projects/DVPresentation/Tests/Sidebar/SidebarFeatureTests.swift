@@ -45,6 +45,38 @@ struct SidebarFeatureTests {
     }
   }
 
+  @Test("projectsResponse에 같은 id 중복이 와도 크래시 없이 하나로 합쳐진다")
+  func taskDeduplicatesProjectsById() async {
+    // CloudKit이 같은 id의 중복 레코드를 만들 수 있다. 방어가 없으면 IdentifiedArray가 fatalError.
+    let id = UUID()
+    let projects = [
+      ProjectItem(id: id, name: "Backend"),
+      ProjectItem(id: id, name: "Backend copy"),
+    ]
+    let counts = SecretCounts(byFilter: [.all: 5], byProject: [:])
+    let store = TestStore(initialState: SidebarFeature.State()) {
+      SidebarFeature()
+    } withDependencies: {
+      $0.sidebarClient.fetchProjects = { projects }
+      $0.sidebarClient.fetchCounts = { _, _ in counts }
+      $0.date = .constant(Self.referenceDate)
+    }
+
+    await store.send(.task) {
+      $0.projectsState = .loading
+      $0.countsState = .loading
+    }
+    // 이름 정렬 후 같은 id 중 첫 항목("Backend")만 남는다.
+    await store.receive(.projectsResponse(.success(projects))) {
+      $0.projectsState = .loaded(IdentifiedArray(uniqueElements: [
+        ProjectItem(id: id, name: "Backend"),
+      ]))
+    }
+    await store.receive(.countsResponse(.success(counts))) {
+      $0.countsState = .loaded(counts)
+    }
+  }
+
   /// 화면이 다시 만들어지면 `.task`가 한 번 더 실행된다. 여기서 `.loading`으로 되돌리면 깜빡인다.
   @Test("이미 로드된 상태에서 task가 다시 실행돼도 값을 비우지 않는다")
   func taskAfterReloadKeepsLoadedValues() async {

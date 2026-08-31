@@ -166,7 +166,9 @@ public struct SecretListFeature {
         return fetchSecretsEffect(query: state.query, debounced: false)
 
       case .secretsResponse(.success(let secrets)):
-        let list = IdentifiedArray(uniqueElements: secrets)
+        // CloudKit 동기화가 같은 id의 중복 레코드를 만들 수 있다. uniqueElements는 중복 id에서
+        // fatalError로 죽으므로, 중복이 와도 첫 항목만 남기고 트랩되지 않게 한다.
+        let list = IdentifiedArray(secrets, uniquingIDsWith: { current, _ in current })
         state.secretsState = .loaded(list)
         // 검색이 없을 때의 결과가 곧 컬렉션 전체 수. 검색 중엔 갱신하지 않아 직전 전체 수를 유지한다.
         if state.searchText.isEmpty {

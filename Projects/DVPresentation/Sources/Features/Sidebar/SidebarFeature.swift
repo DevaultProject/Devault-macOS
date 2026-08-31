@@ -204,7 +204,8 @@ public struct SidebarFeature {
       case .projectsResponse(.success(let projects)):
         state.isRefreshingProjects = false
         let sorted = projects.sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
-        state.projectsState = .loaded(IdentifiedArray(uniqueElements: sorted))
+        // CloudKit 중복 레코드로 같은 id가 와도 트랩되지 않게 첫 항목만 남긴다(uniqueElements는 fatalError).
+        state.projectsState = .loaded(IdentifiedArray(sorted, uniquingIDsWith: { current, _ in current }))
         // 프로젝트별 개수를 세려면 ID 목록이 필요하므로 목록 로드 성공 후에 이어서 집계한다.
         return countsEffect(projectIDs: sorted.map(\.id))
 
