@@ -1190,7 +1190,7 @@ struct MainFeatureTests {
       $0.date = .constant(Self.referenceDate)
     }
 
-    await store.send(.sidebar(.renameResponse(.success(renamed))))
+    await store.send(.sidebar(.renameResponse(projectID: renamed.id, .success(renamed))))
     // delegate payload의 이름을 직접 사용해 즉시 갱신
     await store.receive(.sidebar(.delegate(.projectRenamed(renamed)))) {
       $0.secretList = SecretListFeature.State(
@@ -1232,7 +1232,7 @@ struct MainFeatureTests {
       $0.date = .constant(Self.referenceDate)
     }
 
-    await store.send(.sidebar(.renameResponse(.success(renamed))))
+    await store.send(.sidebar(.renameResponse(projectID: renamed.id, .success(renamed))))
     await store.receive(.sidebar(.delegate(.projectRenamed(renamed))))
     #expect(store.state.secretList.projectName == nil)
 
