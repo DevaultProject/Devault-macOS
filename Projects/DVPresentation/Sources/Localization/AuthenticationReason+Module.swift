@@ -14,7 +14,7 @@ extension AuthenticationReason {
         case .editSecret:
             return String.module("Authenticate to edit the secret.")
         case .unlock:
-            return String.module("Authenticate to unlock Devault.")
+            return String.module("Authenticate to unlock DeVault.")
         case .enableTouchID:
             return String.module("Authenticate to enable Touch ID.")
         case .deleteAllData:
