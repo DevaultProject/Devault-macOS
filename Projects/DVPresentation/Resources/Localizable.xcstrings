@@ -125,7 +125,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Secret %lld개를 '삭제됨'으로 이동합니다. 나중에 복구할 수 있습니다."
+            "value" : "Secret %lld개를 'Deleted'으로 이동합니다. 나중에 복구할 수 있습니다."
           }
         }
       }
@@ -739,7 +739,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "시크릿 값을 복사하려면 인증이 필요합니다."
+            "value" : "Secret 값을 복사하려면 인증이 필요합니다."
           }
         }
       }
@@ -773,7 +773,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "시크릿을 수정하려면 인증이 필요합니다."
+            "value" : "Secret을 수정하려면 인증이 필요합니다."
           }
         }
       }
@@ -824,7 +824,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "시크릿 값을 확인하려면 인증이 필요합니다."
+            "value" : "Secret 값을 확인하려면 인증이 필요합니다."
           }
         }
       }
@@ -1802,7 +1802,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "만료된 Secret을 모두 삭제할까요?"
+            "value" : "만료된 Secret을 모두 삭제하시겠습니까?"
           }
         }
       }
@@ -2528,7 +2528,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "'삭제됨'을 비울까요?"
+            "value" : "'Deleted'을 비우시겠습니까?"
           }
         }
       }
@@ -3178,18 +3178,18 @@
         }
       }
     },
-    "iCloud Temporarily Unavailable." : {
+    "iCloud Temporarily Unavailable" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iCloud Temporarily Unavailable."
+            "value" : "iCloud Temporarily Unavailable"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iCloud를 일시적으로 사용할 수 없습니다."
+            "value" : "iCloud 일시 사용 불가"
           }
         }
       }
@@ -3514,18 +3514,18 @@
         }
       }
     },
-    "Network Unavailable." : {
+    "Network Unavailable" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Network Unavailable."
+            "value" : "Network Unavailable"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "네트워크를 사용할 수 없습니다."
+            "value" : "네트워크 사용 불가"
           }
         }
       }
@@ -3615,7 +3615,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "선택된 프로젝트 없음"
+            "value" : "선택된 프로젝트가 없습니다."
           }
         }
       }
@@ -3631,7 +3631,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "아직 프로젝트가 없습니다"
+            "value" : "아직 프로젝트가 없습니다."
           }
         }
       }
@@ -3647,7 +3647,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "선택된 Secret 없음"
+            "value" : "선택된 Secret이 없습니다."
           }
         }
       }
@@ -4905,18 +4905,18 @@
         }
       }
     },
-    "Status Unavailable." : {
+    "Status Unavailable" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Status Unavailable."
+            "value" : "Status Unavailable"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "상태를 확인할 수 없습니다."
+            "value" : "상태 확인 불가"
           }
         }
       }
