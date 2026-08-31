@@ -41,6 +41,9 @@ struct NotificationSettingsFeatureTests {
       NotificationSettingsFeature()
     } withDependencies: {
       $0.notificationSettingsClient.expiryAlertDaysBefore = { ExpiryAlertDay.allCases }
+      $0.notificationSettingsClient.isExpiryAlertsEnabled = { true }
+      $0.notificationSettingsClient.isAuthFailureAlertEnabled = { true }
+      $0.notificationSettingsClient.isClipboardAbnormalAccessAlertEnabled = { true }
       $0.notificationSettingsClient.isPermissionGranted = { true }
       $0.notificationSettingsClient.setExpiryAlertDaysBefore = { saved.setValue($0) }
       $0.entitlementClient.current = { .free }
@@ -52,9 +55,8 @@ struct NotificationSettingsFeatureTests {
       $0.expiryAlertDaysBefore = Set(ExpiryAlertDay.allCases)
       $0.isMultipleAlertDaysLocked = true
     }
-    await store.receive(.permissionResponse(true)) {
-      $0.isNotificationPermissionGranted = true
-    }
+    // 기본 상태가 이미 권한 허용(true)이고 stub도 true라 permissionResponse는 상태를 바꾸지 않는다.
+    await store.receive(.permissionResponse(true))
     #expect(saved.value == nil)
   }
 
@@ -103,11 +105,11 @@ struct NotificationSettingsFeatureTests {
     }
     await store.receive(.expiryNotificationsUpdateFailed) {
       $0.alert = AlertState {
-        TextState("Couldn't update expiration alerts.")
+        TextState(String.module("Couldn't update expiration alerts."))
       } actions: {
-        ButtonState(role: .cancel) { TextState("OK") }
+        ButtonState(role: .cancel) { TextState(String.module("OK")) }
       } message: {
-        TextState("The setting was saved, but existing notifications couldn't be updated. Please try again.")
+        TextState(String.module("The setting was saved, but existing notifications couldn't be updated. Please try again."))
       }
     }
   }

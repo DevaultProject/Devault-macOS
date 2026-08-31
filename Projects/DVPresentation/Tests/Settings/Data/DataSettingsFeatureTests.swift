@@ -31,16 +31,16 @@ struct DataSettingsFeatureTests {
 
     await store.send(.didTapDeleteAllData) {
       $0.alert = AlertState {
-        TextState("Delete All Data")
+        TextState(verbatim: String.module("Delete All Data"))
       } actions: {
         ButtonState(role: .destructive, action: .confirmDelete) {
-          TextState("Delete")
+          TextState(verbatim: String.module("Delete"))
         }
         ButtonState(role: .cancel) {
-          TextState("Cancel")
+          TextState(verbatim: String.module("Cancel"))
         }
       } message: {
-        TextState("This will permanently delete all secrets and projects. This action cannot be undone.")
+        TextState(verbatim: String.module("This will permanently delete all secrets and projects. This action cannot be undone."))
       }
     }
   }
@@ -90,11 +90,11 @@ struct DataSettingsFeatureTests {
     await store.receive(.deleteFailed) {
       $0.isDeleting = false
       $0.alert = AlertState {
-        TextState("Couldn't delete data.")
+        TextState(verbatim: String.module("Couldn't delete data."))
       } actions: {
-        ButtonState(role: .cancel) { TextState("OK") }
+        ButtonState(role: .cancel) { TextState(verbatim: String.module("OK")) }
       } message: {
-        TextState("Please try again.")
+        TextState(verbatim: String.module("Please try again."))
       }
     }
   }

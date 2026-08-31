@@ -10,10 +10,10 @@ import Testing
 @Suite("DevaultProPaywallFeature")
 struct DevaultProPaywallFeatureTests {
 
-  private static let monthly = SubscriptionProduct(
+  private let monthly = SubscriptionProduct(
     id: "pro.monthly", displayName: "1개월", displayPrice: "₩4,900", periodInMonths: 1
   )
-  private static let yearly = SubscriptionProduct(
+  private let yearly = SubscriptionProduct(
     id: "pro.yearly", displayName: "1년", displayPrice: "₩39,000", periodInMonths: 12, monthlyEquivalentPrice: "₩3,250"
   )
 
@@ -67,7 +67,7 @@ struct DevaultProPaywallFeatureTests {
     await store.send(.task)
     await store.receive(.statusLoaded(.free))
     await store.receive(.productsLoadFailed) {
-      $0.errorMessage = "Couldn't load subscription plans. Check your connection and try again."
+      $0.errorMessage = String.module("Couldn't load subscription plans. Check your connection and try again.")
     }
   }
 
@@ -129,7 +129,7 @@ struct DevaultProPaywallFeatureTests {
     }
     await store.receive(.purchaseFailed) {
       $0.isPurchasing = false
-      $0.errorMessage = "Purchase failed. Please try again."
+      $0.errorMessage = String.module("Purchase failed. Please try again.")
     }
   }
 
@@ -163,7 +163,7 @@ struct DevaultProPaywallFeatureTests {
     }
     await store.receive(.restoreFailed) {
       $0.isRestoring = false
-      $0.errorMessage = "Couldn't restore your purchase. Please try again."
+      $0.errorMessage = String.module("Couldn't restore your purchase. Please try again.")
     }
   }
 

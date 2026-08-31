@@ -281,16 +281,16 @@ struct SecretListFeatureTests {
 
         await store.send(.didTapDeleteForever(id: secretID)) {
             $0.alert = AlertState {
-                TextState("Delete Forever?")
+                TextState(verbatim: String.module("Delete Forever?"))
             } actions: {
                 ButtonState(role: .destructive, action: .confirmDeleteForever(id: secretID)) {
-                    TextState("Delete Forever")
+                    TextState(verbatim: String.module("Delete Forever"))
                 }
                 ButtonState(role: .cancel) {
-                    TextState("Cancel")
+                    TextState(verbatim: String.module("Cancel"))
                 }
             } message: {
-                TextState("This action cannot be undone.")
+                TextState(verbatim: String.module("This action cannot be undone."))
             }
         }
     }
@@ -307,16 +307,16 @@ struct SecretListFeatureTests {
 
         await store.send(.didTapDeleteForever(id: secretID)) {
             $0.alert = AlertState {
-                TextState("Delete Forever?")
+                TextState(verbatim: String.module("Delete Forever?"))
             } actions: {
                 ButtonState(role: .destructive, action: .confirmDeleteForever(id: secretID)) {
-                    TextState("Delete Forever")
+                    TextState(verbatim: String.module("Delete Forever"))
                 }
                 ButtonState(role: .cancel) {
-                    TextState("Cancel")
+                    TextState(verbatim: String.module("Cancel"))
                 }
             } message: {
-                TextState("This action cannot be undone.")
+                TextState(verbatim: String.module("This action cannot be undone."))
             }
         }
         await store.send(.alert(.presented(.confirmDeleteForever(id: secretID)))) {
@@ -540,7 +540,9 @@ struct SecretListFeatureTests {
         await store.receive(.secretsResponse(.success([]))) {
             $0.secretsState = .loaded([])
         }
-        await store.receive(.reselectAfterMutation)
+        await store.receive(.reselectAfterMutation) {
+            $0.selectedSecretID = nil
+        }
         await store.receive(.delegate(.secretSelected(nil)))
     }
 

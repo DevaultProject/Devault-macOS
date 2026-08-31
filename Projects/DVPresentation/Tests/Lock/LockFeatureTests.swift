@@ -34,13 +34,7 @@ struct LockFeatureTests {
 
         await store.send(.didTapUnlock)
         await store.receive(.unlockAuthFailed(.failed)) {
-            $0.alert = AlertState {
-                TextState("Unlock failed")
-            } actions: {
-                ButtonState(role: .cancel) { TextState("OK") }
-            } message: {
-                TextState("Please try again.")
-            }
+            $0.alert = makeUserAuthenticationFailedAlert(title: String.module("Unlock failed"), error: .failed)
         }
     }
 }
