@@ -32,7 +32,7 @@ extension SidebarClient: TestDependencyKey {
     fetchCounts: { _, projectIDs in
       SecretCounts(
         byFilter: [.all: 12, .starred: 3, .notice: 2, .expired: 1, .deleted: 4],
-        byProject: Dictionary(uniqueKeysWithValues: projectIDs.enumerated().map { ($1, $0 + 1) })
+        byProject: Dictionary(projectIDs.enumerated().map { ($1, $0 + 1) }, uniquingKeysWith: { first, _ in first })
       )
     }
   )
