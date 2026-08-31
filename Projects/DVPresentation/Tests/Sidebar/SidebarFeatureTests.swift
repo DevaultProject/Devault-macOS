@@ -322,8 +322,8 @@ struct SidebarFeatureTests {
     }
   }
 
-  @Test("didConfirmRename에서 nameTaken 오류 시 alert가 표시된다")
-  func didConfirmRenameNameTakenShowsAlert() async {
+  @Test("didConfirmRename에서 nameTaken 오류 시 alert를 띄우고 편집을 닫아 원래 이름으로 되돌린다")
+  func didConfirmRenameNameTakenShowsAlertAndReverts() async {
     let item = ProjectItem(id: UUID(), name: "Backend")
     var state = SidebarFeature.State()
     state.projectsState = .loaded([item])
@@ -336,7 +336,7 @@ struct SidebarFeatureTests {
       $0.sidebarClient.renameProject = { _, _ in throw SidebarError.nameTaken }
     }
 
-    // 실패해도 닫지 않는다 — 닫으면 입력한 이름이 사라진다.
+    // 이름 중복이면 저장을 막고 편집을 닫아 원래 이름으로 되돌린다.
     await store.send(.didConfirmRename)
     await store.receive(.renameResponse(.failure(.nameTaken))) {
       $0.alert = AlertState {
@@ -346,6 +346,8 @@ struct SidebarFeatureTests {
       } message: {
         TextState(String.module("Please enter a different project name."))
       }
+      $0.renamingProjectID = nil
+      $0.renameText = ""
     }
   }
 

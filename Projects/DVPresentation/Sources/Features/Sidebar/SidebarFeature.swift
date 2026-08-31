@@ -281,12 +281,13 @@ public struct SidebarFeature {
         }
         return .none
 
-      // 편집 상태는 성공했을 때만 닫는다. 여기서 닫으면 실패 시 입력한 이름이 사라진다.
+      // 편집 상태는 성공·이름 중복 시 닫아 원래 이름으로 되돌린다.
+      // 그 외 실패(renameFailed)는 열어 둬 입력한 이름을 보존한다(재시도 대비).
       case .didConfirmRename:
         guard let id = state.renamingProjectID else { return .none }
         let name = state.renameText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else {
-          // 빈 이름은 보존할 입력이 없으므로 편집을 닫아 원래 이름으로 되돌린다(nameTaken과 달리).
+          // 빈 이름은 보존할 입력이 없으므로 편집을 닫아 원래 이름으로 되돌린다.
           state.alert = makeRenameEmptyNameAlert()
           state.renamingProjectID = nil
           state.renameText = ""
@@ -317,7 +318,10 @@ public struct SidebarFeature {
         )
 
       case .renameResponse(.failure(.nameTaken)):
+        // 이름 중복은 저장을 막고 편집을 닫아 원래 이름으로 되돌린다.
         state.alert = makeRenameNameTakenAlert()
+        state.renamingProjectID = nil
+        state.renameText = ""
         return .none
 
       case .renameResponse(.failure):
