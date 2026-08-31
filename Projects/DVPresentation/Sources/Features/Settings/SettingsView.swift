@@ -99,7 +99,8 @@ extension SettingsView {
     .foregroundStyle(isBackToAppHovered ? Color.dv(.gray900) : Color.dv(.gray700))
     .listRowSeparator(.hidden)
     .onHover { isBackToAppHovered = $0 }
-    .dvAnimation(MotionMetrics.hover, value: isBackToAppHovered)
+    // hover 색상 피드백은 vestibular 움직임이 아니라 동작 줄이기 대상에서 제외한다(DVDesign hover와 동일 정책).
+    .animation(MotionMetrics.hover, value: isBackToAppHovered)
   }
 
   /// 다른 탭과 같은 기본 시스템 선택 색을 그대로 쓴다 — 여기만 따로 초록을 칠하지 않는다.
