@@ -18,7 +18,7 @@ struct MainView: View {
   var body: some View {
     content
       // `screen`으로 좁히지 않으면 목록·상세가 바뀔 때마다 화면 전체가 다시 페이드된다.
-      .animation(MotionMetrics.transition, value: store.screen)
+      .dvAnimation(MotionMetrics.transition, value: store.screen)
       .dvScreenBackground()
       .task { store.send(.task) }
       .sheet(
@@ -129,7 +129,7 @@ extension MainView {
       }
     }
     // id로 좁힌다. State 전체로 넓히면 조회 화면 안에서 필드를 열 때마다 상세가 다시 페이드된다.
-    .animation(MotionMetrics.transition, value: store.secretDetail?.id)
+    .dvAnimation(MotionMetrics.transition, value: store.secretDetail?.id)
     .navigationTitle("")
     // max는 주지 않는다 — 컬럼이 창을 채우지 못하면 윈도우 배경이 양옆에 드러난다.
     // 폼 폭 상한은 컬럼이 아니라 `SecretDetailView` 안의 `formMaxWidth()`가 담당한다.

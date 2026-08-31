@@ -105,8 +105,8 @@ extension SidebarView {
       collapsibleProjectBody
     }
     // `value`를 좁히지 않으면 이름 변경 입력 한 글자마다 섹션 전체가 다시 애니메이션된다.
-    .animation(MotionMetrics.subtle, value: store.projectsState)
-    .animation(MotionMetrics.subtle, value: store.isRefreshingProjects)
+    .dvAnimation(MotionMetrics.subtle, value: store.projectsState)
+    .dvAnimation(MotionMetrics.subtle, value: store.isRefreshingProjects)
   }
 
   /// **접힘 마스크가 헤더를 포함하면 안 된다.** 경계가 헤더보다 위에 생겨,
@@ -125,7 +125,7 @@ extension SidebarView {
     .mask {
       Rectangle().padding(.horizontal, -12)
     }
-    .animation(MotionMetrics.layout, value: store.isProjectSectionExpanded)
+    .dvAnimation(MotionMetrics.layout, value: store.isProjectSectionExpanded)
   }
 
   /// 스피너 대신 자리를 유지한 채 opacity만 움직인다. 갱신이 잦아 스피너로 갈아끼우면
@@ -184,7 +184,7 @@ extension SidebarView {
         store.send(.didToggleProjectSection)
       }
       .rotationEffect(.degrees(store.isProjectSectionExpanded ? 0 : 180))
-      .animation(MotionMetrics.layout, value: store.isProjectSectionExpanded)
+      .dvAnimation(MotionMetrics.layout, value: store.isProjectSectionExpanded)
       .accessibilityLabel(store.isProjectSectionExpanded ? String.module("Collapse Projects") : String.module("Expand Projects"))
     }
   }
@@ -217,7 +217,7 @@ extension SidebarView {
     }
     .listStyle(.sidebar)
     .tint(Color.dv(.vaultGreen))
-    .animation(MotionMetrics.layout, value: store.projects)
+    .dvAnimation(MotionMetrics.layout, value: store.projects)
     .scrollContentBackground(.hidden)
     .padding(.horizontal, -12)
     .onKeyPress(.return) {
