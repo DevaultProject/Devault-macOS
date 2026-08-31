@@ -35,13 +35,7 @@ struct OnboardingFeatureTests {
 
         await store.send(.didTapEnableTouchID)
         await store.receive(.touchIDAuthFailed(.failed)) {
-            $0.alert = AlertState {
-                TextState("Authentication failed")
-            } actions: {
-                ButtonState(role: .cancel) { TextState("OK") }
-            } message: {
-                TextState("Please try again.")
-            }
+            $0.alert = makeUserAuthenticationFailedAlert(title: String.module("Authentication failed"), error: .failed)
         }
     }
 
@@ -81,16 +75,7 @@ struct OnboardingFeatureTests {
         }
         await store.receive(.iCloudSyncStatusResponse(.noAccount)) {
             $0.isEnablingSync = false
-            $0.alert = AlertState {
-                TextState("iCloud sync isn't available.")
-            } actions: {
-                ButtonState(action: .retry) { TextState("Try Again") }
-                ButtonState(action: .openSystemSettings) { TextState("Open System Settings") }
-                ButtonState(action: .continueWithoutSync) { TextState("Continue Without iCloud") }
-                ButtonState(role: .cancel) { TextState("OK") }
-            } message: {
-                TextState("Sign in to iCloud in System Settings, then try again.")
-            }
+            $0.alert = makeNoAccountAlert()
         }
     }
 
@@ -176,14 +161,10 @@ struct OnboardingFeatureTests {
 }
 
 private func makeNoAccountAlert() -> AlertState<OnboardingFeature.Action.Alert> {
-    AlertState {
-        TextState("iCloud sync isn't available.")
-    } actions: {
-        ButtonState(action: .retry) { TextState("Try Again") }
-        ButtonState(action: .openSystemSettings) { TextState("Open System Settings") }
-        ButtonState(action: .continueWithoutSync) { TextState("Continue Without iCloud") }
-        ButtonState(role: .cancel) { TextState("OK") }
-    } message: {
-        TextState("Sign in to iCloud in System Settings, then try again.")
-    }
+    makeICloudSyncUnavailableAlert(
+        .noAccount,
+        retry: .retry,
+        continueWithoutSync: .continueWithoutSync,
+        openSystemSettings: .openSystemSettings
+    )
 }

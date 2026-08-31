@@ -10,7 +10,7 @@ import Testing
 @Suite("DevaultProSettingsFeature")
 struct DevaultProSettingsFeatureTests {
 
-  private static let product = SubscriptionProduct(
+  private let product = SubscriptionProduct(
     id: "pro.yearly", displayName: "1년", displayPrice: "₩39,000", periodInMonths: 12
   )
 

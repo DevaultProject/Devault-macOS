@@ -15,8 +15,8 @@ struct SecurityNotificationModuleTests {
       for: .secretExpiresSoon(secretID: UUID(), timing: .expirationDay)
     )
 
-    #expect(content.title == "A secret expires today")
-    #expect(content.body == "A saved secret expires today.")
+    #expect(content.title == String.module("A secret expires today"))
+    #expect(content.body == String.module("A saved secret expires today."))
   }
 
   @Test("만료 전 알림은 남은 일수를 표시한다")
@@ -25,7 +25,7 @@ struct SecurityNotificationModuleTests {
       for: .secretExpiresSoon(secretID: UUID(), timing: .sevenDaysBefore)
     )
 
-    #expect(content.title == "A secret is expiring soon")
-    #expect(content.body == "A saved secret will expire in 7 days.")
+    #expect(content.title == String.module("A secret is expiring soon"))
+    #expect(content.body == String.module("A saved secret will expire in \(7) days."))
   }
 }
