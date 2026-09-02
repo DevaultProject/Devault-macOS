@@ -54,9 +54,15 @@ extension DevaultProSettingsView {
     VStack(alignment: .leading, spacing: 10) {
       HStack(alignment: .center) {
         VStack(alignment: .leading, spacing: 4) {
-          Text(store.isPro ? (store.currentPlanName ?? SettingsCategory.devaultPro.title) : String.module("Free Plan"))
-            .dvFont(.bodyLG)
-            .foregroundStyle(Color.dv(.gray900))
+          // 새로고침 버튼은 플랜명과 같은 줄에 둬야 한다 — 바깥 HStack에 형제로 두면
+          // 플랜명+갱신일(또는 사용량) 두 줄 전체 높이 기준으로 세로 중앙 정렬되어
+          // 버튼이 두 줄 사이 어중간한 위치로 밀린다.
+          HStack(spacing: 6) {
+            Text(store.isPro ? (store.currentPlanName ?? SettingsCategory.devaultPro.title) : String.module("Free Plan"))
+              .dvFont(.bodyLG)
+              .foregroundStyle(Color.dv(.gray900))
+            refreshButton
+          }
           if store.isPro, let renewalDescription {
             Text(renewalDescription)
               .dvFont(.captionMDRegular)
@@ -67,7 +73,6 @@ extension DevaultProSettingsView {
               .foregroundStyle(Color.dv(.gray600))
           }
         }
-        refreshButton
         Spacer(minLength: 12)
         if store.isPro {
           HStack(spacing: 8) {
