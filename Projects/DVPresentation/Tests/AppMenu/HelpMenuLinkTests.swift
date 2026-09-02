@@ -27,8 +27,21 @@ struct HelpMenuLinkTests {
     #expect(HelpMenuLink.privacyPolicy.url.absoluteString == "https://devault-devteam.notion.site/privacy-policy")
   }
 
-  @Test("Send Feedback은 팀 이메일 mailto로 연결된다")
-  func sendFeedbackURL() {
-    #expect(HelpMenuLink.sendFeedback.url.absoluteString == "mailto:devault.devteam@gmail.com")
+  @Test("Send Feedback은 팀 이메일 mailto로 연결되고 subject·body 틀을 담는다")
+  func sendFeedbackURL() throws {
+    let url = HelpMenuLink.sendFeedback.url
+    let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
+
+    #expect(url.scheme == "mailto")
+    #expect(components.path == "devault.devteam@gmail.com")
+
+    let body = try #require(components.queryItems?.first { $0.name == "body" }?.value)
+    #expect(body.contains("Type:"))
+    #expect(body.contains("What happened:"))
+    #expect(body.contains("Steps to reproduce"))
+    #expect(body.contains("App Version:"))
+    #expect(body.contains("macOS:"))
+    #expect(body.contains("Mac:"))
+    #expect(body.contains("Plan:"))
   }
 }
