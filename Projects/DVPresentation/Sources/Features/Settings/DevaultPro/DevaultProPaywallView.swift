@@ -207,12 +207,11 @@ extension DevaultProPaywallView {
   private func badgeLabel(_ text: String, accent: Bool) -> some View {
     Text(text)
       .dvFont(.captionMDRegular)
-      // 다크모드에선 vaultGreenTint 위 vaultGreen 대비가 약해 accentOnTint가 흰색으로 바꾼다.
-      .foregroundStyle(accent ? accentOnTint : Color.dv(.gray600))
+      .foregroundStyle(accent ? Color.dv(.white) : Color.dv(.gray600))
       .padding(.horizontal, 6)
       .padding(.vertical, 2)
       .background(
-        Capsule().fill(accent ? Color.dv(.vaultGreenTint) : Color.dv(.gray200))
+        Capsule().fill(accent ? Color.dv(.vaultGreen) : Color.dv(.gray200))
       )
   }
 
