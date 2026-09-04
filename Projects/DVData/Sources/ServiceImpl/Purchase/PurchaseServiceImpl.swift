@@ -127,14 +127,15 @@ public struct PurchaseServiceImpl: PurchaseService {
         return cached.entitlement == .pro ? cached : .free
     }
 
-    /// 자동 갱신 여부는 트랜잭션이 아니라 구독 상태에 있다. 조회에 실패해도 등급·갱신일은 유효하므로 false로 둔다.
+    /// 자동 갱신 여부·예약 상품은 트랜잭션이 아니라 구독 상태(renewalInfo)에 있다. 조회에 실패해도 등급·갱신일은 유효하므로 갱신 정보만 비운다.
     private func status(for transaction: StoreKit.Transaction) async -> DVDomain.SubscriptionStatus {
-        let willAutoRenew = await willAutoRenew(for: transaction)
+        let renewal = await renewalInfo(for: transaction)
         return DVDomain.SubscriptionStatus(
             entitlement: .pro,
             productID: transaction.productID,
             renewsAt: transaction.expirationDate,
-            willAutoRenew: willAutoRenew
+            willAutoRenew: renewal.willAutoRenew,
+            renewalProductID: renewal.autoRenewPreference
         )
     }
 
@@ -265,13 +266,16 @@ extension PurchaseServiceImpl {
         return nil
     }
 
-    /// 다음 주기에 자동 갱신될 예정인지 확인한다.
-    private func willAutoRenew(for transaction: StoreKit.Transaction) async -> Bool {
+    /// 다음 주기 갱신 정보: 자동 갱신 여부와 예약된 상품(autoRenewPreference). 조회 실패 시 갱신 없음으로 본다.
+    /// autoRenewPreference는 다음 갱신에 적용될 상품 — 지금과 다르면 crossgrade가 예약된 것이다.
+    private func renewalInfo(
+        for transaction: StoreKit.Transaction
+    ) async -> (willAutoRenew: Bool, autoRenewPreference: String?) {
         guard let statuses = try? await transaction.subscriptionStatus,
               case .verified(let renewalInfo) = statuses.renewalInfo
         else {
-            return false
+            return (false, nil)
         }
-        return renewalInfo.willAutoRenew
+        return (renewalInfo.willAutoRenew, renewalInfo.autoRenewPreference)
     }
 }
