@@ -16,6 +16,9 @@ struct MainView: View {
 
   @Bindable var store: StoreOf<MainFeature>
 
+  /// 생성 오버레이의 왼쪽 인셋이 사이드바 표시 여부를 따라가야 해서 추적한다. 토글로 사이드바를 접으면 오버레이가 전체 폭을 덮는다.
+  @State private var columnVisibility: NavigationSplitViewVisibility = .all
+
   // MARK: - Body
 
   var body: some View {
@@ -47,10 +50,11 @@ struct MainView: View {
 
 extension MainView {
     
-  /// **`NavigationSplitView`는 하나뿐이다.** 생성 화면은 가운데 컬럼을 접어 2컬럼처럼 보이게 한다.
+  /// **`NavigationSplitView`는 하나뿐이다.** 생성 화면은 브라우즈 3컬럼을 그대로 둔 채 사이드바 오른쪽을 오버레이로 덮어 2컬럼처럼 보이게 한다.
   ///
-  /// 컬럼 수가 다른 두 `NavigationSplitView`는 타입이 달라 `if/else`로 교체하면 서브트리가 통째로
-  /// 새로 만들어진다 — 사이드바까지 재생성되어 토글 버튼이 튀고 `.task`가 재실행돼 목록이 깜빡였다.
+  /// 컬럼 수가 다른 두 `NavigationSplitView`는 타입이 달라 `if/else`로 교체하면 서브트리가 통째로 새로 만들어진다 — 사이드바까지 재생성되어 토글 버튼이 튀고 `.task`가 재실행돼 목록이 깜빡였다.
+  ///
+  /// 가운데 컬럼을 폭 0으로 접는 방식은 쓰지 않는다. 일부 macOS에서 브리지가 콘텐츠 컬럼 가이드에 이름 없는 required `width >= 200`을 걸어 두어, 접힘 클램프(`NSSplitViewItem.MaxSize <= 0`)와 required끼리 충돌하고 어느 쪽이 깨질지가 기기마다 달라 200pt 잔폭이 남는다.
   @ViewBuilder
   private var content: some View {
     switch store.screen {
@@ -61,41 +65,52 @@ extension MainView {
       }
 
     case .browsing, .creating:
-      NavigationSplitView {
+      NavigationSplitView(columnVisibility: $columnVisibility) {
         sidebarColumn
       } content: {
         contentColumn
       } detail: {
-        detailArea
+        detailColumn
       }
       .navigationSplitViewStyle(.balanced)
       .toolbarBackground(.hidden, for: .windowToolbar)
+      .overlay { creatingOverlay }
       .transition(.opacity)
     }
   }
 
   @ViewBuilder
-  private var detailArea: some View {
+  private var creatingOverlay: some View {
     if store.screen == .creating {
-      // 폼이 떠 있는 동안에도 타입 선택 State는 살아 있으므로 폼을 먼저 본다.
-      if let createSecretStore = store.scope(state: \.createSecret, action: \.createSecret) {
-        CreateSecretView(store: createSecretStore)
-          #if DEBUG
-          .columnWidthProbe("detail(form)", screen: store.screen)
-          #endif
-      } else if let selectStore = store.scope(state: \.selectSecretType, action: \.selectSecretType) {
-        SelectSecretTypeView(store: selectStore)
-          #if DEBUG
-          .columnWidthProbe("detail(typeGrid)", screen: store.screen)
-          #endif
+      HStack(spacing: 0) {
+        // Spacer는 히트 테스트를 받지 않아 밑의 사이드바가 그대로 조작된다.
+        Spacer()
+          .frame(width: columnVisibility == .all ? WindowLayoutMetrics.sidebarWidth : 0)
+        creatingArea
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .dvScreenBackground()
       }
-    } else {
-      detailColumn
+      .transition(.opacity)
     }
   }
 
-  /// 폭을 고정한다(min == ideal == max). 범위를 주면 `.balanced`가 남는 폭을 컬럼끼리 나눠 가져,
-  /// 가운데가 접힐 때 사이드바 폭이 흔들린다.
+  @ViewBuilder
+  private var creatingArea: some View {
+    // 폼이 떠 있는 동안에도 타입 선택 State는 살아 있으므로 폼을 먼저 본다.
+    if let createSecretStore = store.scope(state: \.createSecret, action: \.createSecret) {
+      CreateSecretView(store: createSecretStore)
+        #if DEBUG
+        .columnWidthProbe("detail(form)", screen: store.screen)
+        #endif
+    } else if let selectStore = store.scope(state: \.selectSecretType, action: \.selectSecretType) {
+      SelectSecretTypeView(store: selectStore)
+        #if DEBUG
+        .columnWidthProbe("detail(typeGrid)", screen: store.screen)
+        #endif
+    }
+  }
+
+  /// 폭을 고정한다(min == ideal == max). 범위를 주면 `.balanced`가 남는 폭을 컬럼끼리 나눠 가져 화면 전환 때 사이드바 폭이 흔들리고, 생성 오버레이의 왼쪽 인셋도 이 고정 폭을 전제한다.
   private var sidebarColumn: some View {
     SidebarView(store: store.scope(state: \.sidebar, action: \.sidebar))
       .navigationSplitViewColumnWidth(
@@ -108,28 +123,15 @@ extension MainView {
       #endif
   }
 
-  /// 생성 중에는 폭 0으로 접혀 2컬럼처럼 보인다.
-  ///
-  /// 뷰를 없애거나 다른 modifier를 붙이면 뷰 타입이 달라져 위 주석의 재생성 문제가 돌아온다.
-  /// 살려둔 채 **같은 modifier의 값만** 바꾼다.
+  /// 드래그 하한은 컬럼이 아니라 콘텐츠가 갖는다 — 컬럼 `min`은 분할 뷰의 required 제약으로 격상되어 다른 required와 충돌한 이력이 있어 0으로 둔다.
   private var contentColumn: some View {
-    let isCollapsed = store.screen == .creating
-    return SecretListView(store: store.scope(state: \.secretList, action: \.secretList))
+    SecretListView(store: store.scope(state: \.secretList, action: \.secretList))
       .navigationTitle("")
-      .opacity(isCollapsed ? 0 : 1)
-      // 드래그 하한은 컬럼이 아니라 콘텐츠가 갖는다. 컬럼 `min`으로 주면 접힐 때
-      // `width >= 300`과 `MaxSize <= 0`이 공존해 AppKit이 제약 충돌을 뱉는다.
-      //
-      // 접을 때는 상한도 0으로 눌러야 한다. 하한만 풀면 목록이 자기 콘텐츠 폭(행 `DVVaultContainer`의
-      // `minWidth: 200`)을 계속 요구하고, 컬럼 `max: 0`보다 그쪽이 이기는 macOS에서 200pt 여백이 남는다.
-      .frame(
-        minWidth: isCollapsed ? 0 : WindowLayoutMetrics.listMinWidth,
-        maxWidth: isCollapsed ? 0 : nil
-      )
+      .frame(minWidth: WindowLayoutMetrics.listMinWidth)
       .navigationSplitViewColumnWidth(
         min: 0,
-        ideal: isCollapsed ? 0 : WindowLayoutMetrics.listIdealWidth,
-        max: isCollapsed ? 0 : WindowLayoutMetrics.listMaxWidth
+        ideal: WindowLayoutMetrics.listIdealWidth,
+        max: WindowLayoutMetrics.listMaxWidth
       )
       #if DEBUG
       .columnWidthProbe("content", screen: store.screen)
@@ -216,7 +218,8 @@ private enum ColumnWidthProbeLog {
     let frame = screen?.frame ?? .zero
     let visible = screen?.visibleFrame ?? .zero
     print(
-      "[COLPROBE] env model=\(hardwareModel) os=\(ProcessInfo.processInfo.operatingSystemVersionString)"
+      // probe 마커는 발생 기기 로그가 어느 빌드에서 나왔는지 가르는 용도다. 프로브가 낀 커밋마다 올린다.
+      "[COLPROBE] env probe=v3-overlay model=\(hardwareModel) os=\(ProcessInfo.processInfo.operatingSystemVersionString)"
         + " screen=\(Int(frame.width))x\(Int(frame.height))"
         + " visible=\(Int(visible.width))x\(Int(visible.height))"
         + " scale=\(screen?.backingScaleFactor ?? 0)"
