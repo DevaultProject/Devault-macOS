@@ -167,6 +167,7 @@ extension DevaultProPaywallView {
         Text(product.displayName)
           .dvFont(.bodyLG)
           .foregroundStyle(Color.dv(.gray900))
+        planBadge(for: product)
         Spacer(minLength: 12)
         priceText(for: product)
           .dvFont(.bodyLG)
@@ -191,6 +192,28 @@ extension DevaultProPaywallView {
     // 반응하지 않는다 — 카드 전체를 눌러도 선택되도록 별도로 씌운다.
     .contentShape(Rectangle())
     .onTapGesture { store.send(.didSelectProduct(product.id)) }
+  }
+
+  /// 현재 플랜과 예약된 다음 플랜을 배지로 구분한다.
+  @ViewBuilder
+  private func planBadge(for product: SubscriptionProduct) -> some View {
+    if product.id == store.currentProductID {
+      badgeLabel(String.module("Current Plan"), accent: false)
+    } else if product.id == store.renewalProductID {
+      badgeLabel(String.module("Next renewal"), accent: true)
+    }
+  }
+
+  private func badgeLabel(_ text: String, accent: Bool) -> some View {
+    Text(text)
+      .dvFont(.captionMDRegular)
+      // 다크모드에선 vaultGreenTint 위 vaultGreen 대비가 약해 accentOnTint가 흰색으로 바꾼다.
+      .foregroundStyle(accent ? accentOnTint : Color.dv(.gray600))
+      .padding(.horizontal, 6)
+      .padding(.vertical, 2)
+      .background(
+        Capsule().fill(accent ? Color.dv(.vaultGreenTint) : Color.dv(.gray200))
+      )
   }
 
   private var subscribeButton: some View {
@@ -253,7 +276,10 @@ extension DevaultProPaywallView {
       return store.isChangingPlan ? String.module("Change Plan") : String.module("Subscribe")
     }
     if store.isSelectingCurrentPlan {
-      return String.module("Your Current Plan")
+      // 예약이 있으면 기본 선택이 예약 플랜이라, 그걸 고른 건 현재 플랜이 아니라 이미 예약된 플랜이다.
+      return store.renewalProductID != nil
+        ? String.module("Scheduled for Next Renewal")
+        : String.module("Your Current Plan")
     }
     return store.isChangingPlan
       ? String(format: String.module("Change to %@"), selectedProduct.displayName)
@@ -261,7 +287,14 @@ extension DevaultProPaywallView {
   }
 
   private var footerText: String {
-    String.module(
+    // 플랜 변경이면 "다음 갱신부터 적용, 지금은 청구 없음"을 명확히 한다. 그 외는 일반 안내.
+    if store.isChangingPlan, !store.isSelectingCurrentPlan, let selected = store.selectedProduct {
+      return String(
+        format: String.module("Switches to %@ at your next renewal — no charge now. Cancel anytime in Settings."),
+        selected.displayName
+      )
+    }
+    return String.module(
       "Automatically renews after the period ends. You can cancel anytime in Settings."
     )
   }

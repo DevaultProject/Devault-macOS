@@ -19,12 +19,17 @@ public struct DevaultProPaywallFeature {
     var errorMessage: String?
     /// 이미 구독 중인 채로 열리면 카피와 버튼 문구가 "가입"이 아니라 "변경"이어야 한다.
     var isChangingPlan = false
-    /// 현재 구독 중인 상품 ID. 이 값과 같은 플랜을 선택하면 "변경"이 성립하지 않으므로 버튼을 막는다.
+    /// 현재 구독 중인 상품 ID.
     var currentProductID: String?
+    /// 변경 예약이 있으면 그 예약 상품 ID. 없으면 nil.
+    var renewalProductID: String?
 
     var isBusy: Bool { isPurchasing || isRestoring }
     var selectedProduct: SubscriptionProduct? { products.first { $0.id == selectedProductID } }
-    var isSelectingCurrentPlan: Bool { selectedProductID != nil && selectedProductID == currentProductID }
+    /// 다음 갱신에 적용될 플랜 — 예약이 있으면 예약 상품, 없으면 현재 상품.
+    var effectivePlanID: String? { renewalProductID ?? currentProductID }
+    /// 지금 고른 것이 다음 갱신에 적용될 플랜과 같으면 변경이 아니라 버튼을 막는다.
+    var isSelectingCurrentPlan: Bool { selectedProductID != nil && selectedProductID == effectivePlanID }
 
     public init() {}
   }
@@ -86,14 +91,14 @@ public struct DevaultProPaywallFeature {
       case .statusLoaded(let status):
         state.isChangingPlan = status.entitlement == .pro
         state.currentProductID = status.productID
+        state.renewalProductID = status.hasPendingPlanChange ? status.renewalProductID : nil
         return .none
 
       case .productsLoaded(let products):
         state.products = products
         if state.selectedProductID == nil {
-          // 플랜 변경이면 지금 쓰고 있는 플랜을 그대로 보여준다 — 아무것도 안 눌러도 "다른 플랜"을
-          // 고르라는 화면인지 알 수 있어야 한다. 신규 가입이면 1개월(가장 짧은 구독, 정렬 기준 첫 항목)을 기본값으로 둔다.
-          state.selectedProductID = state.currentProductID ?? products.first?.id
+          // 예약이 있으면 예약 플랜, 구독 중이면 현재 플랜, 신규면 가장 짧은 상품을 기본 선택한다.
+          state.selectedProductID = state.effectivePlanID ?? products.first?.id
         }
         return .none
 

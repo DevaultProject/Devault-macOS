@@ -36,8 +36,44 @@ struct DevaultProSettingsFeatureTests {
     await store.receive(.statusLoaded(status)) {
       $0.subscriptionStatus = status
     }
-    await store.receive(.planNameLoaded(product.displayName)) {
+    await store.receive(.planNamesLoaded(current: product.displayName, renewal: nil)) {
       $0.currentPlanName = product.displayName
+    }
+  }
+
+  @Test("변경 예약이 있으면 예약된 다음 플랜의 표시명도 함께 읽어 온다")
+  func taskLoadsRenewalPlanNameWhenPlanChangeIsPending() async {
+    let monthly = SubscriptionProduct(
+      id: "pro.monthly", displayName: "1개월", displayPrice: "₩3,900", periodInMonths: 1
+    )
+    let quarterly = SubscriptionProduct(
+      id: "pro.quarterly", displayName: "3개월", displayPrice: "₩9,900", periodInMonths: 3
+    )
+    // 현재는 1개월, 다음 갱신부터 3개월로 바뀌도록 예약된 상태.
+    let status = SubscriptionStatus(
+      entitlement: .pro, productID: monthly.id, willAutoRenew: true, renewalProductID: quarterly.id
+    )
+    let store = TestStore(initialState: DevaultProSettingsFeature.State()) {
+      DevaultProSettingsFeature()
+    } withDependencies: {
+      $0.entitlementClient.stream = {
+        AsyncStream { continuation in
+          continuation.yield(.pro)
+          continuation.finish()
+        }
+      }
+      $0.purchaseClient.subscriptionStatus = { status }
+      $0.purchaseClient.products = { [monthly, quarterly] }
+      $0.secretClient.totalCountExcludingTrash = { throw CancellationError() }
+    }
+
+    await store.send(.task)
+    await store.receive(.statusLoaded(status)) {
+      $0.subscriptionStatus = status
+    }
+    await store.receive(.planNamesLoaded(current: monthly.displayName, renewal: quarterly.displayName)) {
+      $0.currentPlanName = monthly.displayName
+      $0.renewalPlanName = quarterly.displayName
     }
   }
 
@@ -121,7 +157,7 @@ struct DevaultProSettingsFeatureTests {
       $0.isRefreshing = false
       $0.subscriptionStatus = status
     }
-    await store.receive(.planNameLoaded(product.displayName)) {
+    await store.receive(.planNamesLoaded(current: product.displayName, renewal: nil)) {
       $0.currentPlanName = product.displayName
     }
     #expect(refreshed.value)
