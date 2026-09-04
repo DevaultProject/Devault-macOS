@@ -15,6 +15,8 @@ public struct DevaultProSettingsFeature {
     var subscriptionStatus: SubscriptionStatus = .free
     /// `SubscriptionStatus`엔 productID만 있고 표시명(개월수)이 없어서, 상품 목록에서 따로 찾아온다.
     var currentPlanName: String?
+    /// 다음 갱신에 적용될 플랜의 표시명. **변경 예약이 있을 때만** 채워지고, 그 외엔 nil이다.
+    var renewalPlanName: String?
     /// 무료 사용량 표시("N/15개 사용")용. Pro는 화면에서 안 쓰지만 등급 전환 순간을 대비해 항상 읽어 둔다.
     var secretCount: Int?
     /// 수동 새로고침 진행 중. `Transaction.updates`가 아직 반영 전이라 등급이 실제와
@@ -42,7 +44,7 @@ public struct DevaultProSettingsFeature {
     // MARK: - Internal
 
     case statusLoaded(SubscriptionStatus)
-    case planNameLoaded(String?)
+    case planNamesLoaded(current: String?, renewal: String?)
     case secretCountLoaded(Int)
 
     // MARK: - Child
@@ -93,15 +95,21 @@ public struct DevaultProSettingsFeature {
         state.subscriptionStatus = status
         guard let productID = status.productID else {
           state.currentPlanName = nil
+          state.renewalPlanName = nil
           return .none
         }
+        // 변경 예약이 있을 때(다음 갱신 상품이 현재와 다를 때)만 예약 플랜명을 함께 해석한다.
+        let renewalID = status.hasPendingPlanChange ? status.renewalProductID : nil
         return .run { send in
-          let name = try? await purchaseClient.products().first { $0.id == productID }?.displayName
-          await send(.planNameLoaded(name))
+          let products = try? await purchaseClient.products()
+          let current = products?.first { $0.id == productID }?.displayName
+          let renewal = renewalID.flatMap { id in products?.first { $0.id == id }?.displayName }
+          await send(.planNamesLoaded(current: current, renewal: renewal))
         }
 
-      case .planNameLoaded(let name):
-        state.currentPlanName = name
+      case let .planNamesLoaded(current, renewal):
+        state.currentPlanName = current
+        state.renewalPlanName = renewal
         return .none
 
       case .secretCountLoaded(let count):

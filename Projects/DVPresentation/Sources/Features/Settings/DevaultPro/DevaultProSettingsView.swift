@@ -139,6 +139,10 @@ extension DevaultProSettingsView {
   private var renewalDescription: String? {
     guard let renewsAt = store.subscriptionStatus.renewsAt else { return nil }
     let dateText = renewsAt.formatted(date: .abbreviated, time: .omitted)
+    // 변경 예약이 있으면(다음 갱신부터 다른 플랜) 그걸 우선 안내한다 — "현재는 1개월인데 3개월로 바꿨다"는 혼란을 없앤다.
+    if let renewalPlanName = store.renewalPlanName {
+      return String(format: String.module("Changes to %@ on %@"), renewalPlanName, dateText)
+    }
     return store.subscriptionStatus.willAutoRenew
       ? String(format: String.module("Renews on %@"), dateText)
       : String(format: String.module("Expires on %@"), dateText)
