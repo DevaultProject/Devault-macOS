@@ -54,6 +54,7 @@ public struct AppFeature {
     case iCloudRemoteChangeDetected
     case iCloudRemoteChangeHandled
     case entitlementChanged
+    case entitlementSettledAtLaunch(isFree: Bool)
 
     // MARK: - Child
 
@@ -152,7 +153,18 @@ public struct AppFeature {
 
       case .entitlementChanged:
         // 등급이 바뀌면 만료 알림 시점 한도가 달라진다. 예약은 저장된 선택이 아니라 등급을 함께 보고 계산되므로, 다시 예약해야 강등 뒤에도 무료 한도가 지켜진다.
-        return .run { _ in await appLaunchClient.syncExpiryNotifications() }
+        return .merge(
+          .run { _ in await appLaunchClient.syncExpiryNotifications() },
+          // iCloud 동기화는 Pro 전용이라, free로 내려가면 자동으로 끈다(로컬 데이터는 유지, 미러링만 중단).
+          entitlementClient.current() == .free
+            ? .run { _ in await appLaunchClient.disableICloudSyncForDowngrade() }
+            : .none
+        )
+
+      case let .entitlementSettledAtLaunch(isFree):
+        // 앱 꺼진 사이 만료돼 free로 시작하면 여기서 동기화를 끈다(bootstrap이 stale .pro로 켜뒀어도 정리). Pro면 무시.
+        guard isFree else { return .none }
+        return .run { _ in await appLaunchClient.disableICloudSyncForDowngrade() }
 
       case .iCloudRemoteChangeHandled:
         guard state.main != nil else { return .none }
@@ -244,12 +256,14 @@ private extension AppFeature {
   func entitlementWatchEffect() -> Effect<Action> {
     .run { send in
       var isFirst = true
-      for await _ in entitlementClient.stream() {
-        guard !isFirst else {
+      for await entitlement in entitlementClient.stream() {
+        if isFirst {
           isFirst = false
-          continue
+          // 첫 방출은 알림 재동기화(.task가 이미 함)는 건너뛰되, 이미 free면 동기화 종료는 처리한다.
+          await send(.entitlementSettledAtLaunch(isFree: entitlement == .free))
+        } else {
+          await send(.entitlementChanged)
         }
-        await send(.entitlementChanged)
       }
     }
     .cancellable(id: CancelID.entitlementWatch, cancelInFlight: true)

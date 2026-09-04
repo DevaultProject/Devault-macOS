@@ -43,12 +43,20 @@ actor LiveStorage {
   }
 }
 
+extension LiveStorage {
+  /// CloudKit 미러링 여부를 판정한다. iCloud 동기화는 Pro 전용이라 free면 항상 false.
+  /// 순수 판정만 하고, 플래그 정리는 `setEnabled(false)`가 맡는다.
+  static func resolveICloudSync(_ repository: any SettingsRepository) -> Bool {
+    repository.isICloudSyncEnabled() && repository.cachedEntitlement() == .pro
+  }
+}
+
 private extension LiveStorage {
   private func repositories() throws -> RepositorySet {
     if let current { return current }
 
     let repositorySet = try makeRepositorySet(
-      iCloudSyncEnabled: settingsRepository.isICloudSyncEnabled()
+      iCloudSyncEnabled: Self.resolveICloudSync(settingsRepository)
     )
     current = repositorySet
     return repositorySet

@@ -1,5 +1,7 @@
 // Copyright © 2026 Devault. All rights reserved
 
+import ComposableArchitecture
+import Foundation
 import Testing
 
 @testable import DVPresentation
@@ -29,7 +31,12 @@ struct HelpMenuLinkTests {
 
   @Test("Send Feedback은 팀 이메일 mailto로 연결되고 subject·body 틀을 담는다")
   func sendFeedbackURL() throws {
-    let url = HelpMenuLink.sendFeedback.url
+    // 피드백 본문의 Plan 줄이 entitlementClient.current()를 읽으므로 테스트가 등급을 명시한다.
+    let url = withDependencies {
+      $0.entitlementClient.current = { .free }
+    } operation: {
+      HelpMenuLink.sendFeedback.url
+    }
     let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
 
     #expect(url.scheme == "mailto")
@@ -42,6 +49,19 @@ struct HelpMenuLinkTests {
     #expect(body.contains("App Version:"))
     #expect(body.contains("macOS:"))
     #expect(body.contains("Mac:"))
-    #expect(body.contains("Plan:"))
+    // 라벨만이 아니라 주입한 등급 값까지 검증한다 — current()를 실제로 읽는지 확인.
+    #expect(body.contains("Plan: Free"))
+
+    // 등급이 바뀌면 Plan 값도 달라져야 한다.
+    let proURL = withDependencies {
+      $0.entitlementClient.current = { .pro }
+    } operation: {
+      HelpMenuLink.sendFeedback.url
+    }
+    let proBody = try #require(
+      URLComponents(url: proURL, resolvingAgainstBaseURL: false)?
+        .queryItems?.first { $0.name == "body" }?.value
+    )
+    #expect(proBody.contains("Plan: Pro"))
   }
 }
