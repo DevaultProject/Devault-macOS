@@ -16,8 +16,11 @@ struct MainView: View {
 
   @Bindable var store: StoreOf<MainFeature>
 
-  /// 생성 오버레이의 왼쪽 인셋이 사이드바 표시 여부를 따라가야 해서 추적한다. 토글로 사이드바를 접으면 오버레이가 전체 폭을 덮는다.
-  @State private var columnVisibility: NavigationSplitViewVisibility = .all
+  /// 생성 오버레이의 왼쪽 인셋. 사이드바 컬럼 폭 상수를 쓰지 않는 이유는 AppKit이 사이드바 영역을 컬럼 폭보다 몇 pt 넓게 잡아서다(250 지정에 실측 258) — 목록 컬럼의 실측 왼쪽 끝을 따라가면 그 오프셋이 기기마다 달라도 맞고, 사이드바를 토글로 접으면 0 근처로 내려가 오버레이가 전체 폭을 덮는다.
+  @State private var creatingOverlayInset: CGFloat = WindowLayoutMetrics.sidebarWidth
+
+  /// ``creatingOverlayInset`` 실측에 쓰는 좌표계 이름. `NavigationSplitView`에 붙는다.
+  private static let splitCoordinateSpaceName = "MainSplit"
 
   // MARK: - Body
 
@@ -65,7 +68,7 @@ extension MainView {
       }
 
     case .browsing, .creating:
-      NavigationSplitView(columnVisibility: $columnVisibility) {
+      NavigationSplitView {
         sidebarColumn
       } content: {
         contentColumn
@@ -74,6 +77,7 @@ extension MainView {
       }
       .navigationSplitViewStyle(.balanced)
       .toolbarBackground(.hidden, for: .windowToolbar)
+      .coordinateSpace(name: Self.splitCoordinateSpaceName)
       .overlay { creatingOverlay }
       .transition(.opacity)
     }
@@ -85,10 +89,26 @@ extension MainView {
       HStack(spacing: 0) {
         // Spacer는 히트 테스트를 받지 않아 밑의 사이드바가 그대로 조작된다.
         Spacer()
-          .frame(width: columnVisibility == .all ? WindowLayoutMetrics.sidebarWidth : 0)
+          .frame(width: creatingOverlayInset)
         creatingArea
           .frame(maxWidth: .infinity, maxHeight: .infinity)
-          .dvScreenBackground()
+          // 왼쪽 모서리만 둥글린다 — 컬럼이 카드처럼 그려지는 macOS에서 직각 평면 오버레이가 이질적으로 보여서다. 배경만 안전 영역을 넘겨 툴바 아래까지 채우고, 콘텐츠는 안전 영역 안에 남긴다.
+          .background {
+            let shape = UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 12)
+            shape
+              .fill(Color.dv(.gray100))
+              // 사이드바가 옆 컬럼에 드리우는 그림자를 재현한다 — 브라우즈 화면 실측으로 경계에서 검정 ~5%가 36pt에 걸쳐 사라진다.
+              .overlay(alignment: .leading) {
+                LinearGradient(
+                  colors: [.black.opacity(0.05), .clear],
+                  startPoint: .leading,
+                  endPoint: .trailing
+                )
+                .frame(width: 36)
+              }
+              .clipShape(shape)
+              .ignoresSafeArea(edges: [.top, .bottom])
+          }
       }
       .transition(.opacity)
     }
@@ -110,7 +130,7 @@ extension MainView {
     }
   }
 
-  /// 폭을 고정한다(min == ideal == max). 범위를 주면 `.balanced`가 남는 폭을 컬럼끼리 나눠 가져 화면 전환 때 사이드바 폭이 흔들리고, 생성 오버레이의 왼쪽 인셋도 이 고정 폭을 전제한다.
+  /// 폭을 고정한다(min == ideal == max). 범위를 주면 `.balanced`가 남는 폭을 컬럼끼리 나눠 가져 화면 전환 때 사이드바 폭이 흔들린다.
   private var sidebarColumn: some View {
     SidebarView(store: store.scope(state: \.sidebar, action: \.sidebar))
       .navigationSplitViewColumnWidth(
@@ -127,6 +147,11 @@ extension MainView {
   private var contentColumn: some View {
     SecretListView(store: store.scope(state: \.secretList, action: \.secretList))
       .navigationTitle("")
+      .onGeometryChange(for: CGFloat.self) { proxy in
+        proxy.frame(in: .named(Self.splitCoordinateSpaceName)).minX
+      } action: { minX in
+        creatingOverlayInset = minX
+      }
       .frame(minWidth: WindowLayoutMetrics.listMinWidth)
       .navigationSplitViewColumnWidth(
         min: 0,
