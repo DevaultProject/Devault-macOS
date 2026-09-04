@@ -248,22 +248,66 @@ private enum ColumnWidthProbeLog {
         let splitView = firstSplitView(in: root)
       else { return }
 
-      guard let controller = splitView.delegate as? NSSplitViewController else {
+      if let controller = splitView.delegate as? NSSplitViewController {
+        for (index, item) in controller.splitViewItems.enumerated() {
+          let pane = item.viewController.view
+          print(
+            "[COLPROBE] pane#\(index) width=\(String(format: "%7.1f", pane.frame.width))"
+              + " fitting=\(String(format: "%7.1f", pane.fittingSize.width))"
+              + " min=\(item.minimumThickness) max=\(item.maximumThickness)"
+              + " holding=\(item.holdingPriority.rawValue) collapsed=\(item.isCollapsed)"
+          )
+        }
+      } else {
         for (index, pane) in splitView.arrangedSubviews.enumerated() {
           print("[COLPROBE] pane#\(index) width=\(String(format: "%7.1f", pane.frame.width)) fitting=\(String(format: "%7.1f", pane.fittingSize.width)) (no controller)")
         }
-        return
       }
 
-      for (index, item) in controller.splitViewItems.enumerated() {
-        let pane = item.viewController.view
-        print(
-          "[COLPROBE] pane#\(index) width=\(String(format: "%7.1f", pane.frame.width))"
-            + " fitting=\(String(format: "%7.1f", pane.fittingSize.width))"
-            + " min=\(item.minimumThickness) max=\(item.maximumThickness)"
-            + " holding=\(item.holdingPriority.rawValue) collapsed=\(item.isCollapsed)"
-        )
-      }
+      dumpMiddlePaneDetail(of: splitView)
+    }
+  }
+
+  /// 가운데 페인의 폭을 붙잡는 주체까지 한 덤프에 담는다. 발생 기기 로그는 한 번 받기가 비싸므로, `fitting>0`이면 폭을 요구하는 서브뷰 사슬이, `fitting=0`인데 폭이 남으면 그 폭을 유지시키는 제약과 기기별 복원 상태가 같은 수집에서 바로 나와야 한다.
+  private static func dumpMiddlePaneDetail(of splitView: NSSplitView) {
+    let panes = splitView.arrangedSubviews
+    guard panes.count == 3 else { return }
+    let pane = panes[1]
+
+    var budget = 40
+    dumpWidthDemanders(in: pane, depth: 0, budget: &budget)
+
+    for constraint in pane.constraintsAffectingLayout(for: .horizontal).prefix(12) {
+      print("[COLPROBE] hconstraint \(constraint)")
+    }
+
+    // 기기별로만 다른 상태는 사실상 이것뿐이다 — 다른 기기에서 같은 창 폭으로 재현되지 않는 이유가 여기 있을 수 있다.
+    print("[COLPROBE] autosaveName=\(splitView.autosaveName ?? "nil")")
+    let defaults = UserDefaults.standard.dictionaryRepresentation()
+    for key in defaults.keys.sorted() where key.localizedCaseInsensitiveContains("splitview") {
+      print("[COLPROBE] defaults \(key)=\(String(describing: defaults[key]).prefix(300))")
+    }
+  }
+
+  /// 폭을 요구하는 서브뷰 사슬을 찍는다. 리스트 행이 많아도 로그가 폭주하지 않게 40줄에서 끊고, 구조 파악을 위해 최상위 두 단계는 폭 요구가 없어도 찍는다.
+  private static func dumpWidthDemanders(in view: NSView, depth: Int, budget: inout Int) {
+    guard budget > 0, depth <= 8 else { return }
+
+    let fitting = view.fittingSize.width
+    let intrinsic = view.intrinsicContentSize.width
+    if depth <= 1 || fitting > 0.5 || intrinsic > 0.5 {
+      budget -= 1
+      let indent = String(repeating: "  ", count: depth)
+      print(
+        "[COLPROBE] \(indent)\(String(describing: type(of: view)).prefix(100))"
+          + " width=\(String(format: "%.1f", view.frame.width))"
+          + " fitting=\(String(format: "%.1f", fitting))"
+          + " intrinsic=\(String(format: "%.1f", intrinsic))"
+      )
+    }
+
+    for subview in view.subviews {
+      dumpWidthDemanders(in: subview, depth: depth + 1, budget: &budget)
     }
   }
 
