@@ -18,8 +18,6 @@ public struct DVVaultContainer: View {
     /// `trailingIcon`에 hover 시 뜨는 설명 문구. `trailingIcon`이 `nil`이면 무시된다.
     public let trailingIconTooltip: String?
 
-    @Environment(\.dvVaultContainerMinWidthEnabled) private var minWidthEnabled
-
     // MARK: - Init
 
     public init(
@@ -48,7 +46,7 @@ public struct DVVaultContainer: View {
             trailingIconView
         }
         .padding(8)
-        .frame(minWidth: minWidthEnabled ? 200 : nil, alignment: .leading)
+        .frame(minWidth: 200, alignment: .leading)
     }
 }
 
@@ -151,14 +149,4 @@ extension DVVaultContainer {
                 .accessibilityLabel(trailingIconTooltip ?? "")
         }
     }
-}
-
-// MARK: - Environment
-
-extension EnvironmentValues {
-
-    /// ``DVVaultContainer`` 행의 최소 폭(200pt) 요구를 켜고 끈다.
-    ///
-    /// `NavigationSplitView`는 행 콘텐츠의 최소 폭을 AppKit required 제약으로 격상하므로, 컬럼을 폭 0으로 접을 때 이 요구가 살아 있으면 접힘 클램프(`NSSplitViewItem.MaxSize <= 0`)와 required끼리 충돌한다. 충돌에서 어느 제약이 깨질지는 기기마다 달라 접힌 컬럼에 200pt 잔폭이 남을 수 있으니, 접히는 컬럼 안에서는 `false`로 끈다.
-    @Entry public var dvVaultContainerMinWidthEnabled: Bool = true
 }

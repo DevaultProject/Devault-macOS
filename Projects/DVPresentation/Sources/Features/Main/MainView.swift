@@ -117,11 +117,11 @@ extension MainView {
     return SecretListView(store: store.scope(state: \.secretList, action: \.secretList))
       .navigationTitle("")
       .opacity(isCollapsed ? 0 : 1)
-      // 행 min을 함께 끄지 않으면 브리지가 그것을 AppKit required 제약으로 격상해 두어, 접힘 클램프(`MaxSize <= 0`)와 required끼리 충돌한다. 어느 쪽이 깨질지는 기기마다 달라 접힌 컬럼에 200pt 잔폭이 남는다.
-      .environment(\.dvVaultContainerMinWidthEnabled, !isCollapsed)
-      // 드래그 하한은 컬럼이 아니라 콘텐츠가 갖는다. 컬럼 `min`으로 주면 접힐 때 `width >= 300`과 `MaxSize <= 0`이 공존해 AppKit이 제약 충돌을 뱉는다.
+      // 드래그 하한은 컬럼이 아니라 콘텐츠가 갖는다. 컬럼 `min`으로 주면 접힐 때
+      // `width >= 300`과 `MaxSize <= 0`이 공존해 AppKit이 제약 충돌을 뱉는다.
       //
-      // 접을 때는 상한도 0으로 눌러야 한다. 하한만 풀면 목록이 자기 콘텐츠 폭을 계속 요구해 컬럼 `max: 0`을 이기는 기기가 있다.
+      // 접을 때는 상한도 0으로 눌러야 한다. 하한만 풀면 목록이 자기 콘텐츠 폭(행 `DVVaultContainer`의
+      // `minWidth: 200`)을 계속 요구하고, 컬럼 `max: 0`보다 그쪽이 이기는 macOS에서 200pt 여백이 남는다.
       .frame(
         minWidth: isCollapsed ? 0 : WindowLayoutMetrics.listMinWidth,
         maxWidth: isCollapsed ? 0 : nil
