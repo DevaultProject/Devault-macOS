@@ -87,7 +87,7 @@ struct DetailReadOnlyFieldView: View {
             valueContainer
         }
         // 값을 키로 잡아야 즉시 열리는 경우와 인증을 거쳐 늦게 도착하는 경우가 같은 전환을 탄다.
-        .animation(MotionMetrics.layout, value: displayedValue)
+        .dvAnimation(MotionMetrics.layout, value: displayedValue)
     }
 }
 

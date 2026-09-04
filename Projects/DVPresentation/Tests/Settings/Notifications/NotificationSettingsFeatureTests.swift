@@ -34,6 +34,32 @@ struct NotificationSettingsFeatureTests {
     }
   }
 
+  @Test("Free 등급이면 저장된 선택은 그대로 두고 잠금 표시만 켠다")
+  func taskDoesNotOverwriteExistingSelectionWhenLocked() async {
+    let saved = LockIsolated<[ExpiryAlertDay]?>(nil)
+    let store = TestStore(initialState: NotificationSettingsFeature.State()) {
+      NotificationSettingsFeature()
+    } withDependencies: {
+      $0.notificationSettingsClient.expiryAlertDaysBefore = { ExpiryAlertDay.allCases }
+      $0.notificationSettingsClient.isExpiryAlertsEnabled = { true }
+      $0.notificationSettingsClient.isAuthFailureAlertEnabled = { true }
+      $0.notificationSettingsClient.isClipboardAbnormalAccessAlertEnabled = { true }
+      $0.notificationSettingsClient.isPermissionGranted = { true }
+      $0.notificationSettingsClient.setExpiryAlertDaysBefore = { saved.setValue($0) }
+      $0.entitlementClient.current = { .free }
+      $0.entitlementClient.stream = { .finished }
+      $0.entitlementClient.canUseMultipleExpiryAlertDays = { false }
+    }
+
+    await store.send(.task) {
+      $0.expiryAlertDaysBefore = Set(ExpiryAlertDay.allCases)
+      $0.isMultipleAlertDaysLocked = true
+    }
+    // 기본 상태가 이미 권한 허용(true)이고 stub도 true라 permissionResponse는 상태를 바꾸지 않는다.
+    await store.receive(.permissionResponse(true))
+    #expect(saved.value == nil)
+  }
+
   @Test("만료 알림 사용 토글을 저장한다")
   func expiryAlertsTogglePersists() async {
     let saved = LockIsolated<Bool?>(nil)
@@ -79,11 +105,11 @@ struct NotificationSettingsFeatureTests {
     }
     await store.receive(.expiryNotificationsUpdateFailed) {
       $0.alert = AlertState {
-        TextState("Couldn't update expiration alerts.")
+        TextState(String.module("Couldn't update expiration alerts."))
       } actions: {
-        ButtonState(role: .cancel) { TextState("OK") }
+        ButtonState(role: .cancel) { TextState(String.module("OK")) }
       } message: {
-        TextState("The setting was saved, but existing notifications couldn't be updated. Please try again.")
+        TextState(String.module("The setting was saved, but existing notifications couldn't be updated. Please try again."))
       }
     }
   }

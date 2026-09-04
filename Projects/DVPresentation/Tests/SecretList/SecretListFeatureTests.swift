@@ -29,6 +29,27 @@ struct SecretListFeatureTests {
         }
     }
 
+    @Test("secretsResponse에 같은 id 중복이 와도 크래시 없이 하나로 합쳐진다")
+    func secretsResponseDeduplicatesById() async {
+        // CloudKit이 같은 id의 중복 레코드를 만들 수 있다. 방어가 없으면 IdentifiedArray가 fatalError.
+        let id = UUID()
+        let first = makeSecret(id: id, name: "GitHub API Key")
+        let dup = makeSecret(id: id, name: "GitHub API Key (dup)")
+        let store = TestStore(initialState: SecretListFeature.State()) {
+            SecretListFeature()
+        } withDependencies: {
+            $0.secretClient.fetchByQuery = { _ in [first, dup] }
+        }
+
+        await store.send(.task) {
+            $0.secretsState = .loading
+        }
+        await store.receive(.secretsResponse(.success([first, dup]))) {
+            $0.secretsState = .loaded([first])  // 첫 항목만 남는다
+            $0.collectionCount = 1
+        }
+    }
+
     @Test("task는 조회에 실패하면 failed 상태로 에러를 보존한다")
     func taskFailure() async {
         let store = TestStore(initialState: SecretListFeature.State()) {
@@ -260,16 +281,16 @@ struct SecretListFeatureTests {
 
         await store.send(.didTapDeleteForever(id: secretID)) {
             $0.alert = AlertState {
-                TextState("Delete Forever?")
+                TextState(verbatim: String.module("Delete Forever?"))
             } actions: {
                 ButtonState(role: .destructive, action: .confirmDeleteForever(id: secretID)) {
-                    TextState("Delete Forever")
+                    TextState(verbatim: String.module("Delete Forever"))
                 }
                 ButtonState(role: .cancel) {
-                    TextState("Cancel")
+                    TextState(verbatim: String.module("Cancel"))
                 }
             } message: {
-                TextState("This action cannot be undone.")
+                TextState(verbatim: String.module("This action cannot be undone."))
             }
         }
     }
@@ -286,16 +307,16 @@ struct SecretListFeatureTests {
 
         await store.send(.didTapDeleteForever(id: secretID)) {
             $0.alert = AlertState {
-                TextState("Delete Forever?")
+                TextState(verbatim: String.module("Delete Forever?"))
             } actions: {
                 ButtonState(role: .destructive, action: .confirmDeleteForever(id: secretID)) {
-                    TextState("Delete Forever")
+                    TextState(verbatim: String.module("Delete Forever"))
                 }
                 ButtonState(role: .cancel) {
-                    TextState("Cancel")
+                    TextState(verbatim: String.module("Cancel"))
                 }
             } message: {
-                TextState("This action cannot be undone.")
+                TextState(verbatim: String.module("This action cannot be undone."))
             }
         }
         await store.send(.alert(.presented(.confirmDeleteForever(id: secretID)))) {
@@ -519,7 +540,9 @@ struct SecretListFeatureTests {
         await store.receive(.secretsResponse(.success([]))) {
             $0.secretsState = .loaded([])
         }
-        await store.receive(.reselectAfterMutation)
+        await store.receive(.reselectAfterMutation) {
+            $0.selectedSecretID = nil
+        }
         await store.receive(.delegate(.secretSelected(nil)))
     }
 
@@ -551,9 +574,9 @@ struct SecretListFeatureTests {
 
     // MARK: - Helpers
 
-    private func makeSecret(name: String) -> Secret {
+    private func makeSecret(id: UUID = UUID(), name: String) -> Secret {
         Secret(
-            id: UUID(),
+            id: id,
             name: name,
             secretType: .apiKeyToken,
             createdAt: .now,

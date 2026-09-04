@@ -315,7 +315,7 @@ struct CreateSecretFeatureTests {
         }
 
         await store.send(.didTapSave) {
-            $0.validationErrors = [.name: "Required.", .value: "Required."]
+            $0.validationErrors = [.name: String.module("Required."), .value: String.module("Required.")]
         }
     }
 
@@ -329,7 +329,7 @@ struct CreateSecretFeatureTests {
         }
 
         await store.send(.didTapSave) {
-            $0.validationErrors = [.value: "Required."]
+            $0.validationErrors = [.value: String.module("Required.")]
         }
     }
 
@@ -344,7 +344,7 @@ struct CreateSecretFeatureTests {
         }
 
         await store.send(.didTapSave) {
-            $0.validationErrors = [.value: "Required."]
+            $0.validationErrors = [.value: String.module("Required.")]
         }
     }
 
@@ -356,9 +356,9 @@ struct CreateSecretFeatureTests {
 
         await store.send(.didTapSave) {
             $0.validationErrors = [
-                .name: "Required.",
-                .clientId: "Required.",
-                .clientSecret: "Required.",
+                .name: String.module("Required."),
+                .clientId: String.module("Required."),
+                .clientSecret: String.module("Required."),
             ]
         }
     }

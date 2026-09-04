@@ -31,6 +31,11 @@ enum UserDefaultsKey: String {
 
   // Entitlement
   case cachedEntitlement
+
+  // Subscription status
+  case cachedSubscriptionProductID
+  case cachedSubscriptionRenewsAt
+  case cachedSubscriptionWillAutoRenew
 }
 
 extension UserDefaults {
@@ -72,5 +77,9 @@ extension UserDefaults {
 
   func set(_ value: Date, forKey key: UserDefaultsKey) {
     set(value, forKey: key.rawValue)
+  }
+
+  func removeObject(forKey key: UserDefaultsKey) {
+    removeObject(forKey: key.rawValue)
   }
 }

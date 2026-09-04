@@ -27,7 +27,7 @@ struct MainView: View {
   var body: some View {
     content
       // `screen`으로 좁히지 않으면 목록·상세가 바뀔 때마다 화면 전체가 다시 페이드된다.
-      .animation(MotionMetrics.transition, value: store.screen)
+      .dvAnimation(MotionMetrics.transition, value: store.screen)
       .dvScreenBackground()
       .task { store.send(.task) }
       .sheet(
@@ -41,12 +41,11 @@ struct MainView: View {
           lockButton
         }
       }
-      // DEBUG에서만 띄운다. 릴리스에는 아직 띄울 페이월이 없어서(B2 미완) 시트를 열면 내용도 닫기 버튼도 없는 모달에 갇힌다. **B2가 올라오면 이 조건을 걷어낸다.**
-      #if DEBUG
-      .sheet(isPresented: $store.isPaywallPresented.sending(\.setPaywallPresented)) {
-        DebugPaywallView()
+      .sheet(
+        item: $store.scope(state: \.paywall, action: \.paywall)
+      ) { paywallStore in
+        DevaultProPaywallView(store: paywallStore)
       }
-      #endif
   }
 }
 
@@ -93,7 +92,23 @@ extension MainView {
           .frame(width: creatingOverlayInset)
         creatingArea
           .frame(maxWidth: .infinity, maxHeight: .infinity)
-          .dvScreenBackground()
+          // 왼쪽 모서리만 둥글린다 — 컬럼이 카드처럼 그려지는 macOS에서 직각 평면 오버레이가 이질적으로 보여서다. 배경만 안전 영역을 넘겨 툴바 아래까지 채우고, 콘텐츠는 안전 영역 안에 남긴다.
+          .background {
+            let shape = UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 12)
+            shape
+              .fill(Color.dv(.gray100))
+              // 사이드바가 옆 컬럼에 드리우는 그림자를 재현한다 — 브라우즈 화면 실측으로 경계에서 검정 ~5%가 36pt에 걸쳐 사라진다.
+              .overlay(alignment: .leading) {
+                LinearGradient(
+                  colors: [.black.opacity(0.05), .clear],
+                  startPoint: .leading,
+                  endPoint: .trailing
+                )
+                .frame(width: 36)
+              }
+              .clipShape(shape)
+              .ignoresSafeArea(edges: [.top, .bottom])
+          }
       }
       .transition(.opacity)
     }
@@ -104,14 +119,8 @@ extension MainView {
     // 폼이 떠 있는 동안에도 타입 선택 State는 살아 있으므로 폼을 먼저 본다.
     if let createSecretStore = store.scope(state: \.createSecret, action: \.createSecret) {
       CreateSecretView(store: createSecretStore)
-        #if DEBUG
-        .columnWidthProbe("detail(form)", screen: store.screen)
-        #endif
     } else if let selectStore = store.scope(state: \.selectSecretType, action: \.selectSecretType) {
       SelectSecretTypeView(store: selectStore)
-        #if DEBUG
-        .columnWidthProbe("detail(typeGrid)", screen: store.screen)
-        #endif
     }
   }
 
@@ -162,7 +171,7 @@ extension MainView {
       }
     }
     // id로 좁힌다. State 전체로 넓히면 조회 화면 안에서 필드를 열 때마다 상세가 다시 페이드된다.
-    .animation(MotionMetrics.transition, value: store.secretDetail?.id)
+    .dvAnimation(MotionMetrics.transition, value: store.secretDetail?.id)
     .navigationTitle("")
     // max는 주지 않는다 — 컬럼이 창을 채우지 못하면 윈도우 배경이 양옆에 드러난다.
     // 폼 폭 상한은 컬럼이 아니라 `SecretDetailView` 안의 `formMaxWidth()`가 담당한다.

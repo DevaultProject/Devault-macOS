@@ -95,17 +95,19 @@ struct ICloudSettingsFeatureTests {
     await store.send(.binding(.set(\.isSyncEnabled, false))) {
       $0.isSyncEnabled = true
       $0.alert = AlertState {
-        TextState("Turn Off iCloud Sync?")
+        TextState(verbatim: String.module("Turn Off iCloud Sync?"))
       } actions: {
         ButtonState(role: .destructive, action: .confirmDisableSync) {
-          TextState("Turn Off")
+          TextState(verbatim: String.module("Turn Off"))
         }
         ButtonState(role: .cancel) {
-          TextState("Cancel")
+          TextState(verbatim: String.module("Cancel"))
         }
       } message: {
         TextState(
-          "Data on this Mac and in iCloud won't be deleted. Future changes on this Mac won't sync until iCloud Sync is turned on again."
+          verbatim: String.module(
+            "Data on this Mac and in iCloud won't be deleted. Future changes on this Mac won't sync until iCloud Sync is turned on again."
+          )
         )
       }
     }

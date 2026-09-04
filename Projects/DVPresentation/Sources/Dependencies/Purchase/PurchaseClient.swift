@@ -20,6 +20,13 @@ public struct PurchaseClient: Sendable {
 
     /// 구독 설정 화면에 표시할 현재 상태. 게이트 판정에는 쓰지 않는다.
     public var subscriptionStatus: @Sendable () async -> SubscriptionStatus = { .free }
+
+    /// 등급 캐시를 StoreKit에 다시 물어 갱신한다. `Transaction.updates`가 아직 반영 전일 때
+    /// 사용자가 수동으로 강제 재조회할 수 있는 탈출구다("방금 결제했는데 왜 무료로 보이지").
+    public var refreshEntitlement: @Sendable () async -> Void = {}
+
+    /// macOS엔 iOS의 인앱 구독 관리 시트가 없어, App Store의 구독 관리 페이지를 연다.
+    public var openManageSubscriptions: @Sendable () -> Void = {}
 }
 
 extension PurchaseClient: TestDependencyKey {
@@ -36,7 +43,9 @@ extension PurchaseClient: TestDependencyKey {
         },
         purchase: { _ in .success },
         restore: {},
-        subscriptionStatus: { .free }
+        subscriptionStatus: { .free },
+        refreshEntitlement: {},
+        openManageSubscriptions: {}
     )
 }
 

@@ -33,6 +33,14 @@ public struct FetchSecretUseCaseImpl: FetchSecretUseCase {
         }
     }
 
+    public func totalCountExcludingTrash() async throws -> Int {
+        do {
+            return try await repository.totalCountExcludingTrash()
+        } catch {
+            throw SecretUseCaseError.map(error)
+        }
+    }
+
     public func fetchProjects(secretID: UUID) async throws -> [Project] {
         do {
             return try await repository.fetchProjects(secretID: secretID)

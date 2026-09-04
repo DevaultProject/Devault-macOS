@@ -136,7 +136,8 @@ public struct SidebarFeature {
 
     case projectsResponse(Result<[ProjectItem], SidebarError>)
     case countsResponse(Result<SecretCounts, SidebarError>)
-    case renameResponse(Result<ProjectItem, SidebarError>)
+    // 응답에 요청한 projectID를 실어, 편집 대상이 바뀐 뒤 도착한 stale 응답이 현재 편집을 건드리지 않게 한다.
+    case renameResponse(projectID: ProjectItem.ID, Result<ProjectItem, SidebarError>)
     case deleteResponse(Result<ProjectItem.ID, SidebarError>)
 
     // MARK: - Child
@@ -204,9 +205,12 @@ public struct SidebarFeature {
       case .projectsResponse(.success(let projects)):
         state.isRefreshingProjects = false
         let sorted = projects.sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
-        state.projectsState = .loaded(IdentifiedArray(uniqueElements: sorted))
+        // CloudKit 중복 레코드로 같은 id가 와도 트랩되지 않게 첫 항목만 남긴다(uniqueElements는 fatalError).
+        let list = IdentifiedArray(sorted, uniquingIDsWith: { current, _ in current })
+        state.projectsState = .loaded(list)
         // 프로젝트별 개수를 세려면 ID 목록이 필요하므로 목록 로드 성공 후에 이어서 집계한다.
-        return countsEffect(projectIDs: sorted.map(\.id))
+        // 중복 제거된 목록의 id를 넘겨, 같은 프로젝트를 두 번 조회하지 않게 한다.
+        return countsEffect(projectIDs: Array(list.ids))
 
       case .projectsResponse(.failure(let error)):
         state.isRefreshingProjects = false
@@ -281,12 +285,13 @@ public struct SidebarFeature {
         }
         return .none
 
-      // 편집 상태는 성공했을 때만 닫는다. 여기서 닫으면 실패 시 입력한 이름이 사라진다.
+      // 편집 상태는 성공·이름 중복 시 닫아 원래 이름으로 되돌린다.
+      // 그 외 실패(renameFailed)는 열어 둬 입력한 이름을 보존한다(재시도 대비).
       case .didConfirmRename:
         guard let id = state.renamingProjectID else { return .none }
         let name = state.renameText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else {
-          // 빈 이름은 보존할 입력이 없으므로 편집을 닫아 원래 이름으로 되돌린다(nameTaken과 달리).
+          // 빈 이름은 보존할 입력이 없으므로 편집을 닫아 원래 이름으로 되돌린다.
           state.alert = makeRenameEmptyNameAlert()
           state.renamingProjectID = nil
           state.renameText = ""
@@ -295,11 +300,11 @@ public struct SidebarFeature {
         return .run { [id, name] send in  // 캡처 리스트 명시
           do {
             let updated = try await sidebarClient.renameProject(id, name)
-            await send(.renameResponse(.success(updated)))
+            await send(.renameResponse(projectID: id, .success(updated)))
           } catch let error as SidebarError {
-            await send(.renameResponse(.failure(error)))
+            await send(.renameResponse(projectID: id, .failure(error)))
           } catch {
-            await send(.renameResponse(.failure(.renameFailed)))
+            await send(.renameResponse(projectID: id, .failure(.renameFailed)))
           }
         }
 
@@ -308,19 +313,29 @@ public struct SidebarFeature {
         state.renameText = ""
         return .none
 
-      case .renameResponse(.success(let updated)):
-        state.renamingProjectID = nil
-        state.renameText = ""
+      case let .renameResponse(projectID, .success(updated)):
+        // 편집 상태 정리는 지금 그 프로젝트를 편집 중일 때만 한다. 요청 도중 다른 프로젝트로 옮겼다면
+        // 그 편집을 건드리지 않는다. 반면 이름 변경은 실제로 성공했으므로 목록·부모 반영은 무조건 한다.
+        if state.renamingProjectID == projectID {
+          state.renamingProjectID = nil
+          state.renameText = ""
+        }
         return .concatenate(
           .send(.delegate(.projectRenamed(updated))),
           .send(.refresh)
         )
 
-      case .renameResponse(.failure(.nameTaken)):
+      case let .renameResponse(projectID, .failure(.nameTaken)):
+        // 지금 편집 중인 그 프로젝트의 응답일 때만 처리한다. 다른 프로젝트를 편집 중이면 stale 응답이므로 무시.
+        guard state.renamingProjectID == projectID else { return .none }
+        // 이름 중복은 저장을 막고 편집을 닫아 원래 이름으로 되돌린다.
         state.alert = makeRenameNameTakenAlert()
+        state.renamingProjectID = nil
+        state.renameText = ""
         return .none
 
-      case .renameResponse(.failure):
+      case let .renameResponse(projectID, .failure):
+        guard state.renamingProjectID == projectID else { return .none }
         state.alert = makeRenameFailedAlert()
         return .none
 

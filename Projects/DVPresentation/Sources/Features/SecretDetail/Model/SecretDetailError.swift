@@ -174,6 +174,27 @@ extension AlertState where Action == SecretDetailFeature.Action.Alert {
         }
     }
 
+    /// 이미 휴지통에 있는 시크릿을 조회 화면에서 지우는 경우. 다시 소프트 삭제해봤자
+    /// 아무 일도 안 일어나므로, 여기서는 영구 삭제를 확인한다 — 리스트 화면의
+    /// "Delete Forever" 흐름과 같은 문구를 쓴다.
+    static var confirmDeleteForever: Self {
+        Self {
+            TextState("Delete Forever?", bundle: .module)
+        } actions: {
+            ButtonState(role: .destructive, action: .confirmDeleteForever) {
+                TextState("Delete Forever", bundle: .module)
+            }
+            ButtonState(role: .cancel) {
+                TextState("Cancel", bundle: .module)
+            }
+        } message: {
+            TextState(
+                "This action cannot be undone.",
+                bundle: .module
+            )
+        }
+    }
+
     static var deleteFailed: Self {
         Self {
             TextState("Failed to delete secret.", bundle: .module)

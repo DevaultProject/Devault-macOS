@@ -118,6 +118,9 @@ struct MainFeatureTests {
     store.exhaustivity = .off(showSkippedAssertions: false)
 
     await store.send(.secretList(.didTapDelete(id: deleted.id)))
+    // .off 모드에서 finish()는 effect가 보낸 액션을 state에 reduce하지 않는다. 종단 액션을
+    // 명시적으로 receive해 그 앞의 재조회·재선택 체인을 모두 굴린 뒤 최종 상태만 확인한다.
+    await store.receive(.secretList(.delegate(.secretSelected(remainingTop.id))))
     await store.finish()
 
     #expect(store.state.secretList.secretsState == .loaded([remainingTop, remainingBottom]))
@@ -147,6 +150,9 @@ struct MainFeatureTests {
     store.exhaustivity = .off(showSkippedAssertions: false)
 
     await store.send(.secretList(.didTapDelete(id: deleted.id)))
+    // .off 모드에서 finish()는 effect가 보낸 액션을 state에 reduce하지 않는다. 종단 액션을
+    // 명시적으로 receive해 그 앞의 재조회·재선택 체인을 모두 굴린 뒤 최종 상태만 확인한다.
+    await store.receive(.secretList(.delegate(.secretSelected(nil))))
     await store.finish()
 
     #expect(store.state.secretList.secretsState == .loaded([]))
@@ -646,7 +652,7 @@ struct MainFeatureTests {
     await store.send(.sidebar(.didTapAddButton))
     await store.receive(.sidebar(.delegate(.addButtonTapped)))
     await store.receive(.canCreateSecretResponse(.success(false))) {
-      $0.isPaywallPresented = true
+      $0.paywall = DevaultProPaywallFeature.State()
     }
     #expect(store.state.selectSecretType == nil)
   }
@@ -661,7 +667,7 @@ struct MainFeatureTests {
     }
 
     await store.send(.settings(.delegate(.paywallRequired))) {
-      $0.isPaywallPresented = true
+      $0.paywall = DevaultProPaywallFeature.State()
     }
   }
 
@@ -678,7 +684,7 @@ struct MainFeatureTests {
     }
     await store.receive(.canCreateSecretResponse(.success(false))) {
       $0.pendingCreateType = nil
-      $0.isPaywallPresented = true
+      $0.paywall = DevaultProPaywallFeature.State()
     }
     #expect(store.state.createSecret == nil)
   }
@@ -701,7 +707,7 @@ struct MainFeatureTests {
     }
 
     await store.send(.secretDetail(.delegate(.paywallRequired))) {
-      $0.isPaywallPresented = true
+      $0.paywall = DevaultProPaywallFeature.State()
     }
   }
 
@@ -731,7 +737,7 @@ struct MainFeatureTests {
     await store.send(.sidebar(.didTapAddProject))
     await store.receive(.sidebar(.delegate(.addProjectTapped)))
     await store.receive(.canCreateProjectResponse(.success(false))) {
-      $0.isPaywallPresented = true
+      $0.paywall = DevaultProPaywallFeature.State()
     }
     #expect(store.state.createProject == nil)
   }
@@ -747,7 +753,7 @@ struct MainFeatureTests {
     await store.send(.sidebar(.didTapAddProject))
     await store.receive(.sidebar(.delegate(.addProjectTapped)))
     await store.receive(.canCreateProjectResponse(.failure(.unexpected)))
-    #expect(store.state.isPaywallPresented == false)
+    #expect(store.state.paywall == nil)
     #expect(store.state.createProject == nil)
   }
 
@@ -1113,6 +1119,8 @@ struct MainFeatureTests {
     await store.receive(.sidebar(.countsRefreshRequested))
     await store.receive(.secretList(.secretsResponse(.success([secret])))) {
       $0.secretList.secretsState = .loaded(IdentifiedArray(uniqueElements: [secret]))
+      // 검색어가 없으므로 재조회 결과 수가 곧 컬렉션 전체 수(#121)다.
+      $0.secretList.collectionCount = 1
     }
     await store.receive(.sidebar(.countsResponse(.success(SecretCounts())))) {
       $0.sidebar.countsState = .loaded(SecretCounts())
@@ -1182,7 +1190,7 @@ struct MainFeatureTests {
       $0.date = .constant(Self.referenceDate)
     }
 
-    await store.send(.sidebar(.renameResponse(.success(renamed))))
+    await store.send(.sidebar(.renameResponse(projectID: renamed.id, .success(renamed))))
     // delegate payload의 이름을 직접 사용해 즉시 갱신
     await store.receive(.sidebar(.delegate(.projectRenamed(renamed)))) {
       $0.secretList = SecretListFeature.State(
@@ -1224,7 +1232,7 @@ struct MainFeatureTests {
       $0.date = .constant(Self.referenceDate)
     }
 
-    await store.send(.sidebar(.renameResponse(.success(renamed))))
+    await store.send(.sidebar(.renameResponse(projectID: renamed.id, .success(renamed))))
     await store.receive(.sidebar(.delegate(.projectRenamed(renamed))))
     #expect(store.state.secretList.projectName == nil)
 

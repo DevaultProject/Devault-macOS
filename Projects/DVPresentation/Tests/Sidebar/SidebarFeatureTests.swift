@@ -45,6 +45,42 @@ struct SidebarFeatureTests {
     }
   }
 
+  @Test("projectsResponse에 같은 id 중복이 와도 크래시 없이 하나로 합쳐진다")
+  func taskDeduplicatesProjectsById() async {
+    // CloudKit이 같은 id의 중복 레코드를 만들 수 있다. 방어가 없으면 IdentifiedArray가 fatalError.
+    let id = UUID()
+    let projects = [
+      ProjectItem(id: id, name: "Backend"),
+      ProjectItem(id: id, name: "Backend copy"),
+    ]
+    let counts = SecretCounts(byFilter: [.all: 5], byProject: [:])
+    let store = TestStore(initialState: SidebarFeature.State()) {
+      SidebarFeature()
+    } withDependencies: {
+      $0.sidebarClient.fetchProjects = { projects }
+      $0.sidebarClient.fetchCounts = { _, projectIDs in
+        // 중복 id가 와도 카운트 조회는 고유한 id로만 이뤄져야 한다(같은 프로젝트 중복 조회 방지).
+        #expect(projectIDs == [id])
+        return counts
+      }
+      $0.date = .constant(Self.referenceDate)
+    }
+
+    await store.send(.task) {
+      $0.projectsState = .loading
+      $0.countsState = .loading
+    }
+    // 이름 정렬 후 같은 id 중 첫 항목("Backend")만 남는다.
+    await store.receive(.projectsResponse(.success(projects))) {
+      $0.projectsState = .loaded(IdentifiedArray(uniqueElements: [
+        ProjectItem(id: id, name: "Backend"),
+      ]))
+    }
+    await store.receive(.countsResponse(.success(counts))) {
+      $0.countsState = .loaded(counts)
+    }
+  }
+
   /// 화면이 다시 만들어지면 `.task`가 한 번 더 실행된다. 여기서 `.loading`으로 되돌리면 깜빡인다.
   @Test("이미 로드된 상태에서 task가 다시 실행돼도 값을 비우지 않는다")
   func taskAfterReloadKeepsLoadedValues() async {
@@ -305,7 +341,7 @@ struct SidebarFeatureTests {
 
     // 편집 상태는 성공 응답에서 닫힌다.
     await store.send(.didConfirmRename)
-    await store.receive(.renameResponse(.success(renamed))) {
+    await store.receive(.renameResponse(projectID: item.id, .success(renamed))) {
       $0.renamingProjectID = nil
       $0.renameText = ""
     }
@@ -322,8 +358,8 @@ struct SidebarFeatureTests {
     }
   }
 
-  @Test("didConfirmRename에서 nameTaken 오류 시 alert가 표시된다")
-  func didConfirmRenameNameTakenShowsAlert() async {
+  @Test("didConfirmRename에서 nameTaken 오류 시 alert를 띄우고 편집을 닫아 원래 이름으로 되돌린다")
+  func didConfirmRenameNameTakenShowsAlertAndReverts() async {
     let item = ProjectItem(id: UUID(), name: "Backend")
     var state = SidebarFeature.State()
     state.projectsState = .loaded([item])
@@ -336,9 +372,9 @@ struct SidebarFeatureTests {
       $0.sidebarClient.renameProject = { _, _ in throw SidebarError.nameTaken }
     }
 
-    // 실패해도 닫지 않는다 — 닫으면 입력한 이름이 사라진다.
+    // 이름 중복이면 저장을 막고 편집을 닫아 원래 이름으로 되돌린다.
     await store.send(.didConfirmRename)
-    await store.receive(.renameResponse(.failure(.nameTaken))) {
+    await store.receive(.renameResponse(projectID: item.id, .failure(.nameTaken))) {
       $0.alert = AlertState {
         TextState(String.module("This name is already in use."))
       } actions: {
@@ -346,7 +382,26 @@ struct SidebarFeatureTests {
       } message: {
         TextState(String.module("Please enter a different project name."))
       }
+      $0.renamingProjectID = nil
+      $0.renameText = ""
     }
+  }
+
+  @Test("편집 대상이 바뀐 뒤 도착한 이전 이름 변경의 nameTaken 응답은 현재 편집을 건드리지 않는다")
+  func staleRenameResponseDoesNotDisturbCurrentEdit() async {
+    let editingID = UUID()  // 지금 편집 중인 프로젝트(B)
+    let staleID = UUID()    // 이전에 확정했던 프로젝트(A)
+
+    var state = SidebarFeature.State()
+    state.renamingProjectID = editingID
+    state.renameText = "편집 중"
+
+    let store = TestStore(initialState: state) {
+      SidebarFeature()
+    }
+
+    // A(staleID)의 뒤늦은 nameTaken 응답 — 지금은 B를 편집 중이므로 무시되어야 한다(상태 변화·alert 없음).
+    await store.send(.renameResponse(projectID: staleID, .failure(.nameTaken)))
   }
 
   @Test("didConfirmRename에 빈 이름이면 alert를 띄우고 편집을 닫아 원래 이름으로 되돌린다")

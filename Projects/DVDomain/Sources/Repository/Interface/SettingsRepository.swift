@@ -158,4 +158,15 @@ public protocol SettingsRepository: Sendable {
   /// 구독을 시작하면 현재 캐시값을 즉시 한 번 방출하고, 이후 캐시가 바뀔 때마다 최신값을 방출한다.
   /// - Returns: 등급 스트림
   func cachedEntitlementStream() -> AsyncStream<Entitlement>
+
+  /// 마지막으로 확인된 구독 상태(상품·갱신일·자동 갱신 여부)를 반환한다.
+  ///
+  /// **구매 직후 `Transaction.currentEntitlements`를 곧바로 재조회하면 스토어 반영 지연으로
+  /// 갱신일이 잠깐 비어 있을 수 있다.** `PurchaseService`가 구매/복원에 성공한 순간 이미 손에 쥔
+  /// 트랜잭션 정보를 여기 저장해 두면, 재조회 없이도 즉시 정확한 값을 돌려줄 수 있다.
+  /// - Returns: 마지막으로 확인된 구독 상태. 확인한 적이 없으면 `.free`
+  func cachedSubscriptionStatus() -> SubscriptionStatus
+  /// 확인된 구독 상태를 캐시에 저장한다.
+  /// - Parameter status: 저장할 구독 상태
+  func setCachedSubscriptionStatus(_ status: SubscriptionStatus)
 }

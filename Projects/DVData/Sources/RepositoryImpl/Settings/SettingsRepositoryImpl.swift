@@ -35,7 +35,6 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
       UserDefaultsKey.autoClearClipboardDelaySeconds.rawValue: 30,
       UserDefaultsKey.isWindowCaptureProtectionEnabled.rawValue: true,
       UserDefaultsKey.isExpiryAlertsEnabled.rawValue: true,
-      UserDefaultsKey.expiryAlertDaysBefore.rawValue: ExpiryAlertDay.defaultSelection.map(\.rawValue),
       UserDefaultsKey.isAuthFailureAlertEnabled.rawValue: true,
       UserDefaultsKey.isClipboardAbnormalAccessAlertEnabled.rawValue: true,
     ])
@@ -142,6 +141,30 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
     defaultsStream(cachedEntitlement)
   }
 
+  public func cachedSubscriptionStatus() -> SubscriptionStatus {
+    SubscriptionStatus(
+      entitlement: cachedEntitlement(),
+      productID: defaults.string(forKey: .cachedSubscriptionProductID),
+      renewsAt: defaults.date(forKey: .cachedSubscriptionRenewsAt),
+      willAutoRenew: defaults.bool(forKey: .cachedSubscriptionWillAutoRenew)
+    )
+  }
+
+  public func setCachedSubscriptionStatus(_ status: SubscriptionStatus) {
+    // 등급 자체는 setCachedEntitlement가 별도로 관리한다 — 여기서는 상품·갱신일·자동 갱신 여부만 저장한다.
+    if let productID = status.productID {
+      defaults.set(productID, forKey: .cachedSubscriptionProductID)
+    } else {
+      defaults.removeObject(forKey: .cachedSubscriptionProductID)
+    }
+    if let renewsAt = status.renewsAt {
+      defaults.set(renewsAt, forKey: .cachedSubscriptionRenewsAt)
+    } else {
+      defaults.removeObject(forKey: .cachedSubscriptionRenewsAt)
+    }
+    defaults.set(status.willAutoRenew, forKey: .cachedSubscriptionWillAutoRenew)
+  }
+
   // MARK: - Security
 
   public func isRequireAuthOnLaunchEnabled() -> Bool {
@@ -245,8 +268,13 @@ public struct SettingsRepositoryImpl: SettingsRepository, @unchecked Sendable {
   }
 
   public func expiryAlertDaysBefore() -> [ExpiryAlertDay] {
-    let rawValues = defaults.integerArray(forKey: .expiryAlertDaysBefore)
-      ?? ExpiryAlertDay.defaultSelection.map(\.rawValue)
+    guard let rawValues = defaults.integerArray(forKey: .expiryAlertDaysBefore) else {
+      // 저장된 적이 한 번도 없을 때만 등급을 보고 기본값을 정한다. 이후 실제로 저장된 값은
+      // 등급이 바뀌어도 절대 여기서 건드리지 않는다 — 다운그레이드 시 재구독 복원을 위해서다.
+      // 무료 기본값은 임의의 요일이 아니라, 여러 개 중 하나만 남길 때와 같은 기준(가장 이른 시점 =
+      // 대응할 시간을 가장 많이 준다, `ScheduleSecretExpiryNotificationsUseCaseImpl` 참고)을 그대로 쓴다.
+      return cachedEntitlement() == .pro ? ExpiryAlertDay.defaultSelection : [.thirtyDaysBefore]
+    }
     return rawValues.compactMap(ExpiryAlertDay.init(rawValue:))
   }
 

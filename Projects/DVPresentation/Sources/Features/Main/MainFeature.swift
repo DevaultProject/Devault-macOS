@@ -17,8 +17,8 @@ public struct MainFeature {
     /// sheet가 아닌 2-column NavigationSplitView 전환 용도이므로 @Presents 미사용
     var selectSecretType: SelectSecretTypeFeature.State?
     @Presents var createProject: CreateProjectFeature.State?
-    /// 게이트에 막혀 띄우는 업그레이드 시트. 지금은 데모 페이월이 붙어 있고, B2가 진짜 페이월로 대체한다.
-    var isPaywallPresented = false
+    /// 게이트에 막혀 띄우는 업그레이드 시트.
+    @Presents var paywall: DevaultProPaywallFeature.State?
     /// sheet가 아닌 2-column NavigationSplitView 전환 용도이므로 @Presents 미사용
     var createSecret: CreateSecretFeature.State?
     /// sheet가 아닌 3-column NavigationSplitView detail 컬럼 용도이므로 @Presents 미사용
@@ -76,7 +76,7 @@ public struct MainFeature {
     case canCreateProjectResponse(Result<Bool, ProjectUseCaseError>)
     /// Secret 생성 게이트 판정 결과. 타입 선택 화면을 열기 **전에** 묻는다.
     case canCreateSecretResponse(Result<Bool, SecretUseCaseError>)
-    case setPaywallPresented(Bool)
+    case paywall(PresentationAction<DevaultProPaywallFeature.Action>)
     case createSecret(CreateSecretFeature.Action)
     case secretDetail(SecretDetailFeature.Action)
     case settings(SettingsFeature.Action)
@@ -135,7 +135,7 @@ public struct MainFeature {
 
       case .canCreateSecretResponse(.success(false)):
         state.pendingCreateType = nil
-        state.isPaywallPresented = true
+        state.paywall = DevaultProPaywallFeature.State()
         return .none
 
       case .canCreateSecretResponse(.failure):
@@ -148,15 +148,18 @@ public struct MainFeature {
         return .none
 
       case .canCreateProjectResponse(.success(false)):
-        state.isPaywallPresented = true
+        state.paywall = DevaultProPaywallFeature.State()
         return .none
 
       case .canCreateProjectResponse(.failure):
         // 판정 실패는 저장소가 깨진 것이다. 페이월을 띄우면 결제해도 해결되지 않는다.
         return .none
 
-      case .setPaywallPresented(let isPresented):
-        state.isPaywallPresented = isPresented
+      case .paywall(.presented(.delegate(.didFinish))):
+        state.paywall = nil
+        return .none
+
+      case .paywall:
         return .none
 
       case .iCloudRemoteChangeDetected:
@@ -178,7 +181,7 @@ public struct MainFeature {
       case .settings(.delegate(.paywallRequired)),
            .secretDetail(.delegate(.paywallRequired)),
            .createSecret(.delegate(.paywallRequired)):
-        state.isPaywallPresented = true
+        state.paywall = DevaultProPaywallFeature.State()
         return .none
 
       case .settings(.delegate(.closeRequested)):
@@ -340,6 +343,9 @@ public struct MainFeature {
     }
     .ifLet(\.$createProject, action: \.createProject) {
       CreateProjectFeature()
+    }
+    .ifLet(\.$paywall, action: \.paywall) {
+      DevaultProPaywallFeature()
     }
     .ifLet(\.createSecret, action: \.createSecret) {
       CreateSecretFeature()
